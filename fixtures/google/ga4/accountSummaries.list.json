@@ -1,0 +1,251 @@
+{
+  "accountSummaries": [
+    {
+      "name": "accountSummaries/333333",
+      "account": "accounts/333333",
+      "displayName": "Example Agency (40 clients)",
+      "propertySummaries": [
+        {
+          "property": "properties/2000000001",
+          "displayName": "Client 01 - MUST NOT AUTOSELECT",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000002",
+          "displayName": "Client 02 - Example Brand 2",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000003",
+          "displayName": "Client 03 - Example Brand 3",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000004",
+          "displayName": "Client 04 - Example Brand 4",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000005",
+          "displayName": "Client 05 - Example Brand 5",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000006",
+          "displayName": "Client 06 - Example Brand 6",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000007",
+          "displayName": "Client 07 - Example Brand 7",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000008",
+          "displayName": "Client 08 - Example Brand 8",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000009",
+          "displayName": "Client 09 - Example Brand 9",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000010",
+          "displayName": "Client 10 - Example Brand 10",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000011",
+          "displayName": "Client 11 - Example Brand 11",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000012",
+          "displayName": "Client 12 - Example Brand 12",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000013",
+          "displayName": "Client 13 - Example Brand 13",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000014",
+          "displayName": "Client 14 - Example Brand 14",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000015",
+          "displayName": "Client 15 - Example Brand 15",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000016",
+          "displayName": "Client 16 - Example Brand 16",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000017",
+          "displayName": "Client 17 - Example Brand 17",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000018",
+          "displayName": "Client 18 - Example Brand 18",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000019",
+          "displayName": "Client 19 - Example Brand 19",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000020",
+          "displayName": "Client 20 - Example Brand 20",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000021",
+          "displayName": "Client 21 - Example Brand 21",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000022",
+          "displayName": "Client 22 - Example Brand 22",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000023",
+          "displayName": "Client 23 - Example Brand 23",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000024",
+          "displayName": "Client 24 - Example Brand 24",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000025",
+          "displayName": "Client 25 - Example Brand 25",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000026",
+          "displayName": "Client 26 - Example Brand 26",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000027",
+          "displayName": "Client 27 - Example Brand 27",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000028",
+          "displayName": "Client 28 - Example Brand 28",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000029",
+          "displayName": "Client 29 - Example Brand 29",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000030",
+          "displayName": "Client 30 - Example Brand 30",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000031",
+          "displayName": "Client 31 - Example Brand 31",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000032",
+          "displayName": "Client 32 - Example Brand 32",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000033",
+          "displayName": "Client 33 - Example Brand 33",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000034",
+          "displayName": "Client 34 - Example Brand 34",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000035",
+          "displayName": "Client 35 - Example Brand 35",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000036",
+          "displayName": "Client 36 - Example Brand 36",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000037",
+          "displayName": "Client 37 - Example Brand 37",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000038",
+          "displayName": "Client 38 - Example Brand 38",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000039",
+          "displayName": "Client 39 - Example Brand 39",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        },
+        {
+          "property": "properties/2000000040",
+          "displayName": "Client 40 - Example Brand 40",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/333333"
+        }
+      ]
+    }
+  ]
+}

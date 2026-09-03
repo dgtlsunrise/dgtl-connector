@@ -1,0 +1,16 @@
+{
+  "accounts": [
+    {
+      "name": "accounts/111111",
+      "displayName": "Example Brand",
+      "regionCode": "US",
+      "createTime": "2024-01-15T00:00:00Z",
+      "updateTime": "2024-01-15T00:00:00Z"
+    },
+    {
+      "name": "accounts/222222",
+      "displayName": "Example Agency Sandbox",
+      "regionCode": "US"
+    }
+  ]
+}

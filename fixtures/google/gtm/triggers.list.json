@@ -1,0 +1,13 @@
+{
+  "trigger": [
+    {
+      "path": "accounts/444444/containers/555555/workspaces/6/triggers/2147479572",
+      "accountId": "444444",
+      "containerId": "555555",
+      "workspaceId": "6",
+      "triggerId": "2147479572",
+      "name": "All Pages",
+      "type": "pageview"
+    }
+  ]
+}

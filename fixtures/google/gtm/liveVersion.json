@@ -1,0 +1,28 @@
+{
+  "containerVersion": {
+    "path": "accounts/444444/containers/555555/versions/12",
+    "accountId": "444444",
+    "containerId": "555555",
+    "containerVersionId": "12",
+    "name": "Live",
+    "container": {
+      "publicId": "GTM-XXXX000",
+      "name": "Example Brand Web"
+    },
+    "tag": [
+      {
+        "tagId": "1",
+        "name": "GA4 Configuration",
+        "type": "gaawc"
+      }
+    ],
+    "trigger": [
+      {
+        "triggerId": "2147479572",
+        "name": "All Pages",
+        "type": "pageview"
+      }
+    ],
+    "variable": []
+  }
+}

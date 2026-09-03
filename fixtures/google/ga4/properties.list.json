@@ -1,0 +1,21 @@
+{
+  "properties": [
+    {
+      "name": "properties/111111111",
+      "parent": "accounts/111111",
+      "displayName": "Example Brand Web",
+      "propertyType": "PROPERTY_TYPE_ORDINARY",
+      "timeZone": "America/New_York",
+      "currencyCode": "USD",
+      "industryCategory": "INDUSTRY_CATEGORY_SHOPPING"
+    },
+    {
+      "name": "properties/222222222",
+      "parent": "accounts/111111",
+      "displayName": "Example Brand App",
+      "propertyType": "PROPERTY_TYPE_ORDINARY",
+      "timeZone": "America/New_York",
+      "currencyCode": "USD"
+    }
+  ]
+}

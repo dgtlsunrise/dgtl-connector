@@ -1,0 +1,13 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "dgtl-marketing": {
+      "type": "stdio",
+      "command": "./bin/dgtl-marketing-mcp",
+      "cwd": "${PLUGIN_ROOT}",
+      "env": {
+        "PLUGIN_DATA": "${PLUGIN_DATA}"
+      }
+    }
+  }
+}

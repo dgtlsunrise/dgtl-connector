@@ -1,0 +1,8 @@
+{
+  "path": "accounts/444444/containers/555555",
+  "accountId": "444444",
+  "containerId": "555555",
+  "name": "Example Brand Web",
+  "publicId": "GTM-XXXX000",
+  "usageContext": ["web"]
+}

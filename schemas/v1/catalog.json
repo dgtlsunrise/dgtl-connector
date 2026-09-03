@@ -1,0 +1,141 @@
+{
+  "$comment": "Closed free kernel is 23 (the original 22 from SECOND-OPINION plus ga4_list_account_summaries). Gated families are registered but fail closed.",
+  "version": "0.1.0",
+  "closed": true,
+  "count": 23,
+  "tools": [
+    {
+      "name": "google_whoami",
+      "group": "identity",
+      "google": ["openidconnect.googleapis.com/v1/userinfo"]
+    },
+    {
+      "name": "ga4_list_accounts",
+      "group": "ga4-admin",
+      "google": ["analyticsadmin.googleapis.com/v1beta/accounts.list"]
+    },
+    {
+      "name": "ga4_list_account_summaries",
+      "group": "ga4-admin",
+      "google": ["analyticsadmin.googleapis.com/v1beta/accountSummaries.list"]
+    },
+    {
+      "name": "ga4_list_properties",
+      "group": "ga4-admin",
+      "google": ["analyticsadmin.googleapis.com/v1beta/properties.list"]
+    },
+    {
+      "name": "ga4_get_property",
+      "group": "ga4-admin",
+      "google": ["analyticsadmin.googleapis.com/v1beta/properties.get"]
+    },
+    {
+      "name": "ga4_list_data_streams",
+      "group": "ga4-admin",
+      "google": ["analyticsadmin.googleapis.com/v1beta/properties.dataStreams.list"]
+    },
+    {
+      "name": "ga4_list_key_events",
+      "group": "ga4-admin",
+      "google": ["analyticsadmin.googleapis.com/v1beta/properties.keyEvents.list"]
+    },
+    {
+      "name": "ga4_get_metadata",
+      "group": "ga4-data",
+      "google": ["analyticsdata.googleapis.com/v1beta/properties.getMetadata"]
+    },
+    {
+      "name": "ga4_run_report",
+      "group": "ga4-data",
+      "google": ["analyticsdata.googleapis.com/v1beta/properties.runReport"]
+    },
+    {
+      "name": "gsc_list_sites",
+      "group": "gsc",
+      "google": ["searchconsole.googleapis.com/webmasters/v3/sites.list"]
+    },
+    {
+      "name": "gsc_get_site",
+      "group": "gsc",
+      "google": ["searchconsole.googleapis.com/webmasters/v3/sites.get"]
+    },
+    {
+      "name": "gsc_query_search_analytics",
+      "group": "gsc",
+      "google": ["searchconsole.googleapis.com/webmasters/v3/sites.searchanalytics.query"]
+    },
+    {
+      "name": "gsc_inspect_url",
+      "group": "gsc",
+      "google": ["searchconsole.googleapis.com/v1/urlInspection.index.inspect"]
+    },
+    {
+      "name": "gsc_list_sitemaps",
+      "group": "gsc",
+      "google": ["searchconsole.googleapis.com/webmasters/v3/sites.sitemaps.list"]
+    },
+    {
+      "name": "gsc_get_sitemap",
+      "group": "gsc",
+      "google": ["searchconsole.googleapis.com/webmasters/v3/sites.sitemaps.get"]
+    },
+    {
+      "name": "gtm_list_accounts",
+      "group": "gtm",
+      "google": ["tagmanager.googleapis.com/tagmanager/v2/accounts.list"]
+    },
+    {
+      "name": "gtm_list_containers",
+      "group": "gtm",
+      "google": ["tagmanager.googleapis.com/tagmanager/v2/accounts.containers.list"]
+    },
+    {
+      "name": "gtm_get_container",
+      "group": "gtm",
+      "google": ["tagmanager.googleapis.com/tagmanager/v2/accounts.containers.get"]
+    },
+    {
+      "name": "gtm_list_workspaces",
+      "group": "gtm",
+      "google": ["tagmanager.googleapis.com/tagmanager/v2/accounts.containers.workspaces.list"]
+    },
+    {
+      "name": "gtm_list_tags",
+      "group": "gtm",
+      "google": ["tagmanager.googleapis.com/tagmanager/v2/accounts.containers.workspaces.tags.list"]
+    },
+    {
+      "name": "gtm_list_triggers",
+      "group": "gtm",
+      "google": ["tagmanager.googleapis.com/tagmanager/v2/accounts.containers.workspaces.triggers.list"]
+    },
+    {
+      "name": "gtm_list_variables",
+      "group": "gtm",
+      "google": ["tagmanager.googleapis.com/tagmanager/v2/accounts.containers.workspaces.variables.list"]
+    },
+    {
+      "name": "gtm_get_live_container_version",
+      "group": "gtm",
+      "google": ["tagmanager.googleapis.com/tagmanager/v2/accounts.containers.versions.live"]
+    }
+  ],
+  "gated_tools": [
+    { "name": "gbp_list_accounts", "group": "gbp", "flag": "gbp.enabled", "fail": "GBP_NOT_ENABLED" },
+    { "name": "gbp_list_locations", "group": "gbp", "flag": "gbp.enabled", "fail": "GBP_NOT_ENABLED" },
+    { "name": "gbp_get_location", "group": "gbp", "flag": "gbp.enabled", "fail": "GBP_NOT_ENABLED" },
+    { "name": "gbp_performance", "group": "gbp", "flag": "gbp.enabled", "fail": "GBP_NOT_ENABLED" },
+    { "name": "gbp_search_keywords", "group": "gbp", "flag": "gbp.enabled", "fail": "GBP_NOT_ENABLED" },
+    { "name": "gads_list_accessible_customers", "group": "gads", "fail": "LICENSE_REQUIRED" },
+    { "name": "gads_get_customer", "group": "gads", "fail": "LICENSE_REQUIRED" },
+    { "name": "gads_search", "group": "gads", "fail": "LICENSE_REQUIRED" },
+    { "name": "gads_campaign_performance", "group": "gads", "fail": "LICENSE_REQUIRED" },
+    { "name": "license_status", "group": "license", "fail": null },
+    { "name": "meta_list_ad_accounts", "group": "meta", "fail": "LICENSE_REQUIRED" },
+    { "name": "meta_list_campaigns", "group": "meta", "fail": "LICENSE_REQUIRED" },
+    { "name": "meta_list_adsets", "group": "meta", "fail": "LICENSE_REQUIRED" },
+    { "name": "meta_list_ads", "group": "meta", "fail": "LICENSE_REQUIRED" },
+    { "name": "meta_insights", "group": "meta", "fail": "LICENSE_REQUIRED" },
+    { "name": "meta_get_creative", "group": "meta", "fail": "LICENSE_REQUIRED" }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dgtlsunrise.local/spec/dgtl-marketing/v1/envelope.schema.json",
+  "title": "dgtl-marketing success envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ok", "tool"],
+  "properties": {
+    "ok": { "const": true },
+    "tool": { "type": "string" },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id", "display_name"],
+      "properties": {
+        "type": { "type": "string" },
+        "id": { "type": "string" },
+        "display_name": { "type": "string" }
+      }
+    },
+    "data": true,
+    "page": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["truncated", "row_count"],
+      "properties": {
+        "next_page_token": { "type": "string" },
+        "truncated": { "type": "boolean" },
+        "row_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "quota": true
+  }
+}

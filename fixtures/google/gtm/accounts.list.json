@@ -1,0 +1,10 @@
+{
+  "account": [
+    {
+      "path": "accounts/444444",
+      "accountId": "444444",
+      "name": "Example Brand GTM",
+      "shareData": false
+    }
+  ]
+}

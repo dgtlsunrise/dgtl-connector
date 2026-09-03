@@ -1,0 +1,10 @@
+{
+  "name": "properties/111111111",
+  "parent": "accounts/111111",
+  "displayName": "Example Brand Web",
+  "propertyType": "PROPERTY_TYPE_ORDINARY",
+  "timeZone": "America/New_York",
+  "currencyCode": "USD",
+  "industryCategory": "INDUSTRY_CATEGORY_SHOPPING",
+  "createTime": "2024-01-15T00:00:00Z"
+}

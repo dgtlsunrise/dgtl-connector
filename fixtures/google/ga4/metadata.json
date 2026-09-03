@@ -1,0 +1,20 @@
+{
+  "name": "properties/111111111/metadata",
+  "dimensions": [
+    { "apiName": "date", "uiName": "Date", "customDefinition": false },
+    { "apiName": "sessionDefaultChannelGroup", "uiName": "Session default channel group", "customDefinition": false },
+    { "apiName": "landingPage", "uiName": "Landing page", "customDefinition": false },
+    { "apiName": "eventName", "uiName": "Event name", "customDefinition": false },
+    { "apiName": "deviceCategory", "uiName": "Device category", "customDefinition": false },
+    { "apiName": "country", "uiName": "Country", "customDefinition": false }
+  ],
+  "metrics": [
+    { "apiName": "sessions", "uiName": "Sessions", "customDefinition": false },
+    { "apiName": "activeUsers", "uiName": "Active users", "customDefinition": false },
+    { "apiName": "newUsers", "uiName": "New users", "customDefinition": false },
+    { "apiName": "engagedSessions", "uiName": "Engaged sessions", "customDefinition": false },
+    { "apiName": "engagementRate", "uiName": "Engagement rate", "customDefinition": false },
+    { "apiName": "eventCount", "uiName": "Event count", "customDefinition": false },
+    { "apiName": "conversions", "uiName": "Key events", "customDefinition": false }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "email": "user@example.com",
+  "sub": "000000000000000000000",
+  "granted_scopes": [
+    "openid",
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/analytics.readonly",
+    "https://www.googleapis.com/auth/webmasters.readonly",
+    "https://www.googleapis.com/auth/tagmanager.readonly"
+  ],
+  "expires_in": 3599
+}

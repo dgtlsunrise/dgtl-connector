@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "tool": "gtm_list_accounts",
+  "error_code": "CONSENT_MISSING",
+  "message": "This Google login did not grant Tag Manager readonly (https://www.googleapis.com/auth/tagmanager.readonly). Re-open the Connect card and allow all three: Analytics, Search Console, and Tag Manager.",
+  "missing_scope": "https://www.googleapis.com/auth/tagmanager.readonly",
+  "hint": "One consent, not a second product login."
+}

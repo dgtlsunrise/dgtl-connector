@@ -1,0 +1,90 @@
+/** Closed error codes. Human `message` is user-visible; never include tokens. */
+
+export const ERROR_CODES = [
+  "UNAUTHENTICATED",
+  "REAUTH_REQUIRED",
+  "CONSENT_MISSING",
+  "ACCESS_NOT_CONFIGURED",
+  "PERMISSION_DENIED",
+  "NOT_FOUND",
+  "RESOURCE_REQUIRED",
+  "INVALID_ARGUMENT",
+  "UNSUPPORTED_DIMENSION",
+  "UNSUPPORTED_OPERATION",
+  "QUOTA_EXCEEDED",
+  "RATE_LIMITED",
+  "GOOGLE_UNAVAILABLE",
+  "LICENSE_REQUIRED",
+  "ADS_SCOPE_MISSING",
+  "META_NOT_CONNECTED",
+  "GBP_NOT_ENABLED",
+] as const;
+
+export type ErrorCode = (typeof ERROR_CODES)[number];
+
+export type ErrorExtra = {
+  hint?: string;
+  google_status?: number;
+  google_reason?: string;
+  api?: string;
+  resource_id?: string;
+  missing_scope?: string;
+};
+
+export class ToolError extends Error {
+  readonly error_code: ErrorCode;
+  readonly extra: ErrorExtra;
+
+  constructor(code: ErrorCode, message: string, extra: ErrorExtra = {}) {
+    super(message);
+    this.name = "ToolError";
+    this.error_code = code;
+    this.extra = extra;
+  }
+}
+
+export const MSG = {
+  UNAUTHENTICATED:
+    "Google is not connected. For Cursor and Grok Build stdio, set a host-injected access token (GOOGLE_ACCESS_TOKEN) or run `dgtl-marketing-mcp auth login` (installed-app PKCE). There is no Gmail-style Connect card for local stdio MCP.",
+  REAUTH_REQUIRED:
+    "Google access expired or was revoked. Re-run host token injection or `dgtl-marketing-mcp auth login`. You can also revoke this app under Google Account → Third-party access, then reconnect.",
+  RESOURCE_REQUIRED:
+    "This tool will not guess a property. Name the GA4 property ID, Search Console site, or GTM account/container/workspace. If you are not sure, ask me to list them.",
+  UNSUPPORTED_DIMENSION:
+    "The GA4 Data API has no search-query dimension. Search queries stay in Search Console search analytics. I can run gsc_query_search_analytics with dimension query for the Search Console site you pick. Linking GSC in the GA4 UI does not add searchQuery to this API.",
+  UNSUPPORTED_OPERATION:
+    "v1 is read-only. I cannot publish Tag Manager containers, create tags, submit sitemaps, request indexing, or create GA4–Search Console links (analytics.readonly cannot create those links). Use the Google UI.",
+  LICENSE_REQUIRED:
+    "This tool needs a DGTL paid license (Google Ads / Meta Ads). Free GA4, Search Console, and Tag Manager tools still work. Paste a license JWT via DGTL_LICENSE_JWT or PLUGIN_DATA/license.jwt — never a Google Ads developer-token.",
+  GBP_NOT_ENABLED:
+    "Google Business Profile tools are flagged off until DGTL's GCP project has non-zero GBP API quota (Basic API Access). They are not on the free GA4/GSC/GTM consent screen. Consent B (business.manage) is a separate grant.",
+  ADS_SCOPE_MISSING:
+    "Google Ads is a second OAuth grant (scope adwords). It is not part of the free GA4/GSC/GTM consent. Reconnect Ads after a valid DGTL license.",
+  META_NOT_CONNECTED:
+    "Meta Ads is a separate OAuth (ads_read). Connect Meta after a valid DGTL license. The Meta app secret is never in this plugin.",
+  INVALID_ARGUMENT:
+    "Google rejected the request (INVALID_ARGUMENT). Check dates (YYYY-MM-DD), GA4 limits (≤9 dimensions, ≤10 metrics), and names from ga4_get_metadata. I will not invent a replacement metric.",
+  NOT_FOUND:
+    "Google does not know this resource. Copy the ID from the list tools. Search Console URL-prefix properties must match, including the trailing slash. Domain properties look like sc-domain:example.com.",
+  PERMISSION_DENIED:
+    "This Google account cannot access that resource. In GA4: Admin → Property access. In Search Console: Settings → Users. In GTM: Account user management. Being signed into Google is not the same as being a user on that property.",
+  ACCESS_NOT_CONFIGURED:
+    "Google returned 403 accessNotConfigured. That means the API is not Enabled on the OAuth client's Google Cloud project — not that your GA4 property is empty.",
+  QUOTA:
+    "Google quota or rate limit hit. I cap reports at 1,000 rows per call. Wait, narrow the date range, or inspect fewer URLs.",
+  GOOGLE_UNAVAILABLE:
+    "Google’s API returned a server error. Retry once. If it keeps failing, it is on Google’s side, not your property picker.",
+  RANGE_TOO_LONG:
+    "Date range exceeds 366 days. Pass allow_long_range: true if you really need a longer window (uses more GA4 quota).",
+} as const;
+
+export function consentMissing(scope: string): ToolError {
+  return new ToolError(
+    "CONSENT_MISSING",
+    `This Google login did not grant ${scope}. Re-authorize the same GA4 + Search Console + Tag Manager consent and allow all three product scopes. This plugin will not start a second Google login just for one API.`,
+    {
+      missing_scope: scope,
+      hint: "One consent for GA4 + GSC + GTM. GBP and Ads are separate grants and are not on this screen.",
+    },
+  );
+}

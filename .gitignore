@@ -1,0 +1,43 @@
+# Local env and OAuth artifacts — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.key
+secrets/
+.secrets/
+
+# Google OAuth client files and token stores (test harness leftovers)
+client_secret*.json
+client_secrets*.json
+credentials.json
+token.json
+tokens.json
+*refresh*token*
+*-credentials.json
+*-token.json
+
+# Python / Node junk if a future runtime appears
+__pycache__/
+*.pyc
+.venv/
+venv/
+node_modules/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local agent fetch cache (not part of the spec)
+agent-tools/
+
+# Runtime
+*.tsbuildinfo
+coverage/
+smokes/
+.dgtl-plugin-data/
+.dgtl-plugin-data-test/
+.dgtl-marketing/

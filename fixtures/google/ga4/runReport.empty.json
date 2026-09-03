@@ -1,0 +1,11 @@
+{
+  "dimensionHeaders": [{ "name": "landingPage" }],
+  "metricHeaders": [{ "name": "sessions", "type": "TYPE_INTEGER" }],
+  "rows": [],
+  "rowCount": 0,
+  "metadata": { "currencyCode": "USD", "timeZone": "America/New_York" },
+  "propertyQuota": {
+    "tokensPerDay": { "consumed": 8, "remaining": 199992 },
+    "tokensPerHour": { "consumed": 8, "remaining": 39992 }
+  }
+}

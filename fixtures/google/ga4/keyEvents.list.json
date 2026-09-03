@@ -1,0 +1,9 @@
+{
+  "keyEvents": [
+    {
+      "name": "properties/111111111/keyEvents/purchase",
+      "eventName": "purchase",
+      "countingMethod": "ONCE_PER_EVENT"
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dgtlsunrise.local/spec/dgtl-marketing/v1/error.schema.json",
+  "title": "dgtl-marketing tool error envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ok", "tool", "error_code", "message"],
+  "properties": {
+    "ok": { "const": false },
+    "tool": { "type": "string" },
+    "error_code": {
+      "type": "string",
+      "enum": [
+        "UNAUTHENTICATED",
+        "REAUTH_REQUIRED",
+        "CONSENT_MISSING",
+        "ACCESS_NOT_CONFIGURED",
+        "PERMISSION_DENIED",
+        "NOT_FOUND",
+        "RESOURCE_REQUIRED",
+        "INVALID_ARGUMENT",
+        "UNSUPPORTED_DIMENSION",
+        "UNSUPPORTED_OPERATION",
+        "QUOTA_EXCEEDED",
+        "RATE_LIMITED",
+        "GOOGLE_UNAVAILABLE",
+        "LICENSE_REQUIRED",
+        "ADS_SCOPE_MISSING",
+        "META_NOT_CONNECTED",
+        "GBP_NOT_ENABLED"
+      ]
+    },
+    "message": { "type": "string", "minLength": 1 },
+    "hint": { "type": "string" },
+    "google_status": { "type": "integer" },
+    "google_reason": { "type": "string" },
+    "api": { "type": "string" },
+    "resource_id": { "type": "string" },
+    "missing_scope": { "type": "string" },
+    "resource": { "$ref": "#/$defs/resource" },
+    "data": true,
+    "page": { "$ref": "#/$defs/page" },
+    "quota": true
+  },
+  "$defs": {
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id", "display_name"],
+      "properties": {
+        "type": { "type": "string" },
+        "id": { "type": "string" },
+        "display_name": { "type": "string" }
+      }
+    },
+    "page": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["truncated", "row_count"],
+      "properties": {
+        "next_page_token": { "type": "string" },
+        "truncated": { "type": "boolean" },
+        "row_count": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

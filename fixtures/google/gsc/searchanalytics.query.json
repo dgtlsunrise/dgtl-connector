@@ -1,0 +1,19 @@
+{
+  "rows": [
+    {
+      "keys": ["example brand shoes"],
+      "clicks": 40,
+      "impressions": 900,
+      "ctr": 0.044444,
+      "position": 8.2
+    },
+    {
+      "keys": ["example brand"],
+      "clicks": 25,
+      "impressions": 1200,
+      "ctr": 0.020833,
+      "position": 12.4
+    }
+  ],
+  "responseAggregationType": "byProperty"
+}

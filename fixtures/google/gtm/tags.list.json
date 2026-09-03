@@ -1,0 +1,17 @@
+{
+  "tag": [
+    {
+      "path": "accounts/444444/containers/555555/workspaces/6/tags/1",
+      "accountId": "444444",
+      "containerId": "555555",
+      "workspaceId": "6",
+      "tagId": "1",
+      "name": "GA4 Configuration",
+      "type": "gaawc",
+      "parameter": [
+        { "type": "template", "key": "measurementId", "value": "G-XXXXXXXX" }
+      ],
+      "firingTriggerId": ["2147479572"]
+    }
+  ]
+}

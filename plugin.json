@@ -1,0 +1,48 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "dgtl-marketing",
+  "version": "0.1.0",
+  "description": "Read-only GA4, Search Console, and Tag Manager on your computer. You authorize your Google account. DGTL does not see report bytes. stdio auth is manual (host-injected token or installed-app PKCE), not a Gmail Connect card.",
+  "author": {
+    "name": "DGTL Sunrise",
+    "email": "noel@dgtlsunrise.com"
+  },
+  "homepage": "https://dgtlsunrise.com",
+  "license": "Apache-2.0",
+  "keywords": [
+    "dgtl",
+    "ga4",
+    "search-console",
+    "gtm"
+  ],
+  "extensions": {
+    "com.dgtlsunrise": {
+      "publisher": "DGTL Sunrise (Sunrise Consulting LLC)",
+      "contact": "noel@dgtlsunrise.com",
+      "format": "agent-plugins-1.0",
+      "authTransport": "authport_host_injected_then_pkce",
+      "stdioConnectCard": false,
+      "oauthClientSecretPolicy": "never-commit-never-embed-in-plugin",
+      "consentA": [
+        "https://www.googleapis.com/auth/analytics.readonly",
+        "https://www.googleapis.com/auth/webmasters.readonly",
+        "https://www.googleapis.com/auth/tagmanager.readonly"
+      ],
+      "identityScopesSameConsent": [
+        "openid",
+        "https://www.googleapis.com/auth/userinfo.email"
+      ],
+      "consentB_gbp": "https://www.googleapis.com/auth/business.manage",
+      "consentC_ads": "https://www.googleapis.com/auth/adwords",
+      "v1Apis": [
+        "analyticsadmin.googleapis.com",
+        "analyticsdata.googleapis.com",
+        "searchconsole.googleapis.com",
+        "tagmanager.googleapis.com"
+      ],
+      "closedToolCount": 23,
+      "gbpFlagDefault": false,
+      "paidGateway": "not-in-this-package"
+    }
+  }
+}
