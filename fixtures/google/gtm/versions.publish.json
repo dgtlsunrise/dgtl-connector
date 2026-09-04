@@ -1,0 +1,10 @@
+{
+  "containerVersion": {
+    "path": "accounts/444444/containers/555555/versions/13",
+    "accountId": "444444",
+    "containerId": "555555",
+    "containerVersionId": "13",
+    "name": "Agent publish"
+  },
+  "compilerError": false
+}

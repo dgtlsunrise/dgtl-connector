@@ -58,6 +58,14 @@ export class GoogleHttp {
         api: req.api,
       });
     }
+    // Consent A is readonly for Tag Manager — mutates go through GoogleWriteHttp + Consent W.
+    if (url.hostname === "tagmanager.googleapis.com" && req.method !== "GET") {
+      throw new ToolError(
+        "UNSUPPORTED_OPERATION",
+        "Consent A GoogleHttp cannot POST/PUT Tag Manager. Use GoogleWriteHttp with Consent W.",
+        { api: req.api },
+      );
+    }
     if (req.query) {
       for (const [k, v] of Object.entries(req.query)) {
         if (v !== undefined && v !== "") url.searchParams.set(k, String(v));

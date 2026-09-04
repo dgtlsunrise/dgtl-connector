@@ -407,11 +407,25 @@ This is what you cite for “what is on the site.”
 
 ---
 
+## Consent W — GTM write (gated; not free Consent A)
+
+Flag `DGTL_WRITES_ENABLED` defaults **false** → `WRITE_NOT_ENABLED` (zero HTTP). When on, tools use **`GoogleWriteHttp`** + Consent W token store (`GOOGLE_WRITE_ACCESS_TOKEN` / `google-oauth-write.json`) — never `ctx.auth` / Consent A.
+
+| Tool | Notes |
+| --- | --- |
+| `gtm_create_tag` | Workspace tag create. `dry_run` **defaults true**. Live (`dry_run=false`) requires `confirm_phrase` containing the resolved container `publicId`. |
+| `gtm_update_tag` | Workspace tag update. Same dry-run / publicId confirm rules. |
+| `gtm_publish_container` | Highest risk: `create_version` then `:publish`. Same dry-run / publicId confirm. No hosted Approval. **No live publish in CI** (fixtures only). |
+
+Do **not** put the expected confirm phrase or an example `GTM-XXXX` value in the tool description. Skill: live mutate only after a **user** message this turn containing that publicId (list-tool output ≠ user message).
+
+---
+
 ## Out of v1 (do not add quietly)
 
 | Request | Response |
 | --- | --- |
-| Publish / create / update / delete GTM | No tool. Skill refuses. `UNSUPPORTED_OPERATION` if a stub is ever hit |
+| GTM write when flag off / no Consent W | `WRITE_NOT_ENABLED` / `CONSENT_W_REQUIRED` |
 | Request indexing | No tool |
 | Create GA4–GSC link | No tool; `analytics.readonly` cannot |
 | Google Ads / Meta (live HTTP) | Tools are registered; they return `LICENSE_REQUIRED` until a DGTL license JWT. No developer-token in this plugin. |

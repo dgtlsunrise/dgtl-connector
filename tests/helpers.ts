@@ -152,13 +152,18 @@ function route(method: string, url: URL, opts: FixtureOpts): unknown {
     if (p.endsWith("/accounts")) return loadFixture("gtm/accounts.list.json");
     if (/\/containers\/[^/]+$/.test(p) && method === "GET") return loadFixture("gtm/containers.get.json");
     if (p.endsWith("/containers")) return loadFixture("gtm/containers.list.json");
+    if (/\/workspaces\/[^/]+$/.test(p) && method === "GET") return loadFixture("gtm/workspaces.get.json");
     if (p.endsWith("/workspaces")) return loadFixture("gtm/workspaces.list.json");
+    if (p.endsWith("/tags") && method === "POST") return loadFixture("gtm/tags.create.json");
+    if (/\/tags\/[^/]+$/.test(p) && method === "PUT") return loadFixture("gtm/tags.update.json");
     if (p.endsWith("/tags")) {
       return opts.oversizeTags ? loadFixture("gtm/tags.oversize.json") : loadFixture("gtm/tags.list.json");
     }
     if (p.endsWith("/triggers")) return loadFixture("gtm/triggers.list.json");
     if (p.endsWith("/variables")) return loadFixture("gtm/variables.list.json");
     if (p.endsWith("/versions:live") || p.endsWith("/versions/live")) return loadFixture("gtm/liveVersion.json");
+    if (p.includes(":create_version") && method === "POST") return loadFixture("gtm/create_version.json");
+    if (p.includes(":publish") && method === "POST") return loadFixture("gtm/versions.publish.json");
   }
 
   throw new Error(`UNMAPPED_FIXTURE ${method} ${host}${p}${url.search}`);

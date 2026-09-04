@@ -154,7 +154,18 @@ export const metaInsights = z
   .strict();
 export const metaCreative = z.object({ creative_id: str }).strict();
 
-/** Consent W GTM write stubs — gated; no live mutate until flag + Consent W. */
+/** Require confirm_phrase when dry_run is explicitly false. */
+function requireConfirmWhenLive(val: { dry_run: boolean; confirm_phrase?: string }, ctx: z.RefinementCtx): void {
+  if (val.dry_run === false && (!val.confirm_phrase || !String(val.confirm_phrase).trim())) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "confirm_phrase is required when dry_run is false",
+      path: ["confirm_phrase"],
+    });
+  }
+}
+
+/** Consent W GTM write tools — dry_run defaults true; live needs confirm_phrase. */
 export const gtmCreateTag = z
   .object({
     account_id: str,
@@ -162,9 +173,13 @@ export const gtmCreateTag = z
     workspace_id: str,
     name: str,
     type: str,
-    dry_run: z.boolean().optional(),
+    /** Default true in code — live mutate only when explicitly false. */
+    dry_run: z.boolean().default(true),
+    /** Required when dry_run=false; must include resolved publicId (checked in handler). */
+    confirm_phrase: z.string().optional(),
   })
-  .strict();
+  .strict()
+  .superRefine(requireConfirmWhenLive);
 
 export const gtmUpdateTag = z
   .object({
@@ -174,20 +189,23 @@ export const gtmUpdateTag = z
     tag_id: str,
     name: str,
     type: str,
-    dry_run: z.boolean().optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
   })
-  .strict();
+  .strict()
+  .superRefine(requireConfirmWhenLive);
 
 export const gtmPublishContainer = z
   .object({
     account_id: str,
     container_id: str,
     workspace_id: str,
-    /** When true (preferred), no publish side effect. */
-    dry_run: z.boolean().optional(),
+    /** Default true — no publish side effect unless explicitly false. */
+    dry_run: z.boolean().default(true),
     /** When dry_run is false, must include the container publicId (GTM-XXXX). Do not invent. */
     confirm_phrase: z.string().optional(),
     version_name: str,
     version_notes: str,
   })
-  .strict();
+  .strict()
+  .superRefine(requireConfirmWhenLive);

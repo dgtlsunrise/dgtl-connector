@@ -1,0 +1,9 @@
+{
+  "path": "accounts/444444/containers/555555/workspaces/6/tags/99",
+  "accountId": "444444",
+  "containerId": "555555",
+  "workspaceId": "6",
+  "tagId": "99",
+  "name": "Example",
+  "type": "html"
+}

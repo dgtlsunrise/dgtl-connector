@@ -5,7 +5,7 @@ import { gbpNotEnabled } from "../google/gbp.js";
 import * as ga4 from "../google/ga4.js";
 import * as gsc from "../google/gsc.js";
 import * as gtm from "../google/gtm.js";
-import { gtmWriteNotReady } from "../google/gtm-write.js";
+import * as gtmWrite from "../google/gtm-write.js";
 import { googleWhoami } from "../google/whoami.js";
 import { gadsDisabled, licenseStatus } from "../ads/gads.js";
 import { metaDisabled } from "../meta/meta.js";
@@ -289,7 +289,7 @@ export const TOOLS: ToolSpec[] = [
     handler: (ctx, args) => gtm.gtmGetLiveContainerVersion(ctx, args),
   },
 
-  // Consent W — GTM write/publish stubs (flagged off; never on Consent A)
+  // Consent W — GTM write/publish via GoogleWriteHttp (flagged off by default; never on Consent A)
   {
     name: "gtm_create_tag",
     group: "gtm-write",
@@ -299,7 +299,7 @@ export const TOOLS: ToolSpec[] = [
       "Create a workspace tag. Requires Consent W (tagmanager.edit.containers), not free Consent A. Returns WRITE_NOT_ENABLED when DGTL_WRITES_ENABLED is false. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
     inputSchema: S.gtmCreateTag,
     annotations: ANN_WRITE,
-    handler: async (ctx) => gtmWriteNotReady("gtm_create_tag", ctx),
+    handler: (ctx, args) => gtmWrite.gtmCreateTag(ctx, args),
   },
   {
     name: "gtm_update_tag",
@@ -310,7 +310,7 @@ export const TOOLS: ToolSpec[] = [
       "Update a workspace tag. Consent W only. Returns WRITE_NOT_ENABLED / CONSENT_W_REQUIRED when gated off. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
     inputSchema: S.gtmUpdateTag,
     annotations: ANN_WRITE,
-    handler: async (ctx) => gtmWriteNotReady("gtm_update_tag", ctx),
+    handler: (ctx, args) => gtmWrite.gtmUpdateTag(ctx, args),
   },
   {
     name: "gtm_publish_container",
@@ -321,7 +321,7 @@ export const TOOLS: ToolSpec[] = [
       "Publish a GTM container version. Highest-risk write. Requires Consent W (tagmanager.publish). Prefer dry_run first; live publish requires an explicit confirm that includes the container publicId from the user this turn. Flagged off by default (WRITE_NOT_ENABLED).",
     inputSchema: S.gtmPublishContainer,
     annotations: ANN_DESTRUCTIVE,
-    handler: async (ctx) => gtmWriteNotReady("gtm_publish_container", ctx),
+    handler: (ctx, args) => gtmWrite.gtmPublishContainer(ctx, args),
   },
   // GBP — schemas + flag only
   {

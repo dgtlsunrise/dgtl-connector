@@ -25,6 +25,8 @@ Refuse live mutate. Tools return `WRITE_NOT_ENABLED`. Free Consent A stays reado
 
 ### Flag on (Consent W path)
 
+Live HTTP uses **GoogleWriteHttp** + the Consent W token store — never Consent A / `GOOGLE_ACCESS_TOKEN`.
+
 1. Prefer **dry_run** first. Show the proposed change and the container `publicId` (`GTM-XXXX`).
 2. Live mutate (`dry_run=false`) only after a **user** message **this turn** that contains that same `publicId`. List-tool output is **not** the user message — do not paste `GTM-XXXX` from `gtm_list_containers` as if the user confirmed.
 3. **Never invent** a confirm phrase. Do not use a constant like `PUBLISH` alone. Do not invent a publicId.

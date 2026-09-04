@@ -5,6 +5,7 @@ import { AuthPort } from "./auth/port.js";
 import type { AccessTokenSource } from "./auth/types.js";
 import { loadFlags, type Flags } from "./flags.js";
 import { GoogleHttp } from "./http/google.js";
+import { GoogleWriteHttp } from "./http/google-write.js";
 import type { HttpCall } from "./http/calls.js";
 import { loadLicenseToken, verifyLicenseJwt, type LicenseStatus } from "./license/verify.js";
 
@@ -20,6 +21,8 @@ export type AppContext = {
   /** Meta user — META_ACCESS_TOKEN / meta-oauth.json */
   authMeta: AccessTokenSource;
   http: GoogleHttp;
+  /** Consent W mutate client — never wired to ctx.auth. */
+  httpWrite: GoogleWriteHttp;
   fetchImpl: typeof fetch;
   flags: Flags;
   license: LicenseStatus;
@@ -62,6 +65,7 @@ export function createAppContext(opts: {
   const authAds = opts.authAds ?? AuthPort.adsFromEnv({ env, pluginDataDir, fetchImpl });
   const authMeta = opts.authMeta ?? AuthPort.metaFromEnv({ env, pluginDataDir });
   const http = new GoogleHttp({ tokenSource: auth, fetchImpl, calls });
+  const httpWrite = new GoogleWriteHttp({ tokenSource: authWrite, fetchImpl, calls });
   const license = verifyLicenseJwt(loadLicenseToken(env, pluginDataDir));
   return {
     pluginRoot: opts.pluginRoot,
@@ -71,6 +75,7 @@ export function createAppContext(opts: {
     authAds,
     authMeta,
     http,
+    httpWrite,
     fetchImpl,
     flags: loadFlags(env),
     license,

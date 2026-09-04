@@ -261,7 +261,7 @@ describe("Consent W token store separate from AuthPort A", () => {
     assert.equal(ctx.calls.length, 0);
   });
 
-  it("writes flag on with GOOGLE_WRITE_ACCESS_TOKEN still fails closed (no live mutate), without ctx.auth", async () => {
+  it("writes flag on with GOOGLE_WRITE_ACCESS_TOKEN refuses live mutate without publicId in confirm_phrase; never uses ctx.auth", async () => {
     let authCalls = 0;
     const ctx = makeCtx(
       {},
@@ -283,11 +283,12 @@ describe("Consent W token store separate from AuthPort A", () => {
       dry_run: false,
       confirm_phrase: "PUBLISH",
     });
-    // Live GoogleWriteHttp is PR-8; with W token present we still fail closed.
-    assert.equal(env.error_code, "CONSENT_W_REQUIRED");
-    assert.ok(env.hint?.includes("GoogleWriteHttp") || env.hint?.includes("not implemented"));
+    // Constant PUBLISH alone is not a control — must include resolved publicId.
+    assert.equal(env.error_code, "INVALID_ARGUMENT");
     assert.equal(authCalls, 0);
-    assert.equal(ctx.calls.length, 0);
+    // May GET container to resolve publicId via httpWrite; must not POST :publish.
+    assert.ok(!ctx.calls.some((c) => c.method !== "GET"));
+    assert.ok(!ctx.calls.some((c) => c.path.includes(":publish")));
   });
 
   it("default scopes URL builders never request CONSENT_W", () => {
