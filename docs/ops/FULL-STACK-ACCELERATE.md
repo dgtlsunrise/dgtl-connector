@@ -74,3 +74,9 @@ Product rules for writes:
 - Updated NOEL-ONLY-CHECKLIST (Polar + Consent W + Ads/Meta + sGTM)
 - Plugin PR: Consent W scaffold + write tool registry (flagged off until scopes exist)
 - New hosted repo or Worker tree for gateway + sGTM
+
+---
+
+## Canonical design (locked)
+
+Implement against [`PRODUCT-DESIGN.md`](PRODUCT-DESIGN.md) and [`OPEN-QUESTIONS.md`](OPEN-QUESTIONS.md). This accelerate note remains the short lock; the product design is the full contract.

@@ -55,3 +55,7 @@ GCP OAuth Desktop client created for `dgtl-marketing-507517`. Client ID stored i
 ## 2026-09-03 Full-stack accelerate (PT)
 
 Noel chose full stack: paid hosting (Polar + Ads/Meta gateway + sGTM) + write tools on **separate** Consent W. Free Consent A stays readonly. See FULL-STACK-ACCELERATE.md.
+
+## 2026-09-03 PRODUCT-DESIGN locked (PT)
+
+Canonical design: `docs/ops/PRODUCT-DESIGN.md` (Build approve, 0 open). Companion: `OPEN-QUESTIONS.md`, `DESIGN-OUTLINE-OPERATOR.md`. Full-stack accelerate still holds: free Consent A readonly; paid = DGTL-hosted; writes = Consent W. Next: Noel names a phase (PR-0+) or runs Consent A OAuth demo.
