@@ -1,5 +1,11 @@
 import { createAppContext, detectPluginRoot } from "./context.js";
-import { helpText, runAuthLogin } from "./auth/login-cli.js";
+import {
+  helpText,
+  parseLoginMetaCode,
+  runAuthLogin,
+  runAuthLoginAds,
+  runAuthLoginMeta,
+} from "./auth/login-cli.js";
 import { clearStore, readStore, STORE_FILE } from "./auth/store.js";
 import { serveStdio } from "./server.js";
 import { PLUGIN_VERSION } from "./version.js";
@@ -24,7 +30,9 @@ async function main(argv: string[]): Promise<void> {
     if (sub === "login") {
       const clientId = ctx.env.GOOGLE_OAUTH_CLIENT_ID;
       if (!clientId) {
-        process.stderr.write("Set GOOGLE_OAUTH_CLIENT_ID (public Desktop OAuth client). Do not set a client secret.\n");
+        process.stderr.write(
+          "Set GOOGLE_OAUTH_CLIENT_ID (public Desktop OAuth client). Do not set a client secret in git.\n",
+        );
         process.exitCode = 1;
         return;
       }
@@ -35,9 +43,54 @@ async function main(argv: string[]): Promise<void> {
       });
       return;
     }
+    if (sub === "login-ads") {
+      const clientId = ctx.env.GOOGLE_OAUTH_ADS_CLIENT_ID?.trim();
+      if (!clientId) {
+        process.stderr.write(
+          "Set GOOGLE_OAUTH_ADS_CLIENT_ID (separate Consent C Desktop client). Do not add adwords to Consent A. Never commit GOOGLE_OAUTH_ADS_CLIENT_SECRET.\n",
+        );
+        process.exitCode = 1;
+        return;
+      }
+      process.exitCode = await runAuthLoginAds({
+        clientId,
+        clientSecret: ctx.env.GOOGLE_OAUTH_ADS_CLIENT_SECRET,
+        pluginDataDir: ctx.pluginDataDir,
+        fetchImpl: ctx.fetchImpl,
+      });
+      return;
+    }
+    if (sub === "login-meta") {
+      const code = parseLoginMetaCode(args.slice(2));
+      if (!code) {
+        process.stderr.write(
+          "usage: dgtl-marketing-mcp auth login-meta --code <one-time-grant-code>\n" +
+            "Or set META_ACCESS_TOKEN (host-injected). Support never collects Meta tokens.\n",
+        );
+        process.exitCode = 1;
+        return;
+      }
+      process.exitCode = await runAuthLoginMeta({
+        grantCode: code,
+        pluginDataDir: ctx.pluginDataDir,
+        env: ctx.env,
+        fetchImpl: ctx.fetchImpl,
+      });
+      return;
+    }
     if (sub === "logout") {
       clearStore(ctx.pluginDataDir, STORE_FILE.a);
       process.stderr.write("Cleared PLUGIN_DATA/google-oauth.json (Consent A only; W/C stores untouched)\n");
+      return;
+    }
+    if (sub === "logout-ads") {
+      clearStore(ctx.pluginDataDir, STORE_FILE.ads);
+      process.stderr.write("Cleared PLUGIN_DATA/google-oauth-ads.json (Consent C Ads)\n");
+      return;
+    }
+    if (sub === "logout-meta") {
+      clearStore(ctx.pluginDataDir, STORE_FILE.meta);
+      process.stderr.write("Cleared PLUGIN_DATA/meta-oauth.json (Meta user)\n");
       return;
     }
     if (sub === "status") {

@@ -48,9 +48,17 @@ function form(body: Record<string, string>): string {
   return new URLSearchParams(body).toString();
 }
 
-/** Optional confidential-client secret. Never required; never logged. */
-function resolveClientSecret(explicit?: string): string | undefined {
+/**
+ * Optional confidential-client secret. Never required; never logged.
+ * Consent A may fall back to GOOGLE_OAUTH_CLIENT_SECRET.
+ * Consent W/C pass allowConsentASecretFallback: false so A's secret is never reused.
+ */
+function resolveClientSecret(
+  explicit: string | undefined,
+  allowConsentASecretFallback = true,
+): string | undefined {
   if (typeof explicit === "string" && explicit.length > 0) return explicit;
+  if (!allowConsentASecretFallback) return undefined;
   const fromEnv = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
   if (typeof fromEnv === "string" && fromEnv.length > 0) return fromEnv;
   return undefined;
@@ -69,6 +77,8 @@ export async function exchangeAuthorizationCode(
     verifier: string;
     redirectUri: string;
     clientSecret?: string;
+    /** False for Consent W/C — never reuse GOOGLE_OAUTH_CLIENT_SECRET. Default true (A). */
+    allowConsentASecretFallback?: boolean;
   },
   fetchImpl: typeof fetch,
 ): Promise<TokenResponse> {
@@ -84,7 +94,7 @@ export async function exchangeAuthorizationCode(
           grant_type: "authorization_code",
           redirect_uri: opts.redirectUri,
         },
-        resolveClientSecret(opts.clientSecret),
+        resolveClientSecret(opts.clientSecret, opts.allowConsentASecretFallback !== false),
       ),
     ),
   });
@@ -96,7 +106,13 @@ export async function exchangeAuthorizationCode(
 }
 
 export async function refreshAccessToken(
-  opts: { clientId: string; refreshToken: string; clientSecret?: string },
+  opts: {
+    clientId: string;
+    refreshToken: string;
+    clientSecret?: string;
+    /** False for Consent W/C — never reuse GOOGLE_OAUTH_CLIENT_SECRET. Default true (A). */
+    allowConsentASecretFallback?: boolean;
+  },
   fetchImpl: typeof fetch,
 ): Promise<TokenResponse> {
   const res = await fetchImpl("https://oauth2.googleapis.com/token", {
@@ -109,7 +125,7 @@ export async function refreshAccessToken(
           refresh_token: opts.refreshToken,
           grant_type: "refresh_token",
         },
-        resolveClientSecret(opts.clientSecret),
+        resolveClientSecret(opts.clientSecret, opts.allowConsentASecretFallback !== false),
       ),
     ),
   });

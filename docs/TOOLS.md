@@ -428,7 +428,7 @@ Do **not** put the expected confirm phrase or an example `GTM-XXXX` value in the
 | GTM write when flag off / no Consent W | `WRITE_NOT_ENABLED` / `CONSENT_W_REQUIRED` |
 | Request indexing | No tool |
 | Create GA4–GSC link | No tool; `analytics.readonly` cannot |
-| Google Ads / Meta (live HTTP) | Tools are registered; they return `LICENSE_REQUIRED` until a DGTL license JWT. No developer-token in this plugin. |
+| Google Ads / Meta (live HTTP) | Tools are registered; fail closed: `LICENSE_REQUIRED` → `GATEWAY_UNAVAILABLE` → `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`. Consent C via `auth login-ads` / `auth login-meta --code` or host-injected tokens. No developer-token in this plugin. |
 | GBP live HTTP | Tools are registered; they return `GBP_NOT_ENABLED` until the project flag is on |
 | GA4 realtime, funnel, pivot, batch | No tool |
 | GTM clients (server-side), users, environments | No tool |

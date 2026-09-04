@@ -59,3 +59,7 @@ Noel chose full stack: paid hosting (Polar + Ads/Meta gateway + sGTM) + write to
 ## 2026-09-03 PRODUCT-DESIGN locked (PT)
 
 Canonical design: `docs/ops/PRODUCT-DESIGN.md` (Build approve, 0 open). Companion: `OPEN-QUESTIONS.md`, `DESIGN-OUTLINE-OPERATOR.md`. Full-stack accelerate still holds: free Consent A readonly; paid = DGTL-hosted; writes = Consent W. Next: Noel names a phase (PR-0+) or runs Consent A OAuth demo.
+
+## 2026-09-03 PR-10 Consent C login CLI (PT)
+
+`auth login-ads` (Consent C Google PKCE → `google-oauth-ads.json`) and `auth login-meta --code` (`POST /v1/meta/exchange` → `meta-oauth.json`). Fail closed without Ads client id / gateway / license. No developer-token. No Meta demo hostname deploy.

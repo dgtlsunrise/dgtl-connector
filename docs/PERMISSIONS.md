@@ -90,6 +90,18 @@ Free Consent A stays **readonly** forever for the Desktop client used in demos a
 
 Product rules: explicit tools only; publish requires confirmation (`dry_run` / `confirm_phrase`); property/container named in the call. Full lock: [ops/FULL-STACK-ACCELERATE.md](ops/FULL-STACK-ACCELERATE.md).
 
+## Consent C (Ads / Meta user OAuth) — separate from Consent A
+
+Paid Ads/Meta **user** grants use a **separate** Google OAuth client (`adwords`) plus Meta Login for Business. They are **never** bolted onto the free Desktop Consent A client.
+
+| Path | How |
+| --- | --- |
+| Google Ads | `GOOGLE_ADS_ACCESS_TOKEN` or `dgtl-marketing-mcp auth login-ads` → `PLUGIN_DATA/google-oauth-ads.json` (`GOOGLE_OAUTH_ADS_CLIENT_ID`) |
+| Meta | `META_ACCESS_TOKEN` or `dgtl-marketing-mcp auth login-meta --code <grant>` → `POST /v1/meta/exchange` → `PLUGIN_DATA/meta-oauth.json` |
+| Secrets | Ads developer-token and Meta app secret stay on the Worker. This plugin never ships them. Support never collects Meta tokens. |
+
+Live hops still need `DGTL_LICENSE_JWT` + `DGTL_GATEWAY_URL`. Fail closed until those exist (`LICENSE_REQUIRED` / `GATEWAY_UNAVAILABLE` / `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`).
+
 ## Least privilege in the tools
 
 - Free GA4 / GSC / GTM tools are read/list/get on Consent A. GTM write/publish tools (`gtm_create_tag`, `gtm_update_tag`, `gtm_publish_container`) are registered, flagged off by default (`WRITE_NOT_ENABLED`), and use Consent W + `GoogleWriteHttp` when enabled — they are **not** on the free consent screen.

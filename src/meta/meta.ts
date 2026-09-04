@@ -37,7 +37,7 @@ export async function metaDisabled(
   const metaTok = await ctx.authMeta.getAccessToken();
   if (!metaTok?.accessToken) {
     return failEnvelope(tool, "META_NOT_CONNECTED", MSG.META_NOT_CONNECTED, {
-      hint: "License and gateway are ok. Set META_ACCESS_TOKEN or PLUGIN_DATA/meta-oauth.json. Do not reuse Google Consent A tokens.",
+      hint: "License and gateway are ok. Set META_ACCESS_TOKEN or run `auth login-meta --code` (PLUGIN_DATA/meta-oauth.json). Do not reuse Google Consent A tokens. Support never collects Meta tokens.",
     });
   }
 

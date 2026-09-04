@@ -68,9 +68,9 @@ export const MSG = {
   CONSENT_W_REQUIRED:
     "This write tool needs Consent W (separate OAuth client with edit/publish scopes). It is not part of free Consent A. Do not add write scopes to the Desktop readonly client.",
   ADS_SCOPE_MISSING:
-    "Google Ads is a second OAuth grant (scope adwords). It is not part of the free GA4/GSC/GTM consent. Reconnect Ads after a valid DGTL license.",
+    "Google Ads is a second OAuth grant (scope adwords). It is not part of the free GA4/GSC/GTM consent. After a valid DGTL license, set GOOGLE_ADS_ACCESS_TOKEN or run `dgtl-marketing-mcp auth login-ads` (separate Consent C client). Never reuse Consent A.",
   META_NOT_CONNECTED:
-    "Meta Ads is a separate OAuth (ads_read). Connect Meta after a valid DGTL license. The Meta app secret is never in this plugin.",
+    "Meta Ads is a separate OAuth (ads_read). After a valid DGTL license + gateway, set META_ACCESS_TOKEN or run `dgtl-marketing-mcp auth login-meta --code <grant>`. Support never collects Meta tokens; the app secret is never in this plugin.",
   INVALID_ARGUMENT:
     "Google rejected the request (INVALID_ARGUMENT). Check dates (YYYY-MM-DD), GA4 limits (≤9 dimensions, ≤10 metrics), and names from ga4_get_metadata. I will not invent a replacement metric.",
   NOT_FOUND:

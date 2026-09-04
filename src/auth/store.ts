@@ -112,6 +112,8 @@ export class PkceTokenSource implements AccessTokenSource {
         clientId: this.clientId,
         refreshToken: stored.refresh_token,
         clientSecret: this.clientSecret,
+        // Consent W/C must never reuse GOOGLE_OAUTH_CLIENT_SECRET (Consent A).
+        allowConsentASecretFallback: this.storeFile === STORE_FILE.a,
       },
       this.fetchImpl,
     );

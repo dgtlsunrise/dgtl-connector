@@ -48,7 +48,7 @@ export async function gadsDisabled(
   const adsTok = await ctx.authAds.getAccessToken();
   if (!adsTok?.accessToken) {
     return failEnvelope(tool, "ADS_SCOPE_MISSING", MSG.ADS_SCOPE_MISSING, {
-      hint: "License and gateway are ok. Connect Consent C via GOOGLE_ADS_ACCESS_TOKEN or PLUGIN_DATA/google-oauth-ads.json — never reuse Consent A (GOOGLE_ACCESS_TOKEN). No developer-token is attached on this client.",
+      hint: "License and gateway are ok. Connect Consent C via GOOGLE_ADS_ACCESS_TOKEN or `auth login-ads` (PLUGIN_DATA/google-oauth-ads.json) — never reuse Consent A (GOOGLE_ACCESS_TOKEN). No developer-token is attached on this client.",
       missing_scope: SCOPE.adwords,
     });
   }
