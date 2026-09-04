@@ -52,3 +52,6 @@ GCP OAuth Desktop client created for `dgtl-marketing-507517`. Client ID stored i
 - PKCE login succeeded for `noel@dgtlsunrise.com` with Consent A.
 - Breakwater Viewer/Read grant used only for smoke: GA4 549346832, GSC `sc-domain:breakwatercybercorp.com`, GTM-MJ975G9M live v4.
 
+## 2026-09-03 Full-stack accelerate (PT)
+
+Noel chose full stack: paid hosting (Polar + Ads/Meta gateway + sGTM) + write tools on **separate** Consent W. Free Consent A stays readonly. See FULL-STACK-ACCELERATE.md.

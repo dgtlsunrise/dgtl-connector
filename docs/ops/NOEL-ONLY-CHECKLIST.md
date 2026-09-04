@@ -68,3 +68,35 @@ Package: `dgtl-marketing` 0.1.0. Contact: noel@dgtlsunrise.com.
 - Pre-declare Ads / GBP / Gmail scopes on the Desktop client used for v1.
 - Collect tokens in support tickets.
 - Spend against Polar production from an agent session.
+
+---
+
+## Full-stack accelerate (2026-09-03) — Noel logins only
+
+Do these in parallel with the free Consent A demo/verification. Agents scaffold code; they do not create Polar products, Ads tokens, or Meta apps.
+
+### Polar (charge ASAP)
+A1. Create Polar organization for Sunrise Consulting LLC / DGTL Sunrise (sandbox first if offered).
+A2. Create Pro product (hosted checkout). Do not price as a $5–10 GA4 gate.
+A3. Create webhook endpoint later when Worker URL exists; store signing secret in Worker env only.
+A4. Complete one sandbox purchase yourself; confirm JWT email path.
+
+### Consent W (writes — separate from free Desktop client)
+B1. In GCP project `dgtl-marketing-oauth-20260903` **or** a sibling project, create a **second** OAuth client for writes (do not add write scopes to Consent A client).
+B2. Consent screen / Data Access: add only scopes we ship tools for (start GTM edit; publish last and gated). Never bolt these onto the free readonly client used for tomorrow's demo.
+B3. Put Consent W Client ID (+ secret if Desktop) in gitignored env vars distinct from Consent A (`GOOGLE_OAUTH_WRITE_CLIENT_ID` etc.).
+
+### Ads + Meta (hosted gateway)
+C1. Google Ads API developer token (Reporting / conversion use as applicable) — DGTL MCC, not Axos.
+C2. Meta Business app + App Review for conversion API / ads as needed for sGTM and paid tools.
+C3. Never paste developer-token or Meta app secret into git or chat.
+
+### sGTM / delayed conversions
+D1. Approve first customer shape (Prelim → funded → Google Ads + Meta). Axos is case study only; no Axos contact from this lane unless Noel says so.
+D2. Publish Worker / container hostname when agent has a deployable artifact (Noel says publish).
+
+### Still required for free listing
+E1. Unlisted YouTube Consent A demo (tomorrow).
+E2. Google verification submit for Consent A readonly.
+E3. Flip `dgtlsunrise/dgtl-marketing` public after verification path is in motion; marketplace submit.
+
