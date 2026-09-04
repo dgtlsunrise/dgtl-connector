@@ -11,7 +11,14 @@ import { loadLicenseToken, verifyLicenseJwt, type LicenseStatus } from "./licens
 export type AppContext = {
   pluginRoot: string;
   pluginDataDir: string;
+  /** Consent A only. W/C tools must not read this. */
   auth: AccessTokenSource;
+  /** Consent W — GOOGLE_WRITE_ACCESS_TOKEN / google-oauth-write.json */
+  authWrite: AccessTokenSource;
+  /** Consent C Google Ads — GOOGLE_ADS_ACCESS_TOKEN / google-oauth-ads.json */
+  authAds: AccessTokenSource;
+  /** Meta user — META_ACCESS_TOKEN / meta-oauth.json */
+  authMeta: AccessTokenSource;
   http: GoogleHttp;
   fetchImpl: typeof fetch;
   flags: Flags;
@@ -42,18 +49,27 @@ export function createAppContext(opts: {
   fetchImpl?: typeof fetch;
   now?: () => Date;
   auth?: AccessTokenSource;
+  authWrite?: AccessTokenSource;
+  authAds?: AccessTokenSource;
+  authMeta?: AccessTokenSource;
 }): AppContext {
   const env = opts.env ?? process.env;
   const pluginDataDir = detectPluginData(opts.pluginRoot, env);
   const calls: HttpCall[] = [];
   const fetchImpl = opts.fetchImpl ?? fetch;
   const auth = opts.auth ?? AuthPort.fromEnv({ env, pluginDataDir, fetchImpl });
+  const authWrite = opts.authWrite ?? AuthPort.writeFromEnv({ env, pluginDataDir, fetchImpl });
+  const authAds = opts.authAds ?? AuthPort.adsFromEnv({ env, pluginDataDir, fetchImpl });
+  const authMeta = opts.authMeta ?? AuthPort.metaFromEnv({ env, pluginDataDir });
   const http = new GoogleHttp({ tokenSource: auth, fetchImpl, calls });
   const license = verifyLicenseJwt(loadLicenseToken(env, pluginDataDir));
   return {
     pluginRoot: opts.pluginRoot,
     pluginDataDir,
     auth,
+    authWrite,
+    authAds,
+    authMeta,
     http,
     fetchImpl,
     flags: loadFlags(env),

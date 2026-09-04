@@ -107,7 +107,13 @@ USAGE
 AUTH (stdio is Manual — there is no Gmail-style Connect card)
   1. Host-injected: set GOOGLE_ACCESS_TOKEN (and optional GOOGLE_GRANTED_SCOPES)
   2. PKCE fallback: set GOOGLE_OAUTH_CLIENT_ID (public Desktop client, no secret)
-     then run auth login. Tokens stay in PLUGIN_DATA on this computer.
+     then run auth login. Tokens stay in PLUGIN_DATA/google-oauth.json (Consent A).
+
+Consent W (writes) and Consent C (Ads/Meta) use separate stores and env tokens:
+  GOOGLE_WRITE_ACCESS_TOKEN / google-oauth-write.json
+  GOOGLE_ADS_ACCESS_TOKEN / google-oauth-ads.json
+  META_ACCESS_TOKEN / meta-oauth.json
+  They never reuse Consent A AuthPort. login-ads / login-meta land in a later PR.
 
 Paid Google Ads / Meta tools are listed and return LICENSE_REQUIRED until a
 DGTL license JWT is present. This binary never ships a developer-token.

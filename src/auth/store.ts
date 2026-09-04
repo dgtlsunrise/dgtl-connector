@@ -1,6 +1,7 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { AccessToken, AccessTokenSource } from "./types.js";
+import { STORE_FILE } from "./types.js";
 import { refreshAccessToken } from "./pkce.js";
 import { parseScopeList } from "./host-injected.js";
 
@@ -13,14 +14,14 @@ export type StoredTokens = {
   email?: string;
 };
 
-const FILE = "google-oauth.json";
+export { STORE_FILE };
 
-export function tokenPath(pluginDataDir: string): string {
-  return join(pluginDataDir, FILE);
+export function tokenPath(pluginDataDir: string, file: string = STORE_FILE.a): string {
+  return join(pluginDataDir, file);
 }
 
-export function readStore(pluginDataDir: string): StoredTokens | null {
-  const p = tokenPath(pluginDataDir);
+export function readStore(pluginDataDir: string, file: string = STORE_FILE.a): StoredTokens | null {
+  const p = tokenPath(pluginDataDir, file);
   if (!existsSync(p)) return null;
   try {
     const raw = JSON.parse(readFileSync(p, "utf8")) as StoredTokens;
@@ -31,9 +32,9 @@ export function readStore(pluginDataDir: string): StoredTokens | null {
   }
 }
 
-export function writeStore(pluginDataDir: string, tokens: StoredTokens): void {
+export function writeStore(pluginDataDir: string, tokens: StoredTokens, file: string = STORE_FILE.a): void {
   mkdirSync(pluginDataDir, { recursive: true });
-  const p = tokenPath(pluginDataDir);
+  const p = tokenPath(pluginDataDir, file);
   writeFileSync(p, `${JSON.stringify(tokens, null, 2)}\n`, { encoding: "utf8" });
   try {
     chmodSync(p, 0o600);
@@ -43,24 +44,47 @@ export function writeStore(pluginDataDir: string, tokens: StoredTokens): void {
   }
 }
 
-export function clearStore(pluginDataDir: string): void {
-  const p = tokenPath(pluginDataDir);
+export function clearStore(pluginDataDir: string, file: string = STORE_FILE.a): void {
+  const p = tokenPath(pluginDataDir, file);
   if (existsSync(p)) {
     writeFileSync(p, "{}\n");
   }
 }
 
+export type PkceTokenSourceOpts = {
+  /** PLUGIN_DATA filename. Defaults to Consent A. */
+  storeFile?: string;
+  /** Optional client secret for Desktop /token (never logged). */
+  clientSecret?: string;
+};
+
+/**
+ * File-backed Google OAuth token source for one consent lane.
+ * Writes only to `storeFile` — never to Consent A when configured for W/C.
+ */
 export class PkceTokenSource implements AccessTokenSource {
-  readonly name = "pkce";
+  readonly name: string;
+  private readonly storeFile: string;
+  private readonly clientSecret: string | undefined;
 
   constructor(
     private readonly pluginDataDir: string,
     private readonly clientId: string | undefined,
     private readonly fetchImpl: typeof fetch,
-  ) {}
+    opts: PkceTokenSourceOpts = {},
+  ) {
+    this.storeFile = opts.storeFile ?? STORE_FILE.a;
+    this.clientSecret = opts.clientSecret;
+    this.name =
+      this.storeFile === STORE_FILE.w
+        ? "pkce-write"
+        : this.storeFile === STORE_FILE.ads
+          ? "pkce-ads"
+          : "pkce";
+  }
 
   async getAccessToken(): Promise<AccessToken | null> {
-    const stored = readStore(this.pluginDataDir);
+    const stored = readStore(this.pluginDataDir, this.storeFile);
     if (!stored) return null;
     const now = Date.now();
     if (stored.access_token && stored.expiry - 60_000 > now) {
@@ -84,7 +108,11 @@ export class PkceTokenSource implements AccessTokenSource {
       return null;
     }
     const refreshed = await refreshAccessToken(
-      { clientId: this.clientId, refreshToken: stored.refresh_token },
+      {
+        clientId: this.clientId,
+        refreshToken: stored.refresh_token,
+        clientSecret: this.clientSecret,
+      },
       this.fetchImpl,
     );
     const next: StoredTokens = {
@@ -95,12 +123,44 @@ export class PkceTokenSource implements AccessTokenSource {
       token_type: refreshed.token_type,
       email: stored.email,
     };
-    writeStore(this.pluginDataDir, next);
+    writeStore(this.pluginDataDir, next, this.storeFile);
     return {
       accessToken: next.access_token,
       expiresIn: refreshed.expires_in,
       scopes: next.scopes,
       email: next.email,
+      source: "pkce",
+    };
+  }
+}
+
+/**
+ * Meta (and similar) file store — access token only, no Google refresh.
+ * Reads/writes `meta-oauth.json` only.
+ */
+export class FileTokenSource implements AccessTokenSource {
+  readonly name: string;
+
+  constructor(
+    private readonly pluginDataDir: string,
+    private readonly storeFile: string,
+  ) {
+    this.name = `file:${storeFile}`;
+  }
+
+  async getAccessToken(): Promise<AccessToken | null> {
+    const stored = readStore(this.pluginDataDir, this.storeFile);
+    if (!stored?.access_token) return null;
+    const now = Date.now();
+    const expiresIn =
+      stored.expiry && stored.expiry > now
+        ? Math.max(0, Math.floor((stored.expiry - now) / 1000))
+        : undefined;
+    return {
+      accessToken: stored.access_token,
+      expiresIn,
+      scopes: stored.scopes,
+      email: stored.email,
       source: "pkce",
     };
   }

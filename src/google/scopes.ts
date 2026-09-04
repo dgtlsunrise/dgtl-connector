@@ -36,6 +36,9 @@ export const CONSENT_W = [
 /** GTM edit/publish subset of Consent W (first write tools). */
 export const CONSENT_W_GTM = [SCOPE.tagmanagerEditContainers, SCOPE.tagmanagerPublish] as const;
 
+/** Consent C Google Ads — separate client; never merge into CONSENT_A. */
+export const CONSENT_C_GOOGLE = [SCOPE.adwords] as const;
+
 export const APIS = {
   admin: "analyticsadmin.googleapis.com",
   data: "analyticsdata.googleapis.com",

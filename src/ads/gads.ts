@@ -3,6 +3,7 @@ import { failEnvelope, okEnvelope, type Envelope } from "../envelope.js";
 import { MSG } from "../errors.js";
 import { hasFeature } from "../license/verify.js";
 import { PLUGIN_VERSION, detectHost } from "../version.js";
+import { SCOPE } from "../google/scopes.js";
 
 export function requireAdsLicense(ctx: AppContext, tool: string): Envelope | null {
   if (!hasFeature(ctx.license, "ads")) {
@@ -13,11 +14,26 @@ export function requireAdsLicense(ctx: AppContext, tool: string): Envelope | nul
   return null;
 }
 
-export function gadsDisabled(ctx: AppContext, tool: string): Envelope {
+/**
+ * Fail-closed Ads tools until gateway (PR-5).
+ * Consent C token from authAds only — never ctx.auth / GOOGLE_ACCESS_TOKEN.
+ */
+export async function gadsDisabled(ctx: AppContext, tool: string): Promise<Envelope> {
   const miss = requireAdsLicense(ctx, tool);
   if (miss) return miss;
+
+  const adsTok = await ctx.authAds.getAccessToken();
+  if (!adsTok?.accessToken) {
+    return failEnvelope(tool, "ADS_SCOPE_MISSING", MSG.ADS_SCOPE_MISSING, {
+      hint: "License is valid. Connect Consent C via GOOGLE_ADS_ACCESS_TOKEN or PLUGIN_DATA/google-oauth-ads.json — never reuse Consent A (GOOGLE_ACCESS_TOKEN). No developer-token is attached on this client.",
+      missing_scope: SCOPE.adwords,
+    });
+  }
+
+  // C token present; gateway hop is PR-5. Keep ADS_SCOPE_MISSING until GATEWAY_UNAVAILABLE exists.
   return failEnvelope(tool, "ADS_SCOPE_MISSING", MSG.ADS_SCOPE_MISSING, {
-    hint: "License is valid. Google Ads runtime (user token or gateway) is Phase 9–10. No developer-token is attached on this client.",
+    hint: "Consent C Ads token is present. Google Ads runtime (allowlisted gateway) is not in this binary yet (PR-5). No developer-token is attached on this client.",
+    missing_scope: SCOPE.adwords,
   });
 }
 

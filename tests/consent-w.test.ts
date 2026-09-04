@@ -7,7 +7,7 @@ import { CONSENT_A, CONSENT_W, CONSENT_W_GTM, SCOPE } from "../src/google/scopes
 import { loadFlags } from "../src/flags.js";
 import { dispatch } from "../src/tools/dispatch.js";
 import { FREE_TOOL_NAMES, TOOLS } from "../src/tools/registry.js";
-import { installNetworkGuard, makeCtx, ROOT, testEnv } from "./helpers.js";
+import { installNetworkGuard, makeCtx, ROOT, testEnv, TEST_TOKEN } from "./helpers.js";
 
 const WRITE_TOOLS = ["gtm_create_tag", "gtm_update_tag", "gtm_publish_container"] as const;
 
@@ -155,5 +155,151 @@ describe("Consent W scaffold — Consent A stays readonly", () => {
     const license = readFileSync(join(ROOT, "skills/license-and-reconnect/SKILL.md"), "utf8");
     assert.ok(/WRITE_NOT_ENABLED/.test(license));
     assert.ok(/CONSENT_W_REQUIRED/.test(license));
+  });
+});
+
+describe("Consent W token store separate from AuthPort A", () => {
+  it("W store path is google-oauth-write.json and writeStore does not overwrite A", async () => {
+    const { mkdtempSync, readFileSync, writeFileSync, existsSync, rmSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const { STORE_FILE, readStore, writeStore, tokenPath } = await import("../src/auth/store.js");
+
+    const dir = mkdtempSync(join(tmpdir(), "dgtl-consent-w-"));
+    try {
+      assert.equal(STORE_FILE.w, "google-oauth-write.json");
+      assert.equal(tokenPath(dir, STORE_FILE.w), join(dir, "google-oauth-write.json"));
+      assert.equal(tokenPath(dir), join(dir, "google-oauth.json"));
+
+      writeStore(dir, {
+        access_token: "a-token",
+        expiry: Date.now() + 3600_000,
+        scopes: ["openid"],
+      }, STORE_FILE.a);
+      writeStore(dir, {
+        access_token: "w-token",
+        expiry: Date.now() + 3600_000,
+        scopes: ["https://www.googleapis.com/auth/tagmanager.edit.containers"],
+      }, STORE_FILE.w);
+
+      const a = readStore(dir, STORE_FILE.a);
+      const w = readStore(dir, STORE_FILE.w);
+      assert.equal(a?.access_token, "a-token");
+      assert.equal(w?.access_token, "w-token");
+      assert.ok(existsSync(join(dir, "google-oauth.json")));
+      assert.ok(existsSync(join(dir, "google-oauth-write.json")));
+      assert.ok(!readFileSync(join(dir, "google-oauth.json"), "utf8").includes("w-token"));
+      assert.ok(!readFileSync(join(dir, "google-oauth-write.json"), "utf8").includes("a-token"));
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("AuthPort A ignores GOOGLE_WRITE_ACCESS_TOKEN; write port ignores GOOGLE_ACCESS_TOKEN", async () => {
+    const { AuthPort } = await import("../src/auth/port.js");
+    const { mkdtempSync, rmSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const dir = mkdtempSync(join(tmpdir(), "dgtl-ports-"));
+    try {
+      const fetchImpl = (async () => {
+        throw new Error("NETWORK_FORBIDDEN");
+      }) as typeof fetch;
+
+      const a = AuthPort.fromEnv({
+        env: {
+          GOOGLE_WRITE_ACCESS_TOKEN: "write-only-token",
+          GOOGLE_ADS_ACCESS_TOKEN: "ads-only-token",
+          META_ACCESS_TOKEN: "meta-only-token",
+        },
+        pluginDataDir: dir,
+        fetchImpl,
+      });
+      assert.equal(await a.getAccessToken(), null);
+
+      const w = AuthPort.writeFromEnv({
+        env: {
+          GOOGLE_ACCESS_TOKEN: "consent-a-token",
+          GOOGLE_ADS_ACCESS_TOKEN: "ads-only-token",
+        },
+        pluginDataDir: dir,
+        fetchImpl,
+      });
+      assert.equal(await w.getAccessToken(), null);
+
+      const w2 = AuthPort.writeFromEnv({
+        env: { GOOGLE_WRITE_ACCESS_TOKEN: "write-only-token" },
+        pluginDataDir: dir,
+        fetchImpl,
+      });
+      const wt = await w2.getAccessToken();
+      assert.equal(wt?.accessToken, "write-only-token");
+      assert.equal(wt?.source, "host-injected");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("writes flag on with A token only still CONSENT_W_REQUIRED; never uses ctx.auth", async () => {
+    let authCalls = 0;
+    const ctx = makeCtx({}, testEnv({ DGTL_WRITES_ENABLED: "true", GOOGLE_ACCESS_TOKEN: TEST_TOKEN }));
+    const orig = ctx.auth.getAccessToken.bind(ctx.auth);
+    ctx.auth.getAccessToken = async () => {
+      authCalls += 1;
+      return orig();
+    };
+    const env = await dispatch(ctx, "gtm_create_tag", {
+      account_id: "444444",
+      container_id: "555555",
+      workspace_id: "6",
+      dry_run: true,
+      name: "Example",
+      type: "html",
+    });
+    assert.equal(env.error_code, "CONSENT_W_REQUIRED");
+    assert.equal(authCalls, 0, "W tool must not call ctx.auth");
+    assert.equal(ctx.calls.length, 0);
+  });
+
+  it("writes flag on with GOOGLE_WRITE_ACCESS_TOKEN still fails closed (no live mutate), without ctx.auth", async () => {
+    let authCalls = 0;
+    const ctx = makeCtx(
+      {},
+      testEnv({
+        DGTL_WRITES_ENABLED: "true",
+        GOOGLE_WRITE_ACCESS_TOKEN: "write-test-token",
+        GOOGLE_ACCESS_TOKEN: TEST_TOKEN,
+      }),
+    );
+    const orig = ctx.auth.getAccessToken.bind(ctx.auth);
+    ctx.auth.getAccessToken = async () => {
+      authCalls += 1;
+      return orig();
+    };
+    const env = await dispatch(ctx, "gtm_publish_container", {
+      account_id: "444444",
+      container_id: "555555",
+      workspace_id: "6",
+      dry_run: false,
+      confirm_phrase: "PUBLISH",
+    });
+    // Live GoogleWriteHttp is PR-8; with W token present we still fail closed.
+    assert.equal(env.error_code, "CONSENT_W_REQUIRED");
+    assert.ok(env.hint?.includes("GoogleWriteHttp") || env.hint?.includes("not implemented"));
+    assert.equal(authCalls, 0);
+    assert.equal(ctx.calls.length, 0);
+  });
+
+  it("default scopes URL builders never request CONSENT_W", () => {
+    const pkce = generatePkce();
+    const url = buildGoogleAuthUrl({
+      clientId: "example-public-client-id.apps.googleusercontent.com",
+      redirectUri: "http://127.0.0.1:8732/callback",
+      challenge: pkce.challenge,
+      state: pkce.state,
+    });
+    for (const bad of CONSENT_W) {
+      assert.ok(!url.includes(bad), bad);
+    }
   });
 });

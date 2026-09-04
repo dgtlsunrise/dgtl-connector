@@ -1,6 +1,6 @@
 import { createAppContext, detectPluginRoot } from "./context.js";
 import { helpText, runAuthLogin } from "./auth/login-cli.js";
-import { clearStore, readStore } from "./auth/store.js";
+import { clearStore, readStore, STORE_FILE } from "./auth/store.js";
 import { serveStdio } from "./server.js";
 import { PLUGIN_VERSION } from "./version.js";
 
@@ -36,13 +36,16 @@ async function main(argv: string[]): Promise<void> {
       return;
     }
     if (sub === "logout") {
-      clearStore(ctx.pluginDataDir);
-      process.stderr.write("Cleared PLUGIN_DATA/google-oauth.json\n");
+      clearStore(ctx.pluginDataDir, STORE_FILE.a);
+      process.stderr.write("Cleared PLUGIN_DATA/google-oauth.json (Consent A only; W/C stores untouched)\n");
       return;
     }
     if (sub === "status") {
       const tok = await ctx.auth.getAccessToken();
-      const stored = readStore(ctx.pluginDataDir);
+      const stored = readStore(ctx.pluginDataDir, STORE_FILE.a);
+      const writeTok = await ctx.authWrite.getAccessToken();
+      const adsTok = await ctx.authAds.getAccessToken();
+      const metaTok = await ctx.authMeta.getAccessToken();
       process.stdout.write(
         JSON.stringify(
           {
@@ -52,6 +55,21 @@ async function main(argv: string[]): Promise<void> {
             email: tok?.email ?? null,
             expires_in: tok?.expiresIn ?? null,
             scopes: tok?.scopes ?? null,
+            consent_w: {
+              host_injected: Boolean(ctx.env.GOOGLE_WRITE_ACCESS_TOKEN?.trim()),
+              store: Boolean(readStore(ctx.pluginDataDir, STORE_FILE.w)?.access_token),
+              present: Boolean(writeTok?.accessToken),
+            },
+            consent_c_ads: {
+              host_injected: Boolean(ctx.env.GOOGLE_ADS_ACCESS_TOKEN?.trim()),
+              store: Boolean(readStore(ctx.pluginDataDir, STORE_FILE.ads)?.access_token),
+              present: Boolean(adsTok?.accessToken),
+            },
+            consent_c_meta: {
+              host_injected: Boolean(ctx.env.META_ACCESS_TOKEN?.trim()),
+              store: Boolean(readStore(ctx.pluginDataDir, STORE_FILE.meta)?.access_token),
+              present: Boolean(metaTok?.accessToken),
+            },
             license_ok: ctx.license.ok,
             license_features: ctx.license.features,
           },
