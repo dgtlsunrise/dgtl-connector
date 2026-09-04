@@ -61,7 +61,7 @@ Failure:
 | Params | none |
 | Idempotent | yes |
 
-**Returns (no tokens):** `email`, `sub`, `granted_scopes` (array of strings; host-provided or tokeninfo), `expires_in` (seconds, if known).
+**Returns (no tokens):** `email`, `sub`, `granted_scopes` (array of strings; host-provided or tokeninfo), `expires_in` (seconds, if known), `token_source`, `connections`, `license` (`ok`, `features`, `exp`, `jti`), `plugin_version`, `host` (string when known via `DGTL_HOST` / host heuristics, else `null`), `gateway.reachable` (always `false` until PR-5 health probe — do not treat as live gateway).
 
 If email scope was denied: `email` is null, `error_code` is not set; include `CONSENT_MISSING` only when the host has no access token at all.
 
@@ -387,6 +387,23 @@ Included because marketing audits need “where does this GA4 ID live,” not on
 **Returns:** the **published** container version (tags, triggers, variables, fingerprint). No workspace id. If the container was never published, map Google’s error to `NOT_FOUND` with a clear message.
 
 This is what you cite for “what is on the site.”
+
+---
+
+## License (1)
+
+### `license_status`
+
+**Why:** Support and paid-lane intake need local JWT status without key material.
+
+| | |
+| --- | --- |
+| Google | none (local verify only) |
+| Scope | none |
+| Params | none |
+| Idempotent | yes |
+
+**Returns (no tokens / no JWT):** `ok`, `features`, `exp`, `sub`, `jti`, `reason`, `plugin_version`, `host` (when known), `gateway` (`reachable` always `false` until PR-5; `note` explains). Never the JWT string.
 
 ---
 

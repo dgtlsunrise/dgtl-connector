@@ -2,6 +2,7 @@ import type { AppContext } from "../context.js";
 import { failEnvelope, okEnvelope, type Envelope } from "../envelope.js";
 import { MSG } from "../errors.js";
 import { hasFeature } from "../license/verify.js";
+import { PLUGIN_VERSION, detectHost } from "../version.js";
 
 export function requireAdsLicense(ctx: AppContext, tool: string): Envelope | null {
   if (!hasFeature(ctx.license, "ads")) {
@@ -27,8 +28,12 @@ export function licenseStatus(ctx: AppContext): Envelope {
       features: ctx.license.features,
       exp: ctx.license.exp ?? null,
       sub: ctx.license.sub ?? null,
+      jti: ctx.license.jti ?? null,
       reason: ctx.license.reason ?? null,
-      gateway: { reachable: false, note: "No gateway in this binary (Phase 10)." },
+      plugin_version: PLUGIN_VERSION,
+      host: detectHost(ctx.env),
+      // Stay false until PR-5 (URL unset / no health probe). Do not advertise a live gateway.
+      gateway: { reachable: false, note: "No gateway probe in this binary (PR-5)." },
     },
   });
 }
