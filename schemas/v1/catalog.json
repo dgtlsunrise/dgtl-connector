@@ -121,6 +121,9 @@
     }
   ],
   "gated_tools": [
+    { "name": "gtm_create_tag", "group": "gtm-write", "flag": "writes.enabled", "fail": "WRITE_NOT_ENABLED" },
+    { "name": "gtm_update_tag", "group": "gtm-write", "flag": "writes.enabled", "fail": "WRITE_NOT_ENABLED" },
+    { "name": "gtm_publish_container", "group": "gtm-write", "flag": "writes.enabled", "fail": "WRITE_NOT_ENABLED" },
     { "name": "gbp_list_accounts", "group": "gbp", "flag": "gbp.enabled", "fail": "GBP_NOT_ENABLED" },
     { "name": "gbp_list_locations", "group": "gbp", "flag": "gbp.enabled", "fail": "GBP_NOT_ENABLED" },
     { "name": "gbp_get_location", "group": "gbp", "flag": "gbp.enabled", "fail": "GBP_NOT_ENABLED" },

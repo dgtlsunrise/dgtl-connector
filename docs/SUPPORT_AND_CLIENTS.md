@@ -67,7 +67,7 @@ If they say “I don’t want a vendor, just the connector,” reply: “That’
 
 | Ticket | Treat as |
 | --- | --- |
-| Connect card / `REAUTH_REQUIRED` | Support |
+| AuthPort / Manual reauth / `REAUTH_REQUIRED` | Support |
 | `accessNotConfigured` on published plugin | Publisher defect — own it |
 | Empty property, 40-property picker, GSC queries, GTM publish refuse | How-to / non-bug — no pitch |
 | “Can you manage this for us?” | They opened the sales door — still no tokens |

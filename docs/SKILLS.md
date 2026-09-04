@@ -11,7 +11,7 @@ This index is closed for v1 spec. **10 skills.** Each directory below must exist
 | GA4 report recipes | `skills/ga4-report-recipes/` | Standard reports with real metrics from `ga4_run_report`. |
 | No hallucinated metrics | `skills/no-hallucinated-metrics/` | Numbers only from tool `data`. Refuse invented metrics. |
 | GSC vs GA4 search | `skills/gsc-vs-ga4-search/` | Queries live in Search Console. GA4 has no `searchQuery`. |
-| GTM readonly limits | `skills/gtm-readonly-limits/` | Audit live vs workspace. Refuse publish/edit. |
+| GTM readonly limits | `skills/gtm-readonly-limits/` | Audit live vs workspace. Consent W gates for write/publish. |
 | Google marketing support | `skills/google-marketing-support/` | Diagnose OAuth / empty / quota / API-not-enabled. One optional DGTL line after a real answer. |
 | License and reconnect | `skills/license-and-reconnect/` | Map `LICENSE_REQUIRED` / `REAUTH_REQUIRED` / `CONSENT_MISSING`. |
 | GSC vs Ads keywords | `skills/gsc-vs-ads-keywords/` | Join only on two named IDs. No default client. |

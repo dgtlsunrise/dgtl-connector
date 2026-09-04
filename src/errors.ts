@@ -18,6 +18,8 @@ export const ERROR_CODES = [
   "ADS_SCOPE_MISSING",
   "META_NOT_CONNECTED",
   "GBP_NOT_ENABLED",
+  "WRITE_NOT_ENABLED",
+  "CONSENT_W_REQUIRED",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -58,6 +60,10 @@ export const MSG = {
     "This tool needs a DGTL paid license (Google Ads / Meta Ads). Free GA4, Search Console, and Tag Manager tools still work. Paste a license JWT via DGTL_LICENSE_JWT or PLUGIN_DATA/license.jwt — never a Google Ads developer-token.",
   GBP_NOT_ENABLED:
     "Google Business Profile tools are flagged off until DGTL's GCP project has non-zero GBP API quota (Basic API Access). They are not on the free GA4/GSC/GTM consent screen. Consent B (business.manage) is a separate grant.",
+  WRITE_NOT_ENABLED:
+    "Write/publish tools are flagged off (DGTL_WRITES_ENABLED=false). Free Consent A stays readonly (analytics/webmasters/tagmanager.readonly). Writes use a separate Consent W OAuth client — see docs/ops/FULL-STACK-ACCELERATE.md.",
+  CONSENT_W_REQUIRED:
+    "This write tool needs Consent W (separate OAuth client with edit/publish scopes). It is not part of free Consent A. Do not add write scopes to the Desktop readonly client.",
   ADS_SCOPE_MISSING:
     "Google Ads is a second OAuth grant (scope adwords). It is not part of the free GA4/GSC/GTM consent. Reconnect Ads after a valid DGTL license.",
   META_NOT_CONNECTED:

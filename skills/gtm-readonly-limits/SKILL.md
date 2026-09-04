@@ -1,11 +1,11 @@
 ---
 name: gtm-readonly-limits
-description: Audit Google Tag Manager as read-only. Use when the user wants tags, triggers, variables, container IDs, or to publish/edit/create a tag. v1 cannot publish. Distinguish workspace drafts from the live container version. GTM 403 accessNotConfigured means the Tag Manager API is not enabled on the OAuth client's Cloud project.
+description: Audit Google Tag Manager live vs workspace. Use when the user wants tags, triggers, variables, container IDs, or to publish/edit/create a tag. Consent A is readonly; write stubs are gated (WRITE_NOT_ENABLED / CONSENT_W_REQUIRED). When writes are enabled, require dry-run then a user confirm that includes the container publicId — never invent confirm. GTM 403 accessNotConfigured means the Tag Manager API is not enabled on the OAuth client's Cloud project.
 ---
 
-# GTM readonly limits
+# GTM readonly limits (and Consent W gates)
 
-GTM is **in v1**. It is **read-only**.
+Consent A GTM tools are **read-only**. Write/publish stubs (`gtm_create_tag`, `gtm_update_tag`, `gtm_publish_container`) exist but are **gated**.
 
 ## When they want an audit
 
@@ -16,12 +16,22 @@ GTM is **in v1**. It is **read-only**.
 
 ## When they want to publish, create, edit, pause, or delete
 
-Refuse. No such tool. `UNSUPPORTED_OPERATION`.
+### Flag off (`DGTL_WRITES_ENABLED` false — default)
+
+Refuse live mutate. Tools return `WRITE_NOT_ENABLED`. Free Consent A stays readonly.
 
 **Copy:**  
-“v1 cannot publish or edit Tag Manager. I can show the live version and the workspace draft. Publishing stays in the Tag Manager UI.”
+“Write/publish tools are flagged off. I can show the live version and the workspace draft. Publishing stays in the Tag Manager UI (or a separate Consent W client when writes are enabled).”
 
-Do not imply v2 hosted Ads will publish tags. Do not collect tokens “so DGTL can publish.”
+### Flag on (Consent W path)
+
+1. Prefer **dry_run** first. Show the proposed change and the container `publicId` (`GTM-XXXX`).
+2. Live mutate (`dry_run=false`) only after a **user** message **this turn** that contains that same `publicId`. List-tool output is **not** the user message — do not paste `GTM-XXXX` from `gtm_list_containers` as if the user confirmed.
+3. **Never invent** a confirm phrase. Do not use a constant like `PUBLISH` alone. Do not invent a publicId.
+4. Create/update hit **workspace**. Publish is the irreversible step — say which.
+5. If Consent W / write client is missing → `CONSENT_W_REQUIRED`. Do not add write scopes to Consent A.
+
+Do not collect tokens “so DGTL can publish.” Do not imply hosted Ads will publish tags.
 
 ## 403 `accessNotConfigured`
 

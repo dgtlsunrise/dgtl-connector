@@ -27,7 +27,9 @@
         "LICENSE_REQUIRED",
         "ADS_SCOPE_MISSING",
         "META_NOT_CONNECTED",
-        "GBP_NOT_ENABLED"
+        "GBP_NOT_ENABLED",
+        "WRITE_NOT_ENABLED",
+        "CONSENT_W_REQUIRED"
       ]
     },
     "message": { "type": "string", "minLength": 1 },

@@ -153,3 +153,41 @@ export const metaInsights = z
   })
   .strict();
 export const metaCreative = z.object({ creative_id: str }).strict();
+
+/** Consent W GTM write stubs — gated; no live mutate until flag + Consent W. */
+export const gtmCreateTag = z
+  .object({
+    account_id: str,
+    container_id: str,
+    workspace_id: str,
+    name: str,
+    type: str,
+    dry_run: z.boolean().optional(),
+  })
+  .strict();
+
+export const gtmUpdateTag = z
+  .object({
+    account_id: str,
+    container_id: str,
+    workspace_id: str,
+    tag_id: str,
+    name: str,
+    type: str,
+    dry_run: z.boolean().optional(),
+  })
+  .strict();
+
+export const gtmPublishContainer = z
+  .object({
+    account_id: str,
+    container_id: str,
+    workspace_id: str,
+    /** When true (preferred), no publish side effect. */
+    dry_run: z.boolean().optional(),
+    /** When dry_run is false, must include the container publicId (GTM-XXXX). Do not invent. */
+    confirm_phrase: z.string().optional(),
+    version_name: str,
+    version_notes: str,
+  })
+  .strict();

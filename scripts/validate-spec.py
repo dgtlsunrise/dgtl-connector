@@ -168,6 +168,19 @@ def check_catalog_and_tools() -> None:
         ext = (plugin.get("extensions") or {}).get("com.dgtlsunrise") or {}
         if ext.get("closedToolCount") != 23:
             err(f"plugin.json extensions closedToolCount must be 23, got {ext.get('closedToolCount')}")
+    gated = catalog.get("gated_tools")
+    if not isinstance(gated, list):
+        err("catalog.json: gated_tools must be an array")
+    else:
+        by_name = {g.get("name"): g for g in gated if isinstance(g, dict)}
+        for wname in ("gtm_create_tag", "gtm_update_tag", "gtm_publish_container"):
+            g = by_name.get(wname)
+            if not g:
+                err(f"catalog.json gated_tools missing {wname}")
+            elif g.get("fail") != "WRITE_NOT_ENABLED":
+                err(f"catalog.json {wname} fail must be WRITE_NOT_ENABLED, got {g.get('fail')!r}")
+            elif wname in names:
+                err(f"catalog.json: write tool {wname} must not be in closed tools[]")
 
 
 def check_manifests() -> None:
@@ -258,6 +271,10 @@ def check_secrets() -> None:
         if not path.is_file():
             continue
         if any(part in SKIP_SECRET_DIRS for part in path.parts):
+            continue
+        # Local gitignored env / token stores — never commit; do not fail the spec on them.
+        name = path.name
+        if name == ".env" or (name.startswith(".env.") and name != ".env.example"):
             continue
         if path.suffix in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".woff", ".woff2"}:
             continue

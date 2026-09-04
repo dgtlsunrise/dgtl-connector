@@ -5,13 +5,6 @@ import { dispatch } from "./tools/dispatch.js";
 import { TOOLS } from "./tools/registry.js";
 import { PLUGIN_NAME, PLUGIN_VERSION } from "./version.js";
 
-const annotations = {
-  readOnlyHint: true,
-  destructiveHint: false,
-  idempotentHint: true,
-  openWorldHint: true,
-} as const;
-
 export function createMcpServer(ctx: AppContext): McpServer {
   const server = new McpServer({ name: PLUGIN_NAME, version: PLUGIN_VERSION });
   for (const spec of TOOLS) {
@@ -21,7 +14,7 @@ export function createMcpServer(ctx: AppContext): McpServer {
         title: spec.title,
         description: spec.description,
         inputSchema: spec.inputSchema,
-        annotations,
+        annotations: spec.annotations,
       },
       async (args) => {
         const envelope = await dispatch(ctx, spec.name, args ?? {});

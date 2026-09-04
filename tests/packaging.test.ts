@@ -54,6 +54,8 @@ describe("packaging and secrets", () => {
     assert.ok(url.includes("analytics.readonly"));
     assert.ok(!url.includes("adwords"));
     assert.ok(!url.includes("business.manage"));
+    assert.ok(!url.includes("tagmanager.edit.containers"));
+    assert.ok(!url.includes("tagmanager.publish"));
   });
 
   it("no secrets or developer-token in fixtures", () => {
@@ -82,6 +84,11 @@ describe("packaging and secrets", () => {
     assert.equal(plugin.extensions["com.dgtlsunrise"].closedToolCount, 23);
     assert.equal(plugin.license, "Apache-2.0");
     assert.equal(plugin.author.name, "DGTL Sunrise");
+    for (const name of ["gtm_create_tag", "gtm_update_tag", "gtm_publish_container"]) {
+      const g = catalog.gated_tools.find((x: { name: string }) => x.name === name);
+      assert.ok(g, name);
+      assert.equal(g.fail, "WRITE_NOT_ENABLED", name);
+    }
   });
 
   it("README tells the truth about stdio auth", () => {
