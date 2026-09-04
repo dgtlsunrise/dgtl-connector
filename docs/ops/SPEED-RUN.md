@@ -48,7 +48,7 @@ Ordered. Runs in parallel with Track A. Agents scaffold and wire; Noel creates a
 | B3 | Deploy stamp Worker | Say **publish** / approve deploy. Confirm hostname. | Build + deploy only after Noel publish. Fail closed until secrets present. |
 | B4 | Polar org + Pro + webhook | Create Polar org (sandbox first). Create **Pro** product (hosted checkout — not a $5–10 GA4 gate). Point webhook to Worker `POST /webhooks/polar`. Store signing secret in Worker only. | Document event list + mint-audit shape per POLAR-LICENSE-PLAN. Do not create products or spend. |
 | B5 | Sandbox purchase → license | Complete one sandbox purchase. Redeem via portal / `POST /v1/license` (JSON body). Set `DGTL_LICENSE_JWT` or `PLUGIN_DATA/license.jwt` locally. | Verify JWT locally (iss/kid/exp/features). No email-bearer primary path. |
-| B6 | Consent C + Ads token + Meta | Separate Desktop/hosted client for Ads scopes; Ads **developer token** (Reporting); Meta Business app. Never paste tokens into git/chat. | `auth login-ads` / `auth login-meta --code` paths fail closed without client id / gateway / license. |
+| B6 | Consent C + Ads token + Meta | Separate Desktop client for Ads (`adwords`); Ads **developer token** (DGTL MCC, Reporting); Meta Business app stub. Never paste tokens into git/chat. **Never** add scopes to Consent A. Click detail: [PAID-CREDENTIALS-CLICKS.md](PAID-CREDENTIALS-CLICKS.md). | `auth login-ads` / `auth login-meta --code` paths fail closed without client id / gateway / license. |
 | B7 | E2E smoke | Approve one readonly Ads or Meta call against a safe account. | JWT verify → gateway health → one Ads or Meta **readonly** call. Stop on fail-closed. |
 
 **Secret names to put via `wrangler secret put` (values never documented here):** Polar webhook signing secret, JWT minting private key material, any gateway attach credentials Noel chooses. Agent may print the **list of names** only.
@@ -80,6 +80,7 @@ Parallel rule: Noel does Track A clicks while agent works Track B scaffold; when
 ## Pointers
 
 - Noel clicks detail → [NOEL-ONLY-CHECKLIST.md](NOEL-ONLY-CHECKLIST.md)
+- **Weekend Track B (Polar blocked):** Consent C + Ads developer-token (DGTL MCC, Reporting) + Meta app stub → [PAID-CREDENTIALS-CLICKS.md](PAID-CREDENTIALS-CLICKS.md)
 - Launch status → [STATUS.md](STATUS.md)
 - Demo script → [DEMO-VIDEO-SCRIPT.md](DEMO-VIDEO-SCRIPT.md)
 - GCP / Consent A → [GCP-SETUP.md](GCP-SETUP.md)

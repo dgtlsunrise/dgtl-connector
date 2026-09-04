@@ -90,6 +90,7 @@ B3. Put Consent W Client ID (+ secret if Desktop) in gitignored env vars distinc
 C1. Google Ads API developer token (Reporting / conversion use as applicable) — DGTL MCC, not Axos.
 C2. Meta Business app + App Review for conversion API / ads as needed for sGTM and paid tools.
 C3. Never paste developer-token or Meta app secret into git or chat.
+C4. Weekend click path (Polar blocked): [PAID-CREDENTIALS-CLICKS.md](PAID-CREDENTIALS-CLICKS.md) — Consent C Desktop, Ads token, Meta stub. Do not add `adwords` to Consent A on `dgtl-marketing-oauth-20260903`.
 
 ### sGTM / delayed conversions
 D1. Approve first customer shape (Prelim → funded → Google Ads + Meta). Axos is case study only; no Axos contact from this lane unless Noel says so.
@@ -106,3 +107,5 @@ E3. Flip `dgtlsunrise/dgtl-marketing` public after verification path is in motio
 ## SPEED-RUN (2026-09-04)
 
 Ordered dual-track this week (Noel clicks + agent support in parallel): [SPEED-RUN.md](SPEED-RUN.md).
+
+**Weekend Track B while Polar is blocked:** Consent C Desktop client + Google Ads developer token (DGTL MCC, Reporting) + Meta Business app stub — [PAID-CREDENTIALS-CLICKS.md](PAID-CREDENTIALS-CLICKS.md). Never add scopes to Consent A (`dgtl-marketing-oauth-20260903`).
