@@ -187,7 +187,7 @@ export function makeCtx(opts: FixtureOpts = {}, env: NodeJS.ProcessEnv = testEnv
 }
 
 export function signLicense(claims: Record<string, unknown>): string {
-  const header = Buffer.from(JSON.stringify({ alg: "EdDSA", typ: "JWT" })).toString("base64url");
+  const header = Buffer.from(JSON.stringify({ alg: "EdDSA", typ: "JWT", kid: "dev-1" })).toString("base64url");
   const payload = Buffer.from(JSON.stringify({ iss: LICENSE_ISSUER, ...claims })).toString("base64url");
   const key = createPrivateKey({
     key: Buffer.from(TEST_LICENSE_PKCS8_B64, "base64"),
