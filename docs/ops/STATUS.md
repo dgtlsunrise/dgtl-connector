@@ -63,3 +63,7 @@ Canonical design: `docs/ops/PRODUCT-DESIGN.md` (Build approve, 0 open). Companio
 ## 2026-09-03 PR-10 Consent C login CLI (PT)
 
 `auth login-ads` (Consent C Google PKCE → `google-oauth-ads.json`) and `auth login-meta --code` (`POST /v1/meta/exchange` → `meta-oauth.json`). Fail closed without Ads client id / gateway / license. No developer-token. No Meta demo hostname deploy.
+
+## 2026-09-04 SPEED-RUN (PT)
+
+Dual-track accelerate checklist: [SPEED-RUN.md](SPEED-RUN.md) — Track A trust/listing + Track B paid hosted, in parallel. Quality locks unchanged (Consent A readonly; paid=hosted; separate W/C; no secrets in git; fail-closed gateway; no Axos contact).

@@ -100,3 +100,9 @@ E1. Unlisted YouTube Consent A demo (tomorrow).
 E2. Google verification submit for Consent A readonly.
 E3. Flip `dgtlsunrise/dgtl-marketing` public after verification path is in motion; marketplace submit.
 
+
+---
+
+## SPEED-RUN (2026-09-04)
+
+Ordered dual-track this week (Noel clicks + agent support in parallel): [SPEED-RUN.md](SPEED-RUN.md).
