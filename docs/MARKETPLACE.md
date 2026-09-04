@@ -13,9 +13,9 @@ Reviewers will treat this as code that runs on a user's computer and talks to Go
 - [ ] `plugin.json` validates against Agent Plugins 1.0 (`$schema` + `name` constraints)
 - [ ] `mcp.json` validates against Agent Plugins MCP schema (`$schema` + `mcpServers`, stdio `type`+`command`)
 - [ ] Auth is **AuthPort**: host-injected token, then installed-app PKCE (public Desktop client). stdio is Manual — no Gmail-style Connect card. Do not embed a client secret.
-- [ ] Tools are the closed 23 free tools; no undeclared write tools
-- [ ] README explains who it's for, v1 in/out, and that users authorize **their** Google accounts
-- [ ] Skills refuse hallucinated metrics, silent property pick, GTM publish, GA4 `searchQuery`
+- [ ] Tools: closed **23** free Consent A tools in the listing story; any write/publish stubs are gated off / Consent W (different OAuth client) — listing copy promises **Consent A readonly only**
+- [ ] README explains who it's for, Consent A in/out, AuthPort, and that users authorize **their** Google accounts
+- [ ] Skills refuse hallucinated metrics, silent property pick, Consent A publish, GA4 `searchQuery`; Consent W is gated, not eternal “no publish tool”
 - [ ] License is a public OSI license (replace `UNLICENSED` before submit)
 - [ ] Support email `noel@dgtlsunrise.com` is real
 - [ ] Privacy policy URL exists (Google verification needs it; marketplace reviewers will look)
@@ -29,7 +29,8 @@ Source: Cursor plugins reference, submit at [cursor.com/marketplace/publish](htt
 
 - [ ] Valid **root** `plugin.json` (Agent Plugin), not only `.cursor-plugin/plugin.json`
 - [ ] `name` is unique, lowercase kebab-case: `dgtl-marketing` (working listing id; rename everywhere if Noel changes it)
-- [ ] `description` explains readonly GA4 / GSC / GTM and user-owned Google auth (remove “SPEC STUB” before submit)
+- [ ] `description` explains readonly GA4 / GSC / GTM (Consent A only) and user-owned Google auth (remove “SPEC STUB” before submit)
+- [ ] `homepage` is `https://www.dgtlsunrise.com/`
 - [ ] `author.name` is **DGTL Sunrise**
 - [ ] Skills have YAML frontmatter (`name`, `description`)
 - [ ] `mcp.json` at plugin root; command is a real executable in the public repo (or documented package)
@@ -93,9 +94,9 @@ A marketplace listing that still uses an unverified testing-mode OAuth client wi
 ## What not to submit
 
 - This spec-only revision (`version` `0.0.0`, description contains `SPEC STUB`, `bin/` empty)
-- A plugin that shells out to `google-auth-oauthlib` local server
+- Listing copy that promises Ads, GBP, or live writes (Consent A listing only)
 - A remote MCP URL on DGTL infrastructure “just for Grok Bot”
-- Ads/Meta tools “while we're here”
+- Docs that tell reviewers to use a Connect card for stdio or that “there is no publish tool” while gated stubs exist
 
 ## Rename
 

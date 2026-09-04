@@ -10,7 +10,7 @@ This document is how Polar billing will mint that JWT. Implementation is a later
 
 ## Goal
 
-Polar Pro checkout (paid) leads to a Polar webhook (order.paid / subscription.active). A DGTL Worker verifies the webhook, mints an Ed25519 JWT, and the customer sets DGTL_LICENSE_JWT. The plugin verifies locally with the embedded public key and does not call Polar.
+Polar Pro checkout (paid) leads to a Polar webhook (`order.paid` / `subscription.active`, plus remint on `subscription.cycled` / `subscription.updated` when period end moves). A DGTL Worker verifies the webhook, mints an Ed25519 JWT into mint-audit, and the customer fetches it via portal `POST /v1/license` (JSON body) — not an emailed bearer. The plugin verifies locally with the embedded public key and does not call Polar.
 
 Polar is merchant of record / billing. Polar's built-in license-key benefit is a Polar-format string. It will not verify as DGTL_LICENSE_JWT (alg must be EdDSA, issuer dgtl-sunrise). Do not feed Polar keys into the plugin. Optionally attach Polar's license-key benefit for the customer portal, but the plugin only accepts DGTL's JWT.
 
@@ -45,7 +45,7 @@ Do not put Google tokens, Ads developer tokens, or Meta app secrets in the JWT.
 
 ## Product shape (do not create yet)
 
-One Polar product, working name DGTL Sunrise Pro. Recurring subscription (Polar hosted checkout). Price is professional/agency infrastructure, not a 5-10 dollar wedge in front of GA4. Success URL can be a static page that says: set DGTL_LICENSE_JWT to the token we email you.
+One Polar product, working name DGTL Sunrise Pro. Recurring subscription (Polar hosted checkout). Price is professional/agency infrastructure, not a 5-10 dollar wedge in front of GA4. Success URL / customer portal is the primary delivery path (session- or one-time-code gated). Prefer portal redeem over emailing a bearer.
 
 ---
 
@@ -62,20 +62,26 @@ Intended home: a small Cloudflare Worker (or equivalent) on a DGTL hostname, not
 Inbound:
 
 - POST webhook from Polar, format Raw. Verify Standard Webhooks signature using POLAR_WEBHOOK_SECRET from the Worker env (Polar dashboard, later). Reject unsigned bodies.
-- Subscribe (when Noel creates the endpoint later): order.paid, order.refunded, subscription.active, subscription.revoked, subscription.canceled. Prefer order.paid over order.created (created can still be pending).
+- Subscribe (when Noel creates the endpoint later) to Polar-documented events: `order.paid`, `order.refunded`, `subscription.active`, `subscription.revoked`, `subscription.canceled`, `subscription.cycled`, `subscription.updated`. Prefer `order.paid` over `order.created` (created can still be pending). Confirm names against Polar docs at implement time.
 
 On paid / active:
 
 - Map Polar product id → features [ads, meta] for Pro. Unknown products: no mint.
-- Mint JWT with the fields above. exp aligned to current_period_end when Polar sends it.
-- Deliver the JWT by email to the Polar customer email (from DGTL, not from this plugin) and/or a success page Noel hosts. Customer pastes into DGTL_LICENSE_JWT or PLUGIN_DATA/license.jwt.
-- Idempotent on polar order id / jti so Polar retries do not spam inboxes.
+- Mint JWT with the fields above. exp aligned to `current_period_end` when Polar sends it.
+- Store **mint-audit** claims in Worker D1 (`jti`, `sub`, `iat`, `exp`, `features`, `kid`, order/checkout id). **Do not** store JWT plaintext or `sha256(jwt)` — a hash of the JWT cannot be redeemed.
+- **Deliver via portal**, not email bearer: customer opens success URL / portal; plugin or page calls `POST {DGTL_GATEWAY_URL}/v1/license` with JSON body `{ "code" }` or `{ "checkout_id" }` (`Cache-Control: no-store`). Worker re-mints from the mint-audit row (same `jti`/`exp`/`features`) after redeeming a one-time `code_hash`. Customer sets `DGTL_LICENSE_JWT` or `PLUGIN_DATA/license.jwt`. Email may notify “license ready — open this link” with **no** bearer.
+- Idempotent on polar order id / jti so Polar retries do not spam redeems.
+
+On remint (period move):
+
+- `subscription.cycled` → remint (extend `exp` to new `current_period_end`).
+- `subscription.updated` → remint **when** `current_period_end` moves. Do not invent event names.
 
 On refunded / revoked:
 
-- Stop minting. Local JWT verify cannot pull a revocation list in v1 (by design: Ads tools fail closed when exp lapses). Short exp plus remint on subscription.cycled is the v1 control. A later Worker denylist is optional and not required for launch of the free plugin.
+- Stop minting. Local JWT verify cannot pull a revocation list in v1 (by design: Ads tools fail closed when exp lapses). Short exp plus remint on `subscription.cycled` / qualifying `subscription.updated` is the v1 control. A later Worker denylist is optional and not required for launch of the free plugin.
 
-Do not: call Polar checkout APIs from the plugin, store report payloads, attach Ads developer-token here, or expose a public "mint any JWT" route.
+Do not: call Polar checkout APIs from the plugin, store report payloads, attach Ads developer-token here, email the JWT as the primary credential, hash the JWT for storage, or expose a public "mint any JWT" route.
 
 ---
 

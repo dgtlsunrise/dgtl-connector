@@ -2,22 +2,23 @@
 
 Read-only **GA4**, **Search Console**, and **Tag Manager** for Grok Bot, Cursor, and Grok Build. You authorize **your** Google account. Tools run on **your** computer. DGTL Sunrise does not see report bytes.
 
-Publisher: **DGTL Sunrise** (Sunrise Consulting LLC), `noel@dgtlsunrise.com`. Apache-2.0.
+Publisher: **DGTL Sunrise** (Sunrise Consulting LLC), `noel@dgtlsunrise.com`. Apache-2.0.  
+Homepage: https://www.dgtlsunrise.com/ · Privacy: https://www.dgtlsunrise.com/privacy
 
-Working package id: `dgtl-marketing` (Noel names the public listing). Version **0.1.0**.
+Working package id: `dgtl-marketing` (Noel names the public listing). Version **0.1.0**. Marketplace listing copy = **Consent A readonly** only.
 
 ## What it is / is not
 
 **Is:** a local stdio MCP plugin. Closed typed tools (23 free: identity + GA4 + GSC + GTM). Skills that refuse hallucinated metrics and will not pick the first of 40 agency properties.
 
-**Is not:** a hosted analytics warehouse, a Gmail-style Connect card for stdio, Google Ads/Meta (those tools are listed and return `LICENSE_REQUIRED`), or a GBP client until DGTL’s GCP project has GBP quota (`GBP_NOT_ENABLED`). Writes (publish GTM, pause ads, submit sitemaps) are out.
+**Is not:** a hosted analytics warehouse, a Gmail-style Connect card for stdio, Google Ads/Meta (those tools are listed and return `LICENSE_REQUIRED` until a paid license + Worker), or a GBP client until DGTL’s GCP project has GBP quota (`GBP_NOT_ENABLED`). GTM write/publish stubs (if registered) are **flagged off** on a **separate Consent W** OAuth client — not on free Consent A, and not marketplace listing promises.
 
 ## Auth on this host (stdio is Manual)
 
 There is no Gmail-style Connect card for stdio. Agent Plugins 1.0 and today’s Cursor / Grok Bot **stdio** MCP do **not** give third-party plugins a Connect card. OAuth Connect cards are for **remote HTTP/SSE** MCP servers. This plugin implements **AuthPort**:
 
 1. **Host-injected** (preferred when the host can do it): set `GOOGLE_ACCESS_TOKEN` (optional `GOOGLE_GRANTED_SCOPES`, `GOOGLE_ACCOUNT_EMAIL`).
-2. **Installed-app PKCE fallback** (documented, advanced): a **public** Desktop OAuth client id (`GOOGLE_OAUTH_CLIENT_ID`, no client secret in git or in the binary). Run:
+2. **Installed-app PKCE fallback** (documented, advanced): Desktop OAuth client id (`GOOGLE_OAUTH_CLIENT_ID`) plus `GOOGLE_OAUTH_CLIENT_SECRET` in **gitignored** `.env` for `/token` (never git, chat, `mcp.json`, or the binary). Run:
 
    ```bash
    ./bin/dgtl-marketing-mcp auth login
@@ -56,7 +57,7 @@ No implicit resource. Tools require IDs. `default` / `first` / `0` → `RESOURCE
 
 ## Paid (not live in this binary)
 
-Google Ads and Meta Ads tools are registered so the model does not poll. Without a DGTL license JWT (`DGTL_LICENSE_JWT`) they return `LICENSE_REQUIRED`. Free GA4/GSC/GTM still work. DGTL’s Ads developer token and Meta app secret are **not** in this plugin. The allowlisted gateway is a later deployable (`services/stamp/`), not this package.
+Google Ads and Meta Ads tools are registered so the model does not poll. Without a DGTL license JWT (`DGTL_LICENSE_JWT` or `PLUGIN_DATA/license.jwt`) they return `LICENSE_REQUIRED`. Free GA4/GSC/GTM still work. License delivery (when Polar is live) is portal / `POST /v1/license`, not emailing the bearer. DGTL’s Ads developer token and Meta app secret are **not** in this plugin. The allowlisted gateway is a later deployable (`services/stamp/`), not this package.
 
 ## Support intake
 

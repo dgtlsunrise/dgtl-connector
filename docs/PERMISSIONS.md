@@ -77,9 +77,21 @@ Readonly scopes see **everything that Google user can already see** in the Googl
 
 If an agency needs employees to see only one client, that is a **Google permissions** problem (don't share the agency owner login). Support may explain that. DGTL does not collect a list of client properties into a vault in v1.
 
+## Consent W (writes) — separate from free Consent A
+
+Free Consent A stays **readonly** forever for the Desktop client used in demos and verification. Write/publish tools use a **separate** OAuth client (Consent W). Candidate scopes live in `src/google/scopes.ts` as `CONSENT_W` / `CONSENT_W_GTM` and are **never** merged into `CONSENT_A`.
+
+| Env / flag | Meaning |
+| --- | --- |
+| `GOOGLE_OAUTH_WRITE_CLIENT_ID` / `GOOGLE_OAUTH_WRITE_CLIENT_SECRET` | Consent W client (gitignored `.env` only; placeholders in `.env.example`) |
+| `DGTL_WRITES_ENABLED` | Default `false`. When off, GTM write stubs return `WRITE_NOT_ENABLED` |
+| When flag on but Consent W missing | Stubs return `CONSENT_W_REQUIRED` |
+
+Product rules: explicit tools only; publish requires confirmation (`dry_run` / `confirm_phrase`); property/container named in the call. Full lock: [ops/FULL-STACK-ACCELERATE.md](ops/FULL-STACK-ACCELERATE.md).
+
 ## Least privilege in the tools
 
-- All 22 tools are read/list/get. Publishing a tag is **not implemented** (no tool), not “implemented and denied.”
+- Free GA4 / GSC / GTM tools are read/list/get on Consent A. GTM write/publish stubs (`gtm_create_tag`, `gtm_update_tag`, `gtm_publish_container`) are registered but gated off (`WRITE_NOT_ENABLED` / `CONSENT_W_REQUIRED`) until Consent W exists — they are **not** on the free consent screen.
 - `ga4_run_report` defaults to small row limits (see [TOOLS.md](TOOLS.md)) so one prompt cannot burn a property's daily Data API tokens.
 - URL Inspection is read of index state, not request indexing (`webmasters.readonly` cannot submit anyway).
 - Workspace GTM lists may include **unpublished drafts**. Live tags come from `gtm_get_live_container_version`. Skills must not imply a draft tag is in production.
@@ -110,15 +122,15 @@ Plus `openid` and `userinfo.email` as non-sensitive identity.
 
 English, unlisted YouTube, showing:
 
-1. Connect card / Google consent with the **same** three scopes visible.
+1. **Manual / PKCE auth** (`dgtl-marketing-mcp auth login` or host-injected token) — **not** a Gmail-style Connect card. Google consent with the **same** three Consent A scopes visible.
 2. Address bar includes the OAuth **client ID**.
 3. App name on the consent screen.
 4. List GA4 properties → user picks one → `runReport` numbers appear.
 5. GSC search analytics for **queries**.
 6. GTM list tags or live version.
-7. A refusal: user asks to publish a tag → agent declines.
+7. A refusal: user asks to publish a tag → agent declines (Consent A cannot publish; write stubs, if listed, are flagged off on a **different** OAuth client).
 
-Do **not** show Ads, Gmail, or write scopes in that video.
+Do **not** show Ads, Gmail, Connect-card UI, or write scopes on the Consent A client in that video.
 
 ### Sensitive vs restricted
 

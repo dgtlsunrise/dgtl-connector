@@ -7,7 +7,7 @@ The Installed App harness already proved GSC inspect + searchanalytics + sitemap
 ## What CI must prove
 
 1. Required spec files exist (proof of done).
-2. Closed tool count is **22** and matches `docs/TOOLS.md` headings + `schemas/v1/catalog.json`.
+2. Closed free tool count is **23** and matches `docs/TOOLS.md` headings + `schemas/v1/catalog.json`.
 3. `plugin.json` / `mcp.json` match Agent Plugins 1.0 schemas (when schemas are vendored or fetched in a **non-Google** step; prefer vendored copies later).
 4. Each skill in [SKILLS.md](SKILLS.md) has `skills/<name>/SKILL.md` with frontmatter.
 5. Secret scan fails the build on credential patterns.
@@ -56,7 +56,7 @@ All property names are **synthetic** (`Example Brand`, `properties/111111111`, `
 `python3 scripts/validate-spec.py` (stdlib only):
 
 - Enumerate required files
-- `catalog.json` `count` == `len(tools)` == 22
+- `catalog.json` `count` == `len(tools)` == 23
 - Every catalog `name` appears in `docs/TOOLS.md` as `` `name` ``
 - Every skill directory has `SKILL.md`
 - `plugin.json` / `mcp.json` JSON parse; required keys present

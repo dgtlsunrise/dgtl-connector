@@ -130,7 +130,7 @@ Google rejects "future enhancement" scopes. Ads stays off this OAuth client.
 
 ---
 
-## 4. Create the Desktop OAuth client (public, no secret)
+## 4. Create the Desktop OAuth client (ID public; secret in gitignored `.env`)
 
 1. Google Auth Platform → **Clients** → **Create client**  
    (or [Credentials](https://console.cloud.google.com/apis/credentials) → Create credentials → OAuth client ID).
@@ -170,7 +170,7 @@ Then a Grok Bot agent on this box will:
 2. From the plugin root, after a build if needed, run the documented PKCE subcommand: `dgtl-marketing-mcp auth login`.
    The binary binds loopback, prints an accounts.google.com URL, and that URL must include `client_id=` matching the Desktop client (required for the verification demo video).
 3. You open that URL in a browser on the box that can reach loopback on this machine. Sign in as a test user. Grant all three product scopes plus identity. Do not uncheck GTM if you want the live-version smoke.
-4. Google redirects to loopback. The binary exchanges the code with PKCE (no client secret), writes `PLUGIN_DATA/google-oauth.json` with mode 0600, and prints that authorization was saved without logging the refresh token.
+4. Google redirects to loopback. The binary exchanges the code with PKCE and `GOOGLE_OAUTH_CLIENT_SECRET` from gitignored `.env` at `/token`, writes `PLUGIN_DATA/google-oauth.json` with mode 0600, and prints that authorization was saved without logging the refresh token.
 5. The agent then, without printing tokens:
    - `dgtl-marketing-mcp auth status` (email, token_source pkce, scopes; no bearer)
    - MCP `google_whoami` (email + granted scopes)
@@ -178,7 +178,7 @@ Then a Grok Bot agent on this box will:
    - one `ga4_run_report` on the ID you confirm
    - `gsc_list_sites` then `gsc_query_search_analytics` with dimension `query`
    - `gtm_list_accounts` then containers then `gtm_get_live_container_version`
-   - confirm there is no publish tool; a "publish this tag" prompt is refused
+   - confirm Consent A cannot publish; a "publish this tag" prompt is refused (write stubs, if any, are flagged off / different OAuth client)
 6. The agent will not: commit `.env` or `google-oauth.json`, call Polar, create Cloud secrets, add Ads scopes, or email Google.
 
 If login fails with `access_denied`, you are not a test user or the app is Internal. If `redirect_uri_mismatch`, the client is not Desktop. If `403 accessNotConfigured`, re-check the four APIs on this project.

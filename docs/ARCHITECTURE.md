@@ -1,6 +1,6 @@
 # Architecture
 
-**Lock:** `ARCHITECTURE-LOCK.md` and `SECOND-OPINION.md` override this file on auth, paid topology, and packaging. stdio auth is **AuthPort** (host-injected token, then installed-app PKCE). There is no Gmail-style Connect card for stdio. Paid Ads/Meta use a DGTL allowlisted gateway (not in this package). This file is the vendored cloud spec; keep it for the 22-tool kernel and error/non-bug discussion.
+**Lock:** `ARCHITECTURE-LOCK.md`, `SECOND-OPINION.md`, and [ops/PRODUCT-DESIGN.md](ops/PRODUCT-DESIGN.md) override this file on auth, paid topology, and packaging. stdio auth is **AuthPort** (host-injected token, then installed-app PKCE). There is no Gmail-style Connect card for stdio. Paid Ads/Meta use a DGTL allowlisted gateway in the **same** plugin (not a second MCP; not in this package yet). This file is the vendored cloud spec; keep it for the **23**-tool free kernel and error/non-bug discussion.
 
 v1 is a **local MCP server** packaged as an **Agent Plugin**. Google API calls for GA4 / GSC / GTM leave the **user's** computer **directly to Google**. DGTL Sunrise is not on that path.
 
@@ -16,21 +16,22 @@ Grok Bot gives each member a dedicated computer (managed Linux VM). Cursor and G
 - `mcp.json` declaring a **stdio** server
 - `skills/*/SKILL.md`
 
-Agent Plugins 1.0 **defines no portable OAuth fields**. Authentication is **client-managed**. That matches the locked transport: **platform connect card / MCP OAuth**, not a client-secret in `mcp.json`.
+Agent Plugins 1.0 **defines no portable OAuth fields**. Authentication is **client-managed**. Locked transport for stdio is **AuthPort** (host-injected token, then installed-app PKCE). Do **not** put a client secret in `mcp.json` or the binary; Desktop `/token` uses gitignored `.env` `GOOGLE_OAUTH_CLIENT_SECRET` only.
 
 ## Building blocks
 
 ```text
  User
    │  install plugin (git / marketplace)
-   │  Connect card → Google consent (one screen, three product scopes)
+   │  AuthPort: host-injected token  OR  Desktop PKCE (auth login)
+   │  Google consent = Consent A (one screen, three readonly product scopes)
    v
- Host connector store   (Cursor / Grok Bot / Grok Build)
+ Token store (host-injected  OR  PLUGIN_DATA/google-oauth.json mode 0600)
    │  refresh token  — user-owned, never DGTL, never git
-   │  short-lived access token injected into MCP process
+   │  short-lived access token in MCP process
    v
  stdio MCP on the user's computer
-   │  tools from docs/TOOLS.md (22, closed)
+   │  free tools from docs/TOOLS.md / schemas/v1/catalog.json (23, closed)
    v
  Google APIs (OAuth client project's APIs must be Enabled)
    ├── analyticsadmin.googleapis.com   GA4 Admin v1beta
@@ -39,30 +40,30 @@ Agent Plugins 1.0 **defines no portable OAuth fields**. Authentication is **clie
    └── tagmanager.googleapis.com       Tag Manager v2
 ```
 
-DGTL's Google Cloud project may **own the OAuth client ID** (so Google shows a DGTL Sunrise consent screen and DGTL can complete verification). That is **not** a data plane. The client ID is a public identifier. The client secret, if the platform requires a confidential web client, lives in the **publisher console / Google Cloud**, not in this repo, not in the plugin package.
+DGTL's Google Cloud project may **own the OAuth client ID** (so Google shows a DGTL Sunrise consent screen and DGTL can complete verification). That is **not** a data plane. The client ID is a public identifier. For Desktop PKCE, Google still issues a client secret used at `/token` — put it only in gitignored `.env` as `GOOGLE_OAUTH_CLIENT_SECRET` (never git, chat, `mcp.json`, or the binary).
 
-## Token flow (published plugin)
+## Token flow (published plugin — AuthPort)
 
 1. User installs the plugin.
-2. Host shows **Authorize / Connect**. User completes Google OAuth in the browser.
-3. Redirect URI is a **platform** callback (Cursor / Grok Bot), not `localhost` from `run_local_server`.
-4. Google returns an authorization code to the **host**. Host exchanges it (PKCE and/or platform-held client secret).
-5. **Refresh token** is stored in the **user's connector store**.
-6. On tool call, host attaches a fresh **access token** to the MCP process. Exact injection is host-defined (env, MCP auth context). Implementers follow the host; they do **not** invent a DGTL exchange endpoint.
+2. **Preferred:** host injects a short-lived access token (`GOOGLE_ACCESS_TOKEN`, optional granted-scopes / email env).
+3. **Fallback:** user runs `dgtl-marketing-mcp auth login` (installed-app PKCE, Desktop client, loopback `127.0.0.1:<port>/callback`).
+4. Google returns an authorization code to loopback (or the host). Exchange uses PKCE; Desktop clients also send `GOOGLE_OAUTH_CLIENT_SECRET` from gitignored `.env` at `/token`.
+5. **Refresh token** stays user-owned: host connector store **or** `PLUGIN_DATA/google-oauth.json` (mode 0600) for the PKCE path.
+6. On tool call, MCP uses the access token. Implementers do **not** invent a DGTL Google-token exchange endpoint for Consent A.
 7. MCP calls Google with `Authorization: Bearer <access_token>`.
-8. Tool results return to the agent. Payloads do not transit DGTL.
+8. Tool results return to the agent. Consent A payloads do not transit DGTL.
 
-### Forbidden published path
+### Not a Connect card
 
-`google_auth_oauthlib.flow.InstalledAppFlow.run_local_server` (or any loopback PKCE the **plugin** opens itself) is **not** the marketplace auth path. It already worked as a **test harness** for proving GSC/GTM/GA4 reads. Keep that story in “Proven”; do not package it.
+There is **no** Gmail-style Connect card for third-party **stdio** MCP on today's Cursor / Grok Bot hosts. Do not document or demo a Connect card for this package. Remote-HTTP Connect cards are a later **host** feature, not this plugin’s identity.
 
 ### Granular consent
 
-Google may let the user uncheck a scope. `google_whoami` reports granted scopes. A GTM tool with only GA4+GSC granted returns `CONSENT_MISSING` for `tagmanager.readonly`, not a generic 401. Do not start a second OAuth dance per product; send the user back to the **same** connect card to re-grant.
+Google may let the user uncheck a scope. `google_whoami` reports granted scopes. A GTM tool with only GA4+GSC granted returns `CONSENT_MISSING` for `tagmanager.readonly`, not a generic 401. Do not start a second OAuth dance per product; re-run AuthPort (`auth login` or host re-inject) and grant all three Consent A product scopes on the **same** Desktop client.
 
 ### Expired / revoked consent
 
-Refresh token revoked, password change, or unused-token expiry → host marks the connector as needing reauth. Tools return `REAUTH_REQUIRED`. Skill tells the user to use the Connect card again. Support never asks for the refresh token.
+Refresh token revoked, password change, or unused-token expiry → tools return `REAUTH_REQUIRED`. Skill tells the user to reconnect via AuthPort (host-injected token or `auth login`), not a Connect card. Support never asks for the refresh token.
 
 ## What runs where
 
@@ -71,14 +72,14 @@ Refresh token revoked, password change, or unused-token expiry → host marks th
 | Skills | Loaded by the host from `skills/` | No network |
 | MCP stdio process | User's Grok Bot computer or local Cursor/Grok Build | Placeholder command in `mcp.json` |
 | Google OAuth client ID | DGTL GCP project (likely) | Public; placeholder in spec stubs |
-| OAuth client secret | Google Cloud / publisher settings **if** required | **Never** in git |
-| Refresh token | User connector store | **Never** in git, PLUGIN_DATA, support tickets |
+| OAuth client secret | Gitignored `.env` (`GOOGLE_OAUTH_CLIENT_SECRET`) for Desktop `/token` | **Never** in git, chat, `mcp.json`, or binary |
+| Refresh token | Host connector store **or** `PLUGIN_DATA/google-oauth.json` (PKCE) | **Never** in git or support tickets |
 | Access token | Memory of host + MCP process | Never logged |
 | Property picker state | Conversation + explicit tool params | **Not** a hidden default in PLUGIN_DATA across clients |
 
 ### PLUGIN_DATA
 
-Hosts provide `PLUGIN_DATA`. v1 **may** cache metadata (dimension catalogs) keyed by `properties/{id}` with a short TTL. v1 **must not** persist “active client = first property” across sessions. Resource IDs are required parameters on every data tool.
+Hosts provide `PLUGIN_DATA`. **Allowed:** PKCE token store `google-oauth.json` (mode 0600); later Consent W/C stores; optional `license.jwt`; optional local audit jsonl. **Never-list as sticky defaults:** do not persist “active client = first property” across sessions. Resource IDs are required parameters on every data tool. v1 **may** cache metadata (dimension catalogs) keyed by `properties/{id}` with a short TTL.
 
 ## If a host cannot run stdio
 
@@ -119,24 +120,18 @@ Rules:
 - `ga4_run_report` is the only GA4 report tool. No batch, funnel, or realtime in v1 (quota + complexity).
 - Read calls are **retry-safe**. They are not snapshot-stable (processing lag).
 
-Closed list: [TOOLS.md](TOOLS.md). Machine copy: `schemas/v1/catalog.json` (`count`: **22**).
+Closed free list: [TOOLS.md](TOOLS.md). Machine copy: `schemas/v1/catalog.json` (`count`: **23**). Write/publish stubs (if registered) are gated (`WRITE_NOT_ENABLED` / Consent W) and are **not** Consent A listing promises.
 
-## How v2 hosted Ads plugs in without rewriting GA4
+## How paid hosted Ads plugs in without rewriting GA4
 
-v2 adds a **second** MCP server (or a second plugin) for credentials a public plugin cannot hold.
+**PRODUCT-DESIGN + ARCHITECTURE-LOCK win:** paid Ads/Meta are tools in the **same** plugin that call a DGTL Worker — **not** a second MCP server. (Older “second MCP” wording in [V2_HOSTED.md](V2_HOSTED.md) is superseded.)
 
-```text
- mcp.json (future, illustrative — not v1)
-   dgtl-google-marketing     stdio, local, GA4/GSC/GTM (unchanged)
-   dgtl-google-ads-hosted    streamable-http, optional, user opt-in
-```
+- GA4/GSC/GTM tools keep the same names and IDs on Consent A.
+- Ads/Meta tools are new names (`gads_*`, `meta_*`), never overloads of `ga4_run_report`.
+- Skills: if the user asks for spend/ROAS and license/Worker is absent, say so; still offer GA4/GSC.
+- The local free path must not start requiring a DGTL account.
 
-- GA4/GSC/GTM tools keep the same names and IDs.
-- Ads tools are new names (`gads_*`), never overloads of `ga4_run_report`.
-- Skills learn: if the user asks for spend/ROAS and the hosted server is absent, say so; still offer GA4/GSC.
-- The local server must not start requiring a DGTL account.
-
-See [V2_HOSTED.md](V2_HOSTED.md).
+See [V2_HOSTED.md](V2_HOSTED.md) and [ops/PRODUCT-DESIGN.md](ops/PRODUCT-DESIGN.md).
 
 ## Secrets and logging
 
@@ -145,7 +140,9 @@ Never:
 - Commit client secrets, refresh tokens, service account JSON, or `token.json`
 - Return tokens from any tool (including `google_whoami`)
 - Log `Authorization` headers
-- Write tokens into `PLUGIN_DATA`
+- Persist sticky “default property” picker state in `PLUGIN_DATA`
+
+PKCE may write `PLUGIN_DATA/google-oauth.json` (mode 0600). That is the AuthPort fallback store, not a picker default.
 
 `google_whoami` may return email, granted scopes, and `expires_in` seconds.
 
@@ -155,7 +152,7 @@ When a runtime is written (later):
 
 - Language is not locked here. Prefer whatever the marketplace runner can execute without a DGTL service.
 - Map each tool in [TOOLS.md](TOOLS.md) 1:1 to a Google method. Do not add undeclared tools in the same version.
-- Auth: consume host-injected access token; refresh is the host's job.
+- Auth: AuthPort — host-injected access token preferred; else PKCE store. Refresh is host or local PKCE refresh, never DGTL.
 - Tests: replay `fixtures/google/**` — [TEST_PLAN.md](TEST_PLAN.md).
 
 Label any exploratory `googleapiclient` snippet **NOT FOR SHIP**. This spec repo should not contain that snippet.

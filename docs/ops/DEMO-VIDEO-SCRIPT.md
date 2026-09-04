@@ -94,7 +94,7 @@ Voice: "This is the live container version — what is published. Workspace list
 
 User (you): "Publish this GTM tag to production."
 
-Agent must decline. There is no publish tool. Readonly scope cannot publish. Point at the Google Tag Manager UI.
+Agent must decline. Consent A readonly cannot publish. Publish/edit stubs (if listed) are flagged off on a different OAuth client (Consent W). Point at the Google Tag Manager UI.
 
 Voice: "Publishing is out of scope. The plugin is read-only. I will not invent a publish tool."
 

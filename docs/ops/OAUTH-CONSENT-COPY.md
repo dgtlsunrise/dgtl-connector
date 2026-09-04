@@ -29,7 +29,7 @@ Authorized domain is the **top private domain** only: `dgtlsunrise.com` (no `www
 
 ## One-line product description (questionnaire / demo intro)
 
-DGTL Sunrise is a local agent plugin. The user authorizes their own Google account so the plugin can read Google Analytics 4, Search Console, and Tag Manager on their computer. Sunrise Consulting LLC does not receive report bytes. The plugin cannot create, update, publish, or delete anything.
+DGTL Sunrise is a local agent plugin. The user authorizes their own Google account so the plugin can read Google Analytics 4, Search Console, and Tag Manager on their computer. Sunrise Consulting LLC does not receive report bytes. This OAuth client (Consent A) is readonly only — it cannot create, update, publish, or delete. Separate write/publish tools, if present in the package, are flagged off and use a **different** OAuth client (Consent W), not this verification client.
 
 ---
 
@@ -66,7 +66,7 @@ The app lists Search Console sites the signed-in user already has access to, rea
 
 ### `https://www.googleapis.com/auth/tagmanager.readonly`
 
-The app lists the signed-in user's Tag Manager accounts, containers, workspaces, tags, triggers, variables, and the live (published) container version so they can audit what is on a site. The app does not create, edit, delete, or publish tags. There is no publish tool. `tagmanager.readonly` cannot publish.
+The app lists the signed-in user's Tag Manager accounts, containers, workspaces, tags, triggers, variables, and the live (published) container version so they can audit what is on a site. This Consent A client does not create, edit, delete, or publish tags — `tagmanager.readonly` cannot publish. Publish/edit tools may exist in the package **flagged off** behind a **different** OAuth client (Consent W); they are not granted by this scope and are not part of this verification.
 
 ### `openid` (non-sensitive)
 

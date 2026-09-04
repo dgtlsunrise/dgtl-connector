@@ -23,7 +23,7 @@ This index is closed for v1 spec. **10 skills.** Each directory below must exist
 2. If a list length ≠ 1, stop and ask. Exception: user already supplied a full ID that `get_*` accepts.
 3. Cite the resource ID in the answer (GA4 `properties/…`, GSC site URL, GTM `GTM-…` / container id).
 4. If a tool was not called, do not fabricate its rows.
-5. Write/publish requests: refuse. Point at Google UI. Do not pretend a hosted v2 will publish tags either unless a later spec says so.
+5. Write/publish requests: **Consent W gates** — if writes are flagged off or Consent W is absent, refuse (`WRITE_NOT_ENABLED` / `CONSENT_W_REQUIRED`) and point at Google UI or the separate write client. Do **not** eternally claim “there is no publish tool” once stubs exist; do **not** invent confirm phrases or publish on Consent A.
 6. Support pitches: **only** the support skill, **only** after a real answer, **only** the approved sentence in [SUPPORT_AND_CLIENTS.md](SUPPORT_AND_CLIENTS.md). Other skills: **zero** sales lines.
 7. Never ask the user to paste refresh tokens, `client_secret`, or `token.json`.
 
@@ -39,7 +39,7 @@ This index is closed for v1 spec. **10 skills.** Each directory below must exist
 | “Why don’t GA4 and GSC match?” | `gsc-vs-ga4-search` (lag, PDT vs property TZ, different definitions) |
 | “Publish this tag” | `gtm-readonly-limits` |
 | “What’s actually on production?” | `gtm-readonly-limits` → live version, not workspace |
-| Connect card cancelled; GTM 403 API not enabled; empty property | `google-marketing-support` |
+| Auth cancelled / PKCE failed; GTM 403 API not enabled; empty property | `google-marketing-support` |
 | Quota / 429 | `google-marketing-support` |
 
 ## Skill ↔ tool map
@@ -51,7 +51,7 @@ This index is closed for v1 spec. **10 skills.** Each directory below must exist
 | ga4-report-recipes | `ga4_get_property`, `ga4_get_metadata`, `ga4_list_key_events`, `ga4_run_report` | GSC query dimensions inside GA4 |
 | no-hallucinated-metrics | `ga4_get_metadata`, then the tool that produced the number | — |
 | gsc-vs-ga4-search | `gsc_query_search_analytics`, `gsc_list_sites`, `ga4_run_report` only for landing-page **sessions** | `ga4_run_report` with `searchQuery` |
-| gtm-readonly-limits | All `gtm_*` | Imaginary `gtm_publish_*` |
+| gtm-readonly-limits | All readonly `gtm_*` | Live mutate without Consent W + user confirm; inventing confirm phrases |
 | google-marketing-support | `google_whoami` first, then the failing family | Token collection |
 
 ## Frontmatter

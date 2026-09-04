@@ -13,7 +13,7 @@ These are not open questions. Implementation later must obey them.
 3. **v1 APIs (readonly):** GA4 Admin + Data v1beta (`analytics.readonly`), Search Console (`webmasters.readonly`), Tag Manager v2 (`tagmanager.readonly`). **GTM is in v1. Do not defer.**
 4. **v1 must not include** Google Ads, Meta Ads, GBP, write/publish, Gmail, Drive.
 5. **One Google consent** with all three readonly product scopes. Not sequential per-product tokens.
-6. **Published auth transport** is a **platform connect card / MCP OAuth**. `google-auth-oauthlib` local-server PKCE is a **test harness only**.
+6. **Published stdio auth** is **AuthPort** (host-injected access token, then installed-app PKCE with a Desktop OAuth client). A Gmail-style Connect card is **not** available for third-party stdio MCP on today's hosts — that older lock is **stale for stdio**. Remote-HTTP Connect cards may exist later as a **host** feature; do not rewrite the plugin to fake one. Writes / paid Ads-Meta → [ops/FULL-STACK-ACCELERATE.md](ops/FULL-STACK-ACCELERATE.md) + [ops/PRODUCT-DESIGN.md](ops/PRODUCT-DESIGN.md) (Consent W + Worker), not this lock.
 7. **OAuth client ID** may belong to DGTL's Google Cloud project. **Refresh tokens stay in the user's connector store.** Never commit secrets.
 8. **Explicit picker** for property / site / GTM account (and container/workspace). Never silently pick the first of 40 clients.
 9. **Skills refuse hallucinated metrics.** Document non-bugs (see [ERRORS.md](ERRORS.md)).
@@ -59,14 +59,14 @@ Order is product logic, not a calendar.
 | # | Touch point | Who approves | Exit criterion |
 | --- | --- | --- | --- |
 | 1 | This spec repo (private) | Noel | Files in the proof-of-done list exist; tool list closed; scopes exact |
-| 2 | Runtime implementation (later commit / later repo) | Noel | Fixture tests pass; no live Google in CI; connect-card auth, not local-server PKCE |
-| 3 | Google Cloud: enable four APIs + OAuth consent screen (External) with **only** v1 scopes | Noel | APIs enabled on the **OAuth client's** project; no extra scopes “for later” |
-| 4 | Platform redirect URIs registered on the OAuth client (Cursor / Grok Bot callbacks) | Noel + platform docs | Connect card completes without `redirect_uri_mismatch` |
-| 5 | Google brand verification + sensitive-scope verification | Google | Production users beyond the testing cap; demo video of **read** flows only |
+| 2 | Runtime implementation (later commit / later repo) | Noel | Fixture tests pass; no live Google in CI; AuthPort (host-injected / Desktop PKCE) |
+| 3 | Google Cloud: enable four APIs + OAuth consent screen (External) with **only** Consent A scopes | Noel | APIs enabled on the **OAuth client's** project; no write/Ads scopes “for later” on Consent A |
+| 4 | Desktop OAuth client + loopback PKCE (and host-injected token path) | Noel | `auth login` / host token works; no Connect-card redirect on this client |
+| 5 | Google brand verification + sensitive-scope verification | Google | Production users beyond the testing cap; demo video of **Consent A read** flows only |
 | 6 | Public git + LICENSE | Noel | Repo public **only** when ready to submit; still no secrets |
-| 7 | Cursor Marketplace submit (`cursor.com/marketplace/publish`) | Cursor review | Listed; connect card works in Grok Bot and Cursor |
+| 7 | Cursor Marketplace submit (`cursor.com/marketplace/publish`) | Cursor review | Listed; listing copy = Consent A readonly only; AuthPort works in Grok Bot and Cursor |
 | 8 | Grok Build catalog PR (`xai-org/plugin-marketplace`) | xAI review | Pinned SHA; remote source |
-| 9 | Optional v2 hosted Ads/Meta | Noel + Google Ads API / Meta App Review | Separate MCP server; local v1 unchanged |
+| 9 | Optional paid hosted Ads/Meta + Consent W writes | Noel + Google Ads API / Meta App Review | Same plugin + DGTL Worker (see PRODUCT-DESIGN); free Consent A unchanged |
 
 Noel does not need Cursor or Google approval to **write this spec**. Those approvals gate **publish**, not planning.
 

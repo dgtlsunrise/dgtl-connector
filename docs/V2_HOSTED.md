@@ -29,16 +29,16 @@ Free local v1 stays free even if v2 exists.
 
 ## How it stays optional
 
-Architecture: **second MCP server**, not a rewrite of GA4 tools ([ARCHITECTURE.md](ARCHITECTURE.md)).
+**Supersession:** [ops/PRODUCT-DESIGN.md](ops/PRODUCT-DESIGN.md) + `ARCHITECTURE-LOCK.md` **win** over this file’s older “second MCP server” sketch. Paid Ads/Meta tools (`gads_*` / `meta_*`) live in the **same** plugin and call a DGTL allowlisted Worker — not a second MCP package. GA4/GSC/GTM tools are not rewritten.
 
-| v1 (required for the plugin to be itself) | v2 (opt-in) |
+| Free / local (required for the plugin to be itself) | Paid hosted (opt-in) |
 | --- | --- |
-| stdio / user computer | streamable-http DGTL or user-hosted |
-| GA4, GSC, GTM tools unchanged | `gads_*`, `meta_*`, vault admin |
-| User Google OAuth via connect card | Separate consent; Ads developer token on the host |
-| No DGTL account | DGTL account only for hosted features |
+| stdio / user computer | Same stdio plugin → Worker gateway for Ads/Meta secrets |
+| GA4, GSC, GTM Consent A readonly | `gads_*`, `meta_*` gated by license JWT; vault later |
+| User Google OAuth via **AuthPort** (host-injected / Desktop PKCE) | Separate Consent C (Ads) + Meta app; developer-token / app secret on the Worker |
+| No DGTL account | Polar / DGTL account only for hosted features |
 
-Skills: if Ads is asked and v2 is absent — say what’s missing, still run GA4/GSC. Never disable GTM because they declined hosted.
+Skills: if Ads is asked and the Worker/license is absent — say what’s missing, still run GA4/GSC. Never disable GTM because they declined hosted.
 
 ## Google Ads / Meta review (future)
 

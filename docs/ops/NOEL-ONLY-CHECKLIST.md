@@ -17,8 +17,8 @@ Package: `dgtl-marketing` 0.1.0. Contact: noel@dgtlsunrise.com.
 7. Audience: user type **External**, publishing status **Testing**. Do not Publish app yet.
 8. Add test users, starting with **noel@dgtlsunrise.com**.
 9. Data Access: add Consent A scopes only (`analytics.readonly`, `webmasters.readonly`, `tagmanager.readonly`, `openid`, `userinfo.email`). Do not add Ads, GBP, Gmail, Drive, or write scopes.
-10. Create OAuth client type **Desktop app**. Copy the **Client ID** only. Do not put a client secret in git, chat, or `.env`.
-11. Put `GOOGLE_OAUTH_CLIENT_ID=...` in `/workspace/dgtl-google-plugin/.env` (or hand the Client ID to the agent to write that gitignored file).
+10. Create OAuth client type **Desktop app**. Copy **Client ID** and **Client secret**. Desktop `/token` **does** need `GOOGLE_OAUTH_CLIENT_SECRET` in gitignored `.env` (same as STATUS.md / GCP-SETUP.md). Never put the secret in git, chat, `mcp.json`, or the binary.
+11. Put `GOOGLE_OAUTH_CLIENT_ID=...` and `GOOGLE_OAUTH_CLIENT_SECRET=...` in `/workspace/dgtl-google-plugin/.env` (or hand values to the agent to write that gitignored file).
 12. When the agent runs PKCE login, **you** open the printed accounts.google.com URL in a browser on the box, pick a test-user Google account, complete password / 2FA / consent, and grant the three product scopes. The agent cannot complete that screen.
 
 13. Confirm the property / site / GTM container the agent should use for smoke (speak the IDs; do not paste tokens).
@@ -50,7 +50,7 @@ Package: `dgtl-marketing` 0.1.0. Contact: noel@dgtlsunrise.com.
 24. Create the Pro product and hosted checkout (your dashboard; agents must not create products or spend).
 25. Create the Polar webhook endpoint and store the signing secret in the Worker env (not in this plugin).
 26. Place the JWT minting secret in the Worker secret store (not in this git).
-27. Complete a **sandbox** test purchase yourself and confirm the emailed JWT sets `DGTL_LICENSE_JWT`.
+27. Complete a **sandbox** test purchase yourself and fetch the JWT via the customer portal / `POST /v1/license` (JSON body) — do **not** treat emailing the bearer as the primary path.
 
 ---
 
@@ -79,7 +79,7 @@ Do these in parallel with the free Consent A demo/verification. Agents scaffold 
 A1. Create Polar organization for Sunrise Consulting LLC / DGTL Sunrise (sandbox first if offered).
 A2. Create Pro product (hosted checkout). Do not price as a $5–10 GA4 gate.
 A3. Create webhook endpoint later when Worker URL exists; store signing secret in Worker env only.
-A4. Complete one sandbox purchase yourself; confirm JWT email path.
+A4. Complete one sandbox purchase yourself; confirm portal / `POST /v1/license` redeem (not email bearer).
 
 ### Consent W (writes — separate from free Desktop client)
 B1. In GCP project `dgtl-marketing-oauth-20260903` **or** a sibling project, create a **second** OAuth client for writes (do not add write scopes to Consent A client).

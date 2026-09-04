@@ -22,14 +22,14 @@ No access token from the host.
 Token revoked, expired refresh, or host `connectors_needing_reauth`.
 
 **User-visible:**  
-“Google access expired or was revoked. Open the plugin connection and Authorize again. You can also revoke this app under Google Account → Third-party access, then reconnect.”
+“Google access expired or was revoked. Reconnect with AuthPort: set a host-injected access token (`GOOGLE_ACCESS_TOKEN`) or run `dgtl-marketing-mcp auth login` again. There is no Gmail-style Connect card for local stdio. You can also revoke this app under Google Account → Third-party access, then reconnect.”
 
 ### `CONSENT_MISSING`
 
 Granular consent: the user unchecked a scope, or identity-only token.
 
 **User-visible (example, GTM):**  
-“This Google login did not grant Tag Manager readonly (`https://www.googleapis.com/auth/tagmanager.readonly`). Re-open the Connect card and allow all three: Analytics, Search Console, and Tag Manager. This plugin uses one consent for all three — it will not ask for a second Google login just for GTM.”
+“This Google login did not grant Tag Manager readonly (`https://www.googleapis.com/auth/tagmanager.readonly`). Re-run AuthPort (`auth login` or host re-inject) and allow all three Consent A scopes: Analytics, Search Console, and Tag Manager. There is no Connect card for local stdio. This plugin uses one consent for all three — it will not ask for a second Google login just for GTM.”
 
 Include the missing scope string in `hint`.
 
@@ -163,9 +163,9 @@ Listing tags in a workspace can show unpublished drafts. Production is `gtm_get_
 
 `https://www.example.com/` and `sc-domain:example.com` and `https://example.com/` are different properties. Do not coerce.
 
-### 8. Local-server PKCE is not a production outage
+### 8. AuthPort vs imaginary Connect card
 
-If someone tries the old Installed App harness and marketplace Connect in the same breath: they are different auth paths. Production issues are connect-card issues. Do not debug marketplace OAuth by asking for `client_secret.json`.
+stdio auth is AuthPort (host-injected / Desktop PKCE). There is no Gmail-style Connect card for this plugin. Do not debug “Connect card failed” tickets as a plugin defect. Do not ask for `client_secret.json` in chat — Desktop secret stays in gitignored `.env` only.
 
 ---
 
@@ -179,7 +179,7 @@ Use `REAUTH_REQUIRED`. After reconnect, call `google_whoami` and confirm email *
 
 ## “Publish this tag” scenario (copy)
 
-Use `UNSUPPORTED_OPERATION`. Add: “I can show the live container and the workspace draft so you can see the diff. Publishing stays in Tag Manager.”
+On Consent A / flag off: refuse (`UNSUPPORTED_OPERATION` or `WRITE_NOT_ENABLED`). Add: “I can show the live container and the workspace draft so you can see the diff. Publishing needs Consent W (separate OAuth client) when that path is enabled — not the free readonly consent.”
 
 ## “Search queries in GA4” scenario (copy)
 
