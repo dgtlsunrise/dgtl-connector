@@ -61,7 +61,7 @@ Failure:
 | Params | none |
 | Idempotent | yes |
 
-**Returns (no tokens):** `email`, `sub`, `granted_scopes` (array of strings; host-provided or tokeninfo), `expires_in` (seconds, if known), `token_source`, `connections`, `license` (`ok`, `features`, `exp`, `jti`), `plugin_version`, `host` (string when known via `DGTL_HOST` / host heuristics, else `null`), `gateway.reachable` (always `false` until PR-5 health probe — do not treat as live gateway).
+**Returns (no tokens):** `email`, `sub`, `granted_scopes` (array of strings; host-provided or tokeninfo), `expires_in` (seconds, if known), `token_source`, `connections`, `license` (`ok`, `features`, `exp`, `jti`), `plugin_version`, `host` (string when known via `DGTL_HOST` / host heuristics, else `null`), `gateway.reachable` (`GET /v1/health` when `DGTL_GATEWAY_URL` is set; `false` if unset or probe fails — never `true` from URL alone).
 
 If email scope was denied: `email` is null, `error_code` is not set; include `CONSENT_MISSING` only when the host has no access token at all.
 
@@ -403,7 +403,7 @@ This is what you cite for “what is on the site.”
 | Params | none |
 | Idempotent | yes |
 
-**Returns (no tokens / no JWT):** `ok`, `features`, `exp`, `sub`, `jti`, `reason`, `plugin_version`, `host` (when known), `gateway` (`reachable` always `false` until PR-5; `note` explains). Never the JWT string.
+**Returns (no tokens / no JWT):** `ok`, `features`, `exp`, `sub`, `jti`, `reason`, `plugin_version`, `host` (when known), `gateway` (`reachable` from health probe when URL set; `false` + `note` if unset/down). Never the JWT string.
 
 ---
 

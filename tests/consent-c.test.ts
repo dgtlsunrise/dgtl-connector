@@ -105,7 +105,7 @@ describe("Consent C token stores separate from AuthPort A (fail closed)", () => 
     }
   });
 
-  it("licensed Ads with only Consent A token → ADS_SCOPE_MISSING; never uses ctx.auth", async () => {
+  it("licensed Ads with only Consent A token + URL unset → GATEWAY_UNAVAILABLE; never uses ctx.auth", async () => {
     const jwt = signLicense({
       sub: "test-user",
       exp: Math.floor(Date.now() / 1000) + 86400,
@@ -120,12 +120,12 @@ describe("Consent C token stores separate from AuthPort A (fail closed)", () => 
       return orig();
     };
     const env = await dispatch(ctx, "gads_list_accessible_customers", {});
-    assert.equal(env.error_code, "ADS_SCOPE_MISSING");
+    assert.equal(env.error_code, "GATEWAY_UNAVAILABLE");
     assert.equal(authCalls, 0, "gads must not call ctx.auth");
     assert.equal(ctx.calls.length, 0);
   });
 
-  it("licensed Ads with GOOGLE_ADS_ACCESS_TOKEN still fail closed (no gateway); never uses ctx.auth", async () => {
+  it("licensed Ads with GOOGLE_ADS_ACCESS_TOKEN + URL unset → GATEWAY_UNAVAILABLE; never uses ctx.auth", async () => {
     const jwt = signLicense({
       sub: "test-user",
       exp: Math.floor(Date.now() / 1000) + 86400,
@@ -147,14 +147,14 @@ describe("Consent C token stores separate from AuthPort A (fail closed)", () => 
       return orig();
     };
     const env = await dispatch(ctx, "gads_search", { customer_id: "123", recipe: "campaigns" });
-    assert.equal(env.error_code, "ADS_SCOPE_MISSING");
-    assert.ok(env.hint?.includes("gateway") || env.hint?.includes("not in this binary"));
+    assert.equal(env.error_code, "GATEWAY_UNAVAILABLE");
+    assert.ok(env.hint?.toLowerCase().includes("gateway") || env.message?.toLowerCase().includes("gateway"));
     assert.equal(authCalls, 0);
     assert.ok(ctx.calls.every((c) => !c.hasDeveloperToken));
     assert.equal(ctx.calls.length, 0);
   });
 
-  it("licensed Meta with only Consent A token → META_NOT_CONNECTED; never uses ctx.auth", async () => {
+  it("licensed Meta with only Consent A token + URL unset → GATEWAY_UNAVAILABLE; never uses ctx.auth", async () => {
     const jwt = signLicense({
       sub: "test-user",
       exp: Math.floor(Date.now() / 1000) + 86400,
@@ -169,12 +169,12 @@ describe("Consent C token stores separate from AuthPort A (fail closed)", () => 
       return orig();
     };
     const env = await dispatch(ctx, "meta_list_ad_accounts", {});
-    assert.equal(env.error_code, "META_NOT_CONNECTED");
+    assert.equal(env.error_code, "GATEWAY_UNAVAILABLE");
     assert.equal(authCalls, 0);
     assert.equal(ctx.calls.length, 0);
   });
 
-  it("licensed Meta with META_ACCESS_TOKEN still fail closed (no gateway); never uses ctx.auth", async () => {
+  it("licensed Meta with META_ACCESS_TOKEN + URL unset → GATEWAY_UNAVAILABLE; never uses ctx.auth", async () => {
     const jwt = signLicense({
       sub: "test-user",
       exp: Math.floor(Date.now() / 1000) + 86400,
@@ -196,8 +196,8 @@ describe("Consent C token stores separate from AuthPort A (fail closed)", () => 
       return orig();
     };
     const env = await dispatch(ctx, "meta_insights", { ad_account_id: "act_1" });
-    assert.equal(env.error_code, "META_NOT_CONNECTED");
-    assert.ok(env.hint?.includes("gateway") || env.hint?.includes("not in this binary"));
+    assert.equal(env.error_code, "GATEWAY_UNAVAILABLE");
+    assert.ok(env.hint?.toLowerCase().includes("gateway") || env.message?.toLowerCase().includes("gateway"));
     assert.equal(authCalls, 0);
     assert.equal(ctx.calls.length, 0);
   });

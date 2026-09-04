@@ -118,9 +118,18 @@ GBP feature flag off (default) or project quota still 0.
 **User-visible:**  
 “Google Business Profile tools are flagged off until DGTL's GCP project has non-zero GBP API quota. They are not on the free GA4/GSC/GTM consent screen.”
 
+### `GATEWAY_UNAVAILABLE`
+
+Valid paid license (`ads` / `meta`), but `DGTL_GATEWAY_URL` is unset, the Worker is down, or the gateway is paused.
+
+**User-visible:**  
+“The DGTL Ads/Meta gateway is not reachable. Set `DGTL_GATEWAY_URL` to a live Worker, or wait until the hosted gateway is up. Free GA4, Search Console, and Tag Manager tools still work. This is not a missing Ads OAuth reconnect.”
+
+Do **not** tell the user to “Reconnect Ads” for this code — that is `ADS_SCOPE_MISSING`.
+
 ### `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`
 
-License present but the second OAuth (Ads `adwords` / Meta `ads_read`) is not connected, or the Ads/Meta runtime is not in this binary yet.
+License **and** gateway are ok, but the second OAuth (Ads `adwords` / Meta `ads_read`) is not connected. Consent C / Meta tokens never come from Consent A (`GOOGLE_ACCESS_TOKEN`).
 
 ### `GOOGLE_UNAVAILABLE`
 

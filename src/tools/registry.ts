@@ -383,7 +383,7 @@ export const TOOLS: ToolSpec[] = [
     description: "Paid. Requires a DGTL license. Lists accessible Ads customers. No mutate. Returns LICENSE_REQUIRED without a license.",
     inputSchema: S.emptyInput,
     annotations: ANN_RO,
-    handler: async (ctx) => gadsDisabled(ctx, "gads_list_accessible_customers"),
+    handler: async (ctx, args) => gadsDisabled(ctx, "gads_list_accessible_customers", args),
   },
   {
     name: "gads_get_customer",
@@ -393,7 +393,7 @@ export const TOOLS: ToolSpec[] = [
     description: "Paid. Descriptive name, currency, time zone. LICENSE_REQUIRED without a DGTL license.",
     inputSchema: S.gadsCustomer,
     annotations: ANN_RO,
-    handler: async (ctx) => gadsDisabled(ctx, "gads_get_customer"),
+    handler: async (ctx, args) => gadsDisabled(ctx, "gads_get_customer", args),
   },
   {
     name: "gads_search",
@@ -403,7 +403,7 @@ export const TOOLS: ToolSpec[] = [
     description: "Paid. Closed recipe enum (campaigns, ad_groups, keywords, search_terms, conversion_actions, change_status, policy_topics, performance). The model never sends raw GAQL. LICENSE_REQUIRED without a license. No developer-token on this client.",
     inputSchema: S.gadsSearch,
     annotations: ANN_RO,
-    handler: async (ctx) => gadsDisabled(ctx, "gads_search"),
+    handler: async (ctx, args) => gadsDisabled(ctx, "gads_search", args),
   },
   {
     name: "gads_campaign_performance",
@@ -413,14 +413,14 @@ export const TOOLS: ToolSpec[] = [
     description: "Paid. Campaign performance recipe. LICENSE_REQUIRED without a DGTL license.",
     inputSchema: S.gadsSearch,
     annotations: ANN_RO,
-    handler: async (ctx) => gadsDisabled(ctx, "gads_campaign_performance"),
+    handler: async (ctx, args) => gadsDisabled(ctx, "gads_campaign_performance", args),
   },
   {
     name: "license_status",
     group: "license",
     family: "license",
     title: "License status",
-    description: "Local license JWT features and expiry. No key material. Gateway reachable is always false in this binary.",
+    description: "Local license JWT features and expiry. No key material. gateway.reachable probes GET /v1/health when DGTL_GATEWAY_URL is set (false if unset or probe fails).",
     inputSchema: S.emptyInput,
     annotations: ANN_RO,
     handler: async (ctx) => licenseStatus(ctx),
@@ -434,7 +434,7 @@ export const TOOLS: ToolSpec[] = [
     description: "Paid. LICENSE_REQUIRED without a DGTL license. Meta app secret is never in this plugin.",
     inputSchema: S.emptyInput,
     annotations: ANN_RO,
-    handler: async (ctx) => metaDisabled(ctx, "meta_list_ad_accounts"),
+    handler: async (ctx, args) => metaDisabled(ctx, "meta_list_ad_accounts", args),
   },
   {
     name: "meta_list_campaigns",
@@ -444,7 +444,7 @@ export const TOOLS: ToolSpec[] = [
     description: "Paid. LICENSE_REQUIRED without a DGTL license.",
     inputSchema: S.metaAccount,
     annotations: ANN_RO,
-    handler: async (ctx) => metaDisabled(ctx, "meta_list_campaigns"),
+    handler: async (ctx, args) => metaDisabled(ctx, "meta_list_campaigns", args),
   },
   {
     name: "meta_list_adsets",
@@ -454,7 +454,7 @@ export const TOOLS: ToolSpec[] = [
     description: "Paid. LICENSE_REQUIRED without a DGTL license.",
     inputSchema: S.metaAccount,
     annotations: ANN_RO,
-    handler: async (ctx) => metaDisabled(ctx, "meta_list_adsets"),
+    handler: async (ctx, args) => metaDisabled(ctx, "meta_list_adsets", args),
   },
   {
     name: "meta_list_ads",
@@ -464,7 +464,7 @@ export const TOOLS: ToolSpec[] = [
     description: "Paid. LICENSE_REQUIRED without a DGTL license.",
     inputSchema: S.metaAccount,
     annotations: ANN_RO,
-    handler: async (ctx) => metaDisabled(ctx, "meta_list_ads"),
+    handler: async (ctx, args) => metaDisabled(ctx, "meta_list_ads", args),
   },
   {
     name: "meta_insights",
@@ -474,7 +474,7 @@ export const TOOLS: ToolSpec[] = [
     description: "Paid. Recipe insights (account/campaign/adset/ad + date + level). LICENSE_REQUIRED without a license.",
     inputSchema: S.metaInsights,
     annotations: ANN_RO,
-    handler: async (ctx) => metaDisabled(ctx, "meta_insights"),
+    handler: async (ctx, args) => metaDisabled(ctx, "meta_insights", args),
   },
   {
     name: "meta_get_creative",
@@ -484,7 +484,7 @@ export const TOOLS: ToolSpec[] = [
     description: "Paid. Creative metadata and image URLs, not bytes. LICENSE_REQUIRED without a license.",
     inputSchema: S.metaCreative,
     annotations: ANN_RO,
-    handler: async (ctx) => metaDisabled(ctx, "meta_get_creative"),
+    handler: async (ctx, args) => metaDisabled(ctx, "meta_get_creative", args),
   },
 ];
 

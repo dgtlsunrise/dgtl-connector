@@ -15,6 +15,7 @@ export const ERROR_CODES = [
   "RATE_LIMITED",
   "GOOGLE_UNAVAILABLE",
   "LICENSE_REQUIRED",
+  "GATEWAY_UNAVAILABLE",
   "ADS_SCOPE_MISSING",
   "META_NOT_CONNECTED",
   "GBP_NOT_ENABLED",
@@ -58,6 +59,8 @@ export const MSG = {
     "v1 is read-only. I cannot publish Tag Manager containers, create tags, submit sitemaps, request indexing, or create GA4–Search Console links (analytics.readonly cannot create those links). Use the Google UI.",
   LICENSE_REQUIRED:
     "This tool needs a DGTL paid license (Google Ads / Meta Ads). Free GA4, Search Console, and Tag Manager tools still work. Paste a license JWT via DGTL_LICENSE_JWT or PLUGIN_DATA/license.jwt — never a Google Ads developer-token.",
+  GATEWAY_UNAVAILABLE:
+    "The DGTL Ads/Meta gateway is not reachable. Set DGTL_GATEWAY_URL to a live Worker, or wait until the hosted gateway is up. Free GA4, Search Console, and Tag Manager tools still work. This is not a missing Ads OAuth reconnect.",
   GBP_NOT_ENABLED:
     "Google Business Profile tools are flagged off until DGTL's GCP project has non-zero GBP API quota (Basic API Access). They are not on the free GA4/GSC/GTM consent screen. Consent B (business.manage) is a separate grant.",
   WRITE_NOT_ENABLED:

@@ -25,6 +25,7 @@
         "RATE_LIMITED",
         "GOOGLE_UNAVAILABLE",
         "LICENSE_REQUIRED",
+        "GATEWAY_UNAVAILABLE",
         "ADS_SCOPE_MISSING",
         "META_NOT_CONNECTED",
         "GBP_NOT_ENABLED",

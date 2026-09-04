@@ -120,7 +120,7 @@ describe("session proofs", () => {
     assert.equal(ctx.license.ok, true);
     const ads = await dispatch(ctx, "gads_search", { customer_id: "123", recipe: "campaigns" });
     assert.equal(ads.ok, false);
-    assert.ok(ads.error_code === "ADS_SCOPE_MISSING" || ads.error_code === "LICENSE_REQUIRED");
+    assert.ok(ads.error_code === "GATEWAY_UNAVAILABLE" || ads.error_code === "ADS_SCOPE_MISSING" || ads.error_code === "LICENSE_REQUIRED");
     assert.ok(ctx.calls.every((c) => !c.hasDeveloperToken));
     const ga4 = await dispatch(ctx, "ga4_run_report", reportArgs());
     assert.equal(ga4.ok, true);

@@ -2,6 +2,7 @@ import type { AppContext } from "../context.js";
 import { okEnvelope, type Envelope } from "../envelope.js";
 import { APIS } from "./scopes.js";
 import { MSG, ToolError } from "../errors.js";
+import { probeGatewayReachable } from "../gateway/client.js";
 import { PLUGIN_VERSION, detectHost } from "../version.js";
 
 type UserInfo = {
@@ -37,6 +38,8 @@ export async function googleWhoami(ctx: AppContext): Promise<Envelope> {
     }
   }
 
+  const gateway = await probeGatewayReachable(ctx);
+
   return okEnvelope("google_whoami", {
     data: {
       email: info.email ?? token.email ?? null,
@@ -60,8 +63,9 @@ export async function googleWhoami(ctx: AppContext): Promise<Envelope> {
       },
       plugin_version: PLUGIN_VERSION,
       host: detectHost(ctx.env),
-      // Stay false until PR-5 (URL unset / no health probe). Do not advertise a live gateway.
-      gateway: { reachable: false },
+      gateway: gateway.note
+        ? { reachable: gateway.reachable, note: gateway.note }
+        : { reachable: gateway.reachable },
     },
   });
 }

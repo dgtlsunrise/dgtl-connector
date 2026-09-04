@@ -20,7 +20,7 @@ describe("PR-2b whoami / license_status support fields", () => {
     assert.equal(detectHost({ CURSOR_AGENT: "1" }), "Cursor");
   });
 
-  it("google_whoami echoes plugin_version, host, jti, gateway.reachable=false", async () => {
+  it("google_whoami echoes plugin_version, host, jti; unreachable URL → gateway.reachable=false", async () => {
     const jwt = signLicense({
       sub: "whoami-user",
       exp: Math.floor(Date.now() / 1000) + 86400,
@@ -57,7 +57,7 @@ describe("PR-2b whoami / license_status support fields", () => {
     assert.ok(!blob.toLowerCase().includes("bearer"));
   });
 
-  it("license_status echoes plugin_version, host, jti; gateway.reachable stays false", async () => {
+  it("license_status echoes plugin_version, host, jti; probe fail → gateway.reachable false + note", async () => {
     const jwt = signLicense({
       sub: "lic-user",
       exp: Math.floor(Date.now() / 1000) + 86400,
