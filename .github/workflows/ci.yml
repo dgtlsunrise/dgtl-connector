@@ -42,3 +42,17 @@ jobs:
       # OSS gitleaks CLI (not gitleaks-action): dgtlsunrise org CI needs no GITLEAKS_LICENSE.
       - name: Secret scan (gitleaks)
         run: GITLEAKS_INSTALL=1 bash scripts/secret-scan.sh
+
+  # Official Semgrep CE pattern (semgrep/semgrep image). Deprecated semgrep-action avoided.
+  # p/typescript + p/nodejs (not --config auto): auto only flagged mutable GHA tags + local PLUGIN_DATA.
+  semgrep:
+    name: semgrep-oss
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Semgrep SAST
+        run: semgrep scan --error --config p/typescript --config p/nodejs
