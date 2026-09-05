@@ -1,0 +1,5 @@
+# Allowlist only with a one-line comment why. Default rules stay on.
+title = "dgtl-connector"
+
+[extend]
+useDefault = true
