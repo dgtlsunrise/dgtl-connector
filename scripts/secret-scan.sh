@@ -50,10 +50,10 @@ run_gitleaks() {
   if [[ -f "$ROOT/.gitleaks.toml" ]]; then
     extra+=(--config "$ROOT/.gitleaks.toml")
   fi
+  # Working tree (uncommitted files) plus git history when this is a repo.
+  "$bin" dir "${extra[@]}" "$ROOT"
   if [[ -d "$ROOT/.git" ]]; then
-    "$bin" git --source "$ROOT" "${extra[@]}"
-  else
-    "$bin" dir --source "$ROOT" "${extra[@]}"
+    "$bin" git --platform github "${extra[@]}" "$ROOT"
   fi
 }
 
