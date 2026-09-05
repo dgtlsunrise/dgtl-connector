@@ -46,7 +46,7 @@ DGTL's Google Cloud project may **own the OAuth client ID** (so Google shows a D
 
 1. User installs the plugin.
 2. **Preferred:** host injects a short-lived access token (`GOOGLE_ACCESS_TOKEN`, optional granted-scopes / email env).
-3. **Fallback:** user runs `dgtl-marketing-mcp auth login` (installed-app PKCE, Desktop client, loopback `127.0.0.1:<port>/callback`).
+3. **Fallback:** user runs `dgtl-connector-mcp auth login` (installed-app PKCE, Desktop client, loopback `127.0.0.1:<port>/callback`).
 4. Google returns an authorization code to loopback (or the host). Exchange uses PKCE; Desktop clients also send `GOOGLE_OAUTH_CLIENT_SECRET` from gitignored `.env` at `/token`.
 5. **Refresh token** stays user-owned: host connector store **or** `PLUGIN_DATA/google-oauth.json` (mode 0600) for the PKCE path.
 6. On tool call, MCP uses the access token. Implementers do **not** invent a DGTL Google-token exchange endpoint for Consent A.

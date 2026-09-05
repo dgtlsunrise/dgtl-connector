@@ -30,7 +30,7 @@ Ordered. Noel clicks + agent support in parallel with Track B.
 | --- | --- | --- | --- |
 | A1 | Consent A unlisted YouTube | Record + upload **Unlisted** per [DEMO-VIDEO-SCRIPT.md](DEMO-VIDEO-SCRIPT.md). Keep URL. | Keep script aligned to PERMISSIONS / 23 tools + AuthPort; no live API calls for the script itself. |
 | A2 | Google verification submit | Auth Platform: brand + sensitive-scope verification. Paste [OAUTH-CONSENT-COPY.md](OAUTH-CONSENT-COPY.md) justifications + demo URL. Answer reviewer mail from **noel@dgtlsunrise.com**. | Prep copy only. Do not submit. Do not Publish app until Google approves. |
-| A3 | Flip `dgtlsunrise/dgtl-marketing` public | After PR-0 + PR-1 are in (already done in code): make GitHub remote **public**. Still no secrets. | Confirm tree clean of secrets; Apache-2.0 + privacy URL live. |
+| A3 | Flip `dgtlsunrise/dgtl-connector` public | After PR-0 + PR-1 are in (already done in code): make GitHub remote **public**. Still no secrets. | Confirm tree clean of secrets; Apache-2.0 + privacy URL live. |
 | A4 | Cursor marketplace + later xAI | Submit at cursor.com/marketplace/publish. Later: PR to `xai-org/plugin-marketplace` pinning a full commit SHA. | Package id / bin / MARKETPLACE.md stay accurate; draft PR text when Noel asks. |
 
 **Do not** put write or Ads scopes on the Consent A client to “speed” verification.

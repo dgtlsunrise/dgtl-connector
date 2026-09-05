@@ -24,7 +24,7 @@ Do not show Ads, Gmail, Drive, write scopes, a client secret, or token files.
 
 ## Shot 0 — Title (optional, 5 seconds)
 
-On-screen text: DGTL Sunrise, local read-only GA4 / Search Console / Tag Manager, package dgtl-marketing 0.1.0, publisher Sunrise Consulting LLC.
+On-screen text: DGTL Sunrise, local read-only GA4 / Search Console / Tag Manager, package dgtl-connector 0.1.0, publisher Sunrise Consulting LLC.
 
 Voice: "This demo shows DGTL Sunrise reading Google Analytics, Search Console, and Tag Manager after the user signs in on their own computer. The plugin cannot publish tags or change campaigns."
 

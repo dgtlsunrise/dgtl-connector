@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://dgtlsunrise.local/spec/dgtl-marketing/v1/envelope.schema.json",
-  "title": "dgtl-marketing success envelope",
+  "$id": "https://dgtlsunrise.local/spec/dgtl-connector/v1/envelope.schema.json",
+  "title": "dgtl-connector success envelope",
   "type": "object",
   "additionalProperties": false,
   "required": ["ok", "tool"],

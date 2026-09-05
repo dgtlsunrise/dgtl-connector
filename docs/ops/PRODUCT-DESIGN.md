@@ -8,8 +8,8 @@
 | **Status** | **LOCKED** 2026-09-03 PT · Plan (not Implemented) · Build approve (0 open) · merged with Cursor Phase 0 |
 | **Publisher** | DGTL Sunrise (Sunrise Consulting LLC) |
 | **Contact** | noel@dgtlsunrise.com |
-| **Package** | `dgtl-marketing` 0.1.0, Apache-2.0 |
-| **Git** | Private `dgtlsunrise/dgtl-marketing`; Origin `noel-churchill/dgtl-marketing` |
+| **Package** | `dgtl-connector` 0.1.0, Apache-2.0 |
+| **Git** | Private `dgtlsunrise/dgtl-connector`; Origin `noel-churchill/dgtl-marketing` |
 | **Homepage** | https://www.dgtlsunrise.com/ (`plugin.json` today is `https://dgtlsunrise.com` without `www` — honesty PR aligns it) |
 | **Privacy** | https://www.dgtlsunrise.com/privacy |
 | **GCP project of record** | `dgtl-marketing-oauth-20260903` (559563115308). Ignore `dgtl-marketing-507517` for the plugin client. |
@@ -30,7 +30,7 @@ This is a plan-only document. It does not create Polar products, OAuth clients, 
 
 ## Overview
 
-DGTL Sunrise ships a **marketing-engineer workforce in the user’s agent**, not a dashboard with a chat box. The free lane is a local stdio MCP plugin (`dgtl-marketing`) that reads the user’s own GA4, Search Console, and Tag Manager on the user’s Bot computer under **Consent A** (`analytics.readonly`, `webmasters.readonly`, `tagmanager.readonly` + `openid` / `userinfo.email`). DGTL never sees those report bytes and never holds those refresh tokens. The paid lane is **DGTL-hosted infrastructure** that a public plugin cannot hold: Polar billing, an allowlisted Ads/Meta gateway, server-side GTM / delayed conversions, and a later token vault. Writes (GTM edit/publish, explicit GSC mutations) use a **separate Consent W OAuth client**. Paid Ads/Meta **user** OAuth is a **separate Consent C** Google client plus a Meta Login for Business app — never bolted onto the free Desktop client used for Google verification.
+DGTL Sunrise ships a **marketing-engineer workforce in the user’s agent**, not a dashboard with a chat box. The free lane is a local stdio MCP plugin (`dgtl-connector`) that reads the user’s own GA4, Search Console, and Tag Manager on the user’s Bot computer under **Consent A** (`analytics.readonly`, `webmasters.readonly`, `tagmanager.readonly` + `openid` / `userinfo.email`). DGTL never sees those report bytes and never holds those refresh tokens. The paid lane is **DGTL-hosted infrastructure** that a public plugin cannot hold: Polar billing, an allowlisted Ads/Meta gateway, server-side GTM / delayed conversions, and a later token vault. Writes (GTM edit/publish, explicit GSC mutations) use a **separate Consent W OAuth client**. Paid Ads/Meta **user** OAuth is a **separate Consent C** Google client plus a Meta Login for Business app — never bolted onto the free Desktop client used for Google verification.
 
 The architecture is already one-shot in the plugin repo (`/workspace/dgtl-google-plugin/`): 23 closed free tools, gated families that fail closed, AuthPort (host-injected token then installed-app PKCE), local Ed25519 license JWT verification, Consent W stubs behind `DGTL_WRITES_ENABLED`. This document is the product contract for finishing that architecture without a rewrite: honest marketplace listing **before** submit, least-privilege consents A/W/B/C, gated mutations on a write HTTP client, Polar entitlement ≠ credential, and a Worker under `services/stamp/` that attaches DGTL-owned secrets. Sequencing is Consent A verification → free marketplace listing → Polar + gateway → Consent W writes → sGTM → vault/ACL.
 
@@ -156,7 +156,7 @@ Entitlement ≠ credential: a valid JWT unlocks tools; the Worker still holds DG
 flowchart TB
   subgraph UserBox["Trust: user Bot computer"]
     Agent["Agent (Grok Bot / Cursor / Grok Build)"]
-    Plugin["dgtl-marketing stdio MCP\n./bin/dgtl-marketing-mcp"]
+    Plugin["dgtl-connector stdio MCP\n./bin/dgtl-connector-mcp"]
     PD["PLUGIN_DATA\nA: google-oauth.json\nW: google-oauth-write.json\nC: google-oauth-ads.json\nMeta: meta-oauth.json\nlicense.jwt\noptional audit.jsonl"]
     Agent -->|MCP tools/list + tools/call| Plugin
     Plugin --> PD
@@ -217,7 +217,7 @@ Polar is an **HTTP client** of the Worker (`POST /webhooks/polar`). Polar does n
 Interface `AccessTokenSource` in `src/auth/types.ts`. `AuthPort` in `src/auth/port.ts` — **first match wins**, and this chain is **Consent A only**:
 
 1. **Host-injected** access token (`GOOGLE_ACCESS_TOKEN` and aliases in `src/auth/host-injected.ts`; optional `GOOGLE_GRANTED_SCOPES`, `GOOGLE_ACCOUNT_EMAIL`).
-2. **Installed-app PKCE** (`dgtl-marketing-mcp auth login`), public Desktop client, tokens in `PLUGIN_DATA/google-oauth.json`. Desktop token exchange currently requires gitignored `GOOGLE_OAUTH_CLIENT_SECRET` — **never commit**. People API must be enabled on the GCP project or Desktop Sign-In returns `invalid_client`.
+2. **Installed-app PKCE** (`dgtl-connector-mcp auth login`), public Desktop client, tokens in `PLUGIN_DATA/google-oauth.json`. Desktop token exchange currently requires gitignored `GOOGLE_OAUTH_CLIENT_SECRET` — **never commit**. People API must be enabled on the GCP project or Desktop Sign-In returns `invalid_client`.
 3. **Never** embed a confidential web-client secret in the binary or git.
 
 There is **no** Gmail-style Connect card for stdio. Agent Plugins 1.0 has no portable OAuth fields. A future **remote HTTP MCP** may use a host Connect card; that is a host feature (second **transport**), not a rewrite of local GA4/GSC/GTM tools, and **not** the paid Ads plane (`V2_HOSTED.md` second-MCP idea is superseded).
@@ -258,10 +258,10 @@ This is the gap that would have caused an implementer to bolt `adwords` onto the
 
 | Piece | Spec |
 | --- | --- |
-| Google Ads OAuth client | New Desktop (or later web) client, **not** the Consent A client. Env: `GOOGLE_OAUTH_ADS_CLIENT_ID` / `GOOGLE_OAUTH_ADS_CLIENT_SECRET` (gitignored). CLI: `dgtl-marketing-mcp auth login-ads`. Store: `PLUGIN_DATA/google-oauth-ads.json` mode 0600. **GCP project: OQ 20** (recommended: same org, **sibling** project — do not couple Ads verification to Consent A’s `dgtl-marketing-oauth-20260903`) |
+| Google Ads OAuth client | New Desktop (or later web) client, **not** the Consent A client. Env: `GOOGLE_OAUTH_ADS_CLIENT_ID` / `GOOGLE_OAUTH_ADS_CLIENT_SECRET` (gitignored). CLI: `dgtl-connector-mcp auth login-ads`. Store: `PLUGIN_DATA/google-oauth-ads.json` mode 0600. **GCP project: OQ 20** (recommended: same org, **sibling** project — do not couple Ads verification to Consent A’s `dgtl-marketing-oauth-20260903`) |
 | Meta Login for Business | Meta app claimed by Sunrise Consulting LLC. `META_APP_ID` is public (login URL). `META_APP_SECRET` **Worker env only** |
 | Refresh — Google C | Same PKCE refresh as A, against the **C** client id, writing only the C store |
-| Meta **stdio grant (v1)** | **Host-injected `META_ACCESS_TOKEN`** when the host can inject (no user paste). Otherwise the **hosted Login page (PR-3b) is the grant origin**: after Facebook Login, Worker issues a **one-time grant code** (TTL minutes, single use) — not a Meta bearer in the URL. Plugin `dgtl-marketing-mcp auth login-meta --code` calls `POST /v1/meta/exchange`. Support never collects Meta tokens. Loopback `login-meta` without a hosted redirect is **not** v1 default (Login for Business wants a hosted URI) |
+| Meta **stdio grant (v1)** | **Host-injected `META_ACCESS_TOKEN`** when the host can inject (no user paste). Otherwise the **hosted Login page (PR-3b) is the grant origin**: after Facebook Login, Worker issues a **one-time grant code** (TTL minutes, single use) — not a Meta bearer in the URL. Plugin `dgtl-connector-mcp auth login-meta --code` calls `POST /v1/meta/exchange`. Support never collects Meta tokens. Loopback `login-meta` without a hosted redirect is **not** v1 default (Login for Business wants a hosted URI) |
 | Meta exchange (frozen) | See `MetaExchangeRequest` / `MetaExchangeResponse` below. Plugin sends license JWT + short-lived token **or** one-time grant code. Worker uses app secret, returns **long-lived user token to the plugin**, **stores nothing**. Plugin writes `PLUGIN_DATA/meta-oauth.json` mode 0600 |
 | Hosted clickable demo (PR-3b) | **Not fixture HTML.** Real Meta Login + **one live Graph read** (list ad accounts → one insights table) as the App Review tester. Secrets in Worker env. Noel-gated hostname (OQ 16). Same Login app as product Meta OAuth — not a customer vault |
 | Plugin → gateway | Hop-scoped **access** token in `X-DGTL-User-Access-Token`. License JWT in `Authorization: Bearer`. Never send refresh tokens to the Worker |
@@ -438,7 +438,7 @@ Approval {
 
 ### Free plugin (marketplace listing)
 
-Surface: local stdio MCP, command `./bin/dgtl-marketing-mcp` (plugin-relative, **no npx**). Dual-emit `mcp.json` / `.mcp.json` from `src/packaging/mcp.template.json`.
+Surface: local stdio MCP, command `./bin/dgtl-connector-mcp` (plugin-relative, **no npx**). Dual-emit `mcp.json` / `.mcp.json` from `src/packaging/mcp.template.json`.
 
 **Closed free kernel (23)** — bump version + `schemas/v1/catalog.json` to add a 24th:
 
@@ -462,7 +462,7 @@ Invariants: no implicit resource; `ga4_run_report` denylists search-query dimens
 | license | `license_status` | always callable | in `gated_tools` (`fail: null`) |
 | gtm-write | `gtm_create_tag`, `gtm_update_tag`, `gtm_publish_container` | `WRITE_NOT_ENABLED` / `CONSENT_W_REQUIRED` | **missing from `catalog.json` today** — add in PR-1 |
 
-`license_status` **today** (`src/ads/gads.ts`): `{ ok, features, exp, sub, reason, gateway: { reachable: false, note } }` — **no** `jti`, **no** plugin version. `PLUGIN_VERSION` is MCP server version + `dgtl-marketing-mcp --version` only. Support intake still asks the user for plugin version until PR-2b.
+`license_status` **today** (`src/ads/gads.ts`): `{ ok, features, exp, sub, reason, gateway: { reachable: false, note } }` — **no** `jti`, **no** plugin version. `PLUGIN_VERSION` is MCP server version + `dgtl-connector-mcp --version` only. Support intake still asks the user for plugin version until PR-2b.
 
 Skills (10): `select-google-property`, `agency-property-isolation`, `ga4-report-recipes`, `no-hallucinated-metrics`, `gsc-vs-ga4-search`, `gtm-readonly-limits`, `google-marketing-support`, `license-and-reconnect`, `gsc-vs-ads-keywords`, `ga4-vs-ads-conversions`.
 
@@ -983,7 +983,7 @@ Rollback: flags off (`DGTL_WRITES_ENABLED`, gateway pause, stop Polar mint). Fre
 | **Consent C** | Separate **user** Google Ads OAuth client (`adwords`) + Meta Login app. Not the gateway; not Consent A |
 | **AuthPort** | Consent A `AccessTokenSource` chain: host-injected then PKCE. W/C have their own sources |
 | **GoogleWriteHttp** | Write HTTP client: W token only, path allowlist |
-| **PLUGIN_DATA** | Host-provided data dir (or `~/.dgtl-marketing`); per-consent stores mode 0600; optional `license.jwt` |
+| **PLUGIN_DATA** | Host-provided data dir (or `~/.dgtl-connector`); per-consent stores mode 0600; optional `license.jwt` |
 | **Envelope** | Closed JSON tool result (`src/envelope.ts`). No `request_id` property today |
 | **Free kernel** | 23 tools in `schemas/v1/catalog.json` |
 | **Fail closed** | Tool remains in `tools/list` but returns a typed error (no live HTTP) |
@@ -1123,7 +1123,7 @@ Network check would make Polar an availability dependency for Ads tools and enco
 
 Noel Churchill decisions only. Engineering TODOs are in the PR Plan. Same list: `/workspace/dgtl-planning/OPEN-QUESTIONS.md`.
 
-1. **Public listing name** — Package id stays `dgtl-marketing`. What string goes on Cursor / Grok catalogs and the Google consent **App name** (copy today: “DGTL Sunrise”)?
+1. **Public listing name** — Package id is `dgtl-connector`. What string goes on Cursor / Grok catalogs and the Google consent **App name** (copy today: “DGTL Sunrise”)?
 2. **Polar Pro packaging** — One product vs separate SKUs for gateway / sGTM / vault / writes?
 3. **JWT feature strings beyond `ads` / `meta`** — Mint `sgtm` / `writes` / `vault` later, or keep Pro = ads+meta only until a second Polar product exists?
 4. **Polar price** — Do not invent a number. What is Pro priced at (professional/agency infrastructure, not $5–10)?
@@ -1132,7 +1132,7 @@ Noel Churchill decisions only. Engineering TODOs are in the PR Plan. Same list: 
 7. **Audit retention / data residency default** — Days retained on Worker? US-only Cloudflare vs a documented limitation?
 8. **Consent W GCP** — Second client on `dgtl-marketing-oauth-20260903` vs a sibling project?
 9. **Writes local vs vaulted** — Consent W tokens stay on the user’s box (like A) for first ship, or also offer vaulted writes in the same SKU? Hosted Approval is not required for local W.
-10. **Marketplace public git** — When to flip `dgtlsunrise/dgtl-marketing` public (after verification submitted vs after approved)?
+10. **Marketplace public git** — When to flip `dgtlsunrise/dgtl-connector` public (after verification submitted vs after approved)?
 11. **sGTM first-customer shape** — Synthetic only, DGTL’s own properties, or a named engagement Noel chooses? (No outbound. Code names: `apply` / `funded`.)
 12. **Power-user local Ads developer-token bypass** — Ship later or never?
 13. **GBP** — File Basic API Access now, or leave `DGTL_GBP_ENABLED` false indefinitely?

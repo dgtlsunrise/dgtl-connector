@@ -54,7 +54,7 @@ Product rules for writes:
 ## Delivery order (accelerate)
 
 1. Spec + Noel gates (this doc) — **now**
-2. Free path still: OAuth demo → Google verification Consent A → public `dgtlsunrise/dgtl-marketing` → marketplace
+2. Free path still: OAuth demo → Google verification Consent A → public `dgtlsunrise/dgtl-connector` → marketplace
 3. Polar org + Pro product (Noel dashboard)
 4. Worker: webhook mint JWT + stub Ads/Meta routes
 5. Plugin: Consent W auth path + write tool stubs behind flags; license features gate hosted calls

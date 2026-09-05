@@ -2,7 +2,7 @@
 
 **Status:** design. Do not create Polar products, checkout links, or webhooks in this pass. Do not spend money. Do not put a private key in the plugin.
 
-Free GA4 / GSC / GTM stays free and local. Paid unlock is Google Ads plus Meta Ads only. Those tools already exist in dgtl-marketing 0.1.0 and return LICENSE_REQUIRED until a locally verified Ed25519 JWT is present (DGTL_LICENSE_JWT or PLUGIN_DATA/license.jwt). See src/license/verify.ts.
+Free GA4 / GSC / GTM stays free and local. Paid unlock is Google Ads plus Meta Ads only. Those tools already exist in dgtl-connector 0.1.0 and return LICENSE_REQUIRED until a locally verified Ed25519 JWT is present (DGTL_LICENSE_JWT or PLUGIN_DATA/license.jwt). See src/license/verify.ts.
 
 This document is how Polar billing will mint that JWT. Implementation is a later Worker, not this package.
 

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://dgtlsunrise.local/spec/dgtl-marketing/v1/error.schema.json",
-  "title": "dgtl-marketing tool error envelope",
+  "$id": "https://dgtlsunrise.local/spec/dgtl-connector/v1/error.schema.json",
+  "title": "dgtl-connector tool error envelope",
   "type": "object",
   "additionalProperties": false,
   "required": ["ok", "tool", "error_code", "message"],

@@ -64,7 +64,7 @@ async function main(argv: string[]): Promise<void> {
       const code = parseLoginMetaCode(args.slice(2));
       if (!code) {
         process.stderr.write(
-          "usage: dgtl-marketing-mcp auth login-meta --code <one-time-grant-code>\n" +
+          "usage: dgtl-connector-mcp auth login-meta --code <one-time-grant-code>\n" +
             "Or set META_ACCESS_TOKEN (host-injected). Support never collects Meta tokens.\n",
         );
         process.exitCode = 1;

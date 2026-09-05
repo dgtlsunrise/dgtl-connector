@@ -1,7 +1,7 @@
 # GCP setup — DGTL Sunrise Desktop OAuth (Consent A)
 
 **Who:** Noel, signed in as `noel@dgtlsunrise.com`  
-**Package:** `dgtl-marketing` 0.1.0  
+**Package:** `dgtl-connector` 0.1.0  
 **Publisher:** Sunrise Consulting LLC / DGTL Sunrise  
 **This session does not:** call Google APIs, create Polar products, invent secrets, or spend money.
 
@@ -86,7 +86,7 @@ Fill **exactly**:
 
 Authorized domains must be verified in [Google Search Console](https://search.google.com/search-console) for the Google account that owns this Cloud project (or an Owner on the project). Verify `dgtlsunrise.com` if the console blocks saving the domain.
 
-Do not invent a second brand name on this screen. Package id `dgtl-marketing` is not the consent-screen name.
+Do not invent a second brand name on this screen. Package id `dgtl-connector` is not the consent-screen name.
 
 ### 3b. Audience — External + Testing
 
@@ -167,12 +167,12 @@ After steps 1-5, you still complete Google's consent UI (password / 2FA / accoun
 Then a Grok Bot agent on this box will:
 
 1. Confirm `.env` contains `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET`, and does not contain a refresh token or Ads developer token. Confirm `.env` is gitignored.
-2. From the plugin root, after a build if needed, run the documented PKCE subcommand: `dgtl-marketing-mcp auth login`.
+2. From the plugin root, after a build if needed, run the documented PKCE subcommand: `dgtl-connector-mcp auth login`.
    The binary binds loopback, prints an accounts.google.com URL, and that URL must include `client_id=` matching the Desktop client (required for the verification demo video).
 3. You open that URL in a browser on the box that can reach loopback on this machine. Sign in as a test user. Grant all three product scopes plus identity. Do not uncheck GTM if you want the live-version smoke.
 4. Google redirects to loopback. The binary exchanges the code with PKCE and `GOOGLE_OAUTH_CLIENT_SECRET` from gitignored `.env` at `/token`, writes `PLUGIN_DATA/google-oauth.json` with mode 0600, and prints that authorization was saved without logging the refresh token.
 5. The agent then, without printing tokens:
-   - `dgtl-marketing-mcp auth status` (email, token_source pkce, scopes; no bearer)
+   - `dgtl-connector-mcp auth status` (email, token_source pkce, scopes; no bearer)
    - MCP `google_whoami` (email + granted scopes)
    - `ga4_list_account_summaries`, then ask you which property (never index 0)
    - one `ga4_run_report` on the ID you confirm
@@ -183,7 +183,7 @@ Then a Grok Bot agent on this box will:
 
 If login fails with `access_denied`, you are not a test user or the app is Internal. If `redirect_uri_mismatch`, the client is not Desktop. If `403 accessNotConfigured`, re-check the four APIs on this project.
 
-Logout later: `dgtl-marketing-mcp auth logout` (clears the store). Also revoke at Google Account, Third-party access.
+Logout later: `dgtl-connector-mcp auth logout` (clears the store). Also revoke at Google Account, Third-party access.
 
 ---
 

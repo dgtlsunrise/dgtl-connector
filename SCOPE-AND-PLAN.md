@@ -21,7 +21,7 @@ Writes (pause campaign, change budget, publish GTM, submit sitemap) are **out of
 
 Not in v1: TikTok, Shopify, HubSpot, Gmail, Sheets, ClickUp, organic Instagram, LinkedIn Ads, Microsoft Ads. Gmail/Sheets already have first-party plugins.
 
-Name (working): `dgtl-google-marketing`. Rename before submit.
+Name: `dgtl-connector`. Marketplace title/description can still say marketing/Ads.
 
 ## 2. Bar (xAI-shaped, not startup-shaped)
 

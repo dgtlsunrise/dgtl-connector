@@ -1,6 +1,6 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "dgtl-marketing",
+  "name": "dgtl-connector",
   "version": "0.1.0",
   "description": "Read-only GA4, Search Console, and Tag Manager on your computer. You authorize your Google account. DGTL does not see report bytes. stdio auth is manual (host-injected token or installed-app PKCE), not a Gmail Connect card.",
   "author": {

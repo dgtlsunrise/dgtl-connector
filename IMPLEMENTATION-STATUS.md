@@ -1,7 +1,7 @@
 # Implementation status — Phase 0–6
 
 Date: 2026-09-02  
-Package: `dgtl-marketing` 0.1.0  
+Package: `dgtl-connector` 0.1.0  
 License: Apache-2.0  
 Publisher: DGTL Sunrise (`noel@dgtlsunrise.com`)
 
@@ -18,7 +18,7 @@ This session implemented the **runnable free plugin** (architecture one-shot, li
 
 - Agent Plugin `plugin.json` (closed-ish top level; DGTL data under `extensions.com.dgtlsunrise`).
 - `src/packaging/mcp.template.json` → generated `mcp.json` and `.mcp.json` (identical).
-- `bin/dgtl-marketing-mcp` (plugin-relative, no npx).
+- `bin/dgtl-connector-mcp` (plugin-relative, no npx).
 - `scripts/validate-spec.py`.
 - Error envelope module (`src/envelope.ts`, `src/errors.ts`).
 
@@ -70,7 +70,7 @@ Skills (10): original 7 plus `license-and-reconnect`, `gsc-vs-ads-keywords`, `ga
 | `mcp.json` and `.mcp.json` from one source | Pass |
 | No secrets / no `developer-token` in fixtures | Pass |
 | README: stdio is Manual/PKCE, not a Gmail Connect card | Pass |
-| `./bin/dgtl-marketing-mcp --help` exits 0 | Pass |
+| `./bin/dgtl-connector-mcp --help` exits 0 | Pass |
 
 ## How to run
 
@@ -78,10 +78,10 @@ Skills (10): original 7 plus `license-and-reconnect`, `gsc-vs-ads-keywords`, `ga
 npm install
 npm run build
 npm test
-./bin/dgtl-marketing-mcp --help
+./bin/dgtl-connector-mcp --help
 ```
 
-stdio MCP: hosts spawn `./bin/dgtl-marketing-mcp` with `cwd` = plugin root. Set `GOOGLE_ACCESS_TOKEN` or run `auth login`.
+stdio MCP: hosts spawn `./bin/dgtl-connector-mcp` with `cwd` = plugin root. Set `GOOGLE_ACCESS_TOKEN` or run `auth login`.
 
 ## Remaining (Phase 7+)
 

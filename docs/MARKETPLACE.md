@@ -28,7 +28,7 @@ Open source is the review bar. Do not ship a “contact us for the binary” plu
 Source: Cursor plugins reference, submit at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish).
 
 - [ ] Valid **root** `plugin.json` (Agent Plugin), not only `.cursor-plugin/plugin.json`
-- [ ] `name` is unique, lowercase kebab-case: `dgtl-marketing` (working listing id; rename everywhere if Noel changes it)
+- [ ] `name` is unique, lowercase kebab-case: `dgtl-connector`
 - [ ] `description` explains readonly GA4 / GSC / GTM (Consent A only) and user-owned Google auth (remove “SPEC STUB” before submit)
 - [ ] `homepage` is `https://www.dgtlsunrise.com/`
 - [ ] `author.name` is **DGTL Sunrise**
@@ -45,9 +45,9 @@ Do **not** add Cursor `variables` that ask the user to paste a refresh token.
 
 ## Grok Bot install story (what reviewers should see)
 
-stdio MCP auth is **Manual** (AuthPort). There is no Gmail-style Connect card for this plugin. Host-injected `GOOGLE_ACCESS_TOKEN` is preferred when the host can do it; otherwise installed-app PKCE (`dgtl-marketing-mcp auth login`, public Desktop client). See README.
+stdio MCP auth is **Manual** (AuthPort). There is no Gmail-style Connect card for this plugin. Host-injected `GOOGLE_ACCESS_TOKEN` is preferred when the host can do it; otherwise installed-app PKCE (`dgtl-connector-mcp auth login`, public Desktop client). See README.
 
-1. Install **dgtl-marketing** (plugin dir / marketplace once listed)
+1. Install **dgtl-connector** (plugin dir / marketplace once listed)
 2. Set `GOOGLE_OAUTH_CLIENT_ID` (public) or a host-injected access token
 3. If PKCE: run `auth login`, complete Google consent in the browser (client id in the URL)
 4. `google_whoami` shows the connected email and scopes — never the bearer
@@ -63,7 +63,7 @@ Catalog repo: [xai-org/plugin-marketplace](https://github.com/xai-org/plugin-mar
 - [ ] PR adds a **remote** entry to `.grok-plugin/marketplace.json` (do not vendor unless they require it)
 - [ ] `source.source` / URL form as their README specifies
 - [ ] **Pin a full 40-character commit SHA**
-- [ ] `name`: `dgtl-marketing`
+- [ ] `name`: `dgtl-connector`
 - [ ] `description`, `category` (e.g. `productivity` or `monitoring` — pick one that matches their list), `homepage`, `keywords` (`ga4`, `search-console`, `gtm`, `google-analytics`)
 - [ ] `author` display: DGTL Sunrise
 - [ ] Run their `generate-plugin-index.py` / `validate-catalog.py` as required by CI
@@ -77,7 +77,7 @@ Grok Build also discovers `.mcp.json` in some layouts. **Only add a duplicate `.
 - [ ] `mcp.json` `$schema` = `https://agent-plugins.org/schemas/1.0.0/mcp.schema.json`
 - [ ] No unknown **required** fields at the top level; client-specific data under `extensions`
 - [ ] Skills only as immediate children of `skills/` with `SKILL.md`
-- [ ] stdio `command` is one token (`./bin/dgtl-marketing-mcp` or a PATH binary)
+- [ ] stdio `command` is one token (`./bin/dgtl-connector-mcp` or a PATH binary)
 - [ ] Placeholders in `args` / `env` / `cwd` are only `${PLUGIN_ROOT}` and `${PLUGIN_DATA}` (Agent Plugins). Host token injection is **not** encoded as a fake secret in headers
 
 ## Google verification vs marketplace
@@ -100,4 +100,4 @@ A marketplace listing that still uses an unverified testing-mode OAuth client wi
 
 ## Rename
 
-If Noel renames the product, change marketplace `name`, git repo name (if any), `plugin.json`, MCP server key, and this checklist together.
+Package / marketplace id is `dgtl-connector`. If Noel renames the product again, change marketplace `name`, git repo name (if any), `plugin.json`, MCP server key, and this checklist together.

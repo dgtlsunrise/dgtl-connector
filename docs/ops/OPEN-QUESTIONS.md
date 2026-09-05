@@ -10,9 +10,9 @@ Recommended defaults apply **only if Noel is silent**; they do not invent prices
 ---
 
 1. **Public listing name**
-   - **Decision:** What display name goes on Cursor Marketplace, Grok catalog, and (if different) the Google OAuth **App name**? Package id stays `dgtl-marketing`. Consent-screen copy today is **DGTL Sunrise**.
+   - **Decision:** What display name goes on Cursor Marketplace, Grok catalog, and (if different) the Google OAuth **App name**? Package id is `dgtl-connector`. Consent-screen copy today is **DGTL Sunrise**.
    - **Why it blocks:** Marketplace submit and Google verification both freeze a string. Renaming after listing is a coordinated break (`plugin.json`, MCP server key, skills, catalog).
-   - **Recommended default if Noel is silent:** Keep Google App name **DGTL Sunrise**. Keep package / marketplace id **`dgtl-marketing`**. Do not ship `dgtl-google-marketing` as the listing id.
+   - **Recommended default if Noel is silent:** Keep Google App name **DGTL Sunrise**. Keep package / marketplace id **`dgtl-connector`**. Marketplace title/description can still say marketing/Ads.
 
 2. **Polar Pro packaging**
    - **Decision:** One Polar product (Pro) vs separate SKUs for Ads/Meta gateway, sGTM, vault, and writes?
@@ -54,7 +54,7 @@ Recommended defaults apply **only if Noel is silent**; they do not invent prices
    - **Why it blocks:** Auth implementation (`PLUGIN_DATA/google-oauth-write.json` vs Worker vault) and whether writes require Polar.
    - **Recommended default if Noel is silent:** **Local user tokens first** (mirrors Consent A; DGTL still only ships OAuth app registration). Vaulted writes wait for the vault SKU. `DGTL_WRITES_ENABLED` is a technical flag, not a Polar feature, until question 3 is decided. Hosted `Approval` records are **not** required for local W.
 
-10. **Marketplace: when to flip `dgtlsunrise/dgtl-marketing` public**
+10. **Marketplace: when to flip `dgtlsunrise/dgtl-connector` public**
     - **Decision:** Public git after Consent A verification is **submitted**, or only after Google **approves**?
     - **Why it blocks:** Cursor marketplace requires public git + clean secret scan. Unverified External/Testing clients strand strangers.
     - **Recommended default if Noel is silent:** Flip public when verification is **submitted** (demo uploaded, questionnaire in) **and** README honestly says the OAuth client may still be in testing. Do not invite unlimited strangers until Google is In production.

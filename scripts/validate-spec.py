@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the dgtl-marketing spec + packaging. No Google API calls."""
+"""Validate the dgtl-connector spec + packaging. No Google API calls."""
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ REQUIRED_FILES = [
     "schemas/v1/tools.schema.json",
     "schemas/v1/envelope.schema.json",
     "src/packaging/mcp.template.json",
-    "bin/dgtl-marketing-mcp",
+    "bin/dgtl-connector-mcp",
 ]
 
 SKILLS = [
@@ -192,6 +192,8 @@ def check_manifests() -> None:
         name = plugin.get("name")
         if not isinstance(name, str) or not NAME_RE.match(name):
             err(f"plugin.json: invalid name {name!r}")
+        elif name != "dgtl-connector":
+            err(f"plugin.json: name must be dgtl-connector, got {name!r}")
         author = plugin.get("author") or {}
         if author.get("name") != "DGTL Sunrise":
             err("plugin.json: author.name must be DGTL Sunrise")
@@ -217,6 +219,15 @@ def check_manifests() -> None:
         scopes = spec.get("consentA") or spec.get("productScopes") or []
         if scopes != SCOPES:
             err("plugin.json: consentA / productScopes must be the three readonly product scopes in order")
+    pkg = load_json("package.json")
+    if isinstance(pkg, dict):
+        if pkg.get("name") != "dgtl-connector":
+            err(f"package.json: name must be dgtl-connector, got {pkg.get('name')!r}")
+        bins = pkg.get("bin") or {}
+        if not isinstance(bins, dict) or "dgtl-connector-mcp" not in bins:
+            err("package.json: missing bin.dgtl-connector-mcp")
+        elif bins.get("dgtl-connector-mcp") != "./bin/dgtl-connector-mcp":
+            err("package.json: bin.dgtl-connector-mcp must be ./bin/dgtl-connector-mcp")
 
     mcp = load_json("mcp.json")
     dot = load_json(".mcp.json")
@@ -229,19 +240,22 @@ def check_manifests() -> None:
         if mcp.get("$schema") != "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json":
             err("mcp.json: wrong $schema")
         servers = mcp.get("mcpServers")
-        if not isinstance(servers, dict) or "dgtl-marketing" not in servers:
-            err("mcp.json: missing mcpServers.dgtl-marketing")
+        if not isinstance(servers, dict) or "dgtl-connector" not in servers:
+            err("mcp.json: missing mcpServers.dgtl-connector")
         else:
-            srv = servers["dgtl-marketing"]
+            srv = servers["dgtl-connector"]
             if srv.get("type") != "stdio":
                 err("mcp.json: v1 server type must be stdio")
-            if srv.get("command") != "./bin/dgtl-marketing-mcp":
-                err("mcp.json: command must be ./bin/dgtl-marketing-mcp")
+            if srv.get("command") != "./bin/dgtl-connector-mcp":
+                err("mcp.json: command must be ./bin/dgtl-connector-mcp")
             blob = json.dumps(mcp)
             if "npx" in blob:
                 err("mcp.json: npx is not the marketplace command")
             if "CLIENT_SECRET" in blob or "GOCSPX-" in blob:
                 err("mcp.json: looks like a client secret")
+    update = read(ROOT / "src/update-check.ts")
+    if "raw.githubusercontent.com/dgtlsunrise/dgtl-connector/main/plugin.json" not in update:
+        err("src/update-check.ts: default latest URL must point at dgtlsunrise/dgtl-connector")
 
 
 def check_permissions_doc() -> None:

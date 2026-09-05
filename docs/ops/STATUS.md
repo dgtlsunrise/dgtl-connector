@@ -1,4 +1,4 @@
-# Launch-assets status — dgtl-marketing 0.1.0
+# Launch-assets status — dgtl-connector 0.1.0
 
 Date: 2026-09-03 (PT)  
 Publisher: Sunrise Consulting LLC / DGTL Sunrise  
@@ -13,7 +13,7 @@ This pass: docs only. No Google API calls. No Polar products. No secrets invente
 - DEMO-VIDEO-SCRIPT.md — unlisted YouTube script matching PERMISSIONS.md. stdio is Manual/PKCE, not a Connect card. Client id in the URL.
 - POLAR-LICENSE-PLAN.md — Phase 8 design: Polar Pro checkout, webhook, Worker mints Ed25519 JWT for DGTL_LICENSE_JWT. Fields, minting not in the plugin, Worker outline. No products created.
 - NOEL-ONLY-CHECKLIST.md — numbered logins / form submits / approvals only Noel can do.
-- docs/MARKETPLACE.md — stale 22-tools / Connect-card-only stdio lines updated to 23 tools plus AuthPort. Package id and bin path aligned to dgtl-marketing.
+- docs/MARKETPLACE.md — stale 22-tools / Connect-card-only stdio lines updated to 23 tools plus AuthPort. Package id and bin path aligned to dgtl-connector.
 
 Prior binary (not this pass): plugin 0.1.0, 23 free tools, PKCE Desktop OAuth, 48 tests passing, Apache-2.0, privacy live at https://www.dgtlsunrise.com/privacy.
 

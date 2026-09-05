@@ -2,7 +2,7 @@
 
 Actions that require **Noel's** Google / Polar / marketplace login, a form submit, or an approval. Agents write files and run local tests. They do not sign in as Noel, do not submit Google verification, do not create Polar products, and do not spend money.
 
-Package: `dgtl-marketing` 0.1.0. Contact: noel@dgtlsunrise.com.
+Package: `dgtl-connector` 0.1.0. Contact: noel@dgtlsunrise.com.
 
 ---
 
@@ -99,7 +99,7 @@ D2. Publish Worker / container hostname when agent has a deployable artifact (No
 ### Still required for free listing
 E1. Unlisted YouTube Consent A demo (tomorrow).
 E2. Google verification submit for Consent A readonly.
-E3. Flip `dgtlsunrise/dgtl-marketing` public after verification path is in motion; marketplace submit.
+E3. Flip `dgtlsunrise/dgtl-connector` public after verification path is in motion; marketplace submit.
 
 
 ---

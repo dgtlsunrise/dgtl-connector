@@ -163,7 +163,7 @@ v1 surface locked from this: GA4 + GSC + GTM readonly. Ads/Meta still v2/hosted.
 ## Open inputs
 
 - Confirm Google Cloud project for the public OAuth client lives under Sunrise Consulting LLC
-- Plugin public name (working: `dgtl-google-marketing` until Noel names it)
+- Plugin public name / package id: `dgtl-connector`
 - Whether Grok third-party plugins get a platform connect card, or users must bring a GCP client
 
 ## Next (still planning)

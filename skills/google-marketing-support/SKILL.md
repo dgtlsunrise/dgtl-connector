@@ -15,7 +15,7 @@ Fix the plugin problem. Do not run a sales script.
 
 | Signal | Meaning | What to say |
 | --- | --- | --- |
-| No token / `UNAUTHENTICATED` | Host did not inject a token and PKCE store is empty | Set `GOOGLE_ACCESS_TOKEN` or run `dgtl-marketing-mcp auth login`. stdio is Manual — not a Gmail Connect card |
+| No token / `UNAUTHENTICATED` | Host did not inject a token and PKCE store is empty | Set `GOOGLE_ACCESS_TOKEN` or run `dgtl-connector-mcp auth login`. stdio is Manual — not a Gmail Connect card |
 | `REAUTH_REQUIRED` | Revoked/expired | Re-inject a token or PKCE login again; mention Google third-party access |
 | `CONSENT_MISSING` | Unchecked a scope | One consent, three product scopes; re-grant the same Consent A |
 | `ACCESS_NOT_CONFIGURED` | API not Enabled on **OAuth client** project | Published plugin = publisher defect; local harness = enable Admin, Data, Search Console, Tag Manager APIs. GTM-only 403 is usually Tag Manager API |

@@ -1,11 +1,11 @@
-# dgtl-marketing
+# dgtl-connector
 
 Read-only **GA4**, **Search Console**, and **Tag Manager** for Grok Bot, Cursor, and Grok Build. You authorize **your** Google account. Tools run on **your** computer. DGTL Sunrise does not see report bytes.
 
 Publisher: **DGTL Sunrise** (Sunrise Consulting LLC), `noel@dgtlsunrise.com`. Apache-2.0.  
 Homepage: https://www.dgtlsunrise.com/ · Privacy: https://www.dgtlsunrise.com/privacy
 
-Working package id: `dgtl-marketing` (Noel names the public listing). Version **0.1.0**. Marketplace listing copy = **Consent A readonly** only.
+Working package id: `dgtl-connector`. Version **0.1.0**. Marketplace listing copy = **Consent A readonly** only (title/description can still say marketing/Ads for discovery).
 
 ## What it is / is not
 
@@ -21,7 +21,7 @@ There is no Gmail-style Connect card for stdio. Agent Plugins 1.0 and today’s 
 2. **Installed-app PKCE fallback** (documented, advanced): Desktop OAuth client id (`GOOGLE_OAUTH_CLIENT_ID`) plus `GOOGLE_OAUTH_CLIENT_SECRET` in **gitignored** `.env` for `/token` (never git, chat, `mcp.json`, or the binary). Run:
 
    ```bash
-   ./bin/dgtl-marketing-mcp auth login
+   ./bin/dgtl-connector-mcp auth login
    ```
 
    Tokens are written to `PLUGIN_DATA/google-oauth.json` (mode 0600). Refresh tokens are never logged.
@@ -33,10 +33,10 @@ Until Google verifies the OAuth client, it stays in **testing** with an allowlis
 ```bash
 npm install
 npm run build
-./bin/dgtl-marketing-mcp --help
+./bin/dgtl-connector-mcp --help
 ```
 
-The marketplace command is **one token**, plugin-relative: `./bin/dgtl-marketing-mcp`. Not `npx`.
+The marketplace command is **one token**, plugin-relative: `./bin/dgtl-connector-mcp`. Not `npx`.
 
 - Cursor / Agent Plugins: `mcp.json` (generated).
 - Grok Build: `.mcp.json` (same bytes, generated from `src/packaging/mcp.template.json`).

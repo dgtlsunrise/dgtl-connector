@@ -24,15 +24,15 @@ describe("packaging and secrets", () => {
     const b = readFileSync(join(ROOT, ".mcp.json"), "utf8");
     assert.equal(a, b);
     const parsed = JSON.parse(a);
-    const srv = parsed.mcpServers["dgtl-marketing"];
+    const srv = parsed.mcpServers["dgtl-connector"];
     assert.equal(srv.type, "stdio");
-    assert.equal(srv.command, "./bin/dgtl-marketing-mcp");
+    assert.equal(srv.command, "./bin/dgtl-connector-mcp");
     assert.ok(!JSON.stringify(parsed).includes("npx"));
     assert.ok(!JSON.stringify(parsed).toLowerCase().includes("client_secret"));
   });
 
   it("binary --help exits 0", () => {
-    const bin = join(ROOT, "bin/dgtl-marketing-mcp");
+    const bin = join(ROOT, "bin/dgtl-connector-mcp");
     assert.equal(existsSync(bin), true);
     const out = execFileSync(bin, ["--help"], { encoding: "utf8" });
     assert.ok(out.includes("stdio"));
@@ -81,9 +81,13 @@ describe("packaging and secrets", () => {
       assert.ok(TOOLS.some((x) => x.name === t.name), t.name);
     }
     const plugin = JSON.parse(readFileSync(join(ROOT, "plugin.json"), "utf8"));
+    assert.equal(plugin.name, "dgtl-connector");
     assert.equal(plugin.extensions["com.dgtlsunrise"].closedToolCount, 23);
     assert.equal(plugin.license, "Apache-2.0");
     assert.equal(plugin.author.name, "DGTL Sunrise");
+    const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
+    assert.equal(pkg.name, "dgtl-connector");
+    assert.ok(pkg.bin["dgtl-connector-mcp"]);
     for (const name of ["gtm_create_tag", "gtm_update_tag", "gtm_publish_container"]) {
       const g = catalog.gated_tools.find((x: { name: string }) => x.name === name);
       assert.ok(g, name);
@@ -97,6 +101,7 @@ describe("packaging and secrets", () => {
     assert.ok(/stdio/i.test(readme));
     assert.ok(/manual/i.test(readme) || /host-injected/i.test(readme));
     assert.ok(/no Gmail-style Connect card/i.test(readme) || /not a Gmail-style Connect card/i.test(readme));
+    assert.ok(!/npx .*dgtl-connector-mcp/.test(readme));
     assert.ok(!/npx .*dgtl-marketing-mcp/.test(readme));
   });
 });

@@ -42,7 +42,7 @@ export function detectPluginData(pluginRoot: string, env: NodeJS.ProcessEnv = pr
     env.PLUGIN_DATA ||
     env.GROK_PLUGIN_DATA ||
     env.CLAUDE_PLUGIN_DATA ||
-    join(homedir(), ".dgtl-marketing")
+    join(homedir(), ".dgtl-connector")
   );
 }
 

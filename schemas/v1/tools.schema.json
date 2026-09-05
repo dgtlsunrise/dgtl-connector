@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://dgtlsunrise.local/spec/dgtl-google-marketing/v1/tools.schema.json",
-  "title": "dgtl-marketing v1 tool parameters (closed, 23 free tools + gated families)",
+  "$id": "https://dgtlsunrise.local/spec/dgtl-connector/v1/tools.schema.json",
+  "title": "dgtl-connector v1 tool parameters (closed, 23 free tools + gated families)",
   "$comment": "Implementers map each $defs key to an MCP tool inputSchema. Resource IDs are required; never default. dimension_filter is a closed FilterExpression subset.",
   "$defs": {
     "page_size": {

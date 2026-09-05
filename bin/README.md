@@ -1,11 +1,9 @@
-# `bin/dgtl-marketing-mcp`
+# `bin/dgtl-connector-mcp`
 
-Plugin-relative stdio command. Hosts spawn this; they must not use `npx`.
+Plugin-relative stdio entry. Hosts spawn this with `cwd` = plugin root.
 
 ```
-./bin/dgtl-marketing-mcp           # MCP stdio
-./bin/dgtl-marketing-mcp --help    # exits 0
-./bin/dgtl-marketing-mcp auth login
+./bin/dgtl-connector-mcp           # MCP stdio
+./bin/dgtl-connector-mcp --help    # exits 0
+./bin/dgtl-connector-mcp auth login
 ```
-
-Requires `npm run build` so `dist/index.js` exists. Node 20+. No Python `googleapiclient`.

@@ -25,7 +25,7 @@ Synthetic Google-shaped JSON only (`Example Brand`, `sc-domain:example.com`). Se
 
 - Public git, Apache-2.0, author DGTL Sunrise.
 - `plugin.json` `$schema` Agent Plugins 1.0. DGTL fields under `extensions.com.dgtlsunrise`.
-- `mcp.json` / `.mcp.json` generated from one source; command is `./bin/dgtl-marketing-mcp`.
+- `mcp.json` / `.mcp.json` generated from one source; command is `./bin/dgtl-connector-mcp`.
 - Skills do not collect tokens. Support intake: version, host, tool, `error_code`, Google status/reason, resource ID.
 - Gateway (later): allowlist `googleads.googleapis.com` and Meta Graph only; attach developer-token **only** on the server; no payload storage.
 

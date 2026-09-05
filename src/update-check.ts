@@ -2,7 +2,7 @@ import { PLUGIN_VERSION } from "./version.js";
 
 /** Default latest plugin.json. Override with DGTL_PLUGIN_LATEST_URL. */
 export const DEFAULT_PLUGIN_LATEST_URL =
-  "https://raw.githubusercontent.com/dgtlsunrise/dgtl-marketing/main/plugin.json";
+  "https://raw.githubusercontent.com/dgtlsunrise/dgtl-connector/main/plugin.json";
 
 const UPDATE_TIMEOUT_MS = 3_000;
 

@@ -35,7 +35,7 @@ async function readRpc(proc: ReturnType<typeof spawn>, timeoutMs = 15000): Promi
 
 describe("binary MCP initialize + tools/list", () => {
   it("speaks initialize and lists the closed tools", async () => {
-    const bin = join(ROOT, "bin/dgtl-marketing-mcp");
+    const bin = join(ROOT, "bin/dgtl-connector-mcp");
     const proc = spawn(bin, [], {
       cwd: ROOT,
       env: {
@@ -64,7 +64,7 @@ describe("binary MCP initialize + tools/list", () => {
       assert.equal(init.id, 1);
       assert.ok(init.result, JSON.stringify(init));
       const result = init.result as { serverInfo?: { name?: string }; protocolVersion?: string };
-      assert.equal(result.serverInfo?.name, "dgtl-marketing");
+      assert.equal(result.serverInfo?.name, "dgtl-connector");
 
       send(proc, { jsonrpc: "2.0", method: "notifications/initialized" });
       send(proc, { jsonrpc: "2.0", id: 2, method: "tools/list", params: {} });

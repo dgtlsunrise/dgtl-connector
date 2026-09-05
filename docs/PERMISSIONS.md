@@ -96,8 +96,8 @@ Paid Ads/Meta **user** grants use a **separate** Google OAuth client (`adwords`)
 
 | Path | How |
 | --- | --- |
-| Google Ads | `GOOGLE_ADS_ACCESS_TOKEN` or `dgtl-marketing-mcp auth login-ads` → `PLUGIN_DATA/google-oauth-ads.json` (`GOOGLE_OAUTH_ADS_CLIENT_ID`) |
-| Meta | `META_ACCESS_TOKEN` or `dgtl-marketing-mcp auth login-meta --code <grant>` → `POST /v1/meta/exchange` → `PLUGIN_DATA/meta-oauth.json` |
+| Google Ads | `GOOGLE_ADS_ACCESS_TOKEN` or `dgtl-connector-mcp auth login-ads` → `PLUGIN_DATA/google-oauth-ads.json` (`GOOGLE_OAUTH_ADS_CLIENT_ID`) |
+| Meta | `META_ACCESS_TOKEN` or `dgtl-connector-mcp auth login-meta --code <grant>` → `POST /v1/meta/exchange` → `PLUGIN_DATA/meta-oauth.json` |
 | Secrets | Ads developer-token and Meta app secret stay on the Worker. This plugin never ships them. Support never collects Meta tokens. |
 
 Live hops still need `DGTL_LICENSE_JWT` + `DGTL_GATEWAY_URL`. Fail closed until those exist (`LICENSE_REQUIRED` / `GATEWAY_UNAVAILABLE` / `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`).
@@ -115,7 +115,7 @@ When the OAuth client goes **External / In production** with these sensitive sco
 
 ### Brand
 
-- App name consistent with the plugin (DGTL Sunrise / dgtl-google-marketing — final name TBD)
+- App name consistent with the plugin (DGTL Sunrise). Package id `dgtl-connector` is not the consent-screen name.
 - Support email: `noel@dgtlsunrise.com`
 - Authorized domain + homepage + **privacy policy URL** (must exist before this step; not invented in this spec repo)
 - Logo that matches the consent screen
@@ -135,7 +135,7 @@ Plus `openid` and `userinfo.email` as non-sensitive identity.
 
 English, unlisted YouTube, showing:
 
-1. **Manual / PKCE auth** (`dgtl-marketing-mcp auth login` or host-injected token) — **not** a Gmail-style Connect card. Google consent with the **same** three Consent A scopes visible.
+1. **Manual / PKCE auth** (`dgtl-connector-mcp auth login` or host-injected token) — **not** a Gmail-style Connect card. Google consent with the **same** three Consent A scopes visible.
 2. Address bar includes the OAuth **client ID**.
 3. App name on the consent screen.
 4. List GA4 properties → user picks one → `runReport` numbers appear.

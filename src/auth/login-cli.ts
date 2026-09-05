@@ -194,7 +194,7 @@ export async function runAuthLoginMeta(opts: {
   const code = opts.grantCode.trim();
   if (!code) {
     process.stderr.write(
-      "usage: dgtl-marketing-mcp auth login-meta --code <one-time-grant-code>\n" +
+      "usage: dgtl-connector-mcp auth login-meta --code <one-time-grant-code>\n" +
         "Host-injected META_ACCESS_TOKEN also works (no exchange). Support never collects Meta tokens.\n",
     );
     return 1;
@@ -241,19 +241,19 @@ export async function runAuthLoginMeta(opts: {
 }
 
 export function helpText(): string {
-  return `dgtl-marketing-mcp — local stdio MCP for GA4, Search Console, Tag Manager
+  return `dgtl-connector-mcp — local stdio MCP for GA4, Search Console, Tag Manager
 
 USAGE
-  dgtl-marketing-mcp              Start MCP on stdio (hosts spawn this)
-  dgtl-marketing-mcp --help       Show this help and exit 0
-  dgtl-marketing-mcp --version    Print version
-  dgtl-marketing-mcp auth login       Installed-app PKCE (Consent A)
-  dgtl-marketing-mcp auth login-ads   Consent C Ads PKCE (separate client; adwords)
-  dgtl-marketing-mcp auth login-meta --code <grant>  Redeem hosted Meta Login code
-  dgtl-marketing-mcp auth status      Show whether token sources are configured
-  dgtl-marketing-mcp auth logout      Delete PLUGIN_DATA/google-oauth.json (A only)
-  dgtl-marketing-mcp auth logout-ads  Delete PLUGIN_DATA/google-oauth-ads.json
-  dgtl-marketing-mcp auth logout-meta Delete PLUGIN_DATA/meta-oauth.json
+  dgtl-connector-mcp              Start MCP on stdio (hosts spawn this)
+  dgtl-connector-mcp --help       Show this help and exit 0
+  dgtl-connector-mcp --version    Print version
+  dgtl-connector-mcp auth login       Installed-app PKCE (Consent A)
+  dgtl-connector-mcp auth login-ads   Consent C Ads PKCE (separate client; adwords)
+  dgtl-connector-mcp auth login-meta --code <grant>  Redeem hosted Meta Login code
+  dgtl-connector-mcp auth status      Show whether token sources are configured
+  dgtl-connector-mcp auth logout      Delete PLUGIN_DATA/google-oauth.json (A only)
+  dgtl-connector-mcp auth logout-ads  Delete PLUGIN_DATA/google-oauth-ads.json
+  dgtl-connector-mcp auth logout-meta Delete PLUGIN_DATA/meta-oauth.json
 
 AUTH (stdio is Manual — there is no Gmail-style Connect card)
   1. Host-injected: set GOOGLE_ACCESS_TOKEN (and optional GOOGLE_GRANTED_SCOPES)

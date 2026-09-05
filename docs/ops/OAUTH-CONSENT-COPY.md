@@ -1,6 +1,6 @@
 # OAuth consent copy — paste-ready (Google verification)
 
-**App / package:** `dgtl-marketing` 0.1.0  
+**App / package:** `dgtl-connector` 0.1.0  
 **Publisher:** Sunrise Consulting LLC / DGTL Sunrise  
 **OAuth client:** public Desktop (Consent A only). No Ads scopes on this client.
 
@@ -23,7 +23,7 @@ Use these strings on Google Auth Platform → Branding, Audience, Data Access, a
 
 Authorized domain is the **top private domain** only: `dgtlsunrise.com` (no `www`, no path). Homepage and privacy URLs must use that domain. Verify ownership in Search Console for the Google account that owns the Cloud project.
 
-**Do not use:** `dgtl-marketing` or `dgtl-google-marketing` as the consent-screen app name. Those are package / working titles. Google shows the App name to users.
+**Do not use:** `dgtl-connector` or `dgtl-marketing` as the consent-screen app name. Those are package / working titles. Google shows the App name to users.
 
 ---
 

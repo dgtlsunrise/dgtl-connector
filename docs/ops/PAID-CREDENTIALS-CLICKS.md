@@ -2,7 +2,7 @@
 
 Date: 2026-09-04 (PT)  
 Publisher: Sunrise Consulting LLC / DGTL Sunrise  
-Package: `dgtl-marketing` 0.1.0 · Contact: noel@dgtlsunrise.com
+Package: `dgtl-connector` 0.1.0 · Contact: noel@dgtlsunrise.com
 
 **Why this weekend:** Polar org / Pro / webhook is **blocked** (sandbox product + spend stay Noel-gated when Polar unblocks). Run **Track B credential stubs in parallel** so Ads developer-token lead time and Meta app scaffolding are not idle. Agents scaffold code and docs only — they do not create OAuth clients, Ads tokens, Meta apps, or paste secrets.
 
@@ -25,7 +25,7 @@ Consent A project of record: **`dgtl-marketing-oauth-20260903`** (559563115308) 
 
 ## 1. Consent C — Google Desktop OAuth client (Ads user grant)
 
-Separate from Consent A and Consent W. CLI already exists: `dgtl-marketing-mcp auth login-ads` → `PLUGIN_DATA/google-oauth-ads.json` (fail-closed without client id).
+Separate from Consent A and Consent W. CLI already exists: `dgtl-connector-mcp auth login-ads` → `PLUGIN_DATA/google-oauth-ads.json` (fail-closed without client id).
 
 ### Recommended project (OQ 20)
 

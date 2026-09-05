@@ -1,5 +1,5 @@
 {
-  "name": "dgtl-marketing",
+  "name": "dgtl-connector",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "email": "noel@dgtlsunrise.com"
   },
   "bin": {
-    "dgtl-marketing-mcp": "./bin/dgtl-marketing-mcp"
+    "dgtl-connector-mcp": "./bin/dgtl-connector-mcp"
   },
   "engines": {
     "node": ">=20"

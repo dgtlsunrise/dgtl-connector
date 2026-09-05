@@ -71,7 +71,7 @@ plugin/       ship unit
   mcp.json          # Agent Plugins / Cursor
   .mcp.json         # generated copy for Grok Build
   skills/
-  bin/dgtl-marketing-mcp
+  bin/dgtl-connector-mcp
 services/stamp/     NOT in the plugin package
 ```
 
@@ -204,7 +204,7 @@ OAuth readonly sees **everything that Google user can already see**. The plugin 
 
 **Submit free after the 22 tools + skills + fixture CI + Google verification (or testing-mode with honest README).** Do not hold the listing for Ads developer token, Meta App Review, or GBP quota. Paid families ship disabled / `LICENSE_REQUIRED`. SCOPE phase 8 as written waits on the slowest third-party review and is how the repo goes stale.
 
-Public git, OSI license (Apache-2.0), author **DGTL Sunrise**, homepage + **privacy policy URL** (Google and Meta both need it; it does not exist in this repo). Rename **before** first listing. `dgtl-google-marketing` is the wrong name the day Meta is in the paid tier. Working suggestion: `dgtl-marketing` (Noel names it).
+Public git, OSI license (Apache-2.0), author **DGTL Sunrise**, homepage + **privacy policy URL** (Google and Meta both need it; it does not exist in this repo). Rename **before** first listing. `dgtl-google-marketing` is the wrong name the day Meta is in the paid tier. Working suggestion shipped as `dgtl-connector` (GitHub `dgtlsunrise/dgtl-connector`).
 
 xAI catalog: remote source, pinned SHA, brand-scoped keywords (`dgtl`, `ga4`, `search-console`, `gtm` — not generic `api` / `marketing`). Run `validate-catalog.py`. Accept AS-IS / may execute code.
 
@@ -358,7 +358,7 @@ The MCP **compiles** the recipe to GAQL. The model never sends raw GAQL in v1. `
 
 - Apache-2.0. `UNLICENSED` does not ship.
 - `plugin.json` `$schema` Agent Plugins 1.0. Closed top level. DGTL-specific data under `extensions.com.dgtlsunrise`.
-- `bin/dgtl-marketing-mcp` is a real executable (Node entry with vendored deps, or a compiled binary). `command` is **one token**, plugin-relative `./bin/...`.
+- `bin/dgtl-connector-mcp` is a real executable (Node entry with vendored deps, or a compiled binary). `command` is **one token**, plugin-relative `./bin/...`.
 - No `npx` as the marketplace command (network at runtime, supply chain).
 - README sections: what it is, what it is not, which host, how to authorize **on that host**, picker rules, non-bugs, paid, support intake, security (tokens never to DGTL for free tier; Ads/Meta gateway for paid).
 - `SECURITY.md` checklist matching the cloud `MARKETPLACE.md` plus: gateway allowlist, JWT public key pinning, secret scan, no `developer-token` in fixtures.
@@ -402,7 +402,7 @@ Local: structured logs to stderr with `tool`, `error_code`, `api`, `duration_ms`
 
 ### Parallel track N — Noel only (day 1, not code)
 
-1. Product display name (or explicit “ship as `dgtl-marketing`, rename later”).
+1. Product display name (package id is `dgtl-connector`; marketplace title/description can still say marketing/Ads).
 2. GCP project under Sunrise Consulting LLC. OAuth consent External. Enable Analytics Admin, Analytics Data, Search Console, Tag Manager.
 3. Desktop **and** Web OAuth clients (Desktop for PKCE fallback; Web only if a gateway login page needs it). No secrets in git.
 4. Ads API Center: developer token application, permissible use **Reporting**.
@@ -421,7 +421,7 @@ Do not write runtime until that lock file exists. Vendor, don’t paraphrase.
 
 - Agent Plugin skeleton, hello tool, fixture runner, vendored Agent Plugins schemas, secret scan, generated `.mcp.json`.
 - Error envelope module.
-- Proof: `python3 scripts/validate-spec.py` (or the TS equivalent) green; `./bin/dgtl-marketing-mcp` speaks MCP `initialize` + `tools/list`.
+- Proof: `python3 scripts/validate-spec.py` (or the TS equivalent) green; `./bin/dgtl-connector-mcp` speaks MCP `initialize` + `tools/list`.
 
 ### Phase 2 — AuthPort + `google_whoami`
 
@@ -528,6 +528,6 @@ These should not block Phase 0–6.
 - Accept Ads/Meta **credential plane** (Option A) vs drop default paid Ads to “bring your own developer token.”
 - Stripe vs invoice.
 - Whether to list on Cursor while the Google OAuth client is still in testing (honest README vs wait).
-- Display name vs package id if Meta is in-scope (`dgtl-marketing` vs keep google in the id).
+- Display name vs package id if Meta is in-scope (`dgtl-connector` vs keep google in the id).
 
 When Noel says Grok Build go: start at Phase 0 (vendor the 22-tool spec into this repo), not at a blank MCP.

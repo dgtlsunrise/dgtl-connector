@@ -15,14 +15,14 @@ See [TOOLS.md](TOOLS.md). Always include `error_code` and `message`. Include `go
 No access token from the host.
 
 **User-visible:**  
-“Google is not connected. For Cursor and Grok Build stdio, set a host-injected access token (`GOOGLE_ACCESS_TOKEN`) or run `dgtl-marketing-mcp auth login` (installed-app PKCE). There is no Gmail-style Connect card for local stdio MCP.”
+“Google is not connected. For Cursor and Grok Build stdio, set a host-injected access token (`GOOGLE_ACCESS_TOKEN`) or run `dgtl-connector-mcp auth login` (installed-app PKCE). There is no Gmail-style Connect card for local stdio MCP.”
 
 ### `REAUTH_REQUIRED`
 
 Token revoked, expired refresh, or host `connectors_needing_reauth`.
 
 **User-visible:**  
-“Google access expired or was revoked. Reconnect with AuthPort: set a host-injected access token (`GOOGLE_ACCESS_TOKEN`) or run `dgtl-marketing-mcp auth login` again. There is no Gmail-style Connect card for local stdio. You can also revoke this app under Google Account → Third-party access, then reconnect.”
+“Google access expired or was revoked. Reconnect with AuthPort: set a host-injected access token (`GOOGLE_ACCESS_TOKEN`) or run `dgtl-connector-mcp auth login` again. There is no Gmail-style Connect card for local stdio. You can also revoke this app under Google Account → Third-party access, then reconnect.”
 
 ### `CONSENT_MISSING`
 
@@ -131,8 +131,8 @@ Do **not** tell the user to “Reconnect Ads” for this code — that is `ADS_S
 
 License **and** gateway are ok, but the second OAuth (Ads `adwords` / Meta `ads_read`) is not connected. Consent C / Meta tokens never come from Consent A (`GOOGLE_ACCESS_TOKEN`).
 
-- Ads: set `GOOGLE_ADS_ACCESS_TOKEN` or run `dgtl-marketing-mcp auth login-ads` (requires `GOOGLE_OAUTH_ADS_CLIENT_ID` — separate Consent C client; never add `adwords` to Consent A). No developer-token in this plugin.
-- Meta: set `META_ACCESS_TOKEN` or run `dgtl-marketing-mcp auth login-meta --code <grant>` (redeems hosted Login via `POST /v1/meta/exchange`; long-lived token returns **to the plugin**; Worker stores nothing). Support never collects Meta tokens.
+- Ads: set `GOOGLE_ADS_ACCESS_TOKEN` or run `dgtl-connector-mcp auth login-ads` (requires `GOOGLE_OAUTH_ADS_CLIENT_ID` — separate Consent C client; never add `adwords` to Consent A). No developer-token in this plugin.
+- Meta: set `META_ACCESS_TOKEN` or run `dgtl-connector-mcp auth login-meta --code <grant>` (redeems hosted Login via `POST /v1/meta/exchange`; long-lived token returns **to the plugin**; Worker stores nothing). Support never collects Meta tokens.
 
 ### `GOOGLE_UNAVAILABLE`
 

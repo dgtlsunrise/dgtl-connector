@@ -8,7 +8,7 @@ This file is the one-page lock. Do not relitigate it in code review.
 
 ## Names
 
-- Package / plugin id: `dgtl-marketing` (survives a display-name change; Noel names the listing).
+- Package / plugin id: `dgtl-connector` (survives a display-name change; marketplace title/description can still say marketing/Ads).
 - Tool names: **underscore**, family prefix (`ga4_run_report`). Never dotted.
 - Closed free kernel: the **22** tools named in SECOND-OPINION plus **`ga4_list_account_summaries`** (23). Version `0.1.0`.
 
@@ -42,7 +42,7 @@ Commercially free, technically gated (Basic API Access; quota 0 until approved).
 
 ## Packaging
 
-- TypeScript + official MCP SDK + REST `fetch`. One Node bin: `./bin/dgtl-marketing-mcp`. Plugin-relative. **No npx** as the marketplace command. No Python `googleapiclient` runtime.
+- TypeScript + official MCP SDK + REST `fetch`. One Node bin: `./bin/dgtl-connector-mcp`. Plugin-relative. **No npx** as the marketplace command. No Python `googleapiclient` runtime.
 - Dual-emit `mcp.json` (Agent Plugins / Cursor) and `.mcp.json` (Grok Build) from **one** source: `src/packaging/mcp.template.json`.
 - Apache-2.0.
 - Public git; no secrets; no `developer-token` in fixtures.

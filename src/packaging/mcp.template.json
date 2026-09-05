@@ -1,9 +1,9 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
   "mcpServers": {
-    "dgtl-marketing": {
+    "dgtl-connector": {
       "type": "stdio",
-      "command": "./bin/dgtl-marketing-mcp",
+      "command": "./bin/dgtl-connector-mcp",
       "cwd": "${PLUGIN_ROOT}",
       "env": {
         "PLUGIN_DATA": "${PLUGIN_DATA}"

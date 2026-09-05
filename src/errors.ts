@@ -48,9 +48,9 @@ export class ToolError extends Error {
 
 export const MSG = {
   UNAUTHENTICATED:
-    "Google is not connected. For Cursor and Grok Build stdio, set a host-injected access token (GOOGLE_ACCESS_TOKEN) or run `dgtl-marketing-mcp auth login` (installed-app PKCE). There is no Gmail-style Connect card for local stdio MCP.",
+    "Google is not connected. For Cursor and Grok Build stdio, set a host-injected access token (GOOGLE_ACCESS_TOKEN) or run `dgtl-connector-mcp auth login` (installed-app PKCE). There is no Gmail-style Connect card for local stdio MCP.",
   REAUTH_REQUIRED:
-    "Google access expired or was revoked. Re-run host token injection or `dgtl-marketing-mcp auth login`. You can also revoke this app under Google Account → Third-party access, then reconnect.",
+    "Google access expired or was revoked. Re-run host token injection or `dgtl-connector-mcp auth login`. You can also revoke this app under Google Account → Third-party access, then reconnect.",
   RESOURCE_REQUIRED:
     "This tool will not guess a property. Name the GA4 property ID, Search Console site, or GTM account/container/workspace. If you are not sure, ask me to list them.",
   UNSUPPORTED_DIMENSION:
@@ -68,9 +68,9 @@ export const MSG = {
   CONSENT_W_REQUIRED:
     "This write tool needs Consent W (separate OAuth client with edit/publish scopes). It is not part of free Consent A. Do not add write scopes to the Desktop readonly client.",
   ADS_SCOPE_MISSING:
-    "Google Ads is a second OAuth grant (scope adwords). It is not part of the free GA4/GSC/GTM consent. After a valid DGTL license, set GOOGLE_ADS_ACCESS_TOKEN or run `dgtl-marketing-mcp auth login-ads` (separate Consent C client). Never reuse Consent A.",
+    "Google Ads is a second OAuth grant (scope adwords). It is not part of the free GA4/GSC/GTM consent. After a valid DGTL license, set GOOGLE_ADS_ACCESS_TOKEN or run `dgtl-connector-mcp auth login-ads` (separate Consent C client). Never reuse Consent A.",
   META_NOT_CONNECTED:
-    "Meta Ads is a separate OAuth (ads_read). After a valid DGTL license + gateway, set META_ACCESS_TOKEN or run `dgtl-marketing-mcp auth login-meta --code <grant>`. Support never collects Meta tokens; the app secret is never in this plugin.",
+    "Meta Ads is a separate OAuth (ads_read). After a valid DGTL license + gateway, set META_ACCESS_TOKEN or run `dgtl-connector-mcp auth login-meta --code <grant>`. Support never collects Meta tokens; the app secret is never in this plugin.",
   INVALID_ARGUMENT:
     "Google rejected the request (INVALID_ARGUMENT). Check dates (YYYY-MM-DD), GA4 limits (≤9 dimensions, ≤10 metrics), and names from ga4_get_metadata. I will not invent a replacement metric.",
   NOT_FOUND:

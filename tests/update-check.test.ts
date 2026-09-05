@@ -4,9 +4,22 @@ import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 import { MSG } from "../src/errors.js";
 import { PLUGIN_VERSION } from "../src/version.js";
-import { checkPluginUpdate, isNewerVersion } from "../src/update-check.js";
+import {
+  checkPluginUpdate,
+  DEFAULT_PLUGIN_LATEST_URL,
+  isNewerVersion,
+} from "../src/update-check.js";
 import { dispatch } from "../src/tools/dispatch.js";
 import { installNetworkGuard, makeCtx, ROOT, testEnv } from "./helpers.js";
+
+describe("DEFAULT_PLUGIN_LATEST_URL", () => {
+  it("points at GitHub dgtl-connector plugin.json", () => {
+    assert.equal(
+      DEFAULT_PLUGIN_LATEST_URL,
+      "https://raw.githubusercontent.com/dgtlsunrise/dgtl-connector/main/plugin.json",
+    );
+  });
+});
 
 describe("isNewerVersion", () => {
   it("newer latest → true", () => {

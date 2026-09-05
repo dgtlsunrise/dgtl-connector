@@ -1,6 +1,6 @@
 # Product
 
-Working title: **dgtl-google-marketing**. Publisher: **DGTL Sunrise** (Sunrise Consulting LLC). Contact: **noel@dgtlsunrise.com**. Author name on the plugin: **DGTL Sunrise**.
+Package id: **dgtl-connector**. Publisher: **DGTL Sunrise** (Sunrise Consulting LLC). Contact: **noel@dgtlsunrise.com**. Author name on the plugin: **DGTL Sunrise**.
 
 This document is the business spec. Architecture, tools, and marketplace process live in sibling docs.
 
@@ -76,7 +76,7 @@ Ryze (`connector.get-ryze.ai`) is a hosted MCP: Google Ads, Meta, TikTok, GA4, G
 
 We are not a cheaper Ryze.
 
-| | Ryze | dgtl-google-marketing v1 |
+| | Ryze | dgtl-connector v1 |
 | --- | --- | --- |
 | Where tools run | Their host | User's Grok Bot computer |
 | Who holds tokens | Their connector | User's platform connector store |
@@ -105,4 +105,4 @@ The product sentence: **your Google marketing properties, in your agent, with yo
 
 ## Rename
 
-`dgtl-google-marketing` is a working title. If renamed, change `plugin.json` `name`, MCP server key, skill text, and marketplace id together. Do not leave a second plugin id.
+Package / plugin id is `dgtl-connector`. If renamed again, change `plugin.json` `name`, MCP server key, skill text, and marketplace id together. Do not leave a second plugin id.

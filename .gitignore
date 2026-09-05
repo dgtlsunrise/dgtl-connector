@@ -40,4 +40,5 @@ coverage/
 smokes/
 .dgtl-plugin-data/
 .dgtl-plugin-data-test/
+.dgtl-connector/
 .dgtl-marketing/

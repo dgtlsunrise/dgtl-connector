@@ -103,7 +103,7 @@ export class GoogleWriteHttp {
     const headers: Record<string, string> = {
       authorization: `Bearer ${token.accessToken}`,
       accept: "application/json",
-      "user-agent": this.opts.userAgent ?? "dgtl-marketing/0.1.0",
+      "user-agent": this.opts.userAgent ?? "dgtl-connector/0.1.0",
     };
     let body: string | undefined;
     if (req.body !== undefined) {
