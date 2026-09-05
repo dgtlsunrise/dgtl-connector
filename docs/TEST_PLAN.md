@@ -62,7 +62,7 @@ All property names are **synthetic** (`Example Brand`, `properties/111111111`, `
 - `plugin.json` / `mcp.json` JSON parse; required keys present
 - Secret heuristics (see script)
 
-CI (`.github/workflows/ci.yml`) runs this via `npm test`, then `npm audit --omit=dev --audit-level=high` and gitleaks. Run it locally before commit (`npm test`, `npm run secret-scan`).
+CI (`.github/ci.yml.example` → `.github/workflows/ci.yml` when workflow scope is available) runs this via `npm test`, then `npm audit --omit=dev --audit-level=high` and gitleaks. Run it locally before commit (`npm test`, `npm run secret-scan`).
 
 ## Runtime tests (later, not in this revision)
 

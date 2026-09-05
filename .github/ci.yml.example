@@ -1,3 +1,6 @@
+# Copy to .github/workflows/ci.yml once gh/token has workflow scope.
+# OAuth Apps without workflow scope cannot push files under .github/workflows/.
+
 
 # Fixture tests only — do not call googleapis.com, graph.facebook.com, or token endpoints.
 name: CI

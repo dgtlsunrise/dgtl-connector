@@ -23,7 +23,7 @@ Synthetic Google-shaped JSON only (`Example Brand`, `sc-domain:example.com`). Se
 
 ## CI
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on pull requests and pushes to `main`: `npm ci` and the existing test suite (fixtures only), `npm audit --omit=dev --audit-level=high` (fails on high/critical production advisories), and gitleaks (fails on findings). Allowlist an exception in `.gitleaks.toml` only with a one-line comment why. Local: `npm run secret-scan` (gitleaks when installed; otherwise the `validate-spec.py` heuristics). Spec secret heuristics stay in `scripts/validate-spec.py`.
+Live workflow: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (mirrored in [`.github/ci.yml.example`](.github/ci.yml.example)). CI runs on pull requests and pushes to `main`: `npm ci` and the existing test suite (fixtures only), `npm audit --omit=dev --audit-level=high` (fails on high/critical production advisories), gitleaks (fails on findings), and Semgrep SAST (`semgrep/semgrep` image, `p/typescript` + `p/nodejs`, fail on findings). Allowlist an exception in `.gitleaks.toml` only with a one-line comment why. Local: `npm run secret-scan` (gitleaks when installed; otherwise the `validate-spec.py` heuristics). Spec secret heuristics stay in `scripts/validate-spec.py`.
 
 ## Marketplace checklist
 
