@@ -1,0 +1,46 @@
+# Copy to .github/workflows/ci.yml once gh/token has workflow scope.
+# OAuth Apps without workflow scope cannot push files under .github/workflows/.
+
+# Fixture tests only — do not call googleapis.com, graph.facebook.com, or token endpoints.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Production audit
+        run: npm audit --omit=dev --audit-level=high
+
+      # OSS gitleaks CLI (not gitleaks-action): dgtlsunrise org CI needs no GITLEAKS_LICENSE.
+      - name: Secret scan (gitleaks)
+        run: GITLEAKS_INSTALL=1 bash scripts/secret-scan.sh

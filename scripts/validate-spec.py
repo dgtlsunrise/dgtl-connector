@@ -35,6 +35,7 @@ REQUIRED_FILES = [
     "schemas/v1/envelope.schema.json",
     "src/packaging/mcp.template.json",
     "bin/dgtl-connector-mcp",
+    ".github/ci.yml.example",
 ]
 
 SKILLS = [
@@ -67,7 +68,7 @@ SECRET_PATTERNS = [
     (re.compile(r'"refresh_token"\s*:\s*"[^"]+"'), "refresh_token JSON value"),
 ]
 
-SKIP_SECRET_DIRS = {".git", "node_modules", ".venv", "dist"}
+SKIP_SECRET_DIRS = {".git", "node_modules", ".venv", "dist", ".gitleaks-bin"}
 
 NAME_RE = re.compile(r"^(?!.*(?:--|\.\.))[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$")
 
@@ -331,6 +332,33 @@ def check_readme_auth() -> None:
         err("README.md must say stdio is not a Gmail-style Connect card")
 
 
+def check_ci() -> None:
+    rel = ".github/ci.yml.example"
+    path = ROOT / rel
+    if not path.is_file():
+        return
+    text = read(path)
+    for needle in (
+        "npm ci",
+        "npm test",
+        "npm audit --omit=dev",
+        "--audit-level=high",
+        "gitleaks",
+    ):
+        if needle not in text:
+            err(f"{rel}: missing required CI step text {needle!r}")
+    if re.search(
+        r"https?://([a-z0-9.-]+\.)?(googleapis\.com|graph\.facebook\.com|accounts\.google\.com)",
+        text,
+        re.I,
+    ):
+        err(f"{rel}: must not call Google/Meta/token HTTP endpoints")
+    on_pr = "pull_request" in text
+    on_main = "main" in text and ("push" in text)
+    if not on_pr or not on_main:
+        err(f"{rel}: must run on pull_request and push to main")
+
+
 def check_fixtures() -> None:
     required = [
         "fixtures/google/errors/accessNotConfigured.tagmanager.json",
@@ -361,6 +389,7 @@ def main() -> int:
     check_secrets()
     check_support_line()
     check_readme_auth()
+    check_ci()
     check_fixtures()
     if ERRORS:
         print("SPEC INVALID")
