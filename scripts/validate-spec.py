@@ -35,7 +35,7 @@ REQUIRED_FILES = [
     "schemas/v1/envelope.schema.json",
     "src/packaging/mcp.template.json",
     "bin/dgtl-connector-mcp",
-    ".github/workflows/ci.yml",
+    ".github/ci.yml.example",
 ]
 
 SKILLS = [
@@ -333,7 +333,7 @@ def check_readme_auth() -> None:
 
 
 def check_ci() -> None:
-    rel = ".github/workflows/ci.yml"
+    rel = ".github/ci.yml.example"
     path = ROOT / rel
     if not path.is_file():
         return
