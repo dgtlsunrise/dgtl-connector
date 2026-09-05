@@ -37,6 +37,7 @@ agent-tools/
 # Runtime
 *.tsbuildinfo
 coverage/
+.gitleaks-bin/
 smokes/
 .dgtl-plugin-data/
 .dgtl-plugin-data-test/
