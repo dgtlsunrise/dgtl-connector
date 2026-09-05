@@ -107,7 +107,7 @@ Prefer `ok: true` with empty rows. If a skill needs a code for copy:
 Paid Google Ads / Meta tool called without a valid DGTL license JWT.
 
 **User-visible:**  
-“This tool needs a DGTL paid license (Google Ads / Meta Ads). Free GA4, Search Console, and Tag Manager tools still work.”
+“This tool needs DGTL Pro ($19/mo flat, unlimited) for Google Ads / Meta Ads. Free GA4, Search Console, and Tag Manager tools still work. Get Pro at https://www.dgtlsunrise.com/ then paste a license JWT via DGTL_LICENSE_JWT or PLUGIN_DATA/license.jwt — never a Google Ads developer-token.”
 
 Do not ask for a Google Ads developer-token.
 

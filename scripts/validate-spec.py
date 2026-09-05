@@ -46,6 +46,7 @@ SKILLS = [
     "gtm-readonly-limits",
     "google-marketing-support",
     "license-and-reconnect",
+    "pro-upgrade",
     "gsc-vs-ads-keywords",
     "ga4-vs-ads-conversions",
 ]

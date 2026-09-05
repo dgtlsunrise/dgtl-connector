@@ -403,7 +403,7 @@ This is what you cite for “what is on the site.”
 | Params | none |
 | Idempotent | yes |
 
-**Returns (no tokens / no JWT):** `ok`, `features`, `exp`, `sub`, `jti`, `reason`, `plugin_version`, `host` (when known), `gateway` (`reachable` from health probe when URL set; `false` + `note` if unset/down). Never the JWT string.
+**Returns (no tokens / no JWT):** `ok`, `features`, `exp`, `sub`, `jti`, `reason`, `plugin_version`, `latest_version`, `update_available`, optional `update_hint`, `host` (when known), `gateway` (`reachable` from health probe when URL set; `false` + `note` if unset/down). Latest-version probe is soft-fail (skip when `DGTL_SKIP_UPDATE_CHECK` is `1`/`true`; never throws offline). Never the JWT string.
 
 ---
 

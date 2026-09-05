@@ -58,7 +58,7 @@ export const MSG = {
   UNSUPPORTED_OPERATION:
     "v1 is read-only. I cannot publish Tag Manager containers, create tags, submit sitemaps, request indexing, or create GA4–Search Console links (analytics.readonly cannot create those links). Use the Google UI.",
   LICENSE_REQUIRED:
-    "This tool needs a DGTL paid license (Google Ads / Meta Ads). Free GA4, Search Console, and Tag Manager tools still work. Paste a license JWT via DGTL_LICENSE_JWT or PLUGIN_DATA/license.jwt — never a Google Ads developer-token.",
+    "This tool needs DGTL Pro ($19/mo flat, unlimited) for Google Ads / Meta Ads. Free GA4, Search Console, and Tag Manager tools still work. Get Pro at https://www.dgtlsunrise.com/ then paste a license JWT via DGTL_LICENSE_JWT or PLUGIN_DATA/license.jwt — never a Google Ads developer-token.",
   GATEWAY_UNAVAILABLE:
     "The DGTL Ads/Meta gateway is not reachable. Set DGTL_GATEWAY_URL to a live Worker, or wait until the hosted gateway is up. Free GA4, Search Console, and Tag Manager tools still work. This is not a missing Ads OAuth reconnect.",
   GBP_NOT_ENABLED:

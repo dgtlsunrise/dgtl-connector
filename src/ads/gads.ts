@@ -3,6 +3,7 @@ import { failEnvelope, okEnvelope, type Envelope } from "../envelope.js";
 import { MSG } from "../errors.js";
 import { probeGatewayReachable, postGateway } from "../gateway/client.js";
 import { hasFeature } from "../license/verify.js";
+import { checkPluginUpdate } from "../update-check.js";
 import { PLUGIN_VERSION, detectHost } from "../version.js";
 import { SCOPE } from "../google/scopes.js";
 
@@ -63,6 +64,11 @@ export async function gadsDisabled(
 
 export async function licenseStatus(ctx: AppContext): Promise<Envelope> {
   const gateway = await probeGatewayReachable(ctx);
+  const update = await checkPluginUpdate({
+    env: ctx.env,
+    fetchImpl: ctx.fetchImpl,
+    currentVersion: PLUGIN_VERSION,
+  });
   return okEnvelope("license_status", {
     data: {
       ok: ctx.license.ok,
@@ -71,7 +77,10 @@ export async function licenseStatus(ctx: AppContext): Promise<Envelope> {
       sub: ctx.license.sub ?? null,
       jti: ctx.license.jti ?? null,
       reason: ctx.license.reason ?? null,
-      plugin_version: PLUGIN_VERSION,
+      plugin_version: update.plugin_version,
+      latest_version: update.latest_version,
+      update_available: update.update_available,
+      ...(update.update_hint ? { update_hint: update.update_hint } : {}),
       host: detectHost(ctx.env),
       gateway: {
         reachable: gateway.reachable,

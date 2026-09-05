@@ -9,7 +9,7 @@ description: Map LICENSE_REQUIRED, GATEWAY_UNAVAILABLE, REAUTH_REQUIRED, CONSENT
 
 | Code | Meaning | What to do |
 | --- | --- | --- |
-| `LICENSE_REQUIRED` | No/expired/invalid DGTL license JWT | Free tools still work. Paid Ads/Meta need a JWT (`DGTL_LICENSE_JWT`). Do not ask for a Google Ads developer-token. |
+| `LICENSE_REQUIRED` | No/expired/invalid DGTL license JWT | Free tools still work. Pro is $19/mo flat unlimited (hosted Ads/Meta). CTA: https://www.dgtlsunrise.com/. Paste a JWT (`DGTL_LICENSE_JWT` or `PLUGIN_DATA/license.jwt`). Do not ask for a Google Ads developer-token. See `pro-upgrade`. |
 | `GATEWAY_UNAVAILABLE` | License ok, but `DGTL_GATEWAY_URL` unset / Worker down / paused | Set or fix the gateway URL. **Do not** tell the user to reconnect Ads. Free tools still work. |
 | `REAUTH_REQUIRED` | Google token expired or revoked | Host-injected token refresh, or `dgtl-marketing-mcp auth login` (PKCE / AuthPort). Not a Gmail Connect card on stdio. |
 | `CONSENT_MISSING` | A product scope was unchecked | Same Consent A (GA4+GSC+GTM). Do not start a second product login. |

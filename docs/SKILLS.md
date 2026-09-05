@@ -2,7 +2,7 @@
 
 Skills are Agent Skills (`skills/<name>/SKILL.md`). They are how the plugin behaves in conversation. Tools are dumb and typed; skills carry the product judgment.
 
-This index is closed for v1 spec. **10 skills.** Each directory below must exist.
+This index is closed for v1 spec. **11 skills.** Each directory below must exist.
 
 | Skill | Directory | Job |
 | --- | --- | --- |
@@ -14,6 +14,7 @@ This index is closed for v1 spec. **10 skills.** Each directory below must exist
 | GTM readonly limits | `skills/gtm-readonly-limits/` | Audit live vs workspace. Consent W gates for write/publish. |
 | Google marketing support | `skills/google-marketing-support/` | Diagnose OAuth / empty / quota / API-not-enabled. One optional DGTL line after a real answer. |
 | License and reconnect | `skills/license-and-reconnect/` | Map `LICENSE_REQUIRED` / `REAUTH_REQUIRED` / `CONSENT_MISSING`. |
+| Pro upgrade | `skills/pro-upgrade/` | Ads / Meta / sGTM unlock at $19/mo flat. No nag on normal GA4. |
 | GSC vs Ads keywords | `skills/gsc-vs-ads-keywords/` | Join only on two named IDs. No default client. |
 | GA4 vs Ads conversions | `skills/ga4-vs-ads-conversions/` | Two numbers, two definitions, no winner. |
 
@@ -24,7 +25,7 @@ This index is closed for v1 spec. **10 skills.** Each directory below must exist
 3. Cite the resource ID in the answer (GA4 `properties/…`, GSC site URL, GTM `GTM-…` / container id).
 4. If a tool was not called, do not fabricate its rows.
 5. Write/publish requests: **Consent W gates** — if writes are flagged off or Consent W is absent, refuse (`WRITE_NOT_ENABLED` / `CONSENT_W_REQUIRED`) and point at Google UI or the separate write client. Do **not** eternally claim “there is no publish tool” once stubs exist; do **not** invent confirm phrases or publish on Consent A.
-6. Support pitches: **only** the support skill, **only** after a real answer, **only** the approved sentence in [SUPPORT_AND_CLIENTS.md](SUPPORT_AND_CLIENTS.md). Other skills: **zero** sales lines.
+6. Support pitches: **only** the support skill, **only** after a real answer, **only** the approved sentence in [SUPPORT_AND_CLIENTS.md](SUPPORT_AND_CLIENTS.md). Pro unlock ($19/mo): **only** `pro-upgrade`, and only on Ads / Meta / sGTM / `LICENSE_REQUIRED` / `GATEWAY_UNAVAILABLE` — never on a normal GA4 answer. Other skills: **zero** sales lines.
 7. Never ask the user to paste refresh tokens, `client_secret`, or `token.json`.
 
 ## Failure modes these skills exist to catch
@@ -41,6 +42,7 @@ This index is closed for v1 spec. **10 skills.** Each directory below must exist
 | “What’s actually on production?” | `gtm-readonly-limits` → live version, not workspace |
 | Auth cancelled / PKCE failed; GTM 403 API not enabled; empty property | `google-marketing-support` |
 | Quota / 429 | `google-marketing-support` |
+| Ads / Meta / sGTM unlock, `LICENSE_REQUIRED`, `GATEWAY_UNAVAILABLE` | `pro-upgrade` (+ `license-and-reconnect`) |
 
 ## Skill ↔ tool map
 
@@ -53,6 +55,7 @@ This index is closed for v1 spec. **10 skills.** Each directory below must exist
 | gsc-vs-ga4-search | `gsc_query_search_analytics`, `gsc_list_sites`, `ga4_run_report` only for landing-page **sessions** | `ga4_run_report` with `searchQuery` |
 | gtm-readonly-limits | All readonly `gtm_*` | Live mutate without Consent W + user confirm; inventing confirm phrases |
 | google-marketing-support | `google_whoami` first, then the failing family | Token collection |
+| pro-upgrade | `license_status` when explaining unlock | Pitching Pro after a normal GA4/GSC/web GTM answer |
 
 ## Frontmatter
 
