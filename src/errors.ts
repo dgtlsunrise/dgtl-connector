@@ -63,6 +63,10 @@ export const MSG = {
     "This tool needs DGTL Pro ($19/mo flat, unlimited) for Google Ads / Meta Ads. Free GA4, Search Console, and Tag Manager tools still work. Get Pro at https://www.dgtlsunrise.com/ then paste a license JWT via DGTL_LICENSE_JWT or PLUGIN_DATA/license.jwt — never a Google Ads developer-token.",
   GATEWAY_UNAVAILABLE:
     "The DGTL Ads/Meta gateway is not reachable. Set DGTL_GATEWAY_URL to a live Worker, or wait until the hosted gateway is up. Free GA4, Search Console, and Tag Manager tools still work. This is not a missing Ads OAuth reconnect.",
+  FEEDBACK_GATEWAY_UNAVAILABLE:
+    "The DGTL feedback endpoint is not configured. Set DGTL_FEEDBACK_URL or DGTL_GATEWAY_URL to the hosted stamp gateway (POST /v1/feedback). Destination mailbox is support@dgtlsunrise.com. Do not email tokens. Free GA4, Search Console, and Tag Manager tools still work.",
+  FEEDBACK_CONFIRM_REQUIRED:
+    "feedback_send requires confirm: true after the user approves the draft from feedback_prepare. Do not send without that approval.",
   GBP_NOT_ENABLED:
     "Google Business Profile tools are flagged off until DGTL's GCP project has non-zero GBP API quota (Basic API Access). They are not on the free GA4/GSC/GTM consent screen. Consent B (business.manage) is a separate grant.",
   WRITE_NOT_ENABLED:

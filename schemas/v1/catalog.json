@@ -135,6 +135,8 @@
     { "name": "gads_campaign_performance", "group": "gads", "fail": "LICENSE_REQUIRED" },
     { "name": "license_status", "group": "license", "fail": null },
     { "name": "support_packet", "group": "license", "fail": null },
+    { "name": "feedback_prepare", "group": "license", "fail": null },
+    { "name": "feedback_send", "group": "license", "fail": null },
     { "name": "meta_list_ad_accounts", "group": "meta", "fail": "LICENSE_REQUIRED" },
     { "name": "meta_list_campaigns", "group": "meta", "fail": "LICENSE_REQUIRED" },
     { "name": "meta_list_adsets", "group": "meta", "fail": "LICENSE_REQUIRED" },

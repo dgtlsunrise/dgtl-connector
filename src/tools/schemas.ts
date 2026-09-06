@@ -15,6 +15,31 @@ export const supportPacket = z
   })
   .strict();
 
+export const feedbackPrepare = z
+  .object({
+    message: z.string().min(1),
+    reply_to: z.string().min(3).max(254),
+    kind: z.enum(["bug", "feature", "other"]).optional(),
+    last_tool: z.string().max(80).optional(),
+    error_code: z.string().max(64).optional(),
+    resource_id: z.string().max(256).optional(),
+  })
+  .strict();
+
+export const feedbackSend = z
+  .object({
+    /** Exact true after the user approves the draft. Missing/false refuses send. */
+    confirm: z.literal(true),
+    draft_id: z.string().min(1).max(64).optional(),
+    message: z.string().min(1).optional(),
+    reply_to: z.string().min(3).max(254).optional(),
+    kind: z.enum(["bug", "feature", "other"]).optional(),
+    last_tool: z.string().max(80).optional(),
+    error_code: z.string().max(64).optional(),
+    resource_id: z.string().max(256).optional(),
+  })
+  .strict();
+
 export const pageInput = z.object({ page_size: pageSize, page_token: pageToken }).strict();
 
 export const accountPage = z

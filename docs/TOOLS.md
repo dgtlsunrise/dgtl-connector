@@ -409,7 +409,7 @@ This is what you cite for “what is on the site.”
 
 ### `support_packet`
 
-**Why:** Support intake without asking for tokens. Local only — no Google call.
+**Why:** Support intake without asking for tokens. Local only — no Google call. Gated diagnostic (not one of the 23 Consent A tools).
 
 | | |
 | --- | --- |
@@ -419,6 +419,33 @@ This is what you cite for “what is on the site.”
 | Idempotent | yes |
 
 **Returns (never tokens / never JWT):** `plugin_version`, `host` (when known), echoed `last_tool` / `error_code` / `resource_id` when they are safe identifiers. Token-shaped strings are dropped.
+
+### `feedback_prepare`
+
+**Why:** Approve-before-send plugin feedback. Builds a draft from `support_packet` fields plus the user’s message. Does **not** send.
+
+| | |
+| --- | --- |
+| Google | none |
+| Scope | none |
+| Params | `message` (required), `reply_to` (required email), optional `kind` (`bug` \| `feature` \| `other`), optional `last_tool` / `error_code` / `resource_id` |
+| Idempotent | yes |
+
+**Returns:** `draft_text`, short `draft_id` (hash the send step must echo), `sent: false`. Destination mailbox is always `support@dgtlsunrise.com`. Token-shaped strings are stripped; a message that is only secrets is refused.
+
+### `feedback_send`
+
+**Why:** POST an approved draft to the hosted feedback endpoint. Requires exact `confirm: true` and the `draft_id` (or the full draft fields).
+
+| | |
+| --- | --- |
+| Google | none |
+| Scope | none |
+| Endpoint | `POST ${DGTL_FEEDBACK_URL or DGTL_GATEWAY_URL}/v1/feedback` |
+| Params | `confirm: true` (required), `draft_id` and/or the prepare fields |
+| Idempotent | no |
+
+JSON body includes `to` (`support@dgtlsunrise.com`), `reply_to`, `kind`, `message`, `draft_id`, `draft_text`, and the support-packet fields. No Authorization header, no Google tokens, no license JWT. Unset gateway → `GATEWAY_UNAVAILABLE` pointing at `DGTL_FEEDBACK_URL` / `DGTL_GATEWAY_URL`. Missing `confirm: true` → `INVALID_ARGUMENT` (no HTTP).
 
 ---
 
