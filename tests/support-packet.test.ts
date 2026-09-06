@@ -59,8 +59,8 @@ describe("support_packet", () => {
   it("strips token-shaped last_tool / resource_id / error_code", async () => {
     const ctx = makeCtx();
     const env = await dispatch(ctx, "support_packet", {
-      last_tool: "ya29.this-is-an-access-token",
-      error_code: "Bearer abc",
+      last_tool: "Bearer should-not-echo",
+      error_code: "developer-token",
       resource_id: "eyJhbGciOiJFRERTQSJ9.payload.sig",
     });
     assert.equal(env.ok, true);
@@ -73,7 +73,8 @@ describe("support_packet", () => {
     assert.equal(data.error_code, null);
     assert.equal(data.resource_id, null);
     const blob = JSON.stringify(env);
-    assert.ok(!blob.includes("ya29."));
+    assert.ok(!blob.includes("Bearer should-not-echo"));
+    assert.ok(!blob.includes("developer-token"));
     assert.ok(!blob.includes("eyJhbGciOiJFRERTQSJ9"));
   });
 });

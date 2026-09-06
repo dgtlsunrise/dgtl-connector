@@ -16,7 +16,7 @@ describe("doctor CLI (no secrets)", () => {
   it("reports node, package, plugin versions and dist presence; never prints env values", () => {
     const dir = mkdtempSync(join(tmpdir(), "dgtl-doctor-"));
     try {
-      const secret = "ya29.this-must-never-appear-in-doctor-output";
+      const secret = "host-injected-access-token-must-never-appear";
       const report = collectDoctor({
         pluginRoot: ROOT,
         pluginDataDir: dir,
@@ -40,7 +40,7 @@ describe("doctor CLI (no secrets)", () => {
       assert.ok(text.includes("GOOGLE_ACCESS_TOKEN"));
       assert.ok(!text.includes(secret));
       assert.ok(!text.includes("public-client.apps.googleusercontent.com"));
-      assert.ok(!/ya29\./.test(text));
+      assert.ok(!text.includes("host-injected-access-token-must-never-appear"));
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -67,7 +67,7 @@ describe("doctor CLI (no secrets)", () => {
     try {
       writeFileSync(
         join(dir, "google-oauth.json"),
-        JSON.stringify({ access_token: "must-not-be-printed-token-value", refresh_token: "1//not-logged" }),
+        JSON.stringify({ access_token: "must-not-be-printed-token-value", refresh_token: "refresh-not-logged" }),
       );
       const report = collectDoctor({
         pluginRoot: ROOT,
@@ -80,7 +80,7 @@ describe("doctor CLI (no secrets)", () => {
       assert.ok(!report.critical.includes("no_auth"));
       const text = formatDoctorReport(report);
       assert.ok(!text.includes("must-not-be-printed-token-value"));
-      assert.ok(!text.includes("1//not-logged"));
+      assert.ok(!text.includes("refresh-not-logged"));
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
