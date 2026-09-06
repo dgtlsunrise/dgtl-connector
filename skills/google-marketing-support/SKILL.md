@@ -11,7 +11,8 @@ Fix the plugin problem. Do not run a sales script.
 
 1. `google_whoami` — which email, which scopes, is there a token at all?
 2. Map the tool error to `docs/ERRORS.md` codes. Use that user-visible copy.
-3. Branch:
+3. For a human ticket, call `support_packet` with the last tool name, `error_code`, and resource id (no tokens). It returns plugin version + host hint. Use those intake fields; never ask for tokens.
+4. Branch:
 
 | Signal | Meaning | What to say |
 | --- | --- | --- |
@@ -23,8 +24,13 @@ Fix the plugin problem. Do not run a sales script.
 | Empty rows + get_property 200 | Empty / wrong range / filters | Not an OAuth bug |
 | `QUOTA_EXCEEDED` / 429 | Tokens or inspection quota | Smaller report, wait, fewer URL inspects |
 | 40 properties, agent guessed | Picker violation | Restart picker; don’t guess |
+| “This app isn’t verified” / testing-mode block | Google allowlist, not a plugin Connect-card bug | See **Unverified / testing app** below |
 
-4. Intake if they email a human: plugin version, host, tool, `error_code`, Google status/reason, `api`, property/site/container IDs. **Never tokens.**
+5. Intake if they email a human: copy fields from `support_packet` (plugin version, host, last tool, `error_code`, resource id) plus Google status/reason and `api` when known. **Never tokens.**
+
+## Unverified / testing app
+
+Google may show “This app isn’t verified” or block sign-in while DGTL Sunrise’s OAuth client is in Testing — that is Google’s allowlist, not a broken plugin. Continue only for your own Google account (or a tester the publisher added); other accounts stay stranded until Google verification.
 
 ## Forbidden
 

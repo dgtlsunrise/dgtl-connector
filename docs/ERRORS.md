@@ -97,7 +97,7 @@ Data API property tokens, GSC daily quotas, URL Inspection limits, GTM quota, 42
 
 ### `EMPTY_RESULT` (optional, success preferred)
 
-Prefer `ok: true` with empty rows. If a skill needs a code for copy:
+Prefer `ok: true` with empty rows and a short success `hint` (“No rows is not an auth failure; check date range, filters, and property ID.”). If a skill needs a code for copy:
 
 **User-visible:**  
 “The request succeeded and returned no rows. That is not a failed login. Typical causes: date range with no data, a newly created property, filters that match nothing, GSC `data_state=final` while data is still processing, or the wrong property among many. Confirm the ID and timezone (`ga4_get_property`).”
@@ -142,6 +142,12 @@ License **and** gateway are ok, but the second OAuth (Ads `adwords` / Meta `ads_
 “Google’s API returned a server error. Retry once. If it keeps failing, it is on Google’s side, not your property picker.”
 
 ---
+
+### Unverified / testing-mode Google app
+
+Google may show “This app isn’t verified” or block sign-in while DGTL Sunrise’s OAuth client is in Testing — that is Google’s allowlist, not a broken plugin. Continue only for your own Google account (or a tester the publisher added); other accounts stay stranded until Google verification.
+
+This is **not** `UNAUTHENTICATED` from a missing token and **not** a Gmail-style Connect card failure. Marketplace listing while the client is still Testing will strand strangers — see [MARKETPLACE.md](MARKETPLACE.md).
 
 ## Non-bugs (do not “fix” these in code)
 

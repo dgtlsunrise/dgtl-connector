@@ -16,7 +16,7 @@ description: Search queries, keywords, impressions, CTR, and average position li
 1. Pick exact `site_url` via `gsc_list_sites` (`select-google-property`).
 2. `gsc_query_search_analytics` with `dimensions: ["query"]` (add `page`, `country`, `device`, `date` as asked).
 3. Use `data_state: "final"` unless they want recent incomplete data (`all`).
-4. Header: site URL, date range, search_type (default `web`).
+4. Header (required): exact `site_url`, date range, `search_type` (default `web`), and `data_state`. GSC daily dates are **not** the GA4 property timezone — say that when comparing to GA4. Do not emit query rows before this header.
 
 ## Procedure for “organic landing pages” in GA4
 

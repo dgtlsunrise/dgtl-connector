@@ -46,6 +46,8 @@ Failure:
 
 `message` is user-visible. `hint` is user-visible. Neither contains tokens.
 
+Success envelopes may include `hint` when a list/report is **ok with zero rows** (empty is not `UNAUTHENTICATED`). Typical copy: “No rows is not an auth failure; check date range, filters, and property ID.”
+
 ---
 
 ## Identity (1)
@@ -189,7 +191,7 @@ The only report tool. Not batch, not realtime, not funnel, not pivot.
 
 Other unknown names: send to Google; map `INVALID_ARGUMENT` and hint `ga4_get_metadata`.
 
-**Empty rows:** `ok: true`, `row_count: 0`. This is **not** `NOT_FOUND`. Skills distinguish empty property vs wrong ID (wrong ID is 403/404 from get_property).
+**Empty rows:** `ok: true`, `row_count: 0`, plus a short `hint` that empty is not an auth failure. This is **not** `NOT_FOUND`. Skills distinguish empty property vs wrong ID (wrong ID is 403/404 from get_property).
 
 **Does not exist:** `searchQuery` in GA4. Documented non-bug.
 
@@ -404,6 +406,19 @@ This is what you cite for “what is on the site.”
 | Idempotent | yes |
 
 **Returns (no tokens / no JWT):** `ok`, `features`, `exp`, `sub`, `jti`, `reason`, `plugin_version`, `latest_version`, `update_available`, optional `update_hint`, `host` (when known), `gateway` (`reachable` from health probe when URL set; `false` + `note` if unset/down). Latest-version probe is soft-fail (skip when `DGTL_SKIP_UPDATE_CHECK` is `1`/`true`; never throws offline). Never the JWT string.
+
+### `support_packet`
+
+**Why:** Support intake without asking for tokens. Local only — no Google call.
+
+| | |
+| --- | --- |
+| Google | none |
+| Scope | none |
+| Params | optional `last_tool`, `error_code`, `resource_id` |
+| Idempotent | yes |
+
+**Returns (never tokens / never JWT):** `plugin_version`, `host` (when known), echoed `last_tool` / `error_code` / `resource_id` when they are safe identifiers. Token-shaped strings are dropped.
 
 ---
 

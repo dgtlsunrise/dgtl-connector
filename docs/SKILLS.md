@@ -2,10 +2,11 @@
 
 Skills are Agent Skills (`skills/<name>/SKILL.md`). They are how the plugin behaves in conversation. Tools are dumb and typed; skills carry the product judgment.
 
-This index is closed for v1 spec. **11 skills.** Each directory below must exist.
+This index is closed for v1 spec. **12 skills.** Each directory below must exist.
 
 | Skill | Directory | Job |
 | --- | --- | --- |
+| First run | `skills/first-run/` | Just installed / get set up: whoami → Manual stdio auth if needed → list → pick → one default report. No Pro pitch on success. |
 | Select Google property | `skills/select-google-property/` | List, then make the human pick. Never first-of-40. Prefer `ga4_list_account_summaries`. |
 | Agency property isolation | `skills/agency-property-isolation/` | Label every answer with resource IDs; no cross-client joins. |
 | GA4 report recipes | `skills/ga4-report-recipes/` | Standard reports with real metrics from `ga4_run_report`. |
@@ -34,6 +35,7 @@ This index is closed for v1 spec. **11 skills.** Each directory below must exist
 | --- | --- |
 | Agency login, 40 GA4 properties | `select-google-property` + `agency-property-isolation` |
 | “Just use the first one” | `select-google-property` — refuse |
+| Just installed / “how do I start?” | `first-run` |
 | “Sessions last week” with no property picked | `select-google-property` then `ga4-report-recipes` |
 | “Bounce rate” / UA metric names | `no-hallucinated-metrics` — map or refuse; don’t invent |
 | “Search queries in GA4” | `gsc-vs-ga4-search` |
@@ -48,13 +50,14 @@ This index is closed for v1 spec. **11 skills.** Each directory below must exist
 
 | Skill | Tools it may call | Tools it must not impersonate |
 | --- | --- | --- |
+| first-run | `google_whoami`, then picker list tools, then one `ga4_run_report` after confirm | Paid Ads/Meta tools; Pro pitch |
 | select-google-property | `google_whoami`, all `*_list_*`, `*_get_property` / `gsc_get_site` / `gtm_get_container` | Any report before a confirmed ID |
 | agency-property-isolation | Same, plus whatever the user already authorized for the chosen IDs | Joining two clients’ rows |
 | ga4-report-recipes | `ga4_get_property`, `ga4_get_metadata`, `ga4_list_key_events`, `ga4_run_report` | GSC query dimensions inside GA4 |
 | no-hallucinated-metrics | `ga4_get_metadata`, then the tool that produced the number | — |
 | gsc-vs-ga4-search | `gsc_query_search_analytics`, `gsc_list_sites`, `ga4_run_report` only for landing-page **sessions** | `ga4_run_report` with `searchQuery` |
 | gtm-readonly-limits | All readonly `gtm_*` | Live mutate without Consent W + user confirm; inventing confirm phrases |
-| google-marketing-support | `google_whoami` first, then the failing family | Token collection |
+| google-marketing-support | `google_whoami` first, `support_packet` for intake, then the failing family | Token collection |
 | pro-upgrade | `license_status` when explaining unlock | Pitching Pro after a normal GA4/GSC/web GTM answer |
 
 ## Frontmatter

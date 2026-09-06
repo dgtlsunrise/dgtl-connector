@@ -28,7 +28,7 @@ Do not paraphrase into “jump on a call,” “limited slots,” or pricing. Do
 
 ## Intake fields
 
-Collect **only** these. A mail template or issue form is enough. This is diagnostics, not a CRM bait form.
+The agent should call `support_packet` (plugin version, host, last tool, `error_code`, resource id) instead of asking the user to assemble this. Collect **only** these. A mail template or issue form is enough. This is diagnostics, not a CRM bait form.
 
 | Field | Required | Why |
 | --- | --- | --- |

@@ -140,6 +140,7 @@ describe("session proofs", () => {
     const env = await dispatch(ctx, "ga4_run_report", reportArgs());
     assert.equal(env.ok, true);
     assert.equal(env.page?.row_count, 0);
+    assert.ok(env.hint?.includes("not an auth failure"));
   });
 
   it("oversize GTM tag list truncates", async () => {

@@ -30,6 +30,7 @@ describe("PR-10 auth login-ads / login-meta --code", () => {
     assert.ok(h.includes("never ships a developer-token"));
     assert.ok(h.includes("Do not add adwords to Consent A"));
     assert.ok(h.includes("Support never collects Meta tokens"));
+    assert.ok(h.includes("doctor"));
   });
 
   it("Consent C auth URL is adwords only — never merged into Consent A URL", () => {

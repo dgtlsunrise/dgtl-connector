@@ -7,9 +7,19 @@ description: Standard GA4 reports (traffic, channels, landing pages, events, key
 
 Run **typed** `ga4_run_report` after a confirmed `property_id`. Cap `limit` at 50 unless they ask for more (max 1000).
 
+## Answer header (required)
+
+Every recipe answer **must** start with a one-line header that states:
+
+1. Canonical `property_id` (`properties/…`)
+2. Property **timezone** from `ga4_get_property` (do not guess)
+3. **Date range** actually sent to `ga4_run_report` (the `date_ranges` values)
+
+Example shape: `properties/123456789 · America/Los_Angeles · 2026-08-09–2026-09-05`. Include currency when Google returned it. Do not emit numbers before this header.
+
 ## Preconditions
 
-1. Picker confirmed `property_id`. Call `ga4_get_property` and put **timezone + currency** in the header.
+1. Picker confirmed `property_id`. Call `ga4_get_property`. Timezone + date range go in the header (above).
 2. Unfamiliar metric/dimension → `ga4_get_metadata` first. If it is not in the catalog, refuse (`no-hallucinated-metrics`).
 3. Key events / conversions → `ga4_list_key_events` so you don’t assume `purchase` exists.
 

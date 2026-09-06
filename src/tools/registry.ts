@@ -9,6 +9,7 @@ import * as gtmWrite from "../google/gtm-write.js";
 import { googleWhoami } from "../google/whoami.js";
 import { gadsDisabled, licenseStatus } from "../ads/gads.js";
 import { metaDisabled } from "../meta/meta.js";
+import { supportPacket } from "../support/packet.js";
 import * as S from "./schemas.js";
 
 export type ToolFamily = "identity" | "ga4" | "gsc" | "gtm" | "gtm_write" | "gbp" | "gads" | "meta" | "license";
@@ -424,6 +425,17 @@ export const TOOLS: ToolSpec[] = [
     inputSchema: S.emptyInput,
     annotations: ANN_RO,
     handler: async (ctx) => licenseStatus(ctx),
+  },
+  {
+    name: "support_packet",
+    group: "license",
+    family: "license",
+    title: "Support packet",
+    description:
+      "Local support intake: plugin version, host hint, optional last tool / error_code / resource id. Never tokens. No Google call.",
+    inputSchema: S.supportPacket,
+    annotations: ANN_RO,
+    handler: (ctx, args) => supportPacket(ctx, args),
   },
   // Paid Meta
   {

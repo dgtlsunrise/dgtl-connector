@@ -5,10 +5,15 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = join(root, "dist", "index.js");
+const argv = process.argv.slice(2);
+const wantDoctor = argv[0] === "doctor" || (argv[0] === "auth" && argv[1] === "doctor");
 if (!existsSync(dist)) {
   process.stderr.write(
     "dgtl-connector-mcp: dist/index.js missing. Run `npm run build` in the plugin directory.\n",
   );
+  if (wantDoctor) {
+    process.stderr.write("doctor: dist MISSING (critical). npm run doctor still prints the full checklist via tsx.\n");
+  }
   process.exit(1);
 }
 await import(pathToFileURL(dist).href);
