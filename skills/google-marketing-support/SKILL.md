@@ -27,6 +27,7 @@ Fix the plugin problem. Do not run a sales script.
 | “This app isn’t verified” / testing-mode block | Google allowlist, not a plugin Connect-card bug | See **Unverified / testing app** below |
 
 5. Intake if they email a human: copy fields from `support_packet` (plugin version, host, last tool, `error_code`, resource id) plus Google status/reason and `api` when known. **Never tokens.**
+6. After a real diagnosis of a **hard failure** (not `LICENSE_REQUIRED`, empty rows, or the ordinary picker), you may offer **once** to prepare a draft for **support@dgtlsunrise.com**. Follow `send-feedback`: show the draft, wait for approval, then `feedback_send` with `confirm: true` and the `draft_id`. Reply-To is the address they provide. Do not nag.
 
 ## Unverified / testing app
 

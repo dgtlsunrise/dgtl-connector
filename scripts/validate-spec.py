@@ -48,6 +48,7 @@ SKILLS = [
     "gsc-vs-ga4-search",
     "gtm-readonly-limits",
     "google-marketing-support",
+    "send-feedback",
     "license-and-reconnect",
     "pro-upgrade",
     "gsc-vs-ads-keywords",

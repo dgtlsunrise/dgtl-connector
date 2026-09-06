@@ -488,6 +488,34 @@
         "resource_id": { "type": "string", "maxLength": 256 }
       }
     },
+    "feedback_prepare": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["message", "reply_to"],
+      "properties": {
+        "message": { "type": "string", "minLength": 1 },
+        "reply_to": { "type": "string", "minLength": 3, "maxLength": 254 },
+        "kind": { "type": "string", "enum": ["bug", "feature", "other"] },
+        "last_tool": { "type": "string", "maxLength": 80 },
+        "error_code": { "type": "string", "maxLength": 64 },
+        "resource_id": { "type": "string", "maxLength": 256 }
+      }
+    },
+    "feedback_send": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["confirm"],
+      "properties": {
+        "confirm": { "const": true },
+        "draft_id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "message": { "type": "string", "minLength": 1 },
+        "reply_to": { "type": "string", "minLength": 3, "maxLength": 254 },
+        "kind": { "type": "string", "enum": ["bug", "feature", "other"] },
+        "last_tool": { "type": "string", "maxLength": 80 },
+        "error_code": { "type": "string", "maxLength": 64 },
+        "resource_id": { "type": "string", "maxLength": 256 }
+      }
+    },
     "meta_list_ad_accounts": {
       "type": "object",
       "additionalProperties": false,

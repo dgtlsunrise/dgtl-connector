@@ -95,6 +95,13 @@ describe("packaging and secrets", () => {
       assert.ok(g, name);
       assert.equal(g.fail, "WRITE_NOT_ENABLED", name);
     }
+    for (const name of ["support_packet", "feedback_prepare", "feedback_send"]) {
+      const g = catalog.gated_tools.find((x: { name: string }) => x.name === name);
+      assert.ok(g, name);
+      assert.equal(g.fail, null, name);
+      assert.ok(!catalog.tools.some((t: { name: string }) => t.name === name), name);
+      assert.ok(schema.$defs[name], name);
+    }
   });
 
   it("first-run skill exists and does not pitch Pro on success", () => {

@@ -10,6 +10,7 @@ import { googleWhoami } from "../google/whoami.js";
 import { gadsDisabled, licenseStatus } from "../ads/gads.js";
 import { metaDisabled } from "../meta/meta.js";
 import { supportPacket } from "../support/packet.js";
+import { feedbackPrepare, feedbackSend } from "../support/feedback.js";
 import * as S from "./schemas.js";
 
 export type ToolFamily = "identity" | "ga4" | "gsc" | "gtm" | "gtm_write" | "gbp" | "gads" | "meta" | "license";
@@ -436,6 +437,28 @@ export const TOOLS: ToolSpec[] = [
     inputSchema: S.supportPacket,
     annotations: ANN_RO,
     handler: (ctx, args) => supportPacket(ctx, args),
+  },
+  {
+    name: "feedback_prepare",
+    group: "license",
+    family: "license",
+    title: "Prepare plugin feedback",
+    description:
+      "Build a reviewable feedback draft for support@dgtlsunrise.com from support_packet fields plus the user's message. Requires reply_to. Strips token-shaped strings. Does not send. Echo draft_id to feedback_send after the user approves.",
+    inputSchema: S.feedbackPrepare,
+    annotations: ANN_RO,
+    handler: (ctx, args) => feedbackPrepare(ctx, args),
+  },
+  {
+    name: "feedback_send",
+    group: "license",
+    family: "license",
+    title: "Send approved plugin feedback",
+    description:
+      "POST an approved draft to the DGTL feedback endpoint. Requires confirm: true and the draft_id (or the full draft fields). Destination is support@dgtlsunrise.com; Reply-To is the address the user provided. Never emails tokens. Does not send without explicit approval.",
+    inputSchema: S.feedbackSend,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => feedbackSend(ctx, args),
   },
   // Paid Meta
   {

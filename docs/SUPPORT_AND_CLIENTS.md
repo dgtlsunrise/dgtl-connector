@@ -2,7 +2,7 @@
 
 DGTL Sunrise publishes a **free local plugin**. Support exists so that plugin works. Inbound client work is a **side effect of being useful**, not a funnel glued to every how-to.
 
-Contact: **noel@dgtlsunrise.com**. Publisher: DGTL Sunrise (Sunrise Consulting LLC).
+Contact: **noel@dgtlsunrise.com** (engagement / publisher). Plugin feedback channel: **support@dgtlsunrise.com** (Reply-To = the address the user provides). Publisher: DGTL Sunrise (Sunrise Consulting LLC).
 
 ## Support agent rules
 
@@ -73,6 +73,14 @@ If they say “I don’t want a vendor, just the connector,” reply: “That’
 | “Can you manage this for us?” | They opened the sales door — still no tokens |
 | Ads/Meta/autobidding | Explain v1 out of scope; v2 hosted **if** they need it; no fake timeline |
 
+## Agentic feedback (approve-before-send)
+
+After a **real diagnosis of a hard failure**, the agent may offer **once** to prepare a draft via `feedback_prepare` (see `skills/send-feedback/SKILL.md`). Show the draft. Only call `feedback_send` after the user approves, with `confirm: true` and the `draft_id`. Destination is **support@dgtlsunrise.com**; Reply-To is the address they provided. Never tokens.
+
+Do **not** nag on `LICENSE_REQUIRED`, empty rows, or an ordinary property picker. Those are not feedback tickets.
+
+The engagement pitch below stays **noel@dgtlsunrise.com**. Plugin feedback and client-work email are different mailboxes.
+
 ## Support skill
 
-Implementation of these rules: `skills/google-marketing-support/SKILL.md`. Other skills must not freelance sales copy.
+Implementation of these rules: `skills/google-marketing-support/SKILL.md` and `skills/send-feedback/SKILL.md`. Other skills must not freelance sales copy.

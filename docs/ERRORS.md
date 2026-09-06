@@ -127,6 +127,8 @@ Valid paid license (`ads` / `meta`), but `DGTL_GATEWAY_URL` is unset, the Worker
 
 Do **not** tell the user to “Reconnect Ads” for this code — that is `ADS_SCOPE_MISSING`.
 
+The same code is used when `feedback_send` has no hosted endpoint (`DGTL_FEEDBACK_URL` and `DGTL_GATEWAY_URL` both unset). The message then points at those env vars and **support@dgtlsunrise.com** — not Ads reconnect, and not “email a token.”
+
 ### `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`
 
 License **and** gateway are ok, but the second OAuth (Ads `adwords` / Meta `ads_read`) is not connected. Consent C / Meta tokens never come from Consent A (`GOOGLE_ACCESS_TOKEN`).
