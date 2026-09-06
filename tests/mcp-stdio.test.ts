@@ -80,6 +80,8 @@ describe("binary MCP initialize + tools/list", () => {
       assert.ok(names.includes("meta_insights"));
       assert.ok(names.includes("license_status"));
       assert.ok(names.includes("support_packet"));
+      assert.ok(names.includes("feedback_prepare"));
+      assert.ok(names.includes("feedback_send"));
       assert.ok(!names.some((n) => n.includes(".")));
 
       send(proc, {
