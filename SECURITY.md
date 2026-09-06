@@ -13,6 +13,8 @@
 
 stdio MCP auth is **Manual**: host-injected access token or installed-app PKCE into `PLUGIN_DATA`. There is no Gmail-style Connect card for this transport. PKCE uses a **public** Desktop client. Confidential web-client secrets stay in Google Cloud, never in git.
 
+`npm run doctor` / `dgtl-connector-mcp doctor` prints which known env **names** are SET and whether token files exist. It never prints values, JWT bodies, or refresh tokens. Use it before filing support; do not attach `token.json`.
+
 ## License JWT
 
 Paid unlock is a locally verified Ed25519 JWT (public key embedded). The private issuer key is not in this repo. Features are `ads` / `meta`. No network for `LICENSE_REQUIRED`.

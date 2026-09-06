@@ -26,15 +26,18 @@ There is no Gmail-style Connect card for stdio. Agent Plugins 1.0 and today’s 
 
    Tokens are written to `PLUGIN_DATA/google-oauth.json` (mode 0600). Refresh tokens are never logged.
 
-Until Google verifies the OAuth client, it stays in **testing** with an allowlist. Strangers on an unverified client will be stranded — that is a Google verification step, not a plugin Connect card.
+Until Google verifies the OAuth client, it stays in **testing** with an allowlist. Google may show “This app isn’t verified” or block sign-in — that is Google’s allowlist, not a broken plugin. Continue only for your own Google account (or a tester the publisher added); strangers stay stranded until Google verification. That is not a plugin Connect card.
 
 ## Install (local)
 
 ```bash
 npm install
 npm run build
+npm run doctor
 ./bin/dgtl-connector-mcp --help
 ```
+
+`npm run doctor` (also `dgtl-connector-mcp doctor` / `auth doctor`) prints a human checklist: Node + package versions, whether `dist/` exists, which known env **names** are SET (never values), whether `PLUGIN_DATA/google-oauth.json` and `license.jwt` exist, and a local license summary (valid / invalid / missing features). It never prints tokens or JWT bodies. Exit code is non-zero if there is no build or no way to auth.
 
 The marketplace command is **one token**, plugin-relative: `./bin/dgtl-connector-mcp`. Not `npx`.
 

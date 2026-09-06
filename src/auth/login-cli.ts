@@ -247,6 +247,7 @@ USAGE
   dgtl-connector-mcp              Start MCP on stdio (hosts spawn this)
   dgtl-connector-mcp --help       Show this help and exit 0
   dgtl-connector-mcp --version    Print version
+  dgtl-connector-mcp doctor           Human checklist (no secrets); also: auth doctor
   dgtl-connector-mcp auth login       Installed-app PKCE (Consent A)
   dgtl-connector-mcp auth login-ads   Consent C Ads PKCE (separate client; adwords)
   dgtl-connector-mcp auth login-meta --code <grant>  Redeem hosted Meta Login code
@@ -278,5 +279,11 @@ Meta: prefer host-injected META_ACCESS_TOKEN. Otherwise redeem a hosted Login
 
 Paid Google Ads / Meta tools are listed and return LICENSE_REQUIRED until a
 DGTL license JWT is present. This binary never ships a developer-token.
+
+DIAGNOSTICS
+  doctor / auth doctor prints node + package versions, whether dist/ exists,
+  which known env names are SET (never values), PLUGIN_DATA file existence,
+  and a local license summary (valid/invalid/missing features). Exits 1 if
+  there is no build or no way to auth. Same as \`npm run doctor\`.
 `;
 }

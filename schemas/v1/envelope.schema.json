@@ -29,6 +29,7 @@
         "row_count": { "type": "integer", "minimum": 0 }
       }
     },
-    "quota": true
+    "quota": true,
+    "hint": { "type": "string" }
   }
 }

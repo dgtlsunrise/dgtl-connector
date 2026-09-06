@@ -1,5 +1,5 @@
 import type { AppContext } from "../context.js";
-import { okEnvelope, pageFromList, type Envelope } from "../envelope.js";
+import { HINT_EMPTY_LIST, HINT_EMPTY_ROWS, okEnvelope, pageFromList, type Envelope } from "../envelope.js";
 import { asInt, encodeSiteUrl, requireId } from "../ids.js";
 import { APIS, SCOPE } from "./scopes.js";
 import { slicePage } from "../tools/dates.js";
@@ -24,6 +24,7 @@ export async function gscListSites(ctx: AppContext, args: Rec): Promise<Envelope
   return okEnvelope("gsc_list_sites", {
     data: { site_entry: items },
     page: pageFromList(items, total, next),
+    ...(total === 0 ? { hint: HINT_EMPTY_LIST } : {}),
   });
 }
 
@@ -76,6 +77,7 @@ export async function gscQuerySearchAnalytics(ctx: AppContext, args: Rec): Promi
       truncated,
       ...(truncated ? { next_page_token: String(startRow + rows.length) } : {}),
     },
+    ...(rows.length === 0 ? { hint: HINT_EMPTY_ROWS } : {}),
   });
 }
 
@@ -111,6 +113,7 @@ export async function gscListSitemaps(ctx: AppContext, args: Rec): Promise<Envel
     resource: siteResource(siteUrl),
     data: { sitemap: items },
     page: pageFromList(items, total, next),
+    ...(total === 0 ? { hint: HINT_EMPTY_LIST } : {}),
   });
 }
 

@@ -31,6 +31,8 @@ export function loadFixture(rel: string): unknown {
 export type FixtureOpts = {
   gtmForbidden?: boolean;
   emptyReport?: boolean;
+  emptyList?: boolean;
+  emptyGscQuery?: boolean;
   oversizeTags?: boolean;
   agencySummaries?: boolean;
 };
@@ -116,20 +118,26 @@ function route(method: string, url: URL, opts: FixtureOpts): unknown {
   }
 
   if (host.includes("analyticsadmin")) {
-    if (p.endsWith("/accounts") && method === "GET") return loadFixture("ga4/accounts.list.json");
+    if (p.endsWith("/accounts") && method === "GET") {
+      return opts.emptyList ? { accounts: [] } : loadFixture("ga4/accounts.list.json");
+    }
     if (p.endsWith("/accountSummaries")) {
-      return opts.agencySummaries
-        ? loadFixture("ga4/accountSummaries.list.json")
-        : loadFixture("ga4/accountSummaries.list.json");
+      return opts.emptyList ? { accountSummaries: [] } : loadFixture("ga4/accountSummaries.list.json");
     }
     if (/\/properties\/\d+$/.test(p) && method === "GET") {
       const id = p.split("/").pop();
       const base = loadFixture("ga4/properties.get.json") as Record<string, unknown>;
       return { ...base, name: `properties/${id}` };
     }
-    if (p.endsWith("/dataStreams")) return loadFixture("ga4/dataStreams.list.json");
-    if (p.endsWith("/keyEvents")) return loadFixture("ga4/keyEvents.list.json");
-    if (p.endsWith("/properties") && method === "GET") return loadFixture("ga4/properties.list.json");
+    if (p.endsWith("/dataStreams")) {
+      return opts.emptyList ? { dataStreams: [] } : loadFixture("ga4/dataStreams.list.json");
+    }
+    if (p.endsWith("/keyEvents")) {
+      return opts.emptyList ? { keyEvents: [] } : loadFixture("ga4/keyEvents.list.json");
+    }
+    if (p.endsWith("/properties") && method === "GET") {
+      return opts.emptyList ? { properties: [] } : loadFixture("ga4/properties.list.json");
+    }
   }
 
   if (host.includes("analyticsdata")) {
@@ -140,8 +148,12 @@ function route(method: string, url: URL, opts: FixtureOpts): unknown {
   }
 
   if (host.includes("searchconsole") || p.startsWith("/webmasters/")) {
-    if (p.endsWith("/sites") && method === "GET") return loadFixture("gsc/sites.list.json");
-    if (p.includes("/searchAnalytics/query")) return loadFixture("gsc/searchanalytics.query.json");
+    if (p.endsWith("/sites") && method === "GET") {
+      return opts.emptyList ? { siteEntry: [] } : loadFixture("gsc/sites.list.json");
+    }
+    if (p.includes("/searchAnalytics/query")) {
+      return opts.emptyGscQuery ? { rows: [] } : loadFixture("gsc/searchanalytics.query.json");
+    }
     if (p.includes("urlInspection")) return loadFixture("gsc/urlInspection.inspect.json");
     if (/\/sitemaps\/.+/.test(p)) return loadFixture("gsc/sitemaps.get.json");
     if (p.endsWith("/sitemaps")) return loadFixture("gsc/sitemaps.list.json");
@@ -149,11 +161,17 @@ function route(method: string, url: URL, opts: FixtureOpts): unknown {
   }
 
   if (host.includes("tagmanager")) {
-    if (p.endsWith("/accounts")) return loadFixture("gtm/accounts.list.json");
+    if (p.endsWith("/accounts")) {
+      return opts.emptyList ? { account: [] } : loadFixture("gtm/accounts.list.json");
+    }
     if (/\/containers\/[^/]+$/.test(p) && method === "GET") return loadFixture("gtm/containers.get.json");
-    if (p.endsWith("/containers")) return loadFixture("gtm/containers.list.json");
+    if (p.endsWith("/containers")) {
+      return opts.emptyList ? { container: [] } : loadFixture("gtm/containers.list.json");
+    }
     if (/\/workspaces\/[^/]+$/.test(p) && method === "GET") return loadFixture("gtm/workspaces.get.json");
-    if (p.endsWith("/workspaces")) return loadFixture("gtm/workspaces.list.json");
+    if (p.endsWith("/workspaces")) {
+      return opts.emptyList ? { workspace: [] } : loadFixture("gtm/workspaces.list.json");
+    }
     if (p.endsWith("/tags") && method === "POST") return loadFixture("gtm/tags.create.json");
     if (/\/tags\/[^/]+$/.test(p) && method === "PUT") return loadFixture("gtm/tags.update.json");
     if (p.endsWith("/tags")) {

@@ -479,6 +479,15 @@
       "additionalProperties": false,
       "properties": {}
     },
+    "support_packet": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "last_tool": { "type": "string", "maxLength": 80 },
+        "error_code": { "type": "string", "maxLength": 64 },
+        "resource_id": { "type": "string", "maxLength": 256 }
+      }
+    },
     "meta_list_ad_accounts": {
       "type": "object",
       "additionalProperties": false,

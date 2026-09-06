@@ -13,4 +13,6 @@ Two numbers, two definitions, no winner.
 4. Ads: `gads_search` recipe `conversion_actions` / `performance` when licensed. `LICENSE_REQUIRED` means stop on the Ads side.
 5. Say: GA4 key events and Ads conversions are different systems (counting windows, attribution, view-through). Do not pick a “true” number.
 
+Header (required): GA4 `property_id` + property timezone + date range; Ads `customer_id` + Ads account time zone when the get-customer tool returned it. No numbers before the header.
+
 Cross-join skills take **both** IDs and refuse if the user did not name both.

@@ -29,6 +29,13 @@ export type Envelope = {
   missing_scope?: string;
 };
 
+/** User-visible. Empty rows with ok:true are not an auth failure. */
+export const HINT_EMPTY_ROWS =
+  "No rows is not an auth failure; check date range, filters, and property ID.";
+
+export const HINT_EMPTY_LIST =
+  "Empty list is not an auth failure; check this Google account has access and the parent/property ID.";
+
 export function okEnvelope(
   tool: string,
   opts: {
@@ -36,6 +43,7 @@ export function okEnvelope(
     resource?: ResourceRef;
     page?: PageInfo;
     quota?: unknown;
+    hint?: string;
   } = {},
 ): Envelope {
   const env: Envelope = { ok: true, tool };
@@ -43,6 +51,7 @@ export function okEnvelope(
   if (opts.data !== undefined) env.data = opts.data;
   if (opts.page) env.page = opts.page;
   if (opts.quota !== undefined) env.quota = opts.quota;
+  if (opts.hint) env.hint = opts.hint;
   return env;
 }
 

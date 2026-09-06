@@ -1,5 +1,5 @@
 import type { AppContext } from "../context.js";
-import { okEnvelope, pageFromList, type Envelope } from "../envelope.js";
+import { HINT_EMPTY_LIST, okEnvelope, pageFromList, type Envelope } from "../envelope.js";
 import { asInt, normalizeGtmAccount, normalizeGtmContainer, requireId } from "../ids.js";
 import { APIS, SCOPE } from "./scopes.js";
 import { slicePage } from "../tools/dates.js";
@@ -32,6 +32,7 @@ export async function gtmListAccounts(ctx: AppContext, args: Rec): Promise<Envel
   return okEnvelope("gtm_list_accounts", {
     data: { account: items },
     page: pageFromList(items, total, next),
+    ...(total === 0 ? { hint: HINT_EMPTY_LIST } : {}),
   });
 }
 
@@ -50,6 +51,7 @@ export async function gtmListContainers(ctx: AppContext, args: Rec): Promise<Env
     resource: gtmResource(a),
     data: { container: items },
     page: pageFromList(items, total, next),
+    ...(total === 0 ? { hint: HINT_EMPTY_LIST } : {}),
   });
 }
 
@@ -85,6 +87,7 @@ export async function gtmListWorkspaces(ctx: AppContext, args: Rec): Promise<Env
     resource: gtmResource(a, c),
     data: { workspace: items },
     page: pageFromList(items, total, next),
+    ...(total === 0 ? { hint: HINT_EMPTY_LIST } : {}),
   });
 }
 
@@ -118,6 +121,7 @@ async function listWorkspaceChild(
     resource: gtmResource(a, c),
     data: { [sourceKey]: annotated, source: "workspace" },
     page: pageFromList(annotated, total, next),
+    ...(total === 0 ? { hint: HINT_EMPTY_LIST } : {}),
   });
 }
 

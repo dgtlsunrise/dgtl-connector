@@ -89,7 +89,7 @@ Two reviews, two owners:
 | Cursor / xAI marketplace | Plugin git, MCP, skills | Listing |
 | Google OAuth sensitive scopes | Cloud consent screen, demo video, privacy policy | Strangers signing in |
 
-A marketplace listing that still uses an unverified testing-mode OAuth client will strand users. Sequence: runtime + fixture tests → enable APIs → PKCE / host-injected against testers → Google verification → public git → marketplace submit.
+A marketplace listing that still uses an unverified testing-mode OAuth client will strand users. Google may show “This app isn’t verified” or block sign-in — that is Google’s Testing allowlist, not a plugin Connect-card bug. Testers and the publisher’s own account can continue; strangers cannot until Google verification. Sequence: runtime + fixture tests → enable APIs → PKCE / host-injected against testers → Google verification → public git → marketplace submit.
 
 ## What not to submit
 

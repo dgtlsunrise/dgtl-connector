@@ -24,6 +24,7 @@ REQUIRED_FILES = [
     "docs/ERRORS.md",
     "docs/MARKETPLACE.md",
     "docs/SUPPORT_AND_CLIENTS.md",
+    "docs/ops/POST-POLAR-BACKLOG.md",
     "docs/V2_HOSTED.md",
     "docs/TEST_PLAN.md",
     "plugin.json",
@@ -39,6 +40,7 @@ REQUIRED_FILES = [
 ]
 
 SKILLS = [
+    "first-run",
     "select-google-property",
     "agency-property-isolation",
     "ga4-report-recipes",
@@ -320,6 +322,21 @@ def check_support_line() -> None:
         err("google-marketing-support skill missing approved optional line")
 
 
+def check_post_polar_backlog() -> None:
+    text = read(ROOT / "docs/ops/POST-POLAR-BACKLOG.md")
+    if "AFTER Polar" not in text:
+        err("POST-POLAR-BACKLOG.md must be AFTER-Polar work only")
+    if "Noel" not in text or "Agent" not in text:
+        err("POST-POLAR-BACKLOG.md must assign owners (Noel vs agent)")
+    if re.search(r"https://polar\.sh/\S+", text):
+        err("POST-POLAR-BACKLOG.md must not invent Polar checkout URLs")
+    first = read(ROOT / "skills/first-run/SKILL.md")
+    if "google_whoami" not in first:
+        err("first-run skill must start from google_whoami")
+    if re.search(r"https://polar\.sh/\S+", first):
+        err("first-run skill must not invent Polar checkout URLs")
+
+
 def check_readme_auth() -> None:
     text = read(ROOT / "README.md").lower()
     if "pkce" not in text:
@@ -330,6 +347,11 @@ def check_readme_auth() -> None:
         err("README.md must not claim a Gmail-style Connect card for stdio")
     if "there is no gmail-style connect card" not in text and "not a gmail-style connect card" not in text:
         err("README.md must say stdio is not a Gmail-style Connect card")
+    if "npm run doctor" not in text:
+        err("README.md must document npm run doctor")
+    security = read(ROOT / "SECURITY.md").lower()
+    if "doctor" not in security:
+        err("SECURITY.md must mention the doctor checklist")
 
 
 def check_ci() -> None:
@@ -388,6 +410,7 @@ def main() -> int:
     check_no_googleapiclient()
     check_secrets()
     check_support_line()
+    check_post_polar_backlog()
     check_readme_auth()
     check_ci()
     check_fixtures()
