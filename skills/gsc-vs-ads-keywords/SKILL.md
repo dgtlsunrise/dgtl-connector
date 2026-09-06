@@ -13,4 +13,6 @@ Join **only** on two named IDs.
 4. Organic queries: `gsc_query_search_analytics` with `dimensions: ["query"]`.
 5. Paid search terms: `gads_search` recipe `search_terms` (when licensed). Do not send raw GAQL.
 
+Header (required): exact GSC `site_url` + date range + `data_state`; Ads `customer_id` + date range. GSC dates are not the GA4 property timezone. No keyword rows before the header.
+
 Do not declare a winner. Present two tables, two definitions (GSC clicks ≠ Ads clicks). Do not overlay Client A’s GSC onto Client B’s Ads account.

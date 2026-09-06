@@ -1,4 +1,5 @@
 import { createAppContext, detectPluginRoot } from "./context.js";
+import { runDoctorCli } from "./auth/doctor.js";
 import {
   helpText,
   parseLoginMetaCode,
@@ -24,6 +25,15 @@ async function main(argv: string[]): Promise<void> {
   }
 
   const ctx = createAppContext({ pluginRoot });
+
+  if (args[0] === "doctor" || (args[0] === "auth" && args[1] === "doctor")) {
+    process.exitCode = runDoctorCli({
+      pluginRoot: ctx.pluginRoot,
+      pluginDataDir: ctx.pluginDataDir,
+      env: ctx.env,
+    });
+    return;
+  }
 
   if (args[0] === "auth") {
     const sub = args[1];

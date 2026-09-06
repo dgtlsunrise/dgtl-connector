@@ -49,6 +49,8 @@ export class ToolError extends Error {
 export const MSG = {
   UNAUTHENTICATED:
     "Google is not connected. For Cursor and Grok Build stdio, set a host-injected access token (GOOGLE_ACCESS_TOKEN) or run `dgtl-connector-mcp auth login` (installed-app PKCE). There is no Gmail-style Connect card for local stdio MCP.",
+  UNVERIFIED_APP:
+    "Google may show “This app isn’t verified” or block sign-in while DGTL Sunrise’s OAuth client is in Testing — that is Google’s allowlist, not a broken plugin. Continue only for your own Google account (or a tester the publisher added); other accounts stay stranded until Google verification.",
   REAUTH_REQUIRED:
     "Google access expired or was revoked. Re-run host token injection or `dgtl-connector-mcp auth login`. You can also revoke this app under Google Account → Third-party access, then reconnect.",
   RESOURCE_REQUIRED:

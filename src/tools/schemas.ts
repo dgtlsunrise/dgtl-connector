@@ -6,6 +6,15 @@ const str = z.string().optional();
 
 export const emptyInput = z.object({}).strict();
 
+/** Support intake — optional last-failure fields. Never tokens. */
+export const supportPacket = z
+  .object({
+    last_tool: z.string().max(80).optional(),
+    error_code: z.string().max(64).optional(),
+    resource_id: z.string().max(256).optional(),
+  })
+  .strict();
+
 export const pageInput = z.object({ page_size: pageSize, page_token: pageToken }).strict();
 
 export const accountPage = z

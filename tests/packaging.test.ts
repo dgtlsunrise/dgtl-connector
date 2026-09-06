@@ -39,6 +39,7 @@ describe("packaging and secrets", () => {
     assert.ok(out.toLowerCase().includes("pkce"));
     assert.ok(out.includes("Connect card") || out.includes("connect card"));
     assert.ok(out.includes("Manual") || out.includes("host-injected") || out.includes("no Gmail"));
+    assert.ok(out.includes("doctor"));
   });
 
   it("PKCE auth URL has no client_secret and uses S256", () => {
@@ -88,11 +89,22 @@ describe("packaging and secrets", () => {
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
     assert.equal(pkg.name, "dgtl-connector");
     assert.ok(pkg.bin["dgtl-connector-mcp"]);
+    assert.ok(typeof pkg.scripts.doctor === "string" && pkg.scripts.doctor.includes("doctor"));
     for (const name of ["gtm_create_tag", "gtm_update_tag", "gtm_publish_container"]) {
       const g = catalog.gated_tools.find((x: { name: string }) => x.name === name);
       assert.ok(g, name);
       assert.equal(g.fail, "WRITE_NOT_ENABLED", name);
     }
+  });
+
+  it("first-run skill exists and does not pitch Pro on success", () => {
+    const skill = readFileSync(join(ROOT, "skills/first-run/SKILL.md"), "utf8");
+    assert.ok(skill.includes("name: first-run"));
+    assert.ok(/google_whoami/.test(skill));
+    assert.ok(/select-google-property/.test(skill));
+    assert.ok(/Do not pitch Pro/.test(skill) || /do not pitch/i.test(skill));
+    assert.ok(!/polar\.sh/i.test(skill));
+    assert.ok(!/buy\.polar/i.test(skill));
   });
 
   it("README tells the truth about stdio auth", () => {
@@ -103,5 +115,6 @@ describe("packaging and secrets", () => {
     assert.ok(/no Gmail-style Connect card/i.test(readme) || /not a Gmail-style Connect card/i.test(readme));
     assert.ok(!/npx .*dgtl-connector-mcp/.test(readme));
     assert.ok(!/npx .*dgtl-marketing-mcp/.test(readme));
+    assert.ok(/npm run doctor/.test(readme));
   });
 });

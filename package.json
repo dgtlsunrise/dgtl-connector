@@ -22,7 +22,8 @@
     "test": "node --import tsx --test --test-timeout=60000 tests/*.test.ts",
     "validate:spec": "python3 scripts/validate-spec.py",
     "secret-scan": "bash scripts/secret-scan.sh",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "doctor": "node --import tsx src/run-doctor.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.18.2",

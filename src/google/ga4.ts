@@ -1,5 +1,5 @@
 import type { AppContext } from "../context.js";
-import { okEnvelope, pageFromList, type Envelope } from "../envelope.js";
+import { HINT_EMPTY_LIST, HINT_EMPTY_ROWS, okEnvelope, pageFromList, type Envelope } from "../envelope.js";
 import { MSG, ToolError } from "../errors.js";
 import { asInt, normalizeGa4Account, normalizeGa4Property, requireId } from "../ids.js";
 import { denySearchQueryDimensions } from "../tools/denylist.js";
@@ -31,6 +31,7 @@ export async function ga4ListAccounts(ctx: AppContext, args: Rec): Promise<Envel
   return okEnvelope("ga4_list_accounts", {
     data: { accounts },
     page: pageFromList(accounts, accounts.length, typeof raw.nextPageToken === "string" ? raw.nextPageToken : undefined),
+    ...(accounts.length === 0 ? { hint: HINT_EMPTY_LIST } : {}),
   });
 }
 
@@ -48,6 +49,7 @@ export async function ga4ListAccountSummaries(ctx: AppContext, args: Rec): Promi
       summaries.length,
       typeof raw.nextPageToken === "string" ? raw.nextPageToken : undefined,
     ),
+    ...(summaries.length === 0 ? { hint: HINT_EMPTY_LIST } : {}),
   });
 }
 
@@ -64,6 +66,7 @@ export async function ga4ListProperties(ctx: AppContext, args: Rec): Promise<Env
     resource: { type: "ga4_account", id: account.name, display_name: account.name },
     data: { properties },
     page: pageFromList(properties, properties.length, typeof raw.nextPageToken === "string" ? raw.nextPageToken : undefined),
+    ...(properties.length === 0 ? { hint: HINT_EMPTY_LIST } : {}),
   });
 }
 
@@ -92,6 +95,7 @@ export async function ga4ListDataStreams(ctx: AppContext, args: Rec): Promise<En
     resource: { type: "ga4_property", id: prop.name, display_name: prop.name },
     data: { data_streams: streams },
     page: pageFromList(streams, streams.length, typeof raw.nextPageToken === "string" ? raw.nextPageToken : undefined),
+    ...(streams.length === 0 ? { hint: HINT_EMPTY_LIST } : {}),
   });
 }
 
@@ -111,6 +115,7 @@ export async function ga4ListKeyEvents(ctx: AppContext, args: Rec): Promise<Enve
     resource: { type: "ga4_property", id: prop.name, display_name: prop.name },
     data: { key_events: events },
     page: pageFromList(events, events.length, typeof raw.nextPageToken === "string" ? raw.nextPageToken : undefined),
+    ...(events.length === 0 ? { hint: HINT_EMPTY_LIST } : {}),
   });
 }
 
@@ -195,6 +200,7 @@ export async function ga4RunReport(ctx: AppContext, args: Rec): Promise<Envelope
       truncated,
       ...(truncated ? { next_page_token: String(offset + rows.length) } : {}),
     },
+    ...(rowCount === 0 ? { hint: HINT_EMPTY_ROWS } : {}),
   });
 }
 

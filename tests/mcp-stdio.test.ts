@@ -79,6 +79,7 @@ describe("binary MCP initialize + tools/list", () => {
       assert.ok(names.includes("gbp_list_locations"));
       assert.ok(names.includes("meta_insights"));
       assert.ok(names.includes("license_status"));
+      assert.ok(names.includes("support_packet"));
       assert.ok(!names.some((n) => n.includes(".")));
 
       send(proc, {
