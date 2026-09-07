@@ -95,7 +95,7 @@ async function main(argv: string[]): Promise<void> {
       if (!parsed) {
         process.stderr.write(
           "usage: dgtl-connector-mcp auth redeem --code <one-time-code>\n" +
-            "   or: dgtl-connector-mcp auth redeem --checkout-id <polar_checkout_id>\n" +
+            "   or: dgtl-connector-mcp auth redeem --checkout-id <uuid|polar_c_*>\n" +
             "Requires DGTL_GATEWAY_URL. JWT is written to PLUGIN_DATA/license.jwt (never printed).\n",
         );
         process.exitCode = 1;

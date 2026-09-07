@@ -10,7 +10,7 @@ description: Map LICENSE_REQUIRED, GATEWAY_UNAVAILABLE, REAUTH_REQUIRED, CONSENT
 Follow this order. Free GA4 / GSC / GTM keep working at every step.
 
 1. **Missing / expired / invalid JWT** → buy Pro ($19/mo flat unlimited) at https://buy.polar.sh/polar_cl_yZECJ26Ln9mGTQDwBETXCskJRMTwrYAd6thMJO1zHPk (site: https://www.dgtlsunrise.com/). See `pro-upgrade`.
-2. **Redeem** → set `DGTL_GATEWAY_URL` (live: `https://stamp.dgtlsunrise.com`; backup: `https://dgtl-stamp.noel-4ea.workers.dev`) then run `dgtl-connector-mcp auth redeem --code <one-time-code>` or `--checkout-id <polar_checkout_id>` → writes `PLUGIN_DATA/license.jwt`. Never print or paste the JWT into chat. Or set `DGTL_LICENSE_JWT`. Confirm with `license_status` / `auth status`.
+2. **Redeem** → set `DGTL_GATEWAY_URL` (live: `https://stamp.dgtlsunrise.com`; backup: `https://dgtl-stamp.noel-4ea.workers.dev`) then run `dgtl-connector-mcp auth redeem --code <one-time-code>` or `--checkout-id <uuid|polar_c_*>` (stamp resolves confirmation secrets) → writes `PLUGIN_DATA/license.jwt`. Never print or paste the JWT into chat. Or set `DGTL_LICENSE_JWT`. Confirm with `license_status` / `auth status`.
 3. **Ads OAuth** (`ADS_SCOPE_MISSING`) → Consent C via `GOOGLE_ADS_ACCESS_TOKEN` or `auth login-ads`. Never reuse Consent A.
 4. **Meta OAuth** (`META_NOT_CONNECTED`) → `META_ACCESS_TOKEN` or `auth login-meta --code`. Support never collects Meta tokens.
 5. **Gateway** (`GATEWAY_UNAVAILABLE`) → fix `DGTL_GATEWAY_URL` / Worker. **Do not** say “Reconnect Ads.” Do not re-sell Pro if the JWT is already valid.
