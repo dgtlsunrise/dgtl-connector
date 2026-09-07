@@ -50,7 +50,7 @@ Design: [POLAR-LICENSE-PLAN.md](POLAR-LICENSE-PLAN.md). Noel clicks: [NOEL-ONLY-
 | Item | Owner | Notes |
 | --- | --- | --- |
 | Meta OAuth redirect URIs on the **stamp host** | **Noel** in Meta app dashboard; **agent** lists the intended paths | Hosted Login (PR-3b) is Noel-gated. App secret never in this plugin. |
-| Pro Bot **screencast** + Meta `ads_read` **Advanced Access** submit | **Noel** | Agent can write a script; Noel records and submits. |
+| Pro Bot **screencast** + Meta `ads_read` **Advanced Access** submit | **Done 2026-09-07** | Review in progress. CLEAN screencast uploaded; Website platform added. Access Verification email may still arrive. |
 | Google Ads API **Basic** access wait / developer-token on DGTL MCC | **Noel** | Reporting (no mutate). Token lives on the Worker only. See [PAID-CREDENTIALS-CLICKS.md](PAID-CREDENTIALS-CLICKS.md). |
 | Consent C Desktop client (Ads user grant) | **Noel** | Separate from Consent A. Never add `adwords` to the free client. |
 | GBP Basic API Access form | **Noel** | Quota 0 until approved. Not Polar, but still after-free-listing paperwork. |
