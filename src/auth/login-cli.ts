@@ -307,7 +307,7 @@ export async function runAuthRedeem(opts: {
   if ((code && checkoutId) || (!code && !checkoutId)) {
     process.stderr.write(
       "usage: dgtl-connector-mcp auth redeem --code <one-time-code>\n" +
-        "   or: dgtl-connector-mcp auth redeem --checkout-id <polar_checkout_id>\n" +
+        "   or: dgtl-connector-mcp auth redeem --checkout-id <uuid|polar_c_*>\n" +
         "Requires DGTL_GATEWAY_URL. Never paste the JWT into chat; redeem writes PLUGIN_DATA/license.jwt.\n",
     );
     return 1;
@@ -387,7 +387,8 @@ Meta: prefer host-injected META_ACCESS_TOKEN. Otherwise redeem a hosted Login
   Hosted Login UI (PR-3b) is Noel-gated — do not deploy a Meta demo hostname here.
 
 License: after Polar checkout, run auth redeem --code <code> or
-  --checkout-id <id> (needs DGTL_GATEWAY_URL → POST /v1/license). Writes
+  --checkout-id <uuid|polar_c_*> (stamp accepts both; needs DGTL_GATEWAY_URL
+  → POST /v1/license). Writes
   PLUGIN_DATA/license.jwt; never prints the JWT. Or set DGTL_LICENSE_JWT.
   Checkout: https://buy.polar.sh/polar_cl_yZECJ26Ln9mGTQDwBETXCskJRMTwrYAd6thMJO1zHPk
   (site: https://www.dgtlsunrise.com/). Gateway example:
