@@ -43,3 +43,6 @@ smokes/
 .dgtl-plugin-data-test/
 .dgtl-connector/
 .dgtl-marketing/
+
+# Local runtime token/license store (never commit)
+PLUGIN_DATA/

@@ -1,6 +1,6 @@
 import { createPublicKey, verify as nodeVerify } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import {
   LICENSE_ISSUER,
   LICENSE_PUBLIC_KEY_PEM,
@@ -13,6 +13,7 @@ export type LicenseStatus = {
   exp?: number;
   sub?: string;
   jti?: string;
+  kid?: string;
   reason?: "missing" | "expired" | "invalid" | "issuer";
 };
 
@@ -85,6 +86,7 @@ export function verifyLicenseJwt(
       exp: payload.exp,
       sub: payload.sub,
       jti: payload.jti,
+      kid,
       reason: "expired",
     };
   }
@@ -95,6 +97,7 @@ export function verifyLicenseJwt(
     exp: payload.exp,
     sub: payload.sub,
     jti: payload.jti,
+    kid,
   };
 }
 
@@ -105,6 +108,19 @@ export function loadLicenseToken(env: NodeJS.ProcessEnv, pluginDataDir: string):
     return readFileSync(p, "utf8").trim();
   }
   return undefined;
+}
+
+/** Write PLUGIN_DATA/license.jwt (mode 0600). Never log the token. */
+export function writeLicenseToken(pluginDataDir: string, token: string): void {
+  mkdirSync(pluginDataDir, { recursive: true });
+  const p = join(pluginDataDir, "license.jwt");
+  writeFileSync(p, `${token.trim()}\n`, { encoding: "utf8" });
+  try {
+    chmodSync(p, 0o600);
+    chmodSync(dirname(p), 0o700);
+  } catch {
+    // Windows / some hosts cannot chmod; file still written.
+  }
 }
 
 export function hasFeature(status: LicenseStatus, feature: "ads" | "meta"): boolean {

@@ -71,7 +71,7 @@ SECRET_PATTERNS = [
     (re.compile(r'"refresh_token"\s*:\s*"[^"]+"'), "refresh_token JSON value"),
 ]
 
-SKIP_SECRET_DIRS = {".git", "node_modules", ".venv", "dist", ".gitleaks-bin"}
+SKIP_SECRET_DIRS = {".git", "node_modules", ".venv", "dist", ".gitleaks-bin", "PLUGIN_DATA"}
 
 NAME_RE = re.compile(r"^(?!.*(?:--|\.\.))[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$")
 

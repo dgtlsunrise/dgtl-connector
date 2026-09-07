@@ -3,9 +3,11 @@ import { runDoctorCli } from "./auth/doctor.js";
 import {
   helpText,
   parseLoginMetaCode,
+  parseRedeemArgs,
   runAuthLogin,
   runAuthLoginAds,
   runAuthLoginMeta,
+  runAuthRedeem,
 } from "./auth/login-cli.js";
 import { clearStore, readStore, STORE_FILE } from "./auth/store.js";
 import { serveStdio } from "./server.js";
@@ -82,6 +84,26 @@ async function main(argv: string[]): Promise<void> {
       }
       process.exitCode = await runAuthLoginMeta({
         grantCode: code,
+        pluginDataDir: ctx.pluginDataDir,
+        env: ctx.env,
+        fetchImpl: ctx.fetchImpl,
+      });
+      return;
+    }
+    if (sub === "redeem") {
+      const parsed = parseRedeemArgs(args.slice(2));
+      if (!parsed) {
+        process.stderr.write(
+          "usage: dgtl-connector-mcp auth redeem --code <one-time-code>\n" +
+            "   or: dgtl-connector-mcp auth redeem --checkout-id <polar_checkout_id>\n" +
+            "Requires DGTL_GATEWAY_URL. JWT is written to PLUGIN_DATA/license.jwt (never printed).\n",
+        );
+        process.exitCode = 1;
+        return;
+      }
+      process.exitCode = await runAuthRedeem({
+        code: "code" in parsed ? parsed.code : undefined,
+        checkoutId: "checkout_id" in parsed ? parsed.checkout_id : undefined,
         pluginDataDir: ctx.pluginDataDir,
         env: ctx.env,
         fetchImpl: ctx.fetchImpl,

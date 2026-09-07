@@ -3,7 +3,13 @@ import { buildGoogleAuthUrl, exchangeAuthorizationCode, generatePkce } from "./p
 import { writeStore, STORE_FILE } from "./store.js";
 import { CONSENT_A, CONSENT_C_GOOGLE } from "../google/scopes.js";
 import { postMetaExchange } from "../gateway/meta-exchange.js";
-import { loadLicenseToken, verifyLicenseJwt, hasFeature } from "../license/verify.js";
+import { postLicenseRedeem } from "../gateway/license-redeem.js";
+import {
+  loadLicenseToken,
+  verifyLicenseJwt,
+  hasFeature,
+  writeLicenseToken,
+} from "../license/verify.js";
 import { MSG } from "../errors.js";
 
 /**
@@ -240,6 +246,108 @@ export async function runAuthLoginMeta(opts: {
   return 0;
 }
 
+/**
+ * Parse `auth redeem --code <value>` / `--checkout-id <value>` (also `=` forms).
+ * Returns null when neither/both/empty.
+ */
+export function parseRedeemArgs(
+  argv: string[],
+): { code: string } | { checkout_id: string } | null {
+  let code: string | null = null;
+  let checkoutId: string | null = null;
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === undefined) continue;
+    if (a === "--code") {
+      const v = argv[i + 1];
+      if (typeof v === "string" && v.trim() && !v.startsWith("-")) code = v.trim();
+      else return null;
+      i++;
+      continue;
+    }
+    if (a.startsWith("--code=")) {
+      const v = a.slice("--code=".length).trim();
+      if (!v) return null;
+      code = v;
+      continue;
+    }
+    if (a === "--checkout-id") {
+      const v = argv[i + 1];
+      if (typeof v === "string" && v.trim() && !v.startsWith("-")) checkoutId = v.trim();
+      else return null;
+      i++;
+      continue;
+    }
+    if (a.startsWith("--checkout-id=")) {
+      const v = a.slice("--checkout-id=".length).trim();
+      if (!v) return null;
+      checkoutId = v;
+      continue;
+    }
+  }
+  if (code && !checkoutId) return { code };
+  if (checkoutId && !code) return { checkout_id: checkoutId };
+  return null;
+}
+
+/**
+ * Redeem Polar one-time code or checkout_id via Worker POST /v1/license.
+ * Writes PLUGIN_DATA/license.jwt. Fail-closed without DGTL_GATEWAY_URL.
+ * Never prints the JWT — only ok + kid/exp/features.
+ */
+export async function runAuthRedeem(opts: {
+  code?: string;
+  checkoutId?: string;
+  pluginDataDir: string;
+  env: NodeJS.ProcessEnv;
+  fetchImpl: typeof fetch;
+}): Promise<number> {
+  const code = opts.code?.trim() ?? "";
+  const checkoutId = opts.checkoutId?.trim() ?? "";
+  if ((code && checkoutId) || (!code && !checkoutId)) {
+    process.stderr.write(
+      "usage: dgtl-connector-mcp auth redeem --code <one-time-code>\n" +
+        "   or: dgtl-connector-mcp auth redeem --checkout-id <polar_checkout_id>\n" +
+        "Requires DGTL_GATEWAY_URL. Never paste the JWT into chat; redeem writes PLUGIN_DATA/license.jwt.\n",
+    );
+    return 1;
+  }
+
+  const result = await postLicenseRedeem({
+    env: opts.env,
+    fetchImpl: opts.fetchImpl,
+    request: code ? { code } : { checkout_id: checkoutId },
+  });
+
+  if (!result.ok) {
+    process.stderr.write(`${result.message}\n`);
+    if (result.hint) process.stderr.write(`hint: ${result.hint}\n`);
+    return 1;
+  }
+
+  const verified = verifyLicenseJwt(result.token);
+  if (!verified.ok) {
+    process.stderr.write(
+      `License redeem returned a token that failed local verify (${verified.reason ?? "invalid"}).\n`,
+    );
+    process.stderr.write(
+      "hint: Check DGTL_GATEWAY_URL points at the live stamp Worker and the plugin embeds the mint kid.\n",
+    );
+    return 1;
+  }
+
+  writeLicenseToken(opts.pluginDataDir, result.token);
+  // Never print the JWT — ok + kid/exp/features only.
+  const features = verified.features.length ? verified.features.join(",") : "(none)";
+  const kid = verified.kid ?? "(unknown)";
+  const exp = verified.exp ?? result.exp;
+  process.stderr.write(
+    `ok license redeemed → PLUGIN_DATA/license.jwt (token not logged)\n` +
+      `  kid=${kid} exp=${exp ?? "(none)"} features=${features}\n`,
+  );
+  return 0;
+}
+
 export function helpText(): string {
   return `dgtl-connector-mcp — local stdio MCP for GA4, Search Console, Tag Manager
 
@@ -251,6 +359,7 @@ USAGE
   dgtl-connector-mcp auth login       Installed-app PKCE (Consent A)
   dgtl-connector-mcp auth login-ads   Consent C Ads PKCE (separate client; adwords)
   dgtl-connector-mcp auth login-meta --code <grant>  Redeem hosted Meta Login code
+  dgtl-connector-mcp auth redeem --code|--checkout-id  Redeem Polar license → license.jwt
   dgtl-connector-mcp auth status      Show whether token sources are configured
   dgtl-connector-mcp auth logout      Delete PLUGIN_DATA/google-oauth.json (A only)
   dgtl-connector-mcp auth logout-ads  Delete PLUGIN_DATA/google-oauth-ads.json
@@ -276,6 +385,13 @@ Meta: prefer host-injected META_ACCESS_TOKEN. Otherwise redeem a hosted Login
   Exchange returns the long-lived token to the plugin; Worker stores nothing.
   Requires DGTL_GATEWAY_URL + license with meta. Support never collects Meta tokens.
   Hosted Login UI (PR-3b) is Noel-gated — do not deploy a Meta demo hostname here.
+
+License: after Polar checkout, run auth redeem --code <code> or
+  --checkout-id <id> (needs DGTL_GATEWAY_URL → POST /v1/license). Writes
+  PLUGIN_DATA/license.jwt; never prints the JWT. Or set DGTL_LICENSE_JWT.
+  Checkout: https://buy.polar.sh/polar_cl_yZECJ26Ln9mGTQDwBETXCskJRMTwrYAd6thMJO1zHPk
+  (site: https://www.dgtlsunrise.com/). Gateway example:
+  https://stamp.dgtlsunrise.com (backup: https://dgtl-stamp.noel-4ea.workers.dev)
 
 Paid Google Ads / Meta tools are listed and return LICENSE_REQUIRED until a
 DGTL license JWT is present. This binary never ships a developer-token.

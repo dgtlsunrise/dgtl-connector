@@ -1,10 +1,10 @@
 # Post-Polar backlog
 
-**Status:** AFTER Polar exists. Do not implement these items in this package until Noel has a Polar Pro product and a Worker that can mint `DGTL_LICENSE_JWT`.
+**Status:** AFTER Polar + stamp are LIVE. Prefer DGTL_GATEWAY_URL https://stamp.dgtlsunrise.com (backup https://dgtl-stamp.noel-4ea.workers.dev). auth redeem ships (AFTER-Polar plugin work).
 
 This file is the concrete leftover list. Free GA4 / GSC / GTM, `npm run doctor`, first-run, empty-row hints, and `support_packet` are **not** Polar work.
 
-Do **not** invent Polar checkout URLs. Do **not** implement live Polar redeem in this plugin until Polar is unlocked. Pro copy stays **$19/mo flat**; CTA may stay https://www.dgtlsunrise.com/ until a real Polar product URL exists.
+Polar checkout + stamp unlocked. Pro stays **$19/mo flat**. Gateway: https://stamp.dgtlsunrise.com (backup https://dgtl-stamp.noel-4ea.workers.dev).
 
 Owners: **Noel** = dashboard / spend / form submit / secrets. **Agent** = code + docs after Noel unblocks.
 
@@ -24,23 +24,23 @@ Design: [POLAR-LICENSE-PLAN.md](POLAR-LICENSE-PLAN.md). Noel clicks: [NOEL-ONLY-
 
 ---
 
-## Stamp / gateway (after Polar can mint)
+## Stamp / gateway
 
 | Item | Owner | Notes |
 | --- | --- | --- |
 | Stamp Worker secrets + publish | **Noel** puts secrets (`wrangler secret` / equivalent) and says publish; **agent** deploys code when asked | Ads `developer-token`, Meta app secret, mint key — never in this plugin. |
-| `DGTL_GATEWAY_URL` live | **Noel** sets production URL; **agent** documents env name only | Paid tools already fail `GATEWAY_UNAVAILABLE` until this is set. |
+| `DGTL_GATEWAY_URL` live | **Documented** | Primary https://stamp.dgtlsunrise.com; backup https://dgtl-stamp.noel-4ea.workers.dev. Paid tools fail `GATEWAY_UNAVAILABLE` until set. |
 | Allowlist `googleads.googleapis.com` + Meta Graph only | **Agent** (Worker) | No GA4/GSC/GTM report bytes. No payload storage. |
 
 ---
 
-## Plugin work that waits on Polar
+## Plugin work (Polar-unlocked)
 
 | Item | Owner | Notes |
 | --- | --- | --- |
-| License redeem CLI (`auth redeem` or similar against `POST /v1/license`) | **Agent** | Not unlocked now. Fail closed without gateway. Never print the JWT. |
-| Polar checkout **deep link** in `skills/pro-upgrade/` | **Agent** after **Noel** pastes the real Polar URL | Until then CTA stays https://www.dgtlsunrise.com/. Do not invent a checkout URL. |
-| `LICENSE_REQUIRED` ladder section in `license-and-reconnect` | **Agent** | Expand: missing JWT → buy Pro → redeem → `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED` → gateway. Only after Polar + redeem exist. |
+| License redeem CLI (`auth redeem` against `POST /v1/license`) | **Agent** | **Shipped** — fail closed without gateway; never print JWT; write `PLUGIN_DATA/license.jwt`. |
+| Polar checkout **deep link** in `skills/pro-upgrade/` | **Agent** | **Shipped** — Polar CTA + site. |
+| `LICENSE_REQUIRED` ladder in `license-and-reconnect` | **Agent** | **Shipped** — buy → redeem → Ads/Meta OAuth → gateway. |
 | Doctor / support copy that mentions Polar checkout | **Agent** | Keep $19 accurate. No Polar product IDs in git until Noel creates them. |
 
 ---
@@ -61,7 +61,6 @@ Design: [POLAR-LICENSE-PLAN.md](POLAR-LICENSE-PLAN.md). Noel clicks: [NOEL-ONLY-
 
 - Free Consent A readonly (already shipped)
 - `npm run doctor` / first-run / empty-row `hint` / `support_packet` (Polar-free UX)
-- Inventing Polar checkout URLs
-- Live Polar redeem against production
+- Inventing Polar checkout URLs (use live Polar CTA)
 - Putting stamp secrets in this git
 - Charging for `ga4_run_report`
