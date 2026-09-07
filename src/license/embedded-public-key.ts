@@ -13,6 +13,10 @@ export const LICENSE_PUBLIC_KEYS: Record<string, string> = {
 MCowBQYDK2VwAyEAgfKY0yO6pYdqhmB0OrFIn/yKkpU/ZB2ua/YhdhTcfaM=
 -----END PUBLIC KEY-----
 `,
+  "prod-1": `-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAL8iA7p2Xu0g/4/YT49bY30AbL897rcFsHe1KM92mz0Q=
+-----END PUBLIC KEY-----
+`,
 };
 
 /** @deprecated Prefer LICENSE_PUBLIC_KEYS[kid]; kept for single-key callers. */
