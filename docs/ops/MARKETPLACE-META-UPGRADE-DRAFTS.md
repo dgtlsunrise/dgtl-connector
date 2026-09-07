@@ -43,7 +43,7 @@ Contact: noel@dgtlsunrise.com
 
 **Request for v1:** `ads_read` only. Do **not** submit `ads_management` until gated writes ship.
 
-**Ready (do not re-do):** BV for SUNRISE CONSULTING LLC; Polar Pro live; stamp `https://dgtl-stamp.noel-4ea.workers.dev`; privacy URL; Marketing API + Login for Business; Graph Explorer Insights in last 30 days.
+**Ready (do not re-do):** BV for SUNRISE CONSULTING LLC; Polar Pro live; stamp `https://stamp.dgtlsunrise.com` (backup `https://dgtl-stamp.noel-4ea.workers.dev`); privacy URL; Marketing API + Login for Business; Graph Explorer Insights in last 30 days.
 
 **Still Noel:** Pro Bot screencast (script in packet) + App Review submit for `ads_read` Advanced Access. Agent does not submit Meta forms.
 

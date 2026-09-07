@@ -6,7 +6,7 @@
 **Privacy:** https://www.dgtlsunrise.com/privacy  
 **Contact:** noel@dgtlsunrise.com  
 **Package:** `dgtl-connector` — https://github.com/dgtlsunrise/dgtl-connector  
-**Stamp (live):** `https://dgtl-stamp.noel-4ea.workers.dev`  
+**Stamp (live):** `https://stamp.dgtlsunrise.com` (backup `https://dgtl-stamp.noel-4ea.workers.dev`)  
 **Pro checkout (live):** Polar DGTL Sunrise Pro $19/mo — see `/workspace/dgtl-planning/ops/POLAR-PRO-LIVE-2026-09-07.md`  
 **Updated:** 2026-09-07 PT
 
@@ -15,14 +15,14 @@ Advanced Access so paying customers (not only app admins/testers) can connect Me
 
 ## Status
 
-- Stamp gateway live: `https://stamp.dgtlsunrise.com` (backup `https://dgtl-stamp.noel-4ea.workers.dev`).
+- Stamp gateway live: `https://stamp.dgtlsunrise.com` (backup `https://stamp.dgtlsunrise.com`).
  snapshot (2026-09-07 PT)
 
 | Item | Status |
 |------|--------|
 | Business Verification | **Done** — SUNRISE CONSULTING LLC verified 2026-09-05 |
 | Polar Pro $19/mo | **Live** (checkout + product active) |
-| Stamp Worker | **Live** — `https://dgtl-stamp.noel-4ea.workers.dev` |
+| Stamp Worker | **Live** — `https://stamp.dgtlsunrise.com` |
 | Privacy URL | Live + linked in app settings |
 | Marketing API + Facebook Login for Business | Set up |
 | Recent Insights API call | Satisfied (Graph Explorer 2026-09-05; empty data OK) |
@@ -50,7 +50,7 @@ Use a **personal / DGTL-owned** ad account Noel administers. Empty Insights rows
 
 ### Before you record
 
-1. Stamp reachable: `https://dgtl-stamp.noel-4ea.workers.dev` (Pro Bot uses this as gateway).
+1. Stamp reachable: `https://stamp.dgtlsunrise.com` (Pro Bot uses this as gateway).
 2. `dgtl-connector` installed in Grok Bot / Cursor; Pro license present (`license_status` shows Meta/ads features unlocked).
 3. Browser zoom so Facebook Login app name **DGTL Sunrise** and permission text are readable.
 4. If Meta already granted, revoke DGTL Sunrise under Facebook → Settings → Business integrations (or Apps and Websites) so Login is not skipped.
@@ -112,7 +112,7 @@ State verbally: “Read-only. No campaign create, edit, boost, or ads_management
 
 1. Export MP4 (or Meta’s accepted format). Unlisted YouTube is fine if Meta accepts a link; otherwise upload in the App Review form.
 2. Title suggestion: `DGTL Sunrise Pro — Meta ads_read Advanced Access`
-3. Description: homepage https://www.dgtlsunrise.com/ — privacy https://www.dgtlsunrise.com/privacy — support noel@dgtlsunrise.com — stamp host `dgtl-stamp.noel-4ea.workers.dev`
+3. Description: homepage https://www.dgtlsunrise.com/ — privacy https://www.dgtlsunrise.com/privacy — support noel@dgtlsunrise.com — stamp host `stamp.dgtlsunrise.com`
 
 ---
 
@@ -123,7 +123,7 @@ Agent cannot finish these. Do in order when ready to submit.
 ### A. Console prep (before record)
 
 - [ ] **A1.** Meta Developers → app `28413225151701670` → confirm privacy URL https://www.dgtlsunrise.com/privacy and contact noel@dgtlsunrise.com
-- [ ] **A2.** Facebook Login for Business → add OAuth redirect URI(s) for stamp host, e.g. `https://dgtl-stamp.noel-4ea.workers.dev/...` (exact path from stamp Login docs / PR-3b — hostname must match live Worker)
+- [ ] **A2.** Facebook Login for Business → add OAuth redirect URI(s) for stamp host, e.g. `https://stamp.dgtlsunrise.com/...` (exact path from stamp Login docs / PR-3b — hostname must match live Worker)
 - [ ] **A3.** Confirm Marketing API product is set up; `ads_read` listed for review (Standard today)
 - [ ] **A4.** Confirm Business Verification still shows **Verified** for SUNRISE CONSULTING LLC
 - [ ] **A5.** Create or note a **reviewer test user** (or instructions for Meta to use a test role) and a short “how to test” note: install plugin → Pro license → Meta Login → list accounts → Insights
@@ -175,4 +175,4 @@ App Development; BV unverified → then **in review** → email **Verification s
 
 ### 2026-09-07 PT — this polish
 
-Polar Pro live; stamp live at `https://dgtl-stamp.noel-4ea.workers.dev`. Packet updated for **Pro Bot screencast** + Noel submit checklist. Screencast + Advanced Access submit still Noel-only.
+Polar Pro live; stamp live at `https://stamp.dgtlsunrise.com`. Packet updated for **Pro Bot screencast** + Noel submit checklist. Screencast + Advanced Access submit still Noel-only.
