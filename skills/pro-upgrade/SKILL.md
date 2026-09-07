@@ -24,7 +24,7 @@ DGTL Pro is **$19/mo flat, unlimited**. It unlocks the hosted Google Ads / Meta 
 1. **Free** = local GA4 / GSC / GTM. **Pro** = hosted Ads / Meta gateway.
 2. Price: **$19/mo flat, unlimited** — not a usage-based GA4 gate.
 3. CTA: https://buy.polar.sh/polar_cl_yZECJ26Ln9mGTQDwBETXCskJRMTwrYAd6thMJO1zHPk (site: https://www.dgtlsunrise.com/).
-4. After purchase, set a license JWT (`DGTL_LICENSE_JWT` or `PLUGIN_DATA/license.jwt`).
+4. After purchase, set `DGTL_GATEWAY_URL` (live: `https://stamp.dgtlsunrise.com`; backup: `https://dgtl-stamp.noel-4ea.workers.dev`) and run `dgtl-connector-mcp auth redeem --code <code>` or `--checkout-id <id>` (writes `PLUGIN_DATA/license.jwt`; never print the JWT). Or set `DGTL_LICENSE_JWT` / paste into `PLUGIN_DATA/license.jwt`.
 5. Never ask for a Google Ads developer-token or a Meta app secret.
 
 ## Codes
