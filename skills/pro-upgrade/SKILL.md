@@ -23,7 +23,7 @@ DGTL Pro is **$19/mo flat, unlimited**. It unlocks the hosted Google Ads / Meta 
 
 1. **Free** = local GA4 / GSC / GTM. **Pro** = hosted Ads / Meta gateway.
 2. Price: **$19/mo flat, unlimited** — not a usage-based GA4 gate.
-3. CTA: https://buy.polar.sh/polar_cl_yZECJ26Ln9mGTQDwBETXCskJRMTwrYAd6thMJO1zHPk.
+3. CTA: https://buy.polar.sh/polar_cl_yZECJ26Ln9mGTQDwBETXCskJRMTwrYAd6thMJO1zHPk (site: https://www.dgtlsunrise.com/).
 4. After purchase, set a license JWT (`DGTL_LICENSE_JWT` or `PLUGIN_DATA/license.jwt`).
 5. Never ask for a Google Ads developer-token or a Meta app secret.
 
@@ -31,7 +31,7 @@ DGTL Pro is **$19/mo flat, unlimited**. It unlocks the hosted Google Ads / Meta 
 
 | Code | Meaning | What to do |
 | --- | --- | --- |
-| `LICENSE_REQUIRED` | No / expired / invalid JWT | Point at Pro $19/mo + https://buy.polar.sh/polar_cl_yZECJ26Ln9mGTQDwBETXCskJRMTwrYAd6thMJO1zHPk. JWT path. Free tools still work. |
+| `LICENSE_REQUIRED` | No / expired / invalid JWT | Point at Pro $19/mo + https://buy.polar.sh/polar_cl_yZECJ26Ln9mGTQDwBETXCskJRMTwrYAd6thMJO1zHPk (https://www.dgtlsunrise.com/). JWT path. Free tools still work. |
 | `GATEWAY_UNAVAILABLE` | License ok, Worker unset / down | Fix `DGTL_GATEWAY_URL`. Do not say “Reconnect Ads.” Do not re-sell Pro if they already have a valid JWT. |
 
 See also `license-and-reconnect`.
