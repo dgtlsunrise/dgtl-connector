@@ -27,10 +27,10 @@ Advanced Access so paying customers (not only app admins/testers) can connect Me
 | Marketing API + Facebook Login for Business | Set up |
 | Recent Insights API call | Satisfied (Graph Explorer 2026-09-05; empty data OK) |
 | App mode | Development (OK until Review) |
-| `ads_read` Advanced Access | **Not submitted** — screencast + Noel submit remain |
+| `ads_read` Advanced Access | **Submitted 2026-09-07** — Review in progress. Screencast CLEAN uploaded; Website platform https://www.dgtlsunrise.com. Access Verification (Tech Provider) may still arrive by email. |
 | `ads_management` | Do **not** request |
 
-Agent writes this packet and the script. **Agent does not submit Meta forms, record the screencast, or complete Facebook Login password/2FA.**
+Agent drives App Review + Tech Provider access verification as far as the console allows. Noel only for Meta login/2FA/ID uploads. Clean screencast: `/workspace/dgtl-planning/ops/meta-screencast/dgtl-sunrise-ads-read-app-review-CLEAN-20260907.mp4`.
 
 ---
 
