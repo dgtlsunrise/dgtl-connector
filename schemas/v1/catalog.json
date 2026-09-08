@@ -227,6 +227,11 @@
       "fail": "LICENSE_REQUIRED"
     },
     {
+      "name": "gads_describe_recipes",
+      "group": "gads",
+      "fail": "LICENSE_REQUIRED"
+    },
+    {
       "name": "gads_get_customer",
       "group": "gads",
       "fail": "LICENSE_REQUIRED"
@@ -263,6 +268,11 @@
     },
     {
       "name": "meta_list_ad_accounts",
+      "group": "meta",
+      "fail": "LICENSE_REQUIRED"
+    },
+    {
+      "name": "meta_describe_insights_schema",
       "group": "meta",
       "fail": "LICENSE_REQUIRED"
     },

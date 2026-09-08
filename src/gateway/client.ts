@@ -35,6 +35,10 @@ export type GatewayParams = {
   level?: "account" | "campaign" | "adset" | "ad";
   date_start?: string;
   date_stop?: string;
+  date_preset?: string;
+  breakdowns?: string[];
+  fields?: string[];
+  time_increment?: string | number;
   creative_id?: string;
 };
 
@@ -121,6 +125,10 @@ function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
     "level",
     "date_start",
     "date_stop",
+    "date_preset",
+    "breakdowns",
+    "fields",
+    "time_increment",
     "creative_id",
   ]);
   for (const [k, v] of Object.entries(params)) {
@@ -147,6 +155,15 @@ function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
     }
     if (k === "level" && (v === "account" || v === "campaign" || v === "adset" || v === "ad")) {
       out.level = v;
+      continue;
+    }
+    if ((k === "breakdowns" || k === "fields") && Array.isArray(v)) {
+      const arr = v.filter((x): x is string => typeof x === "string" && x.length > 0);
+      if (arr.length) (out as Record<string, unknown>)[k] = arr;
+      continue;
+    }
+    if (k === "time_increment" && (typeof v === "string" || typeof v === "number")) {
+      out.time_increment = v;
       continue;
     }
     if (typeof v === "string") {
@@ -206,6 +223,7 @@ function mapGatewayResponse(tool: string, body: Record<string, unknown>, httpSta
     if (body.data !== undefined) env.data = body.data;
     if (body.page && typeof body.page === "object") env.page = body.page as Envelope["page"];
     if (body.quota !== undefined) env.quota = body.quota;
+    if (typeof body.hint === "string" && body.hint.trim()) env.hint = body.hint;
     return env;
   }
 

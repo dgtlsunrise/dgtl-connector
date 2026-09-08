@@ -7,8 +7,8 @@ import * as gsc from "../google/gsc.js";
 import * as gtm from "../google/gtm.js";
 import * as gtmWrite from "../google/gtm-write.js";
 import { googleWhoami } from "../google/whoami.js";
-import { gadsDisabled, licenseStatus } from "../ads/gads.js";
-import { metaDisabled } from "../meta/meta.js";
+import { gadsDisabled, gadsDescribeRecipes, licenseStatus } from "../ads/gads.js";
+import { metaDisabled, metaDescribeInsightsSchema } from "../meta/meta.js";
 import { supportPacket } from "../support/packet.js";
 import { feedbackPrepare, feedbackSend } from "../support/feedback.js";
 import * as S from "./schemas.js";
@@ -392,17 +392,30 @@ export const TOOLS: ToolSpec[] = [
     group: "gads",
     family: "gads",
     title: "Google Ads list accessible customers",
-    description: "Paid. Pro $19/mo. Requires a DGTL license. Lists accessible Ads customers. No mutate. Returns LICENSE_REQUIRED without a license.",
+    description:
+      "Paid. Pro $19/mo. Use FIRST to discover customer IDs when the user has not given one — most Ads tools need a valid customer_id. Digits only (no hyphens). Cite returned ids; do not invent. No mutate. LICENSE_REQUIRED without a license. No developer-token on this client.",
     inputSchema: S.emptyInput,
     annotations: ANN_RO,
     handler: async (ctx, args) => gadsDisabled(ctx, "gads_list_accessible_customers", args),
+  },
+  {
+    name: "gads_describe_recipes",
+    group: "gads",
+    family: "gads",
+    title: "Google Ads describe closed recipes",
+    description:
+      "Paid. Pro $19/mo. Local closed-recipe catalog (anti-hallucination). Call before gads_search — do not invent GAQL or metrics.*/segments.* fields. Mirrors official get_resource_metadata UX without FieldService dumps. Zero Ads HTTP. LICENSE_REQUIRED without a license.",
+    inputSchema: S.gadsDescribeRecipes,
+    annotations: ANN_RO,
+    handler: async (ctx) => gadsDescribeRecipes(ctx),
   },
   {
     name: "gads_get_customer",
     group: "gads",
     family: "gads",
     title: "Google Ads get customer",
-    description: "Paid. Pro $19/mo. Descriptive name, currency, time zone. LICENSE_REQUIRED without a DGTL license.",
+    description:
+      "Paid. Pro $19/mo. Descriptive name, currency, time zone for a customer_id from gads_list_accessible_customers. LICENSE_REQUIRED without a DGTL license.",
     inputSchema: S.gadsCustomer,
     annotations: ANN_RO,
     handler: async (ctx, args) => gadsDisabled(ctx, "gads_get_customer", args),
@@ -412,7 +425,8 @@ export const TOOLS: ToolSpec[] = [
     group: "gads",
     family: "gads",
     title: "Google Ads search (recipes)",
-    description: "Paid. Pro $19/mo. Closed recipe enum only (campaigns, ad_groups, keywords, search_terms, conversion_actions, change_status, policy_topics, performance). Do not invent GAQL fields or raw queries — recipes only (official Ads MCP discovery pattern, closed here). customer_id digits without hyphens. LICENSE_REQUIRED without a license. No developer-token on this client.",
+    description:
+      "Paid. Pro $19/mo. Closed recipe enum only (campaigns, ad_groups, keywords, search_terms, conversion_actions, change_status, policy_topics, performance). Call gads_describe_recipes first — do not invent GAQL. customer_id digits without hyphens; cite data.cited. LICENSE_REQUIRED without a license. No developer-token on this client.",
     inputSchema: S.gadsSearch,
     annotations: ANN_RO,
     handler: async (ctx, args) => gadsDisabled(ctx, "gads_search", args),
@@ -422,7 +436,8 @@ export const TOOLS: ToolSpec[] = [
     group: "gads",
     family: "gads",
     title: "Google Ads campaign performance",
-    description: "Paid. Pro $19/mo. Campaign performance recipe. LICENSE_REQUIRED without a DGTL license.",
+    description:
+      "Paid. Pro $19/mo. Closed performance recipe (same family as gads_search recipe=performance). Cite customer_id + date_range from data.cited. LICENSE_REQUIRED without a DGTL license.",
     inputSchema: S.gadsSearch,
     annotations: ANN_RO,
     handler: async (ctx, args) => gadsDisabled(ctx, "gads_campaign_performance", args),
@@ -470,23 +485,36 @@ export const TOOLS: ToolSpec[] = [
     annotations: ANN_WRITE,
     handler: (ctx, args) => feedbackSend(ctx, args),
   },
-  // Paid Meta
+  // Paid Meta — ads_read insights DX; writes/catalogs/lift deferred
   {
     name: "meta_list_ad_accounts",
     group: "meta",
     family: "meta",
     title: "Meta list ad accounts",
-    description: "Paid. Pro $19/mo. LICENSE_REQUIRED without a DGTL license. Meta app secret is never in this plugin.",
+    description:
+      "Paid. Pro $19/mo. Use FIRST to discover ad_account_id values. Cite returned ids; do not invent. Meta app secret is never in this plugin. LICENSE_REQUIRED without a license.",
     inputSchema: S.emptyInput,
     annotations: ANN_RO,
     handler: async (ctx, args) => metaDisabled(ctx, "meta_list_ad_accounts", args),
+  },
+  {
+    name: "meta_describe_insights_schema",
+    group: "meta",
+    family: "meta",
+    title: "Meta describe insights schema",
+    description:
+      "Paid. Pro $19/mo. Local insights catalog (levels, date_presets, breakdowns, fields). Call before meta_insights — do not invent Graph fields. Zero Graph/gateway HTTP. Writes/catalogs/audiences/lift stay out of v1. LICENSE_REQUIRED without a license.",
+    inputSchema: S.metaDescribeInsightsSchema,
+    annotations: ANN_RO,
+    handler: async (ctx) => metaDescribeInsightsSchema(ctx),
   },
   {
     name: "meta_list_campaigns",
     group: "meta",
     family: "meta",
     title: "Meta list campaigns",
-    description: "Paid. Pro $19/mo. LICENSE_REQUIRED without a DGTL license.",
+    description:
+      "Paid. Pro $19/mo. List campaigns for an ad_account_id from meta_list_ad_accounts. Empty ≠ auth failure. LICENSE_REQUIRED without a DGTL license.",
     inputSchema: S.metaAccount,
     annotations: ANN_RO,
     handler: async (ctx, args) => metaDisabled(ctx, "meta_list_campaigns", args),
@@ -496,7 +524,8 @@ export const TOOLS: ToolSpec[] = [
     group: "meta",
     family: "meta",
     title: "Meta list ad sets",
-    description: "Paid. Pro $19/mo. LICENSE_REQUIRED without a DGTL license.",
+    description:
+      "Paid. Pro $19/mo. List ad sets for an ad_account_id. LICENSE_REQUIRED without a DGTL license.",
     inputSchema: S.metaAccount,
     annotations: ANN_RO,
     handler: async (ctx, args) => metaDisabled(ctx, "meta_list_adsets", args),
@@ -506,7 +535,8 @@ export const TOOLS: ToolSpec[] = [
     group: "meta",
     family: "meta",
     title: "Meta list ads",
-    description: "Paid. Pro $19/mo. LICENSE_REQUIRED without a DGTL license.",
+    description:
+      "Paid. Pro $19/mo. List ads for an ad_account_id. LICENSE_REQUIRED without a DGTL license.",
     inputSchema: S.metaAccount,
     annotations: ANN_RO,
     handler: async (ctx, args) => metaDisabled(ctx, "meta_list_ads", args),
@@ -516,7 +546,8 @@ export const TOOLS: ToolSpec[] = [
     group: "meta",
     family: "meta",
     title: "Meta insights",
-    description: "Paid. Pro $19/mo. Recipe insights (account/campaign/adset/ad + date + level). LICENSE_REQUIRED without a license.",
+    description:
+      "Paid. Pro $19/mo. Read insights: level (account/campaign/adset/ad), date_preset or date_start/date_stop, optional breakdowns (age/gender/publisher_platform/…) and fields. Call meta_describe_insights_schema first. Cite data.cited. Empty ≠ auth. ads_read only — no mutate. LICENSE_REQUIRED without a license.",
     inputSchema: S.metaInsights,
     annotations: ANN_RO,
     handler: async (ctx, args) => metaDisabled(ctx, "meta_insights", args),
@@ -526,7 +557,8 @@ export const TOOLS: ToolSpec[] = [
     group: "meta",
     family: "meta",
     title: "Meta get creative",
-    description: "Paid. Pro $19/mo. Creative metadata and image URLs, not bytes. LICENSE_REQUIRED without a license.",
+    description:
+      "Paid. Pro $19/mo. Creative metadata and image URLs, not bytes. LICENSE_REQUIRED without a license.",
     inputSchema: S.metaCreative,
     annotations: ANN_RO,
     handler: async (ctx, args) => metaDisabled(ctx, "meta_get_creative", args),

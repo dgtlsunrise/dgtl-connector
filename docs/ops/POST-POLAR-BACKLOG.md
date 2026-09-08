@@ -57,6 +57,19 @@ Design: [POLAR-LICENSE-PLAN.md](POLAR-LICENSE-PLAN.md). Noel clicks: [NOEL-ONLY-
 
 ---
 
+
+
+## Meta hosted MCP / Ads DX follow-ups (pass 2)
+
+| Item | Owner | Notes |
+| --- | --- | --- |
+| OAuth `tools/list` dump vs `https://mcp.facebook.com/ads` | **Noel** login gate | Overnight pass used docs only (401 without token). |
+| `ads_mcp_management` Advanced Access | **Noel** / product | Whether to complement Polar+stamp with Meta hosted MCP — not v1. |
+| Deferred Meta read categories | **Agent** later | Activity logs, help-center search — still no mutate/catalogs/audiences/lift in v1. |
+| Optional GA4 `list_google_ads_links` | **Agent** later | Official analytics_mcp admin tool; not required for pass 2. |
+
+See [META-AND-GOOGLE-MCP-DX-PASS2.md](META-AND-GOOGLE-MCP-DX-PASS2.md).
+
 ## Explicitly not this backlog
 
 - Free Consent A readonly (already shipped)
