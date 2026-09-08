@@ -187,8 +187,9 @@ describe("session proofs", () => {
     assert.ok(!String(env.message).toLowerCase().includes("connect card") || String(env.message).includes("no Gmail"));
   });
 
-  it("closed free kernel is 23 tools including ga4_list_account_summaries", () => {
-    assert.equal(FREE_TOOL_NAMES.length, 23);
+  it("closed free kernel is 24 tools including ga4_list_account_summaries and gsc_describe_schema", () => {
+    assert.equal(FREE_TOOL_NAMES.length, 24);
+    assert.ok(FREE_TOOL_NAMES.includes("gsc_describe_schema"));
     assert.ok(FREE_TOOL_NAMES.includes("ga4_list_account_summaries"));
     assert.ok(FREE_TOOL_NAMES.includes("ga4_run_report"));
     assert.ok(TOOLS.some((t) => t.name === "gads_search"));

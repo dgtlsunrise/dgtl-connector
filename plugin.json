@@ -40,7 +40,7 @@
         "searchconsole.googleapis.com",
         "tagmanager.googleapis.com"
       ],
-      "closedToolCount": 23,
+      "closedToolCount": 24,
       "gbpFlagDefault": false,
       "paidGateway": "not-in-this-package"
     }

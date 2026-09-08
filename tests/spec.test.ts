@@ -10,6 +10,6 @@ describe("validate-spec", () => {
       encoding: "utf8",
     });
     assert.ok(out.includes("SPEC OK"), out);
-    assert.ok(out.includes("tools=23"), out);
+    assert.ok(out.includes("tools=24"), out);
   });
 });

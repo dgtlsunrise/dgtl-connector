@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://dgtlsunrise.local/spec/dgtl-connector/v1/tools.schema.json",
-  "title": "dgtl-connector v1 tool parameters (closed, 23 free tools + gated families)",
+  "title": "dgtl-connector v1 tool parameters (closed, 24 free tools + gated families)",
   "$comment": "Implementers map each $defs key to an MCP tool inputSchema. Resource IDs are required; never default. dimension_filter is a closed FilterExpression subset.",
   "$defs": {
     "page_size": {
@@ -9,7 +9,9 @@
       "minimum": 1,
       "maximum": 200
     },
-    "page_token": { "type": "string" },
+    "page_token": {
+      "type": "string"
+    },
     "account_id": {
       "type": "string",
       "minLength": 1,
@@ -26,8 +28,14 @@
       "minLength": 1,
       "description": "Exact Search Console property, e.g. https://example.com/ or sc-domain:example.com"
     },
-    "container_id": { "type": "string", "minLength": 1 },
-    "workspace_id": { "type": "string", "minLength": 1 },
+    "container_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "workspace_id": {
+      "type": "string",
+      "minLength": 1
+    },
     "google_whoami": {
       "type": "object",
       "additionalProperties": false,
@@ -37,70 +45,133 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "page_size": { "$ref": "#/$defs/page_size" },
-        "page_token": { "$ref": "#/$defs/page_token" }
+        "page_size": {
+          "$ref": "#/$defs/page_size"
+        },
+        "page_token": {
+          "$ref": "#/$defs/page_token"
+        }
       }
     },
     "ga4_list_account_summaries": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "page_size": { "$ref": "#/$defs/page_size" },
-        "page_token": { "$ref": "#/$defs/page_token" }
+        "page_size": {
+          "$ref": "#/$defs/page_size"
+        },
+        "page_token": {
+          "$ref": "#/$defs/page_token"
+        }
       }
     },
     "ga4_list_properties": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["account_id"],
+      "required": [
+        "account_id"
+      ],
       "properties": {
-        "account_id": { "$ref": "#/$defs/account_id" },
-        "page_size": { "$ref": "#/$defs/page_size" },
-        "page_token": { "$ref": "#/$defs/page_token" }
+        "account_id": {
+          "$ref": "#/$defs/account_id"
+        },
+        "page_size": {
+          "$ref": "#/$defs/page_size"
+        },
+        "page_token": {
+          "$ref": "#/$defs/page_token"
+        }
       }
     },
     "ga4_get_property": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["property_id"],
+      "required": [
+        "property_id"
+      ],
       "properties": {
-        "property_id": { "$ref": "#/$defs/property_id" }
+        "property_id": {
+          "$ref": "#/$defs/property_id"
+        }
       }
     },
     "ga4_list_data_streams": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["property_id"],
+      "required": [
+        "property_id"
+      ],
       "properties": {
-        "property_id": { "$ref": "#/$defs/property_id" },
-        "page_size": { "$ref": "#/$defs/page_size" },
-        "page_token": { "$ref": "#/$defs/page_token" }
+        "property_id": {
+          "$ref": "#/$defs/property_id"
+        },
+        "page_size": {
+          "$ref": "#/$defs/page_size"
+        },
+        "page_token": {
+          "$ref": "#/$defs/page_token"
+        }
       }
     },
     "ga4_list_key_events": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["property_id"],
+      "required": [
+        "property_id"
+      ],
       "properties": {
-        "property_id": { "$ref": "#/$defs/property_id" },
-        "page_size": { "$ref": "#/$defs/page_size" },
-        "page_token": { "$ref": "#/$defs/page_token" }
+        "property_id": {
+          "$ref": "#/$defs/property_id"
+        },
+        "page_size": {
+          "$ref": "#/$defs/page_size"
+        },
+        "page_token": {
+          "$ref": "#/$defs/page_token"
+        }
       }
     },
     "ga4_get_metadata": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["property_id"],
+      "required": [
+        "property_id"
+      ],
       "properties": {
-        "property_id": { "$ref": "#/$defs/property_id" }
+        "property_id": {
+          "$ref": "#/$defs/property_id"
+        },
+        "query": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Substring filter on apiName/uiName/description"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "dimension",
+            "metric",
+            "all"
+          ]
+        },
+        "custom_only": {
+          "type": "boolean"
+        }
       }
     },
     "ga4_run_report": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["property_id", "date_ranges", "metrics"],
+      "required": [
+        "property_id",
+        "date_ranges",
+        "metrics"
+      ],
       "properties": {
-        "property_id": { "$ref": "#/$defs/property_id" },
+        "property_id": {
+          "$ref": "#/$defs/property_id"
+        },
         "date_ranges": {
           "type": "array",
           "minItems": 1,
@@ -108,10 +179,17 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["start_date", "end_date"],
+            "required": [
+              "start_date",
+              "end_date"
+            ],
             "properties": {
-              "start_date": { "type": "string" },
-              "end_date": { "type": "string" }
+              "start_date": {
+                "type": "string"
+              },
+              "end_date": {
+                "type": "string"
+              }
             }
           }
         },
@@ -119,34 +197,72 @@
           "type": "array",
           "minItems": 1,
           "maxItems": 10,
-          "items": { "type": "string", "minLength": 1 }
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         },
         "dimensions": {
           "type": "array",
           "maxItems": 9,
-          "items": { "type": "string", "minLength": 1 }
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         },
-        "dimension_filter": { "$ref": "#/$defs/filter_expression" },
-        "metric_filter": { "$ref": "#/$defs/filter_expression" },
+        "dimension_filter": {
+          "$ref": "#/$defs/filter_expression"
+        },
+        "metric_filter": {
+          "$ref": "#/$defs/filter_expression"
+        },
         "order_bys": {
           "type": "array",
           "maxItems": 10,
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["field"],
+            "required": [
+              "field"
+            ],
             "properties": {
-              "field": { "type": "string", "minLength": 1 },
-              "kind": { "type": "string", "enum": ["dimension", "metric"] },
-              "desc": { "type": "boolean" }
+              "field": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "dimension",
+                  "metric"
+                ]
+              },
+              "desc": {
+                "type": "boolean"
+              }
             }
           }
         },
-        "limit": { "type": "integer", "minimum": 1, "maximum": 1000 },
-        "offset": { "type": "integer", "minimum": 0 },
-        "keep_empty_rows": { "type": "boolean" },
-        "currency_code": { "type": "string", "minLength": 3, "maxLength": 3 },
-        "allow_long_range": { "type": "boolean" }
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "keep_empty_rows": {
+          "type": "boolean"
+        },
+        "currency_code": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 3
+        },
+        "allow_long_range": {
+          "type": "boolean"
+        }
       }
     },
     "filter_expression": {
@@ -154,52 +270,82 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["and"],
+          "required": [
+            "and"
+          ],
           "properties": {
             "and": {
               "type": "array",
               "minItems": 1,
-              "items": { "$ref": "#/$defs/filter_expression" }
+              "items": {
+                "$ref": "#/$defs/filter_expression"
+              }
             }
           }
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["or"],
+          "required": [
+            "or"
+          ],
           "properties": {
             "or": {
               "type": "array",
               "minItems": 1,
-              "items": { "$ref": "#/$defs/filter_expression" }
+              "items": {
+                "$ref": "#/$defs/filter_expression"
+              }
             }
           }
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["not"],
+          "required": [
+            "not"
+          ],
           "properties": {
-            "not": { "$ref": "#/$defs/filter_expression" }
+            "not": {
+              "$ref": "#/$defs/filter_expression"
+            }
           }
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["field", "string_filter"],
+          "required": [
+            "field",
+            "string_filter"
+          ],
           "properties": {
-            "field": { "type": "string" },
+            "field": {
+              "type": "string"
+            },
             "string_filter": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["value"],
+              "required": [
+                "value"
+              ],
               "properties": {
                 "match_type": {
                   "type": "string",
-                  "enum": ["EXACT", "BEGINS_WITH", "ENDS_WITH", "CONTAINS", "FULL_REGEXP", "PARTIAL_REGEXP"]
+                  "enum": [
+                    "EXACT",
+                    "BEGINS_WITH",
+                    "ENDS_WITH",
+                    "CONTAINS",
+                    "FULL_REGEXP",
+                    "PARTIAL_REGEXP"
+                  ]
                 },
-                "value": { "type": "string" },
-                "case_sensitive": { "type": "boolean" }
+                "value": {
+                  "type": "string"
+                },
+                "case_sensitive": {
+                  "type": "boolean"
+                }
               }
             }
           }
@@ -207,16 +353,31 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["field", "in_list"],
+          "required": [
+            "field",
+            "in_list"
+          ],
           "properties": {
-            "field": { "type": "string" },
+            "field": {
+              "type": "string"
+            },
             "in_list": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["values"],
+              "required": [
+                "values"
+              ],
               "properties": {
-                "values": { "type": "array", "minItems": 1, "items": { "type": "string" } },
-                "case_sensitive": { "type": "boolean" }
+                "values": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "case_sensitive": {
+                  "type": "boolean"
+                }
               }
             }
           }
@@ -224,17 +385,31 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["field", "numeric_filter"],
+          "required": [
+            "field",
+            "numeric_filter"
+          ],
           "properties": {
-            "field": { "type": "string" },
+            "field": {
+              "type": "string"
+            },
             "numeric_filter": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["operation", "value"],
+              "required": [
+                "operation",
+                "value"
+              ],
               "properties": {
                 "operation": {
                   "type": "string",
-                  "enum": ["EQUAL", "LESS_THAN", "LESS_THAN_OR_EQUAL", "GREATER_THAN", "GREATER_THAN_OR_EQUAL"]
+                  "enum": [
+                    "EQUAL",
+                    "LESS_THAN",
+                    "LESS_THAN_OR_EQUAL",
+                    "GREATER_THAN",
+                    "GREATER_THAN_OR_EQUAL"
+                  ]
                 },
                 "value": true
               }
@@ -251,63 +426,133 @@
     "gsc_get_site": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["site_url"],
+      "required": [
+        "site_url"
+      ],
       "properties": {
-        "site_url": { "$ref": "#/$defs/site_url" }
+        "site_url": {
+          "$ref": "#/$defs/site_url"
+        }
       }
     },
     "gsc_query_search_analytics": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["site_url", "start_date", "end_date"],
+      "required": [
+        "site_url",
+        "start_date",
+        "end_date"
+      ],
       "properties": {
-        "site_url": { "$ref": "#/$defs/site_url" },
-        "start_date": { "type": "string" },
-        "end_date": { "type": "string" },
+        "site_url": {
+          "$ref": "#/$defs/site_url"
+        },
+        "start_date": {
+          "type": "string"
+        },
+        "end_date": {
+          "type": "string"
+        },
         "dimensions": {
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["query", "page", "country", "device", "searchAppearance", "date", "hour"]
+            "enum": [
+              "query",
+              "page",
+              "country",
+              "device",
+              "searchAppearance",
+              "date",
+              "hour"
+            ]
           }
         },
-        "row_limit": { "type": "integer", "minimum": 1, "maximum": 1000 },
-        "start_row": { "type": "integer", "minimum": 0 },
+        "row_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "start_row": {
+          "type": "integer",
+          "minimum": 0
+        },
         "search_type": {
           "type": "string",
-          "enum": ["web", "image", "video", "news", "discover", "googleNews"]
+          "enum": [
+            "web",
+            "image",
+            "video",
+            "news",
+            "discover",
+            "googleNews"
+          ]
         },
-        "data_state": { "type": "string", "enum": ["final", "all"] },
-        "aggregation_type": { "type": "string" },
-        "dimension_filter_groups": { "type": "array" }
+        "data_state": {
+          "type": "string",
+          "enum": [
+            "final",
+            "all"
+          ]
+        },
+        "aggregation_type": {
+          "type": "string"
+        },
+        "dimension_filter_groups": {
+          "type": "array"
+        }
       }
     },
     "gsc_inspect_url": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["site_url", "inspection_url"],
+      "required": [
+        "site_url",
+        "inspection_url"
+      ],
       "properties": {
-        "site_url": { "$ref": "#/$defs/site_url" },
-        "inspection_url": { "type": "string", "minLength": 1 },
-        "language_code": { "type": "string" }
+        "site_url": {
+          "$ref": "#/$defs/site_url"
+        },
+        "inspection_url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "language_code": {
+          "type": "string"
+        }
       }
     },
     "gsc_list_sitemaps": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["site_url"],
+      "required": [
+        "site_url"
+      ],
       "properties": {
-        "site_url": { "$ref": "#/$defs/site_url" },
-        "sitemap_index": { "type": "string" }
+        "site_url": {
+          "$ref": "#/$defs/site_url"
+        },
+        "sitemap_index": {
+          "type": "string"
+        }
       }
     },
     "gsc_get_sitemap": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["site_url", "feedpath"],
+      "required": [
+        "site_url",
+        "feedpath"
+      ],
       "properties": {
-        "site_url": { "$ref": "#/$defs/site_url" },
-        "feedpath": { "type": "string", "minLength": 1 }
+        "site_url": {
+          "$ref": "#/$defs/site_url"
+        },
+        "feedpath": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "gtm_list_accounts": {
@@ -318,108 +563,191 @@
     "gtm_list_containers": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["account_id"],
+      "required": [
+        "account_id"
+      ],
       "properties": {
-        "account_id": { "$ref": "#/$defs/account_id" }
+        "account_id": {
+          "$ref": "#/$defs/account_id"
+        }
       }
     },
     "gtm_get_container": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["account_id", "container_id"],
+      "required": [
+        "account_id",
+        "container_id"
+      ],
       "properties": {
-        "account_id": { "$ref": "#/$defs/account_id" },
-        "container_id": { "$ref": "#/$defs/container_id" }
+        "account_id": {
+          "$ref": "#/$defs/account_id"
+        },
+        "container_id": {
+          "$ref": "#/$defs/container_id"
+        }
       }
     },
     "gtm_list_workspaces": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["account_id", "container_id"],
+      "required": [
+        "account_id",
+        "container_id"
+      ],
       "properties": {
-        "account_id": { "$ref": "#/$defs/account_id" },
-        "container_id": { "$ref": "#/$defs/container_id" }
+        "account_id": {
+          "$ref": "#/$defs/account_id"
+        },
+        "container_id": {
+          "$ref": "#/$defs/container_id"
+        }
       }
     },
     "gtm_list_tags": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["account_id", "container_id", "workspace_id"],
+      "required": [
+        "account_id",
+        "container_id",
+        "workspace_id"
+      ],
       "properties": {
-        "account_id": { "$ref": "#/$defs/account_id" },
-        "container_id": { "$ref": "#/$defs/container_id" },
-        "workspace_id": { "$ref": "#/$defs/workspace_id" }
+        "account_id": {
+          "$ref": "#/$defs/account_id"
+        },
+        "container_id": {
+          "$ref": "#/$defs/container_id"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/workspace_id"
+        }
       }
     },
     "gtm_list_triggers": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["account_id", "container_id", "workspace_id"],
+      "required": [
+        "account_id",
+        "container_id",
+        "workspace_id"
+      ],
       "properties": {
-        "account_id": { "$ref": "#/$defs/account_id" },
-        "container_id": { "$ref": "#/$defs/container_id" },
-        "workspace_id": { "$ref": "#/$defs/workspace_id" }
+        "account_id": {
+          "$ref": "#/$defs/account_id"
+        },
+        "container_id": {
+          "$ref": "#/$defs/container_id"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/workspace_id"
+        }
       }
     },
     "gtm_list_variables": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["account_id", "container_id", "workspace_id"],
+      "required": [
+        "account_id",
+        "container_id",
+        "workspace_id"
+      ],
       "properties": {
-        "account_id": { "$ref": "#/$defs/account_id" },
-        "container_id": { "$ref": "#/$defs/container_id" },
-        "workspace_id": { "$ref": "#/$defs/workspace_id" }
+        "account_id": {
+          "$ref": "#/$defs/account_id"
+        },
+        "container_id": {
+          "$ref": "#/$defs/container_id"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/workspace_id"
+        }
       }
     },
     "gtm_get_live_container_version": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["account_id", "container_id"],
+      "required": [
+        "account_id",
+        "container_id"
+      ],
       "properties": {
-        "account_id": { "$ref": "#/$defs/account_id" },
-        "container_id": { "$ref": "#/$defs/container_id" }
+        "account_id": {
+          "$ref": "#/$defs/account_id"
+        },
+        "container_id": {
+          "$ref": "#/$defs/container_id"
+        }
       }
     },
     "gbp_list_accounts": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "page_size": { "$ref": "#/$defs/page_size" },
-        "page_token": { "$ref": "#/$defs/page_token" }
+        "page_size": {
+          "$ref": "#/$defs/page_size"
+        },
+        "page_token": {
+          "$ref": "#/$defs/page_token"
+        }
       }
     },
     "gbp_list_locations": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "account_name": { "type": "string", "minLength": 1 },
-        "page_size": { "$ref": "#/$defs/page_size" },
-        "page_token": { "$ref": "#/$defs/page_token" }
+        "account_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "page_size": {
+          "$ref": "#/$defs/page_size"
+        },
+        "page_token": {
+          "$ref": "#/$defs/page_token"
+        }
       }
     },
     "gbp_get_location": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "location_name": { "type": "string", "minLength": 1 }
+        "location_name": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "gbp_performance": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "location_name": { "type": "string", "minLength": 1 },
-        "start_date": { "type": "string" },
-        "end_date": { "type": "string" },
-        "daily_metric": { "type": "string" }
+        "location_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "start_date": {
+          "type": "string"
+        },
+        "end_date": {
+          "type": "string"
+        },
+        "daily_metric": {
+          "type": "string"
+        }
       }
     },
     "gbp_search_keywords": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "location_name": { "type": "string", "minLength": 1 },
-        "month": { "type": "string" }
+        "location_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "month": {
+          "type": "string"
+        }
       }
     },
     "gads_list_accessible_customers": {
@@ -431,16 +759,26 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "customer_id": { "type": "string", "minLength": 1 },
-        "login_customer_id": { "type": "string" }
+        "customer_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "login_customer_id": {
+          "type": "string"
+        }
       }
     },
     "gads_search": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "customer_id": { "type": "string", "minLength": 1 },
-        "login_customer_id": { "type": "string" },
+        "customer_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "login_customer_id": {
+          "type": "string"
+        },
         "recipe": {
           "type": "string",
           "enum": [
@@ -458,22 +796,36 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "start_date": { "type": "string" },
-            "end_date": { "type": "string" }
+            "start_date": {
+              "type": "string"
+            },
+            "end_date": {
+              "type": "string"
+            }
           }
         },
         "where": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "status": { "type": "string" },
-            "campaign_id": { "type": "string" }
+            "status": {
+              "type": "string"
+            },
+            "campaign_id": {
+              "type": "string"
+            }
           }
         },
-        "limit": { "type": "integer", "minimum": 1, "maximum": 1000 }
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        }
       }
     },
-    "gads_campaign_performance": { "$ref": "#/$defs/gads_search" },
+    "gads_campaign_performance": {
+      "$ref": "#/$defs/gads_search"
+    },
     "license_status": {
       "type": "object",
       "additionalProperties": false,
@@ -483,37 +835,103 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "last_tool": { "type": "string", "maxLength": 80 },
-        "error_code": { "type": "string", "maxLength": 64 },
-        "resource_id": { "type": "string", "maxLength": 256 }
+        "last_tool": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "error_code": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "resource_id": {
+          "type": "string",
+          "maxLength": 256
+        }
       }
     },
     "feedback_prepare": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["message", "reply_to"],
+      "required": [
+        "message",
+        "reply_to"
+      ],
       "properties": {
-        "message": { "type": "string", "minLength": 1 },
-        "reply_to": { "type": "string", "minLength": 3, "maxLength": 254 },
-        "kind": { "type": "string", "enum": ["bug", "feature", "other"] },
-        "last_tool": { "type": "string", "maxLength": 80 },
-        "error_code": { "type": "string", "maxLength": 64 },
-        "resource_id": { "type": "string", "maxLength": 256 }
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reply_to": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "bug",
+            "feature",
+            "other"
+          ]
+        },
+        "last_tool": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "error_code": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "resource_id": {
+          "type": "string",
+          "maxLength": 256
+        }
       }
     },
     "feedback_send": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["confirm"],
+      "required": [
+        "confirm"
+      ],
       "properties": {
-        "confirm": { "const": true },
-        "draft_id": { "type": "string", "minLength": 1, "maxLength": 64 },
-        "message": { "type": "string", "minLength": 1 },
-        "reply_to": { "type": "string", "minLength": 3, "maxLength": 254 },
-        "kind": { "type": "string", "enum": ["bug", "feature", "other"] },
-        "last_tool": { "type": "string", "maxLength": 80 },
-        "error_code": { "type": "string", "maxLength": 64 },
-        "resource_id": { "type": "string", "maxLength": 256 }
+        "confirm": {
+          "const": true
+        },
+        "draft_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reply_to": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "bug",
+            "feature",
+            "other"
+          ]
+        },
+        "last_tool": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "error_code": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "resource_id": {
+          "type": "string",
+          "maxLength": 256
+        }
       }
     },
     "meta_list_ad_accounts": {
@@ -525,40 +943,73 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "ad_account_id": { "type": "string", "minLength": 1 }
+        "ad_account_id": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "meta_list_adsets": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "ad_account_id": { "type": "string", "minLength": 1 }
+        "ad_account_id": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "meta_list_ads": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "ad_account_id": { "type": "string", "minLength": 1 }
+        "ad_account_id": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "meta_insights": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "ad_account_id": { "type": "string" },
-        "level": { "type": "string", "enum": ["account", "campaign", "adset", "ad"] },
-        "object_id": { "type": "string" },
-        "date_start": { "type": "string" },
-        "date_stop": { "type": "string" }
+        "ad_account_id": {
+          "type": "string"
+        },
+        "level": {
+          "type": "string",
+          "enum": [
+            "account",
+            "campaign",
+            "adset",
+            "ad"
+          ]
+        },
+        "object_id": {
+          "type": "string"
+        },
+        "date_start": {
+          "type": "string"
+        },
+        "date_stop": {
+          "type": "string"
+        }
       }
     },
     "meta_get_creative": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "creative_id": { "type": "string", "minLength": 1 }
+        "creative_id": {
+          "type": "string",
+          "minLength": 1
+        }
       }
+    },
+    "gsc_describe_schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
     }
   }
 }

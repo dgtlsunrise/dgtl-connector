@@ -1,8 +1,8 @@
 # Tools (v1, closed)
 
-**Closed free tool count: 23.** (the original 22 plus `ga4_list_account_summaries`)
+**Closed free tool count: 24.** (the original 22 plus `ga4_list_account_summaries` plus `gsc_describe_schema`)
 
-If you need a 24th **free** tool, bump a version and update `schemas/v1/catalog.json` in the same change. Do not “just add it.” Quality over dump. Small typed tools, not a mega-query kitchen sink. GBP / Ads / Meta are gated families: registered, fail closed (`GBP_NOT_ENABLED` / `LICENSE_REQUIRED`).
+If you need a 25th **free** tool, bump a version and update `schemas/v1/catalog.json` in the same change. Do not “just add it.” Quality over dump. Small typed tools, not a mega-query kitchen sink. GBP / Ads / Meta are gated families: registered, fail closed (`GBP_NOT_ENABLED` / `LICENSE_REQUIRED`).
 
 Machine-readable list: [`schemas/v1/catalog.json`](../schemas/v1/catalog.json). Parameter schema: [`schemas/v1/tools.schema.json`](../schemas/v1/tools.schema.json). Error envelope: [`schemas/v1/error.schema.json`](../schemas/v1/error.schema.json).
 
@@ -153,10 +153,10 @@ If `account_id` omitted → `RESOURCE_REQUIRED`.
 | --- | --- |
 | Google | Data v1beta `properties.getMetadata` (`properties/{id}/metadata`) |
 | Scope | `analytics.readonly` |
-| Params | **`property_id` required** |
+| Params | **`property_id` required**; optional `query` (substring), `kind` (`dimension`\|`metric`\|`all`), `custom_only` |
 | Idempotent | yes |
 
-**Returns:** `dimensions[]` and `metrics[]` with `apiName`, `uiName`, `description`, `customDefinition` (bool). This is the anti-hallucination catalog for **this** property (includes custom dimensions/metrics).
+**Returns:** filtered `dimensions[]` / `metrics[]` with `apiName`, `uiName`, `description`, `customDefinition`, plus `property_id`, counts, and `filtered`. This is the anti-hallucination catalog for **this** property (includes custom dimensions/metrics). Prefer `query` / `kind` over dumping the full catalog when searching for a name.
 
 Cap: if Google returns an oversized catalog, still return it; do not silently drop custom definitions.
 
@@ -197,9 +197,9 @@ Other unknown names: send to Google; map `INVALID_ARGUMENT` and hint `ga4_get_me
 
 ---
 
-## Search Console (6)
+## Search Console (7)
 
-`site_url` is the Search Console property URL: `https://example.com/` or `sc-domain:example.com`. Trailing slash matters for URL-prefix properties; do not “fix” it silently. If Google 404s, return `NOT_FOUND` and tell the user to copy the URL from `gsc_list_sites`.
+`site_url` is the Search Console property URL: `https://example.com/` or `sc-domain:example.com`. Trailing slash matters for URL-prefix properties; do not “fix” it silently. If Google 404s, return `NOT_FOUND` and tell the user to copy the URL from `gsc_list_sites`. Call `gsc_describe_schema` before inventing dimension names.
 
 ### 9. `gsc_list_sites`
 
@@ -211,6 +211,17 @@ Other unknown names: send to Google; map `INVALID_ARGUMENT` and hint `ga4_get_me
 | Idempotent | yes |
 
 **Returns:** `siteUrl`, `permissionLevel`. Empty list is success.
+
+### 9b. `gsc_describe_schema`
+
+| | |
+| --- | --- |
+| Google | none (local catalog) |
+| Scope | none |
+| Params | none |
+| Idempotent | yes |
+
+**Returns:** `dimensions[]` / `metrics[]` with `api_name` + `description`, plus `site_url_notes` and `data_state_notes`. Anti-hallucination for Search Analytics — call before `gsc_query_search_analytics`.
 
 ### 10. `gsc_get_site`
 
@@ -479,12 +490,12 @@ Do **not** put the expected confirm phrase or an example `GTM-XXXX` value in the
 
 ## Count check
 
-Identity 1 + GA4 8 + GSC 6 + GTM 8 = **23**.
+Identity 1 + GA4 8 + GSC 7 + GTM 8 = **24**.
 
 | Group | Tools |
 | --- | --- |
 | identity | `google_whoami` |
 | ga4-admin | `ga4_list_accounts`, `ga4_list_account_summaries`, `ga4_list_properties`, `ga4_get_property`, `ga4_list_data_streams`, `ga4_list_key_events` |
-| ga4-data | `ga4_get_metadata`, `ga4_run_report` |
-| gsc | `gsc_list_sites`, `gsc_get_site`, `gsc_query_search_analytics`, `gsc_inspect_url`, `gsc_list_sitemaps`, `gsc_get_sitemap` |
+| ga4-data | `ga4_get_metadata` (optional query/kind), `ga4_run_report` |
+| gsc | `gsc_list_sites`, `gsc_describe_schema`, `gsc_get_site`, `gsc_query_search_analytics`, `gsc_inspect_url`, `gsc_list_sitemaps`, `gsc_get_sitemap` |
 | gtm | `gtm_list_accounts`, `gtm_list_containers`, `gtm_get_container`, `gtm_list_workspaces`, `gtm_list_tags`, `gtm_list_triggers`, `gtm_list_variables`, `gtm_get_live_container_version` |

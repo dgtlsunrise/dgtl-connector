@@ -1,5 +1,12 @@
 import type { AppContext } from "../context.js";
 import { HINT_EMPTY_LIST, okEnvelope, pageFromList, type Envelope } from "../envelope.js";
+
+/** Workspace lists are drafts — not what is live on the site. */
+const HINT_GTM_WORKSPACE_DRAFT =
+  "source=workspace (draft). This is not the live published container. Use gtm_get_live_container_version for what is on the site; workspace drafts may differ.";
+
+const HINT_GTM_LIVE =
+  "source=live (published). This is what is on the site. Workspace tag/trigger/variable lists may include unpublished drafts.";
 import { asInt, normalizeGtmAccount, normalizeGtmContainer, requireId } from "../ids.js";
 import { APIS, SCOPE } from "./scopes.js";
 import { slicePage } from "../tools/dates.js";
@@ -87,7 +94,12 @@ export async function gtmListWorkspaces(ctx: AppContext, args: Rec): Promise<Env
     resource: gtmResource(a, c),
     data: { workspace: items },
     page: pageFromList(items, total, next),
-    ...(total === 0 ? { hint: HINT_EMPTY_LIST } : {}),
+    hint:
+      total === 0
+        ? HINT_EMPTY_LIST
+        : total > 1
+          ? "Multiple workspaces — do not default to Default Workspace. Name workspace_id explicitly. Hierarchy: account → container → workspace → (draft tags) or live version."
+          : "Hierarchy: account → container → workspace. Draft tags/triggers/variables require this workspace_id; live publish state is gtm_get_live_container_version.",
   });
 }
 
@@ -119,9 +131,9 @@ async function listWorkspaceChild(
   });
   return okEnvelope(tool, {
     resource: gtmResource(a, c),
-    data: { [sourceKey]: annotated, source: "workspace" },
+    data: { [sourceKey]: annotated, source: "workspace", workspace_id: w },
     page: pageFromList(annotated, total, next),
-    ...(total === 0 ? { hint: HINT_EMPTY_LIST } : {}),
+    hint: total === 0 ? HINT_EMPTY_LIST : HINT_GTM_WORKSPACE_DRAFT,
   });
 }
 
@@ -147,10 +159,15 @@ export async function gtmGetLiveContainerVersion(ctx: AppContext, args: Rec): Pr
   const cv = (raw.containerVersion as Rec | undefined) ?? raw;
   return okEnvelope("gtm_get_live_container_version", {
     resource: gtmResource(a, c),
-    data: { ...raw, source: "live" },
+    data: {
+      ...raw,
+      source: "live",
+      cited: { account_id: a, container_id: c, path: `accounts/${a}/containers/${c}` },
+    },
     page: {
       row_count: Array.isArray((cv as Rec).tag) ? ((cv as Rec).tag as unknown[]).length : 0,
       truncated: false,
     },
+    hint: HINT_GTM_LIVE,
   });
 }

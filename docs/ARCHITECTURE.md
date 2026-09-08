@@ -1,6 +1,6 @@
 # Architecture
 
-**Lock:** `ARCHITECTURE-LOCK.md`, `SECOND-OPINION.md`, and [ops/PRODUCT-DESIGN.md](ops/PRODUCT-DESIGN.md) override this file on auth, paid topology, and packaging. stdio auth is **AuthPort** (host-injected token, then installed-app PKCE). There is no Gmail-style Connect card for stdio. Paid Ads/Meta use a DGTL allowlisted gateway in the **same** plugin (not a second MCP; not in this package yet). This file is the vendored cloud spec; keep it for the **23**-tool free kernel and error/non-bug discussion.
+**Lock:** `ARCHITECTURE-LOCK.md`, `SECOND-OPINION.md`, and [ops/PRODUCT-DESIGN.md](ops/PRODUCT-DESIGN.md) override this file on auth, paid topology, and packaging. stdio auth is **AuthPort** (host-injected token, then installed-app PKCE). There is no Gmail-style Connect card for stdio. Paid Ads/Meta use a DGTL allowlisted gateway in the **same** plugin (not a second MCP; not in this package yet). This file is the vendored cloud spec; keep it for the **24**-tool free kernel and error/non-bug discussion.
 
 v1 is a **local MCP server** packaged as an **Agent Plugin**. Google API calls for GA4 / GSC / GTM leave the **user's** computer **directly to Google**. DGTL Sunrise is not on that path.
 
@@ -31,7 +31,7 @@ Agent Plugins 1.0 **defines no portable OAuth fields**. Authentication is **clie
    │  short-lived access token in MCP process
    v
  stdio MCP on the user's computer
-   │  free tools from docs/TOOLS.md / schemas/v1/catalog.json (23, closed)
+   │  free tools from docs/TOOLS.md / schemas/v1/catalog.json (24, closed)
    v
  Google APIs (OAuth client project's APIs must be Enabled)
    ├── analyticsadmin.googleapis.com   GA4 Admin v1beta
@@ -120,7 +120,7 @@ Rules:
 - `ga4_run_report` is the only GA4 report tool. No batch, funnel, or realtime in v1 (quota + complexity).
 - Read calls are **retry-safe**. They are not snapshot-stable (processing lag).
 
-Closed free list: [TOOLS.md](TOOLS.md). Machine copy: `schemas/v1/catalog.json` (`count`: **23**). Write/publish stubs (if registered) are gated (`WRITE_NOT_ENABLED` / Consent W) and are **not** Consent A listing promises.
+Closed free list: [TOOLS.md](TOOLS.md). Machine copy: `schemas/v1/catalog.json` (`count`: **24**). Write/publish stubs (if registered) are gated (`WRITE_NOT_ENABLED` / Consent W) and are **not** Consent A listing promises.
 
 ## How paid hosted Ads plugs in without rewriting GA4
 
