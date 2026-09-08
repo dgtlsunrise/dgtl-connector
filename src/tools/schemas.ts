@@ -192,16 +192,42 @@ export const gadsSearch = z
   .strict();
 
 export const metaAccount = z.object({ ad_account_id: str }).strict();
+export const metaDescribeInsightsSchema = emptyInput;
 export const metaInsights = z
   .object({
     ad_account_id: str,
     level: z.enum(["account", "campaign", "adset", "ad"]).optional(),
-    object_id: str,
-    date_start: str,
-    date_stop: str,
+    /** Campaign/adset/ad id when level is not account; omit for account rollup. */
+    object_id: z.string().min(1).optional(),
+    /** YYYY-MM-DD — use with date_stop, or pass date_preset instead. */
+    date_start: z.string().min(1).optional(),
+    date_stop: z.string().min(1).optional(),
+    /** Marketing API date_preset (see meta_describe_insights_schema). */
+    date_preset: z
+      .enum([
+        "today",
+        "yesterday",
+        "last_7d",
+        "last_14d",
+        "last_28d",
+        "last_30d",
+        "last_90d",
+        "this_month",
+        "last_month",
+        "lifetime",
+        "maximum",
+      ])
+      .optional(),
+    /** age/gender/publisher_platform/… — validate via meta_describe_insights_schema. */
+    breakdowns: z.array(z.string().min(1)).max(8).optional(),
+    /** Closed insight field names — do not invent Graph fields. */
+    fields: z.array(z.string().min(1)).max(40).optional(),
+    /** 1 = daily; all_days = single total; or integer days. Gateway interprets. */
+    time_increment: z.union([z.string(), z.number().int().positive()]).optional(),
   })
   .strict();
 export const metaCreative = z.object({ creative_id: str }).strict();
+export const gadsDescribeRecipes = emptyInput;
 
 /** Require confirm_phrase when dry_run is explicitly false. */
 function requireConfirmWhenLive(val: { dry_run: boolean; confirm_phrase?: string }, ctx: z.RefinementCtx): void {

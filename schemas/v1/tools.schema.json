@@ -974,7 +974,8 @@
       "additionalProperties": false,
       "properties": {
         "ad_account_id": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "level": {
           "type": "string",
@@ -986,15 +987,64 @@
           ]
         },
         "object_id": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "date_start": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "date_stop": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
+        },
+        "date_preset": {
+          "type": "string",
+          "enum": [
+            "today",
+            "yesterday",
+            "last_7d",
+            "last_14d",
+            "last_28d",
+            "last_30d",
+            "last_90d",
+            "this_month",
+            "last_month",
+            "lifetime",
+            "maximum"
+          ]
+        },
+        "breakdowns": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "fields": {
+          "type": "array",
+          "maxItems": 40,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "time_increment": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            }
+          ]
         }
-      }
+      },
+      "required": [
+        "ad_account_id"
+      ]
     },
     "meta_get_creative": {
       "type": "object",
@@ -1007,6 +1057,16 @@
       }
     },
     "gsc_describe_schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "gads_describe_recipes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "meta_describe_insights_schema": {
       "type": "object",
       "additionalProperties": false,
       "properties": {}

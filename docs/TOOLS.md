@@ -474,6 +474,24 @@ Do **not** put the expected confirm phrase or an example `GTM-XXXX` value in the
 
 ---
 
+## Gated Ads / Meta DX (paid; not free kernel)
+
+Free count stays **24**. These are Polar-gated; local describe tools need license only (no gateway/token). Live list/report tools still use stamp gateway + Consent C / Meta token.
+
+| Tool | Notes |
+| --- | --- |
+| `gads_list_accessible_customers` | Use first for customer ids (digits, no hyphens). |
+| `gads_describe_recipes` | Local closed-recipe catalog — call before `gads_search`. No GAQL. |
+| `gads_get_customer` / `gads_search` / `gads_campaign_performance` | Closed recipes; cite `data.cited.customer_id`. |
+| `meta_list_ad_accounts` | Use first for `ad_account_id`. |
+| `meta_describe_insights_schema` | Local levels / date_presets / breakdowns / fields — call before `meta_insights`. |
+| `meta_insights` | `date_preset` or dates; optional `breakdowns` / `fields` / `time_increment`; cite `data.cited`. ads_read only. |
+| `meta_list_*` / `meta_get_creative` | Read lists + creative metadata (URLs, not bytes). |
+
+Writes, catalogs, audiences, lift, activity logs, and Meta hosted `ads_mcp_management` are **deferred** — see [ops/META-AND-GOOGLE-MCP-DX-PASS2.md](ops/META-AND-GOOGLE-MCP-DX-PASS2.md).
+
+---
+
 ## Out of v1 (do not add quietly)
 
 | Request | Response |
