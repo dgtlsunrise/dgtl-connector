@@ -16,8 +16,11 @@ describe("empty-state hints on ok list/report tools", () => {
     const env = await dispatch(ctx, "ga4_run_report", reportArgs());
     assert.equal(env.ok, true);
     assert.equal(env.page?.row_count, 0);
-    assert.equal(env.hint, HINT_EMPTY_ROWS);
+    assert.ok(env.hint?.includes(HINT_EMPTY_ROWS));
     assert.ok(env.hint?.includes("not an auth failure"));
+    assert.ok(env.hint?.includes("properties/"));
+    const cited = (env.data as { cited?: { property_id?: string } }).cited;
+    assert.equal(cited?.property_id, "properties/111111111");
   });
 
   it("ga4_run_report with rows has no empty hint", async () => {
@@ -59,7 +62,9 @@ describe("empty-state hints on ok list/report tools", () => {
     });
     assert.equal(env.ok, true);
     assert.equal(env.page?.row_count, 0);
-    assert.equal(env.hint, HINT_EMPTY_ROWS);
+    assert.ok(env.hint?.includes(HINT_EMPTY_ROWS));
+    assert.ok(env.hint?.includes("sc-domain:example.com"));
+    assert.ok(env.hint?.includes("data_state=final"));
   });
 
   it("populated list tools do not attach an empty hint", async () => {

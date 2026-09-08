@@ -93,8 +93,8 @@ describe("Consent W scaffold — Consent A stays readonly", () => {
     assert.equal(ctx.calls.length, 0);
   });
 
-  it("free kernel stays 23 readonly tools; write tools are separate family", () => {
-    assert.equal(FREE_TOOL_NAMES.length, 23);
+  it("free kernel stays 24 readonly tools; write tools are separate family", () => {
+    assert.equal(FREE_TOOL_NAMES.length, 24);
     for (const name of WRITE_TOOLS) {
       assert.ok(!FREE_TOOL_NAMES.includes(name), name);
       const spec = TOOLS.find((t) => t.name === name);

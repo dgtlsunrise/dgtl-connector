@@ -3,6 +3,23 @@ import { headerMap, type HttpCall } from "./calls.js";
 import { mapGoogleHttpError } from "./map-error.js";
 import type { AccessTokenSource } from "../auth/types.js";
 
+/** Reactive backoff for 429/503 (Magdoub-inspired; no proactive token bucket). */
+const MAX_RETRIES = 2;
+const BASE_BACKOFF_MS = 400;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function retryAfterMs(res: Response, attempt: number): number {
+  const raw = res.headers.get("retry-after");
+  if (raw) {
+    const sec = Number(raw);
+    if (Number.isFinite(sec) && sec >= 0) return Math.min(sec * 1000, 10_000);
+  }
+  return Math.min(BASE_BACKOFF_MS * 2 ** attempt, 5_000);
+}
+
 const ALLOWED_HOSTS = new Set([
   "analyticsadmin.googleapis.com",
   "analyticsdata.googleapis.com",
@@ -84,35 +101,43 @@ export class GoogleHttp {
     }
 
     const headerNames = Object.keys(headers);
-    this.opts.calls.push({
-      method: req.method,
-      host: url.hostname,
-      path: url.pathname,
-      search: url.search.replace(/access_token=[^&]+/gi, "access_token=REDACTED"),
-      headerNames,
-      hasAuthorization: true,
-      hasDeveloperToken: headerNames.some((n) => n.toLowerCase() === "developer-token"),
-    });
 
-    const res = await this.opts.fetchImpl(url.toString(), {
-      method: req.method,
-      headers,
-      body,
-    });
-
+    let lastStatus = 0;
     let parsed: unknown = undefined;
-    const text = await res.text();
-    if (text) {
-      try {
-        parsed = JSON.parse(text);
-      } catch {
-        parsed = { raw: text };
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      this.opts.calls.push({
+        method: req.method,
+        host: url.hostname,
+        path: url.pathname,
+        search: url.search.replace(/access_token=[^&]+/gi, "access_token=REDACTED"),
+        headerNames,
+        hasAuthorization: true,
+        hasDeveloperToken: headerNames.some((n) => n.toLowerCase() === "developer-token"),
+      });
+      const res = await this.opts.fetchImpl(url.toString(), {
+        method: req.method,
+        headers,
+        body,
+      });
+      lastStatus = res.status;
+      const text = await res.text();
+      parsed = undefined;
+      if (text) {
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          parsed = { raw: text };
+        }
       }
-    }
-    if (!res.ok) {
+      if (res.ok) return parsed;
+      const retryable = res.status === 429 || res.status === 503;
+      if (retryable && attempt < MAX_RETRIES) {
+        await sleep(retryAfterMs(res, attempt));
+        continue;
+      }
       throw mapGoogleHttpError({ status: res.status, body: parsed, api: req.api });
     }
-    return parsed;
+    throw mapGoogleHttpError({ status: lastStatus || 503, body: parsed, api: req.api });
   }
 
   get(apiHost: string, path: string, query: Record<string, string | number | undefined> | undefined, meta: { api: string; requiredScope?: string; tool: string }): Promise<unknown> {

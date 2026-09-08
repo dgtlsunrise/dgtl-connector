@@ -9,7 +9,7 @@ Working package id: `dgtl-connector`. Version **0.1.0**. Marketplace listing cop
 
 ## What it is / is not
 
-**Is:** a local stdio MCP plugin. Closed typed tools (23 free: identity + GA4 + GSC + GTM). Skills that refuse hallucinated metrics and will not pick the first of 40 agency properties.
+**Is:** a local stdio MCP plugin. Closed typed tools (24 free: identity + GA4 + GSC + GTM). Skills that refuse hallucinated metrics and will not pick the first of 40 agency properties.
 
 **Is not:** a hosted analytics warehouse, a Gmail-style Connect card for stdio, Google Ads/Meta (those tools are listed and return `LICENSE_REQUIRED` until a paid license + Worker), or a GBP client until DGTL’s GCP project has GBP quota (`GBP_NOT_ENABLED`). GTM write/publish stubs (if registered) are **flagged off** on a **separate Consent W** OAuth client — not on free Consent A, and not marketplace listing promises.
 

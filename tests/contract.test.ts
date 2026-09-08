@@ -15,6 +15,7 @@ const ARGS: Record<string, Record<string, unknown>> = {
   ga4_get_metadata: { property_id: "111111111" },
   ga4_run_report: reportArgs(),
   gsc_list_sites: {},
+  gsc_describe_schema: {},
   gsc_get_site: { site_url: "sc-domain:example.com" },
   gsc_query_search_analytics: {
     site_url: "sc-domain:example.com",

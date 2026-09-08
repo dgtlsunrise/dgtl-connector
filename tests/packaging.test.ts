@@ -72,10 +72,10 @@ describe("packaging and secrets", () => {
     }
   });
 
-  it("catalog count 23 matches registry free tools and tools.schema $defs", () => {
+  it("catalog count 24 matches registry free tools and tools.schema $defs", () => {
     const catalog = JSON.parse(readFileSync(join(ROOT, "schemas/v1/catalog.json"), "utf8"));
-    assert.equal(catalog.count, 23);
-    assert.equal(catalog.tools.length, 23);
+    assert.equal(catalog.count, 24);
+    assert.equal(catalog.tools.length, 24);
     const schema = JSON.parse(readFileSync(join(ROOT, "schemas/v1/tools.schema.json"), "utf8"));
     for (const t of catalog.tools) {
       assert.ok(schema.$defs[t.name], `missing schema for ${t.name}`);
@@ -83,7 +83,7 @@ describe("packaging and secrets", () => {
     }
     const plugin = JSON.parse(readFileSync(join(ROOT, "plugin.json"), "utf8"));
     assert.equal(plugin.name, "dgtl-connector");
-    assert.equal(plugin.extensions["com.dgtlsunrise"].closedToolCount, 23);
+    assert.equal(plugin.extensions["com.dgtlsunrise"].closedToolCount, 24);
     assert.equal(plugin.license, "Apache-2.0");
     assert.equal(plugin.author.name, "DGTL Sunrise");
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));

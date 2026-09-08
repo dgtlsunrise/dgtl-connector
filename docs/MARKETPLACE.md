@@ -13,7 +13,7 @@ Reviewers will treat this as code that runs on a user's computer and talks to Go
 - [ ] `plugin.json` validates against Agent Plugins 1.0 (`$schema` + `name` constraints)
 - [ ] `mcp.json` validates against Agent Plugins MCP schema (`$schema` + `mcpServers`, stdio `type`+`command`)
 - [ ] Auth is **AuthPort**: host-injected token, then installed-app PKCE (public Desktop client). stdio is Manual — no Gmail-style Connect card. Do not embed a client secret.
-- [ ] Tools: closed **23** free Consent A tools in the listing story; any write/publish stubs are gated off / Consent W (different OAuth client) — listing copy promises **Consent A readonly only**
+- [ ] Tools: closed **24** free Consent A tools in the listing story; any write/publish stubs are gated off / Consent W (different OAuth client) — listing copy promises **Consent A readonly only**
 - [ ] README explains who it's for, Consent A in/out, AuthPort, and that users authorize **their** Google accounts
 - [ ] Skills refuse hallucinated metrics, silent property pick, Consent A publish, GA4 `searchQuery`; Consent W is gated, not eternal “no publish tool”
 - [ ] License is a public OSI license (replace `UNLICENSED` before submit)

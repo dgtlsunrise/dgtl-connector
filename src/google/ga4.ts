@@ -119,12 +119,73 @@ export async function ga4ListKeyEvents(ctx: AppContext, args: Rec): Promise<Enve
   });
 }
 
+function filterMetadataItems(
+  items: unknown[],
+  query: string | undefined,
+  customOnly: boolean,
+): unknown[] {
+  const q = query?.trim().toLowerCase() ?? "";
+  return items.filter((item) => {
+    if (!item || typeof item !== "object") return false;
+    const row = item as Rec;
+    if (customOnly && row.customDefinition !== true) return false;
+    if (!q) return true;
+    const hay = [row.apiName, row.uiName, row.description]
+      .filter((v) => typeof v === "string")
+      .join(" ")
+      .toLowerCase();
+    return hay.includes(q);
+  });
+}
+
+/**
+ * Property metadata catalog. Optional query/kind/custom_only filter shrinks the
+ * dump so agents search apiNames instead of inventing metrics (Ads-style discovery).
+ */
 export async function ga4GetMetadata(ctx: AppContext, args: Rec): Promise<Envelope> {
   const prop = normalizeGa4Property(requireId(args.property_id, "property_id"));
   const raw = (await ctx.http.get(DATA, `/v1beta/${prop.name}/metadata`, undefined, dataMeta("ga4_get_metadata"))) as Rec;
+  const kindRaw = typeof args.kind === "string" ? args.kind.trim().toLowerCase() : "all";
+  const kind = kindRaw === "dimension" || kindRaw === "metric" || kindRaw === "all" ? kindRaw : null;
+  if (!kind) {
+    throw new ToolError(
+      "INVALID_ARGUMENT",
+      'kind must be "dimension", "metric", or "all"',
+      { resource_id: prop.name, hint: "Omit kind to return both dimensions and metrics." },
+    );
+  }
+  const query = typeof args.query === "string" ? args.query : undefined;
+  const customOnly = Boolean(args.custom_only);
+  const dimsAll = Array.isArray(raw.dimensions) ? raw.dimensions : [];
+  const metsAll = Array.isArray(raw.metrics) ? raw.metrics : [];
+  const dimensions = kind === "metric" ? [] : filterMetadataItems(dimsAll, query, customOnly);
+  const metrics = kind === "dimension" ? [] : filterMetadataItems(metsAll, query, customOnly);
+  const filtered = Boolean(query) || customOnly || kind !== "all";
+  const empty = dimensions.length === 0 && metrics.length === 0;
   return okEnvelope("ga4_get_metadata", {
     resource: { type: "ga4_property", id: prop.name, display_name: prop.name },
-    data: raw,
+    data: {
+      name: raw.name,
+      property_id: prop.name,
+      kind,
+      query: query ?? null,
+      custom_only: customOnly,
+      filtered,
+      dimension_count: dimensions.length,
+      metric_count: metrics.length,
+      dimensions,
+      metrics,
+    },
+    page: { row_count: dimensions.length + metrics.length, truncated: false },
+    ...(empty
+      ? {
+          hint: filtered
+            ? `No dimensions/metrics matched query=${JSON.stringify(query ?? "")} kind=${kind} on ${prop.name}. Broaden query or call without filters; do not invent apiNames.`
+            : `Metadata empty for ${prop.name}. Confirm property_id via ga4_list_account_summaries.`,
+        }
+      : {
+          hint: `Cite apiName values from this response for ${prop.name}. Do not invent metric or dimension names.`,
+        }),
   });
 }
 
@@ -191,16 +252,35 @@ export async function ga4RunReport(ctx: AppContext, args: Rec): Promise<Envelope
   const rowCount = typeof raw.rowCount === "number" ? raw.rowCount : rows.length;
   const truncated = rows.length < rowCount || (typeof raw.rowCount === "number" && offset + rows.length < raw.rowCount);
 
+  const rangeCite = compiledRanges
+    .map((r) => `${r.startDate}..${r.endDate}`)
+    .join(", ");
+  const emptyHint =
+    `No rows for ${prop.name} dates=[${rangeCite}] (limit=${limit}, offset=${offset}). ` +
+    HINT_EMPTY_ROWS +
+    " Confirm timezone via ga4_get_property; resolve apiNames via ga4_get_metadata.";
+
   return okEnvelope("ga4_run_report", {
     resource: { type: "ga4_property", id: prop.name, display_name: prop.name },
-    data: raw,
+    data: {
+      ...raw,
+      cited: {
+        property_id: prop.name,
+        date_ranges: compiledRanges,
+        metrics: metrics.map((n) => String(n)),
+        dimensions: dimensions.map((n) => String(n)),
+        limit,
+        offset,
+      },
+    },
     quota: raw.propertyQuota,
     page: {
       row_count: rowCount,
       truncated,
       ...(truncated ? { next_page_token: String(offset + rows.length) } : {}),
     },
-    ...(rowCount === 0 ? { hint: HINT_EMPTY_ROWS } : {}),
+    // Keep success-with-rows hint-free so empty-state tests stay sharp; citations live in data.cited.
+    ...(rowCount === 0 ? { hint: emptyHint } : {}),
   });
 }
 

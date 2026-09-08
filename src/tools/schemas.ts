@@ -48,6 +48,21 @@ export const accountPage = z
 
 export const propertyId = z.object({ property_id: str }).strict();
 
+/** Optional search over property metadata (anti-hallucination). */
+export const ga4GetMetadata = z
+  .object({
+    property_id: str,
+    /** Substring match on apiName / uiName / description (case-insensitive). */
+    query: z.string().min(1).max(120).optional(),
+    kind: z.enum(["dimension", "metric", "all"]).optional(),
+    /** When true, only customDefinition=true rows. */
+    custom_only: z.boolean().optional(),
+  })
+  .strict();
+
+/** Local GSC dimension/metric catalog — no Google call. */
+export const gscDescribeSchema = emptyInput;
+
 export const propertyPage = z
   .object({ property_id: str, page_size: pageSize, page_token: pageToken })
   .strict();

@@ -146,8 +146,8 @@ def check_catalog_and_tools() -> None:
         err("catalog.json: tools must be an array")
         return
     count = catalog.get("count")
-    if count != 23 or len(tools) != 23:
-        err(f"closed tool count must be 23 (count={count}, len={len(tools)})")
+    if count != 24 or len(tools) != 24:
+        err(f"closed tool count must be 24 (count={count}, len={len(tools)})")
     names = [t.get("name") for t in tools if isinstance(t, dict)]
     if len(names) != len(set(names)):
         err("catalog.json: duplicate tool names")
@@ -156,9 +156,11 @@ def check_catalog_and_tools() -> None:
             err(f"catalog.json missing vendored tool {n}")
     if "ga4_list_account_summaries" not in names:
         err("catalog.json missing ga4_list_account_summaries")
+    if "gsc_describe_schema" not in names:
+        err("catalog.json missing gsc_describe_schema")
     tools_md = read(ROOT / "docs/TOOLS.md")
-    if "Closed free tool count: 23" not in tools_md and "Closed v1 tool count: 23" not in tools_md:
-        err("docs/TOOLS.md must state closed free count 23")
+    if "Closed free tool count: 24" not in tools_md and "Closed v1 tool count: 24" not in tools_md:
+        err("docs/TOOLS.md must state closed free count 24")
     schema = load_json("schemas/v1/tools.schema.json")
     defs = schema.get("$defs") if isinstance(schema, dict) else None
     for name in names:
@@ -171,8 +173,8 @@ def check_catalog_and_tools() -> None:
     plugin = load_json("plugin.json")
     if isinstance(plugin, dict):
         ext = (plugin.get("extensions") or {}).get("com.dgtlsunrise") or {}
-        if ext.get("closedToolCount") != 23:
-            err(f"plugin.json extensions closedToolCount must be 23, got {ext.get('closedToolCount')}")
+        if ext.get("closedToolCount") != 24:
+            err(f"plugin.json extensions closedToolCount must be 24, got {ext.get('closedToolCount')}")
     gated = catalog.get("gated_tools")
     if not isinstance(gated, list):
         err("catalog.json: gated_tools must be an array")

@@ -10,7 +10,7 @@ This file is the one-page lock. Do not relitigate it in code review.
 
 - Package / plugin id: `dgtl-connector` (survives a display-name change; marketplace title/description can still say marketing/Ads).
 - Tool names: **underscore**, family prefix (`ga4_run_report`). Never dotted.
-- Closed free kernel: the **22** tools named in SECOND-OPINION plus **`ga4_list_account_summaries`** (23). Version `0.1.0`.
+- Closed free kernel: the **22** tools named in SECOND-OPINION plus **`ga4_list_account_summaries`** plus **`gsc_describe_schema`** (24). Version `0.1.0`.
 
 ## Auth (AuthPort)
 
