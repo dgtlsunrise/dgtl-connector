@@ -37,7 +37,7 @@ npm run doctor
 ./bin/dgtl-connector-mcp --help
 ```
 
-`npm run doctor` (also `dgtl-connector-mcp doctor` / `auth doctor`) prints a human checklist: Node + package versions, whether `dist/` exists, which known env **names** are SET (never values), whether `PLUGIN_DATA/google-oauth.json` and `license.jwt` exist, and a local license summary (valid / invalid / missing features). It never prints tokens or JWT bodies. Exit code is non-zero if there is no build or no way to auth.
+`npm run doctor` (also `dgtl-connector-mcp doctor` / `auth doctor`) prints a human checklist: Node + package versions, whether `dist/` exists, which known env **names** are SET (never values), whether Consent A/C/W + Meta + Shopify + `license.jwt` files exist (existence only), plugin vs Worker dual-gate mutate booleans (plugin Ads/Meta mutate default **on**; Worker fail-closed), and a local license summary (valid / invalid / missing features). It never prints tokens, JWT bodies, or gateway URLs. Exit code is non-zero if there is no build or no way to auth.
 
 The marketplace command is **one token**, plugin-relative: `./bin/dgtl-connector-mcp`. Not `npx`.
 

@@ -1,0 +1,38 @@
+{
+  "packet_keys": [
+    "plugin_version",
+    "host",
+    "last_tool",
+    "error_code",
+    "resource_id",
+    "flags",
+    "gateway",
+    "dual_gate",
+    "license",
+    "stores"
+  ],
+  "plugin_flag_keys": ["adsMutateEnabled", "metaMutateEnabled", "writesEnabled", "gbpEnabled"],
+  "worker_flag_keys": ["adsMutateEnabled", "metaMutateEnabled"],
+  "dual_gate_lane_keys": [
+    "plugin_mutate_enabled",
+    "worker_mutate_enabled",
+    "worker_flag_known",
+    "live_mutate_possible"
+  ],
+  "store_keys": ["consent_a", "consent_c", "consent_w", "meta", "shopify"],
+  "plugin_mutate_defaults": {
+    "adsMutateEnabled": true,
+    "metaMutateEnabled": true,
+    "writesEnabled": false,
+    "gbpEnabled": false
+  },
+  "worker_mutate_defaults_fail_closed": {
+    "adsMutateEnabled": false,
+    "metaMutateEnabled": false
+  },
+  "doctor_env_names": [
+    "DGTL_ADS_MUTATE_ENABLED",
+    "DGTL_META_MUTATE_ENABLED",
+    "DGTL_GBP_ENABLED"
+  ]
+}

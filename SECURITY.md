@@ -13,7 +13,7 @@
 
 stdio MCP auth is **Manual**: host-injected access token or installed-app PKCE into `PLUGIN_DATA`. There is no Gmail-style Connect card for this transport. PKCE uses a **public** Desktop client. Confidential web-client secrets stay in Google Cloud, never in git.
 
-`npm run doctor` / `dgtl-connector-mcp doctor` prints which known env **names** are SET and whether token files exist. It never prints values, JWT bodies, or refresh tokens. Use it before filing support; do not attach `token.json`.
+`npm run doctor` / `dgtl-connector-mcp doctor` prints which known env **names** are SET and whether token files exist (Consent A/C/W, Meta, Shopify). It never prints values, JWT bodies, refresh tokens, or gateway URLs. Dual-gate mutate flags are booleans only. Use it before filing support; do not attach `token.json`.
 
 ## License JWT
 

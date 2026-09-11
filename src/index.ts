@@ -45,10 +45,11 @@ async function main(argv: string[]): Promise<void> {
   const ctx = createAppContext({ pluginRoot, env: envWithWriteLocal });
 
   if (args[0] === "doctor" || (args[0] === "auth" && args[1] === "doctor")) {
-    process.exitCode = runDoctorCli({
+    process.exitCode = await runDoctorCli({
       pluginRoot: ctx.pluginRoot,
       pluginDataDir: ctx.pluginDataDir,
       env: ctx.env,
+      fetchImpl: ctx.fetchImpl,
     });
     return;
   }

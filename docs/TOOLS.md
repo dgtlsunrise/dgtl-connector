@@ -429,7 +429,7 @@ This is what you cite for “what is on the site.”
 | Params | optional `last_tool`, `error_code`, `resource_id` |
 | Idempotent | yes |
 
-**Returns (never tokens / never JWT):** `plugin_version`, `host` (when known), echoed `last_tool` / `error_code` / `resource_id` when they are safe identifiers. Token-shaped strings are dropped.
+**Returns (never tokens / never JWT / never gateway URL):** `plugin_version`, `host` (when known), echoed `last_tool` / `error_code` / `resource_id` when they are safe identifiers, `flags.plugin` (`adsMutateEnabled` / `metaMutateEnabled` default **on**; `writesEnabled` / `gbpEnabled` default **off**), `flags.worker` (booleans from `GET /v1/health`, else `null`), `dual_gate` (live mutate = plugin AND Worker; all booleans), `gateway` (`configured`, `reachable`, hostname only), `license` (`present`, `ok`, feature names, `ads`/`meta` booleans — never the JWT), `stores` (Consent A/C/W + Meta + Shopify file existence). Token-shaped strings are dropped. Worker mutate flags stay fail-closed until health reports them.
 
 ### `feedback_prepare`
 

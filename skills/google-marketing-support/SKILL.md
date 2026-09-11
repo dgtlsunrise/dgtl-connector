@@ -11,7 +11,7 @@ Fix the plugin problem. Do not run a sales script.
 
 1. `google_whoami` — which email, which scopes, is there a token at all?
 2. Map the tool error to `docs/ERRORS.md` codes. Use that user-visible copy.
-3. For a human ticket, call `support_packet` with the last tool name, `error_code`, and resource id (no tokens). It returns plugin version + host hint. Use those intake fields; never ask for tokens.
+3. For a human ticket, call `support_packet` with the last tool name, `error_code`, and resource id (no tokens). It returns plugin version, host, dual-gate flag booleans, gateway configured/reachable, license feature names, and consent-store presence. Use those intake fields; never ask for tokens.
 4. Branch:
 
 | Signal | Meaning | What to say |

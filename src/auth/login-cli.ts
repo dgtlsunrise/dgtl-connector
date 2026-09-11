@@ -435,8 +435,10 @@ DGTL license JWT is present. This binary never ships a developer-token.
 
 DIAGNOSTICS
   doctor / auth doctor prints node + package versions, whether dist/ exists,
-  which known env names are SET (never values), PLUGIN_DATA file existence,
-  and a local license summary (valid/invalid/missing features). Exits 1 if
-  there is no build or no way to auth. Same as \`npm run doctor\`.
+  which known env names are SET (never values), PLUGIN_DATA file existence
+  (Consent A/C/W, Meta, Shopify, license.jwt), plugin vs Worker dual-gate
+  mutate booleans, and a local license summary (valid/invalid/missing features).
+  Never prints tokens, JWT, or gateway URLs. Exits 1 if there is no build or
+  no way to auth. Same as \`npm run doctor\`.
 `;
 }

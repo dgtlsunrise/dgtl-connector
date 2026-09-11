@@ -112,7 +112,15 @@ export type GatewayRequest = {
 export type GatewayReachable = {
   reachable: boolean;
   note?: string;
+  /** Worker ADS_MUTATE_ENABLED — boolean from health, else null. Never the env string. */
+  ads_mutate_enabled?: boolean | null;
+  /** Worker META_MUTATE_ENABLED — boolean from health, else null. Never the env string. */
+  meta_mutate_enabled?: boolean | null;
 };
+
+function healthBool(value: unknown): boolean | null {
+  return typeof value === "boolean" ? value : null;
+}
 
 /** Normalize DGTL_GATEWAY_URL (trim trailing slash). Empty → undefined. */
 export function gatewayUrlFromEnv(env: NodeJS.ProcessEnv = process.env): string | undefined {
@@ -152,16 +160,24 @@ export async function probeGatewayReachable(
         note: `Gateway health returned HTTP ${res.status}. Set a reachable DGTL_GATEWAY_URL.`,
       };
     }
-    let body: { ok?: boolean } = {};
+    let body: {
+      ok?: boolean;
+      ads_mutate_enabled?: unknown;
+      meta_mutate_enabled?: unknown;
+    } = {};
     try {
-      body = (await res.json()) as { ok?: boolean };
+      body = (await res.json()) as typeof body;
     } catch {
       return { reachable: false, note: "Gateway health returned non-JSON." };
     }
     if (body.ok !== true) {
       return { reachable: false, note: "Gateway health ok≠true." };
     }
-    return { reachable: true };
+    return {
+      reachable: true,
+      ads_mutate_enabled: healthBool(body.ads_mutate_enabled),
+      meta_mutate_enabled: healthBool(body.meta_mutate_enabled),
+    };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return {

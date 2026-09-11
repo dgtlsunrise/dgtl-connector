@@ -1,7 +1,19 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { STORE_FILE } from "./types.js";
+import { loadFlags } from "../flags.js";
+import { probeGatewayReachable } from "../gateway/client.js";
 import { loadLicenseToken, verifyLicenseJwt } from "../license/verify.js";
+import {
+  consentStorePresence,
+  dualGateMatrix,
+  gatewayHostname,
+  pluginFlagBooleans,
+  safeLicenseFeatures,
+  type ConsentStorePresence,
+  type DualGateMatrix,
+  type PluginFlagBooleans,
+  type WorkerFlagBooleans,
+} from "../support/matrix.js";
 import { PLUGIN_VERSION } from "../version.js";
 
 /** Env names we may report as SET/UNSET. Never print values. */
@@ -29,6 +41,9 @@ export const DOCTOR_ENV_NAMES = [
   "DGTL_HOST",
   "DGTL_MCP_HOST",
   "DGTL_WRITES_ENABLED",
+  "DGTL_ADS_MUTATE_ENABLED",
+  "DGTL_META_MUTATE_ENABLED",
+  "DGTL_GBP_ENABLED",
   "DGTL_SKIP_UPDATE_CHECK",
   "DGTL_AUDIT_LOCAL",
   "PLUGIN_ROOT",
@@ -42,6 +57,7 @@ export type DoctorOpts = {
   pluginDataDir: string;
   env?: NodeJS.ProcessEnv;
   nowMs?: number;
+  fetchImpl?: typeof fetch;
 };
 
 export type DoctorReport = {
@@ -53,12 +69,29 @@ export type DoctorReport = {
   env_unset: string[];
   plugin_data: {
     google_oauth_json: boolean;
+    google_oauth_ads_json: boolean;
+    google_oauth_write_json: boolean;
+    meta_oauth_json: boolean;
+    shopify_oauth_json: boolean;
     license_jwt: boolean;
+  };
+  stores: ConsentStorePresence;
+  flags: {
+    plugin: PluginFlagBooleans;
+    worker: WorkerFlagBooleans;
+  };
+  dual_gate: DualGateMatrix;
+  gateway: {
+    configured: boolean;
+    reachable: boolean;
+    host: string | null;
   };
   license: {
     present: boolean;
     status: "missing" | "valid" | "invalid" | "expired" | "issuer";
     features: string[];
+    ads: boolean;
+    meta: boolean;
     /** Present only when locally verifiable; never the JWT or payload body. */
     missing_features?: string[];
   };
@@ -89,7 +122,7 @@ function envSet(env: NodeJS.ProcessEnv, name: string): boolean {
   return typeof v === "string" && v.trim().length > 0;
 }
 
-export function collectDoctor(opts: DoctorOpts): DoctorReport {
+export async function collectDoctor(opts: DoctorOpts): Promise<DoctorReport> {
   const env = opts.env ?? process.env;
   const nodeVersion = process.version;
   const nodeMajor = Number.parseInt(nodeVersion.replace(/^v/, "").split(".")[0] ?? "0", 10);
@@ -106,7 +139,8 @@ export function collectDoctor(opts: DoctorOpts): DoctorReport {
     else env_unset.push(name);
   }
 
-  const googleOauthJson = existsSync(join(opts.pluginDataDir, STORE_FILE.a));
+  const stores = consentStorePresence(opts.pluginDataDir);
+  const googleOauthJson = stores.consent_a;
   const licenseJwtFile = existsSync(join(opts.pluginDataDir, "license.jwt"));
 
   const token = loadLicenseToken(env, opts.pluginDataDir);
@@ -119,8 +153,17 @@ export function collectDoctor(opts: DoctorOpts): DoctorReport {
   else if (verified.reason === "issuer") status = "issuer";
   else status = "invalid";
 
-  const features = verified.features;
+  const features = safeLicenseFeatures(verified.features);
   const missing_features = EXPECTED_FEATURES.filter((f) => !features.includes(f));
+
+  const flagsLoaded = loadFlags(env);
+  const plugin = pluginFlagBooleans(flagsLoaded);
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  const probe = await probeGatewayReachable({ env, fetchImpl, flags: flagsLoaded });
+  const worker: WorkerFlagBooleans = {
+    adsMutateEnabled: probe.reachable ? (probe.ads_mutate_enabled ?? null) : null,
+    metaMutateEnabled: probe.reachable ? (probe.meta_mutate_enabled ?? null) : null,
+  };
 
   const hostInjected = envSet(env, "GOOGLE_ACCESS_TOKEN") || envSet(env, "DGTL_GOOGLE_ACCESS_TOKEN");
   const oauthClientId = envSet(env, "GOOGLE_OAUTH_CLIENT_ID");
@@ -140,12 +183,26 @@ export function collectDoctor(opts: DoctorOpts): DoctorReport {
     env_unset,
     plugin_data: {
       google_oauth_json: googleOauthJson,
+      google_oauth_ads_json: stores.consent_c,
+      google_oauth_write_json: stores.consent_w,
+      meta_oauth_json: stores.meta,
+      shopify_oauth_json: stores.shopify,
       license_jwt: licenseJwtFile,
+    },
+    stores,
+    flags: { plugin, worker },
+    dual_gate: dualGateMatrix(plugin, worker),
+    gateway: {
+      configured: Boolean(flagsLoaded.gatewayUrl),
+      reachable: probe.reachable,
+      host: gatewayHostname(flagsLoaded.gatewayUrl),
     },
     license: {
       present,
       status,
       features,
+      ads: features.includes("ads"),
+      meta: features.includes("meta"),
       ...(present && status === "valid" && missing_features.length > 0 ? { missing_features } : {}),
     },
     auth: {
@@ -175,8 +232,28 @@ export function formatDoctorReport(report: DoctorReport): string {
     report.env_unset.length ? `  ${report.env_unset.join(", ")}` : "  (all known names are set)",
     "",
     "PLUGIN_DATA files (existence only):",
-    `  google-oauth.json: ${report.plugin_data.google_oauth_json ? "present" : "absent"}`,
+    `  google-oauth.json (Consent A): ${report.plugin_data.google_oauth_json ? "present" : "absent"}`,
+    `  google-oauth-ads.json (Consent C): ${report.plugin_data.google_oauth_ads_json ? "present" : "absent"}`,
+    `  google-oauth-write.json (Consent W): ${report.plugin_data.google_oauth_write_json ? "present" : "absent"}`,
+    `  meta-oauth.json: ${report.plugin_data.meta_oauth_json ? "present" : "absent"}`,
+    `  shopify-oauth.json: ${report.plugin_data.shopify_oauth_json ? "present" : "absent"}`,
     `  license.jwt: ${report.plugin_data.license_jwt ? "present" : "absent"}`,
+    "",
+    "plugin flags (ads/meta mutate default ON; writes/gbp default OFF):",
+    `  adsMutateEnabled: ${report.flags.plugin.adsMutateEnabled}`,
+    `  metaMutateEnabled: ${report.flags.plugin.metaMutateEnabled}`,
+    `  writesEnabled: ${report.flags.plugin.writesEnabled}`,
+    `  gbpEnabled: ${report.flags.plugin.gbpEnabled}`,
+    "",
+    `gateway: configured=${report.gateway.configured} reachable=${report.gateway.reachable} host=${report.gateway.host ?? "(none)"}`,
+    "",
+    "worker flags (fail-closed; unknown unless health reachable):",
+    `  adsMutateEnabled: ${workerFlagLine(report.flags.worker.adsMutateEnabled)}`,
+    `  metaMutateEnabled: ${workerFlagLine(report.flags.worker.metaMutateEnabled)}`,
+    "",
+    "dual-gate (live mutate = plugin AND worker; booleans only):",
+    `  ads: plugin=${report.dual_gate.ads.plugin_mutate_enabled} worker=${report.dual_gate.ads.worker_mutate_enabled} worker_known=${report.dual_gate.ads.worker_flag_known} live=${report.dual_gate.ads.live_mutate_possible}`,
+    `  meta: plugin=${report.dual_gate.meta.plugin_mutate_enabled} worker=${report.dual_gate.meta.worker_mutate_enabled} worker_known=${report.dual_gate.meta.worker_flag_known} live=${report.dual_gate.meta.live_mutate_possible}`,
     "",
     `license: ${licenseLine(report)}`,
     `auth: host_injected=${report.auth.host_injected} pkce_store=${report.auth.pkce_store} GOOGLE_OAUTH_CLIENT_ID=${report.auth.oauth_client_id}`,
@@ -192,6 +269,10 @@ export function formatDoctorReport(report: DoctorReport): string {
   }
   lines.push("");
   return lines.join("\n");
+}
+
+function workerFlagLine(value: boolean | null): string {
+  return value === null ? "false" : String(value);
 }
 
 function licenseLine(report: DoctorReport): string {
@@ -215,8 +296,11 @@ export function doctorExitCode(report: DoctorReport): number {
   return report.ok ? 0 : 1;
 }
 
-export function runDoctorCli(opts: DoctorOpts, write: (s: string) => void = (s) => process.stdout.write(s)): number {
-  const report = collectDoctor(opts);
+export async function runDoctorCli(
+  opts: DoctorOpts,
+  write: (s: string) => void = (s) => process.stdout.write(s),
+): Promise<number> {
+  const report = await collectDoctor(opts);
   write(formatDoctorReport(report));
   return doctorExitCode(report);
 }

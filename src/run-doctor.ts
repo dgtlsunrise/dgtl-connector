@@ -3,8 +3,9 @@ import { runDoctorCli } from "./auth/doctor.js";
 
 const pluginRoot = detectPluginRoot(import.meta.url);
 const ctx = createAppContext({ pluginRoot });
-process.exitCode = runDoctorCli({
+process.exitCode = await runDoctorCli({
   pluginRoot: ctx.pluginRoot,
   pluginDataDir: ctx.pluginDataDir,
   env: ctx.env,
+  fetchImpl: ctx.fetchImpl,
 });

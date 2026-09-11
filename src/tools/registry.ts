@@ -622,7 +622,7 @@ export const TOOLS: ToolSpec[] = [
     family: "license",
     title: "Support packet",
     description:
-      "Local support intake: plugin version, host hint, optional last tool / error_code / resource id. Never tokens. No Google call.",
+      "Local support intake: plugin version, host, plugin/Worker flag matrix (booleans), gateway configured/reachable, license feature names, consent-store presence. Optional last_tool / error_code / resource_id. Never tokens or JWT. No Google call.",
     inputSchema: S.supportPacket,
     annotations: ANN_RO,
     handler: (ctx, args) => supportPacket(ctx, args),
