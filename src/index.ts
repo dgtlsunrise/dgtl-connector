@@ -6,6 +6,7 @@ import {
   parseRedeemArgs,
   runAuthLogin,
   runAuthLoginAds,
+  runAuthLoginWrite,
   runAuthLoginMeta,
   runAuthRedeem,
 } from "./auth/login-cli.js";
@@ -50,6 +51,23 @@ async function main(argv: string[]): Promise<void> {
       }
       process.exitCode = await runAuthLogin({
         clientId,
+        pluginDataDir: ctx.pluginDataDir,
+        fetchImpl: ctx.fetchImpl,
+      });
+      return;
+    }
+    if (sub === "login-write") {
+      const clientId = ctx.env.GOOGLE_OAUTH_WRITE_CLIENT_ID?.trim();
+      if (!clientId) {
+        process.stderr.write(
+          "Set GOOGLE_OAUTH_WRITE_CLIENT_ID (separate Consent W Desktop client). Do not add write scopes to Consent A. Never commit GOOGLE_OAUTH_WRITE_CLIENT_SECRET. login-write does not enable DGTL_WRITES_ENABLED.\n",
+        );
+        process.exitCode = 1;
+        return;
+      }
+      process.exitCode = await runAuthLoginWrite({
+        clientId,
+        clientSecret: ctx.env.GOOGLE_OAUTH_WRITE_CLIENT_SECRET,
         pluginDataDir: ctx.pluginDataDir,
         fetchImpl: ctx.fetchImpl,
       });
@@ -115,6 +133,11 @@ async function main(argv: string[]): Promise<void> {
       process.stderr.write("Cleared PLUGIN_DATA/google-oauth.json (Consent A only; W/C stores untouched)\n");
       return;
     }
+    if (sub === "logout-write") {
+      clearStore(ctx.pluginDataDir, STORE_FILE.w);
+      process.stderr.write("Cleared PLUGIN_DATA/google-oauth-write.json (Consent W)\n");
+      return;
+    }
     if (sub === "logout-ads") {
       clearStore(ctx.pluginDataDir, STORE_FILE.ads);
       process.stderr.write("Cleared PLUGIN_DATA/google-oauth-ads.json (Consent C Ads)\n");
@@ -154,6 +177,13 @@ async function main(argv: string[]): Promise<void> {
               host_injected: Boolean(ctx.env.META_ACCESS_TOKEN?.trim()),
               store: Boolean(readStore(ctx.pluginDataDir, STORE_FILE.meta)?.access_token),
               present: Boolean(metaTok?.accessToken),
+            },
+            shopify: {
+              host_injected: Boolean(
+                (ctx.env.SHOPIFY_STORE?.trim() || ctx.env.DGTL_SHOPIFY_STORE?.trim()) &&
+                  (ctx.env.SHOPIFY_ACCESS_TOKEN?.trim() || ctx.env.DGTL_SHOPIFY_ACCESS_TOKEN?.trim()),
+              ),
+              store_file: "shopify-oauth.json",
             },
             license_ok: ctx.license.ok,
             license_features: ctx.license.features,

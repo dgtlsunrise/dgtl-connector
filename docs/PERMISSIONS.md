@@ -163,3 +163,15 @@ Until verified, the OAuth client stays in testing with an allowlist. Fine for No
 ## Support and tokens
 
 Support intake **never** includes refresh tokens, access tokens, cookie dumps, or HAR files with `Authorization`. See [SUPPORT_AND_CLIENTS.md](SUPPORT_AND_CLIENTS.md).
+
+## Shopify (not Google Consent A)
+
+Local merchant custom app / Dev Dashboard credentials:
+
+- `SHOPIFY_STORE` (`*.myshopify.com`)
+- `SHOPIFY_ACCESS_TOKEN` (`shpat_…`) and/or `SHOPIFY_CLIENT_ID` + `SHOPIFY_CLIENT_SECRET` (client_credentials)
+- Scopes on the **merchant app only**: `read_products`, `read_orders` — **no** `write_*` in v1
+- Store under `PLUGIN_DATA/shopify-oauth.json` mode 0600; never git
+
+Fail closed: `SHOPIFY_NOT_CONNECTED`. Free local lane (do not require Polar Pro). Support never collects Shopify tokens. Not part of Consent A verification / marketplace Google consent screen.
+

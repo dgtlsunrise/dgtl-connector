@@ -53,6 +53,7 @@ SKILLS = [
     "pro-upgrade",
     "gsc-vs-ads-keywords",
     "ga4-vs-ads-conversions",
+    "shopify-readonly",
 ]
 
 SCOPES = [

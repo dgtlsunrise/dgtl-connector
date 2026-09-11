@@ -1,0 +1,27 @@
+{
+  "data": {
+    "products": {
+      "pageInfo": { "hasNextPage": true, "endCursor": "cursor-products-2" },
+      "nodes": [
+        {
+          "id": "gid://shopify/Product/1001",
+          "title": "Blue Widget",
+          "handle": "blue-widget",
+          "status": "ACTIVE",
+          "updatedAt": "2026-09-01T12:00:00Z",
+          "vendor": "Fixture Co",
+          "productType": "Widgets"
+        },
+        {
+          "id": "gid://shopify/Product/1002",
+          "title": "Red Widget",
+          "handle": "red-widget",
+          "status": "DRAFT",
+          "updatedAt": "2026-09-02T12:00:00Z",
+          "vendor": "Fixture Co",
+          "productType": "Widgets"
+        }
+      ]
+    }
+  }
+}

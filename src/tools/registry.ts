@@ -34,11 +34,18 @@ import {
   metaCreateAdCreative,
 } from "../meta/meta-write.js";
 import { metaDisabled, metaDescribeInsightsSchema } from "../meta/meta.js";
+import {
+  shopifyGetShop,
+  shopifyListProducts,
+  shopifyGetProduct,
+  shopifyListOrders,
+  shopifyGetOrder,
+} from "../shopify/shopify.js";
 import { supportPacket } from "../support/packet.js";
 import { feedbackPrepare, feedbackSend } from "../support/feedback.js";
 import * as S from "./schemas.js";
 
-export type ToolFamily = "identity" | "ga4" | "gsc" | "gtm" | "gtm_write" | "gbp" | "gads" | "meta" | "license";
+export type ToolFamily = "identity" | "ga4" | "gsc" | "gtm" | "gtm_write" | "gbp" | "gads" | "meta" | "shopify" | "license";
 
 export type ToolAnnotations = {
   readOnlyHint: boolean;
@@ -818,6 +825,56 @@ export const TOOLS: ToolSpec[] = [
     inputSchema: S.metaCreateAdCreative,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => metaCreateAdCreative(ctx, args),
+  },
+  {
+    name: "shopify_get_shop",
+    group: "shopify",
+    family: "shopify",
+    title: "Shopify get shop",
+    description: `${RO} Confirm merchant shop domain + name via Admin GraphQL (API 2026-04). Local SHOPIFY_STORE + SHOPIFY_ACCESS_TOKEN or PLUGIN_DATA/shopify-oauth.json. Fail closed SHOPIFY_NOT_CONNECTED. Free local — no Polar / stamp.`,
+    inputSchema: S.shopifyGetShop,
+    annotations: ANN_RO,
+    handler: (ctx) => shopifyGetShop(ctx),
+  },
+  {
+    name: "shopify_list_products",
+    group: "shopify",
+    family: "shopify",
+    title: "Shopify list products",
+    description: `${RO} Paginated products (title, handle, status, id). Merchant token with read_products. SHOPIFY_NOT_CONNECTED without credentials. No Polar.`,
+    inputSchema: S.shopifyListProducts,
+    annotations: ANN_RO,
+    handler: (ctx, args) => shopifyListProducts(ctx, args),
+  },
+  {
+    name: "shopify_get_product",
+    group: "shopify",
+    family: "shopify",
+    title: "Shopify get product",
+    description: `${RO} One product by id (gid or numeric). Requires product_id. read_products. No writes.`,
+    inputSchema: S.shopifyGetProduct,
+    annotations: ANN_RO,
+    handler: (ctx, args) => shopifyGetProduct(ctx, args),
+  },
+  {
+    name: "shopify_list_orders",
+    group: "shopify",
+    family: "shopify",
+    title: "Shopify list orders",
+    description: `${RO} Paginated orders with closed status/financial/fulfillment/date filters. read_orders. No customers dump. No Polar.`,
+    inputSchema: S.shopifyListOrders,
+    annotations: ANN_RO,
+    handler: (ctx, args) => shopifyListOrders(ctx, args),
+  },
+  {
+    name: "shopify_get_order",
+    group: "shopify",
+    family: "shopify",
+    title: "Shopify get order",
+    description: `${RO} One order by id (gid or numeric) with line items. Requires order_id. read_orders. No writes.`,
+    inputSchema: S.shopifyGetOrder,
+    annotations: ANN_RO,
+    handler: (ctx, args) => shopifyGetOrder(ctx, args),
   },
 ];
 
