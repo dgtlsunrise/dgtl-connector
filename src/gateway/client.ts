@@ -173,76 +173,95 @@ export async function probeGatewayReachable(
   }
 }
 
+/**
+ * Hop param keys the plugin may POST to stamp. Fifth handwritten map (W0.2);
+ * keep in lockstep with `GatewayParams` and stamp builders.
+ */
+export const GATEWAY_PARAM_ALLOW = new Set([
+  "customer_id",
+  "login_customer_id",
+  "date_range",
+  "where",
+  "limit",
+  "campaign_id",
+  "status",
+  "campaign_budget_id",
+  "campaign_budget_resource_name",
+  "amount_micros",
+  "daily_budget_dollars",
+  "ad_account_id",
+  "object_id",
+  "level",
+  "date_start",
+  "date_stop",
+  "date_preset",
+  "breakdowns",
+  "fields",
+  "time_increment",
+  "creative_id",
+  "adset_id",
+  "ad_id",
+  "name",
+  "daily_budget",
+  "lifetime_budget",
+  "ad_group_id",
+  "criterion_id",
+  "keywords",
+  "headlines",
+  "descriptions",
+  "final_url",
+  "path1",
+  "path2",
+  "campaign_name",
+  "ad_group_name",
+  "cpc_bid_micros",
+  "objective",
+  "special_ad_categories",
+  "billing_event",
+  "optimization_goal",
+  "bid_strategy",
+  "countries",
+  "end_time",
+  "bytes",
+  "file_url",
+  "page_id",
+  "image_hash",
+  "video_id",
+  "link",
+  "message",
+  "title",
+  "description",
+  "call_to_action_type",
+  "asset_group_name",
+  "marketing_image_asset_resource_names",
+  "square_marketing_image_asset_resource_names",
+  "logo_asset_resource_names",
+  "long_headlines",
+  "business_name",
+  "merchant_center_id",
+  "sales_country",
+]);
+
+/**
+ * Closed https fields that are landing/media values — never hop targets.
+ *
+ * Checklist when adding a new media/URL field (do not skip; `final_url` already
+ * broke live RSA create when it was missing):
+ * 1. Add the key here (`CLOSED_HTTPS_FIELDS`).
+ * 2. Add it to `GATEWAY_PARAM_ALLOW` and stamp `LANDING_URL_PARAM_KEYS`.
+ * 3. Stamp mutate builder must validate https-only (no credentials).
+ * 4. Add a hop test that the field survives `stripUrlishParams`.
+ * 5. Update `tests/fixtures/w0-2-mutate-parity.json` `closed_https_fields` in BOTH
+ *    dgtl-connector and dgtl-stamp.
+ *
+ * `path1` / `path2` are path-only sitelink fields (not https) — keep them off this set.
+ */
+export const CLOSED_HTTPS_FIELDS = new Set(["final_url", "file_url", "link"]);
+
 function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
   const out: GatewayParams = {};
-  const allow = new Set([
-    "customer_id",
-    "login_customer_id",
-    "date_range",
-    "where",
-    "limit",
-    "campaign_id",
-    "status",
-    "campaign_budget_id",
-    "campaign_budget_resource_name",
-    "amount_micros",
-    "daily_budget_dollars",
-    "ad_account_id",
-    "object_id",
-    "level",
-    "date_start",
-    "date_stop",
-    "date_preset",
-    "breakdowns",
-    "fields",
-    "time_increment",
-    "creative_id",
-    "adset_id",
-    "ad_id",
-    "name",
-    "daily_budget",
-    "lifetime_budget",
-    "ad_group_id",
-    "criterion_id",
-    "keywords",
-    "headlines",
-    "descriptions",
-    "final_url",
-    "path1",
-    "path2",
-    "campaign_name",
-    "ad_group_name",
-    "cpc_bid_micros",
-    "objective",
-    "special_ad_categories",
-    "billing_event",
-    "optimization_goal",
-    "bid_strategy",
-    "countries",
-    "end_time",
-    "bytes",
-    "file_url",
-    "page_id",
-    "image_hash",
-    "video_id",
-    "link",
-    "message",
-    "title",
-    "description",
-    "call_to_action_type",
-    "asset_group_name",
-    "marketing_image_asset_resource_names",
-    "square_marketing_image_asset_resource_names",
-    "logo_asset_resource_names",
-    "long_headlines",
-    "business_name",
-    "merchant_center_id",
-    "sales_country",
-  ]);
-  /** Closed https fields that are landing/media values — never hop targets. */
-  const CLOSED_HTTPS_FIELDS = new Set(["final_url", "file_url", "link"]);
   for (const [k, v] of Object.entries(params)) {
-    if (!allow.has(k)) continue;
+    if (!GATEWAY_PARAM_ALLOW.has(k)) continue;
     // Reject https in open string fields (would be a proxy hop). Closed URL fields pass.
     if (!CLOSED_HTTPS_FIELDS.has(k) && typeof v === "string" && /^https?:\/\//i.test(v)) continue;
     if (k === "date_range" && v && typeof v === "object" && !Array.isArray(v)) {
@@ -464,11 +483,10 @@ export async function postGateway(ctx: AppContext, opts: GatewayHopOpts): Promis
 
   // Refuse open proxy / client hop URLs on the wire. Closed landing/media URL
   // fields (final_url, file_url, link) are allowlisted after stripUrlishParams.
-  const CLOSED_HTTPS_KEYS = new Set(["final_url", "file_url", "link"]);
   const scrubbedParams: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(body.params as Record<string, unknown>)) {
     scrubbedParams[k] =
-      CLOSED_HTTPS_KEYS.has(k) && typeof v === "string" ? "<closed-https>" : v;
+      CLOSED_HTTPS_FIELDS.has(k) && typeof v === "string" ? "<closed-https>" : v;
   }
   const scrubbed = JSON.stringify({ ...body, params: scrubbedParams });
   if (/https?:\/\//i.test(scrubbed)) {

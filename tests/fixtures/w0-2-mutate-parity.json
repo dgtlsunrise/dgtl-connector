@@ -1,0 +1,48 @@
+{
+  "comment": "W0.2 mutate allowlist contract. Keep byte-identical to dgtl-connector tests/fixtures/w0-2-mutate-parity.json. Mutate names must match stamp GADS_MUTATE_TOOLS/META_MUTATE_TOOLS and plugin gads-write/meta-write groups. Describe tools are plugin-local (zero Ads/Graph HTTP) and MUST NOT appear in stamp GADS_TOOLS/META_TOOLS. Adding a named wizard is allowed — update this fixture in BOTH repos; this is governance, not a freeze.",
+  "gads_mutate": [
+    "gads_set_campaign_status",
+    "gads_update_campaign_budget",
+    "gads_set_keyword_status",
+    "gads_add_keywords",
+    "gads_set_ad_status",
+    "gads_create_responsive_search_ad",
+    "gads_create_search_campaign",
+    "gads_set_ad_group_status",
+    "gads_create_display_campaign",
+    "gads_create_performance_max_campaign",
+    "gads_create_shopping_campaign"
+  ],
+  "meta_mutate": [
+    "meta_update_campaign",
+    "meta_update_adset",
+    "meta_update_ad",
+    "meta_create_campaign",
+    "meta_create_adset",
+    "meta_create_ad",
+    "meta_upload_ad_image",
+    "meta_upload_ad_video",
+    "meta_create_ad_creative"
+  ],
+  "plugin_local_describe": [
+    "gads_describe_recipes",
+    "meta_describe_insights_schema"
+  ],
+  "gads_read_hop": [
+    "gads_search",
+    "gads_campaign_performance",
+    "gads_list_accessible_customers",
+    "gads_get_customer",
+    "gads_list_merchant_center_links"
+  ],
+  "meta_read_hop": [
+    "meta_list_ad_accounts",
+    "meta_list_campaigns",
+    "meta_list_adsets",
+    "meta_list_ads",
+    "meta_insights",
+    "meta_get_creative"
+  ],
+  "closed_https_fields": ["final_url", "file_url", "link"],
+  "path_only_url_adjacent": ["path1", "path2"]
+}

@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { createAppContext } from "../src/context.js";
-import { postGateway, probeGatewayReachable } from "../src/gateway/client.js";
+import {
+  CLOSED_HTTPS_FIELDS,
+  GATEWAY_PARAM_ALLOW,
+  postGateway,
+  probeGatewayReachable,
+} from "../src/gateway/client.js";
 import { dispatch } from "../src/tools/dispatch.js";
 import {
   ROOT,
@@ -389,6 +394,56 @@ describe("PR-5 license-gated gateway client", () => {
     assert.equal(body.params.final_url, "https://example.com/landing");
     assert.equal(body.params.path1, "sale");
     assert.ok(!("url" in body.params));
+  });
+
+  it("allows closed file_url and link https (media/landing, not hop targets)", async () => {
+    assert.ok(CLOSED_HTTPS_FIELDS.has("final_url"));
+    assert.ok(CLOSED_HTTPS_FIELDS.has("file_url"));
+    assert.ok(CLOSED_HTTPS_FIELDS.has("link"));
+    assert.ok(GATEWAY_PARAM_ALLOW.has("final_url"));
+    assert.ok(GATEWAY_PARAM_ALLOW.has("file_url"));
+    assert.ok(GATEWAY_PARAM_ALLOW.has("link"));
+    assert.ok(GATEWAY_PARAM_ALLOW.has("path1"));
+    assert.equal(CLOSED_HTTPS_FIELDS.has("path1"), false);
+
+    const { fetchImpl, captures } = mockWorker({
+      healthOk: true,
+      hop: {
+        status: 200,
+        body: { ok: true, tool: "meta_create_ad_creative", data: {} },
+      },
+    });
+    const jwt = signLicense({
+      sub: "gw-user",
+      exp: Math.floor(Date.now() / 1000) + 86400,
+      features: ["meta"],
+      jti: "gw-closed-https",
+    });
+    const envVars = testEnv({
+      DGTL_LICENSE_JWT: jwt,
+      DGTL_GATEWAY_URL: GATEWAY,
+      META_ACCESS_TOKEN: META_TOKEN,
+    });
+    const ctx = createAppContext({ pluginRoot: ROOT, env: envVars, fetchImpl });
+    const env = await postGateway(ctx, {
+      family: "meta",
+      tool: "meta_create_ad_creative",
+      userAccessToken: META_TOKEN,
+      args: {
+        ad_account_id: "111222333",
+        page_id: "444",
+        image_hash: "abcDEF12",
+        link: "https://example.com/offer",
+        file_url: "https://cdn.example.com/clip.mp4",
+        title: "Offer",
+      },
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    const hop = captures.find((c) => c.url.includes("/v1/meta/meta_create_ad_creative"));
+    assert.ok(hop, "expected creative hop");
+    const body = hop!.body as { params: Record<string, unknown> };
+    assert.equal(body.params.link, "https://example.com/offer");
+    assert.equal(body.params.file_url, "https://cdn.example.com/clip.mp4");
   });
 
   it("still rejects open proxy https outside closed URL fields", async () => {

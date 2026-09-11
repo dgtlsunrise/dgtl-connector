@@ -883,3 +883,18 @@ export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 export const FREE_TOOL_NAMES = TOOLS.filter((t) => t.family === "identity" || t.family === "ga4" || t.family === "gsc" || t.family === "gtm").map(
   (t) => t.name,
 );
+
+/**
+ * Plugin-local describe/recipe tools: zero Ads/Graph HTTP.
+ * W0.2 A18 — must not be required in stamp GADS_TOOLS / META_TOOLS.
+ */
+export const PLUGIN_LOCAL_DESCRIBE_TOOLS = [
+  "gads_describe_recipes",
+  "meta_describe_insights_schema",
+] as const;
+
+/** Registry mutate surface (stamp hop). Keep ⊆ stamp GADS_MUTATE_TOOLS. */
+export const GADS_MUTATE_TOOL_NAMES = TOOLS.filter((t) => t.group === "gads-write").map((t) => t.name);
+
+/** Registry mutate surface (stamp hop). Keep ⊆ stamp META_MUTATE_TOOLS. */
+export const META_MUTATE_TOOL_NAMES = TOOLS.filter((t) => t.group === "meta-write").map((t) => t.name);
