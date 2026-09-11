@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
@@ -15,6 +15,11 @@ import {
 import { assertReadOnlyDocument } from "../src/shopify/http.js";
 import { ALLOWED_OPERATIONS, DOC_BY_OP, OP_SHOP } from "../src/shopify/queries.js";
 import { helpText } from "../src/auth/login-cli.js";
+import {
+  applyWriteEnvLocal,
+  parseDotEnvLocal,
+  WRITE_ENV_LOCAL_KEYS,
+} from "../src/auth/write-env-local.js";
 import { CONSENT_W_GTM, SCOPE } from "../src/google/scopes.js";
 import { buildGoogleAuthUrl, generatePkce } from "../src/auth/pkce.js";
 import { createAppContext } from "../src/context.js";
@@ -336,6 +341,7 @@ describe("Consent W auth login-write CLI", () => {
     assert.ok(h.includes("auth login-write"));
     assert.ok(h.includes("google-oauth-write.json"));
     assert.ok(h.includes("Does not turn on DGTL_WRITES_ENABLED") || h.includes("DGTL_WRITES_ENABLED"));
+    assert.ok(h.includes(".env.write.local") || h.includes("GOOGLE_OAUTH_WRITE_CLIENT_ID"));
     assert.ok(h.includes("SHOPIFY_STORE") || h.includes("Shopify"));
   });
 
@@ -355,3 +361,57 @@ describe("Consent W auth login-write CLI", () => {
     assert.ok(!url.includes("adwords"));
   });
 });
+
+
+describe("Consent W .env.write.local loader", () => {
+  it("parseDotEnvLocal ignores comments and strips quotes", () => {
+    const m = parseDotEnvLocal(
+      '# comment\nGOOGLE_OAUTH_WRITE_CLIENT_ID="cid.apps.googleusercontent.com"\nGOOGLE_OAUTH_WRITE_CLIENT_SECRET=sekrit\nGOOGLE_OAUTH_CLIENT_SECRET=should-ignore\n',
+    );
+    assert.equal(m.GOOGLE_OAUTH_WRITE_CLIENT_ID, "cid.apps.googleusercontent.com");
+    assert.equal(m.GOOGLE_OAUTH_WRITE_CLIENT_SECRET, "sekrit");
+    assert.equal(m.GOOGLE_OAUTH_CLIENT_SECRET, "should-ignore"); // parsed raw; apply filters
+  });
+
+  it("applyWriteEnvLocal fills only unset WRITE keys; never Consent A; existing env wins", () => {
+    const dir = mkdtempSync(join(tmpdir(), "dgtl-write-env-"));
+    try {
+      writeFileSync(
+        join(dir, ".env.write.local"),
+        [
+          "GOOGLE_OAUTH_WRITE_CLIENT_ID=from-file-client",
+          "GOOGLE_OAUTH_WRITE_CLIENT_SECRET=from-file-secret",
+          "GOOGLE_OAUTH_CLIENT_ID=consent-a-leak",
+          "GOOGLE_OAUTH_CLIENT_SECRET=consent-a-secret-leak",
+          "",
+        ].join("\n"),
+        { mode: 0o600 },
+      );
+      const filled = applyWriteEnvLocal(dir, {
+        GOOGLE_OAUTH_WRITE_CLIENT_ID: "",
+        PATH: "/usr/bin",
+      });
+      assert.equal(filled.GOOGLE_OAUTH_WRITE_CLIENT_ID, "from-file-client");
+      assert.equal(filled.GOOGLE_OAUTH_WRITE_CLIENT_SECRET, "from-file-secret");
+      assert.equal(filled.GOOGLE_OAUTH_CLIENT_ID, undefined);
+      assert.equal(filled.GOOGLE_OAUTH_CLIENT_SECRET, undefined);
+
+      const wins = applyWriteEnvLocal(dir, {
+        GOOGLE_OAUTH_WRITE_CLIENT_ID: "already-set",
+        GOOGLE_OAUTH_WRITE_CLIENT_SECRET: "already-secret",
+      });
+      assert.equal(wins.GOOGLE_OAUTH_WRITE_CLIENT_ID, "already-set");
+      assert.equal(wins.GOOGLE_OAUTH_WRITE_CLIENT_SECRET, "already-secret");
+      assert.ok(WRITE_ENV_LOCAL_KEYS.includes("GOOGLE_OAUTH_WRITE_CLIENT_ID"));
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("loadFlags writesEnabled stays false by default (login-write does not flip it)", async () => {
+    const { loadFlags } = await import("../src/flags.js");
+    assert.equal(loadFlags({}).writesEnabled, false);
+    assert.equal(loadFlags({ GOOGLE_OAUTH_WRITE_CLIENT_ID: "x" }).writesEnabled, false);
+  });
+});
+

@@ -11,6 +11,7 @@ import {
   runAuthRedeem,
 } from "./auth/login-cli.js";
 import { clearStore, readStore, STORE_FILE } from "./auth/store.js";
+import { applyWriteEnvLocal } from "./auth/write-env-local.js";
 import { serveStdio } from "./server.js";
 import { PLUGIN_VERSION } from "./version.js";
 
@@ -27,7 +28,21 @@ async function main(argv: string[]): Promise<void> {
     return;
   }
 
-  const ctx = createAppContext({ pluginRoot });
+  // Consent W: fill unset GOOGLE_OAUTH_WRITE_* from gitignored .env.write.local (never Consent A).
+  const envWithWriteLocal = applyWriteEnvLocal(pluginRoot, process.env);
+  for (const k of [
+    "GOOGLE_OAUTH_WRITE_CLIENT_ID",
+    "GOOGLE_OAUTH_WRITE_CLIENT_SECRET",
+    "GOOGLE_WRITE_ACCESS_TOKEN",
+    "GOOGLE_WRITE_GRANTED_SCOPES",
+    "GOOGLE_WRITE_ACCOUNT_EMAIL",
+  ]) {
+    if (envWithWriteLocal[k] && !process.env[k]?.trim()) {
+      process.env[k] = envWithWriteLocal[k];
+    }
+  }
+
+  const ctx = createAppContext({ pluginRoot, env: envWithWriteLocal });
 
   if (args[0] === "doctor" || (args[0] === "auth" && args[1] === "doctor")) {
     process.exitCode = runDoctorCli({
@@ -60,7 +75,7 @@ async function main(argv: string[]): Promise<void> {
       const clientId = ctx.env.GOOGLE_OAUTH_WRITE_CLIENT_ID?.trim();
       if (!clientId) {
         process.stderr.write(
-          "Set GOOGLE_OAUTH_WRITE_CLIENT_ID (separate Consent W Desktop client). Do not add write scopes to Consent A. Never commit GOOGLE_OAUTH_WRITE_CLIENT_SECRET. login-write does not enable DGTL_WRITES_ENABLED.\n",
+          "Set GOOGLE_OAUTH_WRITE_CLIENT_ID (env or gitignored .env.write.local). Separate Consent W Desktop client — do not add write scopes to Consent A. Never commit GOOGLE_OAUTH_WRITE_CLIENT_SECRET. login-write does not enable DGTL_WRITES_ENABLED.\n",
         );
         process.exitCode = 1;
         return;
