@@ -528,7 +528,7 @@ export async function gadsAddKeywords(
   const statusRaw =
     typeof args.status === "string" && args.status.trim()
       ? args.status.trim().toUpperCase()
-      : "ENABLED";
+      : "PAUSED";
   if (!ALLOWED_STATUS.has(statusRaw)) {
     return failEnvelope(tool, "INVALID_ARGUMENT", "status must be ENABLED or PAUSED", {
       api: "google_ads",
@@ -554,7 +554,7 @@ export async function gadsAddKeywords(
         dry_run: true,
         proposed,
         cited: { customer_id, ad_group_id, keyword_count: keywords.length },
-        note: "No Ads mutate HTTP. Pass dry_run=false with confirm_phrase containing this customer_id.",
+        note: "No Ads mutate HTTP. New keywords default PAUSED unless status=ENABLED. Pass dry_run=false with confirm_phrase containing this customer_id.",
       },
     });
   }

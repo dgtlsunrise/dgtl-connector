@@ -565,6 +565,87 @@ describe("Create speedrun keyword/ad/Search campaign (fail closed)", () => {
     }
   });
 
+  it("standalone add_keywords omitted status defaults PAUSED; explicit ENABLED still works", async () => {
+    const addTool = TOOLS.find((x) => x.name === "gads_add_keywords");
+    assert.ok(addTool);
+    assert.match(addTool!.description, /Defaults PAUSED/);
+
+    let hops = 0;
+    const ctx = makeCtx({}, adsLicenseEnv({ DGTL_ADS_MUTATE_ENABLED: "true" }));
+    ctx.fetchImpl = (async (input) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/v1/gads/")) hops += 1;
+      throw new Error(`NETWORK_FORBIDDEN ${url}`);
+    }) as typeof fetch;
+
+    const omitted = await dispatch(ctx, "gads_add_keywords", {
+      customer_id: "1234567890",
+      ad_group_id: "11",
+      keywords: [{ text: "running shoes", match_type: "PHRASE" }],
+    });
+    assert.equal(omitted.ok, true, JSON.stringify(omitted));
+    const omittedData = omitted.data as { dry_run: boolean; proposed: { status: string } };
+    assert.equal(omittedData.dry_run, true);
+    assert.equal(omittedData.proposed.status, "PAUSED");
+    assert.equal(hops, 0);
+
+    const enabled = await dispatch(ctx, "gads_add_keywords", {
+      customer_id: "1234567890",
+      ad_group_id: "11",
+      keywords: [{ text: "running shoes", match_type: "EXACT" }],
+      status: "ENABLED",
+    });
+    assert.equal(enabled.ok, true, JSON.stringify(enabled));
+    const enabledData = enabled.data as { proposed: { status: string } };
+    assert.equal(enabledData.proposed.status, "ENABLED");
+    assert.equal(hops, 0);
+  });
+
+  it("live add_keywords hops omitted status as PAUSED and explicit ENABLED with confirm", async () => {
+    const seen: Array<{ url: string; body: string }> = [];
+    const ctx = makeCtx({}, adsLicenseEnv({ DGTL_ADS_MUTATE_ENABLED: "true" }));
+    ctx.fetchImpl = (async (input, init) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/v1/health")) {
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      if (url.includes("/v1/gads/gads_add_keywords")) {
+        seen.push({ url, body: typeof init?.body === "string" ? init.body : "" });
+        return new Response(JSON.stringify({ ok: true, tool: "gads_add_keywords", data: {} }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      throw new Error(`NETWORK_FORBIDDEN ${url}`);
+    }) as typeof fetch;
+
+    const paused = await dispatch(ctx, "gads_add_keywords", {
+      customer_id: "1234567890",
+      ad_group_id: "11",
+      keywords: [{ text: "paused add" }],
+      dry_run: false,
+      confirm_phrase: "customer 1234567890",
+    });
+    assert.equal(paused.ok, true, JSON.stringify(paused));
+    const pausedBody = JSON.parse(seen[0]!.body) as { params: { status: string } };
+    assert.equal(pausedBody.params.status, "PAUSED");
+
+    const enabled = await dispatch(ctx, "gads_add_keywords", {
+      customer_id: "1234567890",
+      ad_group_id: "11",
+      keywords: [{ text: "enabled add" }],
+      status: "ENABLED",
+      dry_run: false,
+      confirm_phrase: "customer 1234567890",
+    });
+    assert.equal(enabled.ok, true, JSON.stringify(enabled));
+    const enabledBody = JSON.parse(seen[1]!.body) as { params: { status: string } };
+    assert.equal(enabledBody.params.status, "ENABLED");
+  });
+
   it("dry_run create search campaign proposes with zero hop", async () => {
     let hops = 0;
     const ctx = makeCtx({}, adsLicenseEnv({ DGTL_ADS_MUTATE_ENABLED: "true" }));
@@ -584,11 +665,17 @@ describe("Create speedrun keyword/ad/Search campaign (fail closed)", () => {
       final_url: "https://example.com/landing",
     });
     assert.equal(env.ok, true, JSON.stringify(env));
-    const data = env.data as { dry_run: boolean; proposed: { customer_id: string; status: string } };
+    const data = env.data as {
+      dry_run: boolean;
+      proposed: { customer_id: string; status: string };
+    };
     assert.equal(data.dry_run, true);
     assert.equal(data.proposed.customer_id, "1234567890");
     assert.equal(data.proposed.status, "PAUSED");
     assert.equal(hops, 0);
+    // Plugin does not send child keyword/ad-group status; stamp Search create keeps children ENABLED.
+    assert.equal("keyword_status" in data.proposed, false);
+    assert.equal("ad_group_status" in data.proposed, false);
   });
 
   it("live without confirm customer_id → INVALID_ARGUMENT; spend cap blocks", async () => {

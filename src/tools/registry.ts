@@ -513,7 +513,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gads",
     title: "Google Ads add keywords (Consent C)",
     description:
-      "Paid mutate. Add up to 20 Search keywords to an ad group (EXACT/PHRASE/BROAD). Prefer dry_run; live confirm_phrase with customer_id. Consent C + Pro + gateway.",
+      "Paid mutate. Add up to 20 Search keywords to an ad group (EXACT/PHRASE/BROAD). Defaults PAUSED. ENABLED only with explicit status + confirm. Prefer dry_run; live confirm_phrase with customer_id. Consent C + Pro + gateway.",
     inputSchema: S.gadsAddKeywords,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => gadsAddKeywords(ctx, args),
