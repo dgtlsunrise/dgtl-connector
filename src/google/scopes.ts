@@ -13,7 +13,7 @@ export const SCOPE = {
   analyticsEdit: "https://www.googleapis.com/auth/analytics.edit",
 } as const;
 
-/** Free Desktop Consent A — readonly product scopes + identity only. */
+/** Free Desktop Consent A — readonly product scopes + identity only. Never intersects CONSENT_W / CONSENT_C_GOOGLE / Meta ads_management. */
 export const CONSENT_A = [
   SCOPE.analytics,
   SCOPE.webmasters,

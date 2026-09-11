@@ -6,7 +6,8 @@ import { describe, it, before, after } from "node:test";
 import { buildGoogleAuthUrl, generatePkce } from "../src/auth/pkce.js";
 import { AuthPort } from "../src/auth/port.js";
 import { STORE_FILE, readStore, writeStore, tokenPath } from "../src/auth/store.js";
-import { CONSENT_A, CONSENT_C_GOOGLE, SCOPE } from "../src/google/scopes.js";
+import { CONSENT_A, CONSENT_C_GOOGLE, CONSENT_W, SCOPE } from "../src/google/scopes.js";
+import { ADS_MANAGEMENT } from "../src/meta/meta-write.js";
 import { dispatch } from "../src/tools/dispatch.js";
 import { installNetworkGuard, makeCtx, signLicense, testEnv, TEST_TOKEN } from "./helpers.js";
 
@@ -32,6 +33,51 @@ describe("Consent C token stores separate from AuthPort A (fail closed)", () => 
     assert.ok(!url.includes(SCOPE.adwords));
     const granted = new URL(url).searchParams.get("scope")?.split(/\s+/) ?? [];
     assert.deepEqual(granted, [...CONSENT_A]);
+  });
+
+  it("W0.5: CONSENT_A ∩ (CONSENT_W ∪ CONSENT_C ∪ adwords ∪ Meta ads_management) = ∅", () => {
+    const a = new Set<string>(CONSENT_A);
+    const adsWrite = new Set<string>(CONSENT_C_GOOGLE);
+    const gtmWrite = new Set<string>(CONSENT_W);
+    const metaWrite = new Set<string>([ADS_MANAGEMENT]);
+    const write = new Set<string>([...gtmWrite, ...adsWrite, ...metaWrite, SCOPE.adwords]);
+    const intersection = [...a].filter((s) => write.has(s));
+    assert.deepEqual(
+      intersection,
+      [],
+      `CONSENT_A ∩ write must be empty, got ${intersection.join(",")}`,
+    );
+    assert.equal(intersection.length, 0);
+    assert.deepEqual([...a].filter((s) => adsWrite.has(s)), []);
+    assert.deepEqual([...a].filter((s) => gtmWrite.has(s)), []);
+    assert.deepEqual([...a].filter((s) => metaWrite.has(s)), []);
+    assert.ok(!a.has(SCOPE.adwords));
+    assert.ok(!a.has(ADS_MANAGEMENT));
+    assert.equal(ADS_MANAGEMENT, "ads_management");
+    assert.ok(adsWrite.has(SCOPE.adwords));
+    assert.ok(write.has(SCOPE.tagmanagerEditContainers));
+    assert.ok(write.has(SCOPE.tagmanagerPublish));
+    assert.ok(write.has(SCOPE.webmastersWrite));
+    assert.ok(write.has(SCOPE.analyticsEdit));
+
+    const pkce = generatePkce();
+    const url = buildGoogleAuthUrl({
+      clientId: "example-public-client-id.apps.googleusercontent.com",
+      redirectUri: "http://127.0.0.1:8732/callback",
+      challenge: pkce.challenge,
+      state: pkce.state,
+    });
+    const granted = new URL(url).searchParams.get("scope")?.split(/\s+/) ?? [];
+    assert.deepEqual(
+      granted.filter((s) => write.has(s)),
+      [],
+      "default Consent A PKCE URL must not request write scopes",
+    );
+    assert.ok(!url.includes("adwords"));
+    assert.ok(!url.includes(ADS_MANAGEMENT));
+    for (const bad of write) {
+      assert.ok(!granted.includes(bad), bad);
+    }
   });
 
   it("store files are google-oauth-ads.json and meta-oauth.json; writes do not touch A", () => {

@@ -28,6 +28,7 @@ describe("Consent W scaffold — Consent A stays readonly", () => {
     assert.ok(!CONSENT_A.includes(SCOPE.tagmanagerPublish as (typeof CONSENT_A)[number]));
     assert.ok(!CONSENT_A.includes(SCOPE.webmastersWrite as (typeof CONSENT_A)[number]));
     assert.ok(!CONSENT_A.includes(SCOPE.analyticsEdit as (typeof CONSENT_A)[number]));
+    assert.ok(!CONSENT_A.includes(SCOPE.adwords as (typeof CONSENT_A)[number]));
 
     const pkce = generatePkce();
     const url = buildGoogleAuthUrl({
@@ -50,6 +51,25 @@ describe("Consent W scaffold — Consent A stays readonly", () => {
     for (const s of CONSENT_A) {
       assert.ok(!(CONSENT_W as readonly string[]).includes(s), `CONSENT_W must not duplicate Consent A scope ${s}`);
     }
+  });
+
+  it("W0.5: CONSENT_A ∩ CONSENT_W = ∅ (readonly never intersects GTM/GSC/GA write)", () => {
+    const a = new Set<string>(CONSENT_A);
+    const write = new Set<string>(CONSENT_W);
+    const gtmWrite = new Set<string>(CONSENT_W_GTM);
+    const intersection = [...a].filter((s) => write.has(s));
+    const gtmIntersection = [...a].filter((s) => gtmWrite.has(s));
+    assert.deepEqual(intersection, [], `CONSENT_A ∩ CONSENT_W must be empty, got ${intersection.join(",")}`);
+    assert.deepEqual(gtmIntersection, [], `CONSENT_A ∩ CONSENT_W_GTM must be empty, got ${gtmIntersection.join(",")}`);
+    assert.equal(intersection.length, 0);
+    assert.ok(write.size > 0);
+    assert.ok(gtmWrite.has(SCOPE.tagmanagerEditContainers));
+    assert.ok(gtmWrite.has(SCOPE.tagmanagerPublish));
+    assert.ok(!a.has(SCOPE.tagmanagerEditContainers));
+    assert.ok(!a.has(SCOPE.tagmanagerPublish));
+    assert.ok(!a.has(SCOPE.webmastersWrite));
+    assert.ok(!a.has(SCOPE.analyticsEdit));
+    assert.ok(!a.has(SCOPE.adwords));
   });
 
   it("DGTL_WRITES_ENABLED defaults false", () => {

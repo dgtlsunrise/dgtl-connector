@@ -17,7 +17,8 @@ const HINT_FLAG =
   "Plugin Meta mutate defaults on; set DGTL_META_MUTATE_ENABLED=false (or META_MUTATE_ENABLED=false) to opt out. Live hop still needs Worker META_MUTATE_ENABLED=true after Meta ads_management Advanced Access. Reads stay ads_read-only.";
 
 const ALLOWED_STATUS = new Set(["ACTIVE", "PAUSED"]);
-const ADS_MANAGEMENT = "ads_management";
+/** Meta write scope — never on Consent A. W0.5: CONSENT_A ∩ ads_management = ∅ */
+export const ADS_MANAGEMENT = "ads_management";
 const NAME_MAX = 400;
 
 /**
