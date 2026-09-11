@@ -28,8 +28,8 @@ Do not ask for a Google Ads developer-token or a Meta app secret.
 | `GBP_NOT_ENABLED` | GBP flag off / quota 0 | Not a license issue. Consent B is separate. Do not put `business.manage` on Consent A. |
 | `WRITE_NOT_ENABLED` | `DGTL_WRITES_ENABLED` false | Write/publish stubs fail closed. Free Consent A stays readonly. See `gtm-readonly-limits`. |
 | `CONSENT_W_REQUIRED` | Writes flagged on but Consent W missing | Separate write OAuth client — never add edit/publish scopes to Consent A. |
-| `ADS_MUTATE_NOT_ENABLED` | Ads mutate flag off (`DGTL_ADS_MUTATE_ENABLED`) | Reads still work. Mutates (pause/enable, budget update) stay off until Google mutate access + Worker `ADS_MUTATE_ENABLED` + plugin flag. Never Consent A. |
-| `META_MUTATE_NOT_ENABLED` | Meta mutate flag off (`DGTL_META_MUTATE_ENABLED`) | Reads stay `ads_read`. Mutates (status/name/adset budget) stay off until `ads_management` Advanced Access + Worker `META_MUTATE_ENABLED` + plugin flag. Closed fields only — do not invent objective/creative. |
+| `ADS_MUTATE_NOT_ENABLED` | Ads mutate opted out (`DGTL_ADS_MUTATE_ENABLED=false`) | Plugin defaults **on**. Opt out with env=`false`. Live hop still needs Worker `ADS_MUTATE_ENABLED=true`. Never Consent A. |
+| `META_MUTATE_NOT_ENABLED` | Meta mutate opted out (`DGTL_META_MUTATE_ENABLED=false`) | Plugin defaults **on**. Opt out with env=`false`. Live hop still needs Worker `META_MUTATE_ENABLED=true` after `ads_management` Advanced Access. Closed fields only — do not invent objective/creative. |
 | `META_SCOPE_MISSING` | Token lacks `ads_management` (or Graph denied mutate) | Re-authorize Meta after Advanced Access. Do not silently retry. Reads may still work. |
 | `SPEND_CAP_EXCEEDED` | Budget above sanity cap | Google: lower `amount_micros` / `daily_budget_dollars` (micros). Meta: lower `daily_budget` / `lifetime_budget` (**cents**, not micros). Cap $100k/day equivalent. No mutate hop. |
 | `ADS_SCOPE_MISSING` | License + gateway ok, Ads OAuth missing | Consent C (`adwords`) is a second grant — never reuse Consent A / `GOOGLE_ACCESS_TOKEN`. |

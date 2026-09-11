@@ -1,6 +1,6 @@
 /**
  * Google Ads mutate tools — Consent C + gateway only.
- * Flag DGTL_ADS_MUTATE_ENABLED defaults off (fail closed, zero mutate HTTP).
+ * Flag DGTL_ADS_MUTATE_ENABLED defaults on (opt out with =false). Worker ADS_MUTATE_ENABLED still required for live hop.
  * Tools: gads_set_campaign_status, gads_update_campaign_budget.
  * Never touches Consent A / GOOGLE_ACCESS_TOKEN.
  */
@@ -14,7 +14,7 @@ import { SCOPE } from "../google/scopes.js";
 import { requireAdsLicense, enrichGadsEnvelope } from "./gads.js";
 
 const HINT_FLAG =
-  "Set DGTL_ADS_MUTATE_ENABLED=true on the plugin and ADS_MUTATE_ENABLED=true on stamp only after Google Ads API mutate-capable access + compliance. Default stays off. Never add mutate to Consent A.";
+  "Plugin Ads mutate defaults on; set DGTL_ADS_MUTATE_ENABLED=false (or ADS_MUTATE_ENABLED=false) to opt out. Live hop still needs Worker ADS_MUTATE_ENABLED=true after Google Ads API mutate-capable access + compliance. Never add mutate to Consent A.";
 
 const ALLOWED_STATUS = new Set(["ENABLED", "PAUSED"]);
 

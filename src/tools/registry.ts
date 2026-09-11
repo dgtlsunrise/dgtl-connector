@@ -450,7 +450,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gads",
     title: "Google Ads set campaign status (Consent C)",
     description:
-      "Paid mutate. Pause or enable a campaign (ENABLED/PAUSED only). Flagged off by default (ADS_MUTATE_NOT_ENABLED when DGTL_ADS_MUTATE_ENABLED=false). Prefer dry_run; live needs confirm_phrase containing digits-only customer_id after a user message this turn. Consent C + Pro + gateway — never Consent A. No budget/create.",
+      "Paid mutate. Pause or enable a campaign (ENABLED/PAUSED only). Defaults on; opt out with DGTL_ADS_MUTATE_ENABLED=false (ADS_MUTATE_NOT_ENABLED). Worker ADS_MUTATE_ENABLED still required for live hop. Prefer dry_run; live needs confirm_phrase containing digits-only customer_id after a user message this turn. Consent C + Pro + gateway — never Consent A. No budget/create.",
     inputSchema: S.gadsSetCampaignStatus,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => gadsSetCampaignStatus(ctx, args),
@@ -461,7 +461,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gads",
     title: "Google Ads update campaign budget (Consent C)",
     description:
-      "Paid mutate. Update campaign budget amount_micros only (optional daily_budget_dollars helper). Flagged off by default (ADS_MUTATE_NOT_ENABLED). Prefer dry_run; live needs confirm_phrase containing digits-only customer_id. Spend-cap gate ($100k/day micros). Consent C + Pro + gateway — never Consent A. No bid strategies/create.",
+      "Paid mutate. Update campaign budget amount_micros only (optional daily_budget_dollars helper). Defaults on; opt out with DGTL_ADS_MUTATE_ENABLED=false (ADS_MUTATE_NOT_ENABLED). Worker ADS_MUTATE_ENABLED still required for live hop. Prefer dry_run; live needs confirm_phrase containing digits-only customer_id. Spend-cap gate ($100k/day micros). Consent C + Pro + gateway — never Consent A. No bid strategies/create.",
     inputSchema: S.gadsUpdateCampaignBudget,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => gadsUpdateCampaignBudget(ctx, args),
@@ -593,7 +593,7 @@ export const TOOLS: ToolSpec[] = [
     family: "meta",
     title: "Meta update campaign",
     description:
-      "Paid mutate. Update Meta campaign status (ACTIVE/PAUSED) and/or name. Flagged off by default (META_MUTATE_NOT_ENABLED when DGTL_META_MUTATE_ENABLED=false). Prefer dry_run; live needs confirm_phrase containing act_{ad_account_id} AND campaign_id after a user message this turn. Closed fields only — no budget/create/creative. Requires ads_management when scopes detectable.",
+      "Paid mutate. Update Meta campaign status (ACTIVE/PAUSED) and/or name. Defaults on; opt out with DGTL_META_MUTATE_ENABLED=false (META_MUTATE_NOT_ENABLED). Worker META_MUTATE_ENABLED still required for live hop. Prefer dry_run; live needs confirm_phrase containing act_{ad_account_id} AND campaign_id after a user message this turn. Closed fields only — no budget/create/creative. Requires ads_management when scopes detectable.",
     inputSchema: S.metaUpdateCampaign,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => metaUpdateCampaign(ctx, args),
@@ -604,7 +604,7 @@ export const TOOLS: ToolSpec[] = [
     family: "meta",
     title: "Meta update ad set",
     description:
-      "Paid mutate. Update Meta ad set status (ACTIVE/PAUSED), optional name, and/or daily_budget XOR lifetime_budget. Budgets are integer **cents** (Meta account currency smallest unit — not Google Ads micros). Spend-cap gate $100k/day equivalent. Flagged off by default (META_MUTATE_NOT_ENABLED). Prefer dry_run; live needs confirm_phrase containing act_{ad_account_id} AND adset_id. Do not invent objective/creative/targeting.",
+      "Paid mutate. Update Meta ad set status (ACTIVE/PAUSED), optional name, and/or daily_budget XOR lifetime_budget. Budgets are integer **cents** (Meta account currency smallest unit — not Google Ads micros). Spend-cap gate $100k/day equivalent. Defaults on; opt out with DGTL_META_MUTATE_ENABLED=false (META_MUTATE_NOT_ENABLED). Worker META_MUTATE_ENABLED still required for live hop. Prefer dry_run; live needs confirm_phrase containing act_{ad_account_id} AND adset_id. Do not invent objective/creative/targeting.",
     inputSchema: S.metaUpdateAdset,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => metaUpdateAdset(ctx, args),
@@ -615,7 +615,7 @@ export const TOOLS: ToolSpec[] = [
     family: "meta",
     title: "Meta update ad",
     description:
-      "Paid mutate. Update Meta ad status (ACTIVE/PAUSED) and/or name. Flagged off by default (META_MUTATE_NOT_ENABLED). Prefer dry_run; live needs confirm_phrase containing act_{ad_account_id} AND ad_id. No creative fields.",
+      "Paid mutate. Update Meta ad status (ACTIVE/PAUSED) and/or name. Defaults on; opt out with DGTL_META_MUTATE_ENABLED=false (META_MUTATE_NOT_ENABLED). Worker META_MUTATE_ENABLED still required for live hop. Prefer dry_run; live needs confirm_phrase containing act_{ad_account_id} AND ad_id. No creative fields.",
     inputSchema: S.metaUpdateAd,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => metaUpdateAd(ctx, args),

@@ -78,9 +78,9 @@ export const MSG = {
   CONSENT_W_REQUIRED:
     "This write tool needs Consent W (separate OAuth client with edit/publish scopes). It is not part of free Consent A. Do not add write scopes to the Desktop readonly client.",
   ADS_MUTATE_NOT_ENABLED:
-    "Google Ads mutate tools are flagged off (DGTL_ADS_MUTATE_ENABLED=false). Reads still work with Pro + Consent C. Enable only after Google Ads API mutate-capable access and Worker ADS_MUTATE_ENABLED=true — never on Consent A.",
+    "Google Ads mutate tools are opted out (DGTL_ADS_MUTATE_ENABLED=false). Plugin defaults on; unset the env or set true to re-enable. Live hop still needs Worker ADS_MUTATE_ENABLED=true. Reads still work with Pro + Consent C — never on Consent A.",
   META_MUTATE_NOT_ENABLED:
-    "Meta Ads mutate tools are flagged off until ads_management Advanced Access and DGTL_META_MUTATE_ENABLED. Reads stay ads_read-only.",
+    "Meta Ads mutate tools are opted out (DGTL_META_MUTATE_ENABLED=false). Plugin defaults on; unset the env or set true to re-enable. Live hop still needs Worker META_MUTATE_ENABLED=true after ads_management Advanced Access. Reads stay ads_read-only.",
   META_SCOPE_MISSING:
     "This Meta login did not grant ads_management (or Graph denied the mutate). Re-authorize after ads_management Advanced Access. Do not silently retry. ads_read reads may still work.",
   SPEND_CAP_EXCEEDED:

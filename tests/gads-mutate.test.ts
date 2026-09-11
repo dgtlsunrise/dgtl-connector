@@ -39,9 +39,10 @@ describe("Slice 0/1 gads_set_campaign_status (fail closed)", () => {
   });
   after(() => restore());
 
-  it("DGTL_ADS_MUTATE_ENABLED defaults off", () => {
-    assert.equal(loadFlags({}).adsMutateEnabled, false);
+  it("DGTL_ADS_MUTATE_ENABLED defaults on; explicit false opts out", () => {
+    assert.equal(loadFlags({}).adsMutateEnabled, true);
     assert.equal(loadFlags({ DGTL_ADS_MUTATE_ENABLED: "false" }).adsMutateEnabled, false);
+    assert.equal(loadFlags({ ADS_MUTATE_ENABLED: "false" }).adsMutateEnabled, false);
     assert.equal(loadFlags({ DGTL_ADS_MUTATE_ENABLED: "true" }).adsMutateEnabled, true);
     assert.equal(loadFlags({ ADS_MUTATE_ENABLED: "1" }).adsMutateEnabled, true);
   });
@@ -92,7 +93,7 @@ describe("Slice 0/1 gads_set_campaign_status (fail closed)", () => {
 
   it("flag off even on dry_run → ADS_MUTATE_NOT_ENABLED, zero HTTP", async () => {
     let calls = 0;
-    const ctx = makeCtx({}, adsLicenseEnv());
+    const ctx = makeCtx({}, adsLicenseEnv({ DGTL_ADS_MUTATE_ENABLED: "false" }));
     ctx.fetchImpl = (async () => {
       calls += 1;
       throw new Error("NETWORK_FORBIDDEN");
