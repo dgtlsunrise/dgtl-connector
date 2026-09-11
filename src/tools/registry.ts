@@ -8,6 +8,7 @@ import * as gtm from "../google/gtm.js";
 import * as gtmWrite from "../google/gtm-write.js";
 import { googleWhoami } from "../google/whoami.js";
 import { gadsDisabled, gadsDescribeRecipes, licenseStatus } from "../ads/gads.js";
+import { gadsSetCampaignStatus } from "../ads/gads-write.js";
 import { metaDisabled, metaDescribeInsightsSchema } from "../meta/meta.js";
 import { supportPacket } from "../support/packet.js";
 import { feedbackPrepare, feedbackSend } from "../support/feedback.js";
@@ -441,6 +442,17 @@ export const TOOLS: ToolSpec[] = [
     inputSchema: S.gadsSearch,
     annotations: ANN_RO,
     handler: async (ctx, args) => gadsDisabled(ctx, "gads_campaign_performance", args),
+  },
+  {
+    name: "gads_set_campaign_status",
+    group: "gads-write",
+    family: "gads",
+    title: "Google Ads set campaign status (Consent C)",
+    description:
+      "Paid mutate. Pause or enable a campaign (ENABLED/PAUSED only). Flagged off by default (ADS_MUTATE_NOT_ENABLED when DGTL_ADS_MUTATE_ENABLED=false). Prefer dry_run; live needs confirm_phrase containing digits-only customer_id after a user message this turn. Consent C + Pro + gateway — never Consent A. No budget/create.",
+    inputSchema: S.gadsSetCampaignStatus,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => gadsSetCampaignStatus(ctx, args),
   },
   {
     name: "license_status",

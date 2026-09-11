@@ -247,6 +247,12 @@
       "fail": "LICENSE_REQUIRED"
     },
     {
+      "name": "gads_set_campaign_status",
+      "group": "gads-write",
+      "flag": "ads.mutate.enabled",
+      "fail": "ADS_MUTATE_NOT_ENABLED"
+    },
+    {
       "name": "license_status",
       "group": "license",
       "fail": null

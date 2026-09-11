@@ -2,6 +2,11 @@ export type Flags = {
   gbpEnabled: boolean;
   /** Consent W write tools. Default off until write OAuth client + scopes exist. */
   writesEnabled: boolean;
+  /**
+   * Google Ads mutate tools (gads_set_campaign_status). Default off.
+   * Mirror of Worker ADS_MUTATE_ENABLED — both must be on for live mutate.
+   */
+  adsMutateEnabled: boolean;
   /** Append redacted tool audit lines to PLUGIN_DATA/audit.jsonl. Default off. */
   auditLocal: boolean;
   /**
@@ -27,6 +32,7 @@ export function loadFlags(env: NodeJS.ProcessEnv = process.env): Flags {
   return {
     gbpEnabled: truthy(env.DGTL_GBP_ENABLED || env.GBP_ENABLED),
     writesEnabled: truthy(env.DGTL_WRITES_ENABLED || env.WRITES_ENABLED),
+    adsMutateEnabled: truthy(env.DGTL_ADS_MUTATE_ENABLED || env.ADS_MUTATE_ENABLED),
     auditLocal: truthy(env.DGTL_AUDIT_LOCAL),
     gatewayUrl: raw ? raw.replace(/\/+$/, "") : undefined,
     feedbackUrl: feedbackRaw ? feedbackRaw.replace(/\/+$/, "") : undefined,

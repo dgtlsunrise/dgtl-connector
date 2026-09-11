@@ -30,6 +30,8 @@ export type GatewayParams = {
   date_range?: { start_date: string; end_date: string };
   where?: { status?: string; campaign_id?: string };
   limit?: number;
+  campaign_id?: string;
+  status?: string;
   ad_account_id?: string;
   object_id?: string;
   level?: "account" | "campaign" | "adset" | "ad";
@@ -120,6 +122,8 @@ function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
     "date_range",
     "where",
     "limit",
+    "campaign_id",
+    "status",
     "ad_account_id",
     "object_id",
     "level",
@@ -212,6 +216,8 @@ const KNOWN_ERROR_CODES = new Set<string>([
   "GBP_NOT_ENABLED",
   "WRITE_NOT_ENABLED",
   "CONSENT_W_REQUIRED",
+  "ADS_MUTATE_NOT_ENABLED",
+  "META_MUTATE_NOT_ENABLED",
 ]);
 
 function mapGatewayResponse(tool: string, body: Record<string, unknown>, httpStatus: number): Envelope {

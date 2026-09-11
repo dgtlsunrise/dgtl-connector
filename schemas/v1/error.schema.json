@@ -4,10 +4,19 @@
   "title": "dgtl-connector tool error envelope",
   "type": "object",
   "additionalProperties": false,
-  "required": ["ok", "tool", "error_code", "message"],
+  "required": [
+    "ok",
+    "tool",
+    "error_code",
+    "message"
+  ],
   "properties": {
-    "ok": { "const": false },
-    "tool": { "type": "string" },
+    "ok": {
+      "const": false
+    },
+    "tool": {
+      "type": "string"
+    },
     "error_code": {
       "type": "string",
       "enum": [
@@ -30,40 +39,81 @@
         "META_NOT_CONNECTED",
         "GBP_NOT_ENABLED",
         "WRITE_NOT_ENABLED",
-        "CONSENT_W_REQUIRED"
+        "CONSENT_W_REQUIRED",
+        "ADS_MUTATE_NOT_ENABLED",
+        "META_MUTATE_NOT_ENABLED"
       ]
     },
-    "message": { "type": "string", "minLength": 1 },
-    "hint": { "type": "string" },
-    "google_status": { "type": "integer" },
-    "google_reason": { "type": "string" },
-    "api": { "type": "string" },
-    "resource_id": { "type": "string" },
-    "missing_scope": { "type": "string" },
-    "resource": { "$ref": "#/$defs/resource" },
+    "message": {
+      "type": "string",
+      "minLength": 1
+    },
+    "hint": {
+      "type": "string"
+    },
+    "google_status": {
+      "type": "integer"
+    },
+    "google_reason": {
+      "type": "string"
+    },
+    "api": {
+      "type": "string"
+    },
+    "resource_id": {
+      "type": "string"
+    },
+    "missing_scope": {
+      "type": "string"
+    },
+    "resource": {
+      "$ref": "#/$defs/resource"
+    },
     "data": true,
-    "page": { "$ref": "#/$defs/page" },
+    "page": {
+      "$ref": "#/$defs/page"
+    },
     "quota": true
   },
   "$defs": {
     "resource": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "id", "display_name"],
+      "required": [
+        "type",
+        "id",
+        "display_name"
+      ],
       "properties": {
-        "type": { "type": "string" },
-        "id": { "type": "string" },
-        "display_name": { "type": "string" }
+        "type": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "display_name": {
+          "type": "string"
+        }
       }
     },
     "page": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["truncated", "row_count"],
+      "required": [
+        "truncated",
+        "row_count"
+      ],
       "properties": {
-        "next_page_token": { "type": "string" },
-        "truncated": { "type": "boolean" },
-        "row_count": { "type": "integer", "minimum": 0 }
+        "next_page_token": {
+          "type": "string"
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "row_count": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     }
   }
