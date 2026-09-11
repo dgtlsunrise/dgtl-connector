@@ -1106,6 +1106,50 @@
         "campaign_id",
         "status"
       ]
+    },
+    "gads_update_campaign_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customer_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "campaign_budget_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "campaign_budget_resource_name": {
+          "type": "string"
+        },
+        "amount_micros": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "daily_budget_dollars": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "login_customer_id": {
+          "type": "string"
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "customer_id"
+      ]
     }
   }
 }

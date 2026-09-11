@@ -253,6 +253,12 @@
       "fail": "ADS_MUTATE_NOT_ENABLED"
     },
     {
+      "name": "gads_update_campaign_budget",
+      "group": "gads-write",
+      "flag": "ads.mutate.enabled",
+      "fail": "ADS_MUTATE_NOT_ENABLED"
+    },
+    {
       "name": "license_status",
       "group": "license",
       "fail": null

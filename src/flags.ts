@@ -3,7 +3,7 @@ export type Flags = {
   /** Consent W write tools. Default off until write OAuth client + scopes exist. */
   writesEnabled: boolean;
   /**
-   * Google Ads mutate tools (gads_set_campaign_status). Default off.
+   * Google Ads mutate tools (gads_set_campaign_status, gads_update_campaign_budget). Default off.
    * Mirror of Worker ADS_MUTATE_ENABLED — both must be on for live mutate.
    */
   adsMutateEnabled: boolean;

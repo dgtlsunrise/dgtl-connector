@@ -8,7 +8,7 @@ import * as gtm from "../google/gtm.js";
 import * as gtmWrite from "../google/gtm-write.js";
 import { googleWhoami } from "../google/whoami.js";
 import { gadsDisabled, gadsDescribeRecipes, licenseStatus } from "../ads/gads.js";
-import { gadsSetCampaignStatus } from "../ads/gads-write.js";
+import { gadsSetCampaignStatus, gadsUpdateCampaignBudget } from "../ads/gads-write.js";
 import { metaDisabled, metaDescribeInsightsSchema } from "../meta/meta.js";
 import { supportPacket } from "../support/packet.js";
 import { feedbackPrepare, feedbackSend } from "../support/feedback.js";
@@ -453,6 +453,17 @@ export const TOOLS: ToolSpec[] = [
     inputSchema: S.gadsSetCampaignStatus,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => gadsSetCampaignStatus(ctx, args),
+  },
+  {
+    name: "gads_update_campaign_budget",
+    group: "gads-write",
+    family: "gads",
+    title: "Google Ads update campaign budget (Consent C)",
+    description:
+      "Paid mutate. Update campaign budget amount_micros only (optional daily_budget_dollars helper). Flagged off by default (ADS_MUTATE_NOT_ENABLED). Prefer dry_run; live needs confirm_phrase containing digits-only customer_id. Spend-cap gate ($100k/day micros). Consent C + Pro + gateway — never Consent A. No bid strategies/create.",
+    inputSchema: S.gadsUpdateCampaignBudget,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => gadsUpdateCampaignBudget(ctx, args),
   },
   {
     name: "license_status",
