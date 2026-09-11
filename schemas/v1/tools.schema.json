@@ -1150,6 +1150,105 @@
       "required": [
         "customer_id"
       ]
+    },
+    "meta_update_campaign": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ad_account_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "campaign_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ACTIVE",
+            "PAUSED"
+          ]
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ad_account_id",
+        "campaign_id",
+        "status"
+      ]
+    },
+    "meta_update_adset": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ad_account_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "adset_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ACTIVE",
+            "PAUSED"
+          ]
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ad_account_id",
+        "adset_id",
+        "status"
+      ]
+    },
+    "meta_update_ad": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ad_account_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ad_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ACTIVE",
+            "PAUSED"
+          ]
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ad_account_id",
+        "ad_id",
+        "status"
+      ]
     }
   }
 }

@@ -312,6 +312,24 @@
       "name": "meta_get_creative",
       "group": "meta",
       "fail": "LICENSE_REQUIRED"
+    },
+    {
+      "name": "meta_update_campaign",
+      "group": "meta-write",
+      "flag": "meta.mutate.enabled",
+      "fail": "META_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "meta_update_adset",
+      "group": "meta-write",
+      "flag": "meta.mutate.enabled",
+      "fail": "META_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "meta_update_ad",
+      "group": "meta-write",
+      "flag": "meta.mutate.enabled",
+      "fail": "META_MUTATE_NOT_ENABLED"
     }
   ]
 }
