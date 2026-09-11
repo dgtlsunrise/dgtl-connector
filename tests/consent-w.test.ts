@@ -6,7 +6,7 @@ import { buildGoogleAuthUrl, generatePkce } from "../src/auth/pkce.js";
 import { CONSENT_A, CONSENT_W, CONSENT_W_GTM, SCOPE } from "../src/google/scopes.js";
 import { loadFlags } from "../src/flags.js";
 import { dispatch } from "../src/tools/dispatch.js";
-import { FREE_TOOL_NAMES, TOOLS } from "../src/tools/registry.js";
+import { CONSENT_A_TOOLS, LICENSE_GATED_TOOLS, TOOLS } from "../src/tools/registry.js";
 import { installNetworkGuard, makeCtx, ROOT, testEnv, TEST_TOKEN } from "./helpers.js";
 
 const WRITE_TOOLS = ["gtm_create_tag", "gtm_update_tag", "gtm_publish_container"] as const;
@@ -93,10 +93,11 @@ describe("Consent W scaffold — Consent A stays readonly", () => {
     assert.equal(ctx.calls.length, 0);
   });
 
-  it("free kernel stays 24 readonly tools; write tools are separate family", () => {
-    assert.equal(FREE_TOOL_NAMES.length, 24);
+  it("Consent A kernel stays 24 readonly tools; write tools are separate family", () => {
+    assert.equal(CONSENT_A_TOOLS.length, 24);
     for (const name of WRITE_TOOLS) {
-      assert.ok(!FREE_TOOL_NAMES.includes(name), name);
+      assert.ok(!CONSENT_A_TOOLS.includes(name), name);
+      assert.ok(!LICENSE_GATED_TOOLS.includes(name), name);
       const spec = TOOLS.find((t) => t.name === name);
       assert.equal(spec?.family, "gtm_write");
     }

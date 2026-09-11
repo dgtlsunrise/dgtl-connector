@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 import { dispatch } from "../src/tools/dispatch.js";
-import { TOOLS } from "../src/tools/registry.js";
+import { CONSENT_A_TOOLS, LICENSE_GATED_TOOLS, LOCAL_FREE_TOOLS, TOOLS } from "../src/tools/registry.js";
 import * as S from "../src/tools/schemas.js";
 import {
   normalizeShopifyStore,
@@ -148,6 +148,19 @@ describe("Shopify read-only slice (local merchant credentials)", () => {
       TOOLS.filter((t) => t.name.startsWith("shopify_") && !t.annotations.readOnlyHint).length,
       0,
     );
+  });
+
+  it("W0.4: Shopify is LOCAL_FREE, not Consent A kernel, not Polar license-gated", () => {
+    assert.equal(CONSENT_A_TOOLS.length, 24);
+    for (const name of SHOPIFY_TOOLS) {
+      assert.ok(LOCAL_FREE_TOOLS.includes(name), name);
+      assert.ok(!CONSENT_A_TOOLS.includes(name), name);
+      assert.ok(!LICENSE_GATED_TOOLS.includes(name), name);
+    }
+    assert.ok(!LOCAL_FREE_TOOLS.includes("gads_search"));
+    assert.ok(!LOCAL_FREE_TOOLS.includes("meta_insights"));
+    assert.ok(LICENSE_GATED_TOOLS.includes("gads_search"));
+    assert.ok(LICENSE_GATED_TOOLS.includes("meta_insights"));
   });
 
   it("schemas require product_id / order_id; closed order enums", () => {

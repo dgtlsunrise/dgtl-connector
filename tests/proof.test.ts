@@ -9,7 +9,13 @@ import {
   signLicense,
   testEnv,
 } from "./helpers.js";
-import { FREE_TOOL_NAMES, TOOLS } from "../src/tools/registry.js";
+import {
+  CONSENT_A_TOOLS,
+  FREE_TOOL_NAMES,
+  LICENSE_GATED_TOOLS,
+  LOCAL_FREE_TOOLS,
+  TOOLS,
+} from "../src/tools/registry.js";
 import { SEARCH_QUERY_DENY } from "../src/tools/denylist.js";
 
 describe("session proofs", () => {
@@ -187,13 +193,48 @@ describe("session proofs", () => {
     assert.ok(!String(env.message).toLowerCase().includes("connect card") || String(env.message).includes("no Gmail"));
   });
 
-  it("closed free kernel is 24 tools including ga4_list_account_summaries and gsc_describe_schema", () => {
+  it("closed Consent A kernel is 24 tools including ga4_list_account_summaries and gsc_describe_schema", () => {
+    assert.equal(CONSENT_A_TOOLS.length, 24);
+    assert.equal(FREE_TOOL_NAMES, CONSENT_A_TOOLS);
     assert.equal(FREE_TOOL_NAMES.length, 24);
-    assert.ok(FREE_TOOL_NAMES.includes("gsc_describe_schema"));
-    assert.ok(FREE_TOOL_NAMES.includes("ga4_list_account_summaries"));
-    assert.ok(FREE_TOOL_NAMES.includes("ga4_run_report"));
+    assert.ok(CONSENT_A_TOOLS.includes("gsc_describe_schema"));
+    assert.ok(CONSENT_A_TOOLS.includes("ga4_list_account_summaries"));
+    assert.ok(CONSENT_A_TOOLS.includes("ga4_run_report"));
+    assert.ok(!CONSENT_A_TOOLS.some((n) => n.startsWith("shopify_")));
     assert.ok(TOOLS.some((t) => t.name === "gads_search"));
     assert.ok(!TOOLS.some((t) => t.name.includes(".")));
+  });
+
+  it("W0.4: Shopify is LOCAL_FREE; Ads/Meta are LICENSE_GATED; buckets disjoint", () => {
+    const shopify = TOOLS.filter((t) => t.family === "shopify").map((t) => t.name);
+    assert.ok(shopify.length >= 5);
+    for (const name of shopify) {
+      assert.ok(LOCAL_FREE_TOOLS.includes(name), name);
+      assert.ok(!CONSENT_A_TOOLS.includes(name), name);
+      assert.ok(!LICENSE_GATED_TOOLS.includes(name), name);
+    }
+    assert.ok(LOCAL_FREE_TOOLS.includes("shopify_get_shop"));
+    assert.ok(LOCAL_FREE_TOOLS.includes("gbp_list_accounts"));
+
+    const adsMeta = TOOLS.filter((t) => t.family === "gads" || t.family === "meta").map((t) => t.name);
+    assert.ok(adsMeta.includes("gads_search"));
+    assert.ok(adsMeta.includes("meta_insights"));
+    assert.ok(adsMeta.includes("gads_describe_recipes"));
+    assert.ok(adsMeta.includes("meta_describe_insights_schema"));
+    for (const name of adsMeta) {
+      assert.ok(LICENSE_GATED_TOOLS.includes(name), name);
+      assert.ok(!CONSENT_A_TOOLS.includes(name), name);
+      assert.ok(!LOCAL_FREE_TOOLS.includes(name), name);
+    }
+
+    const a = new Set(CONSENT_A_TOOLS);
+    const local = new Set(LOCAL_FREE_TOOLS);
+    const paid = new Set(LICENSE_GATED_TOOLS);
+    for (const n of a) {
+      assert.ok(!local.has(n), n);
+      assert.ok(!paid.has(n), n);
+    }
+    for (const n of local) assert.ok(!paid.has(n), n);
   });
 
   it("date range > 366 days is INVALID_ARGUMENT with zero HTTP", async () => {

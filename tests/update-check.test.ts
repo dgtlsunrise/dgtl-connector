@@ -136,6 +136,7 @@ describe("license_status update fields + LICENSE_REQUIRED copy", () => {
     assert.ok(MSG.LICENSE_REQUIRED.includes("https://www.dgtlsunrise.com/"));
     assert.ok(MSG.LICENSE_REQUIRED.includes("DGTL_LICENSE_JWT"));
     assert.ok(/developer-token/i.test(MSG.LICENSE_REQUIRED));
+    assert.ok(/Shopify/i.test(MSG.LICENSE_REQUIRED));
   });
 
   it("license_status fetch fail → update_available false (soft)", async () => {

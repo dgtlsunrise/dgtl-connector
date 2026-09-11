@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import { describe, it } from "node:test";
 import { join } from "node:path";
 import { ALL_SCOPES, ROOT, TEST_TOKEN } from "./helpers.js";
-import { FREE_TOOL_NAMES } from "../src/tools/registry.js";
+import { CONSENT_A_TOOLS } from "../src/tools/registry.js";
 
 type Rpc = { jsonrpc: "2.0"; id?: number; method?: string; params?: unknown; result?: unknown; error?: unknown };
 
@@ -72,7 +72,7 @@ describe("binary MCP initialize + tools/list", () => {
       assert.equal(listed.id, 2);
       const tools = (listed.result as { tools: Array<{ name: string }> }).tools;
       const names = tools.map((t) => t.name);
-      for (const n of FREE_TOOL_NAMES) {
+      for (const n of CONSENT_A_TOOLS) {
         assert.ok(names.includes(n), `missing ${n}`);
       }
       assert.ok(names.includes("gads_search"));

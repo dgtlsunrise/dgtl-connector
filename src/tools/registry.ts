@@ -880,7 +880,28 @@ export const TOOLS: ToolSpec[] = [
 
 export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 
-export const FREE_TOOL_NAMES = TOOLS.filter((t) => t.family === "identity" || t.family === "ga4" || t.family === "gsc" || t.family === "gtm").map(
+/**
+ * Consent A readonly kernel (identity + GA4 + GSC + GTM list/get).
+ * This is the 24-tool Google fixture loop in contract.test.ts.
+ * Do not add Shopify, GBP, Consent W writes, Ads, Meta, or diagnostics.
+ */
+export const CONSENT_A_TOOLS = TOOLS.filter(
+  (t) => t.family === "identity" || t.family === "ga4" || t.family === "gsc" || t.family === "gtm",
+).map((t) => t.name);
+
+/**
+ * Alias of CONSENT_A_TOOLS (W0.4). Not the commercial free set.
+ * Shopify is LOCAL_FREE_TOOLS; Ads/Meta are LICENSE_GATED_TOOLS.
+ */
+export const FREE_TOOL_NAMES = CONSENT_A_TOOLS;
+
+/** Local-free, not Polar: Shopify merchant token; GBP (flag still fail-closed). */
+export const LOCAL_FREE_TOOLS = TOOLS.filter((t) => t.family === "shopify" || t.family === "gbp").map(
+  (t) => t.name,
+);
+
+/** Polar Pro surface: Google Ads + Meta Ads (including plugin-local describe tools). */
+export const LICENSE_GATED_TOOLS = TOOLS.filter((t) => t.family === "gads" || t.family === "meta").map(
   (t) => t.name,
 );
 

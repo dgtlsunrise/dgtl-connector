@@ -7,7 +7,7 @@ The Installed App harness already proved GSC inspect + searchanalytics + sitemap
 ## What CI must prove
 
 1. Required spec files exist (proof of done).
-2. Closed free tool count is **24** and matches `docs/TOOLS.md` headings + `schemas/v1/catalog.json`.
+2. Closed Consent A kernel count is **24** and matches `docs/TOOLS.md` headings + `schemas/v1/catalog.json`. Shopify is local-free, not in that 24, not Polar.
 3. `plugin.json` / `mcp.json` match Agent Plugins 1.0 schemas (when schemas are vendored or fetched in a **non-Google** step; prefer vendored copies later).
 4. Each skill in [SKILLS.md](SKILLS.md) has `skills/<name>/SKILL.md` with frontmatter.
 5. Secret scan fails the build on credential patterns.

@@ -2,7 +2,7 @@
 
 Machine-readable contract for the closed tool list.
 
-- `catalog.json` — 24 free tools (vendored 22 + `ga4_list_account_summaries` + `gsc_describe_schema`) plus gated families (writes, GBP, Ads/Meta, license, support_packet / feedback diagnostics)
+- `catalog.json` — 24 Consent A kernel tools (vendored 22 + `ga4_list_account_summaries` + `gsc_describe_schema`) plus gated families (writes, GBP, Ads/Meta Polar, Shopify local-free, license, support_packet / feedback diagnostics). Shopify is not Polar and is not in the 24 kernel.
 - `tools.schema.json` — closed input schemas (`additionalProperties: false`)
 - `error.schema.json` / `envelope.schema.json` — result envelope including `page.truncated` and optional success `hint` (empty rows ≠ auth failure)
 

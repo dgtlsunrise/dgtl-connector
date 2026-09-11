@@ -5,7 +5,7 @@ description: Explain DGTL Pro ($19/mo flat, unlimited) for Google Ads, Meta Ads,
 
 # Pro upgrade
 
-DGTL Pro is **$19/mo flat, unlimited**. It unlocks the hosted Google Ads / Meta Ads gateway. Free GA4, Search Console, and Tag Manager stay local and free.
+DGTL Pro is **$19/mo flat, unlimited**. It unlocks the hosted Google Ads / Meta Ads gateway. Free GA4, Search Console, Tag Manager, and local Shopify stay local and free (no Polar).
 
 ## When to use
 

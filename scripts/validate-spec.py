@@ -189,6 +189,28 @@ def check_catalog_and_tools() -> None:
                 err(f"catalog.json {wname} fail must be WRITE_NOT_ENABLED, got {g.get('fail')!r}")
             elif wname in names:
                 err(f"catalog.json: write tool {wname} must not be in closed tools[]")
+        for sname in (
+            "shopify_get_shop",
+            "shopify_list_products",
+            "shopify_get_product",
+            "shopify_list_orders",
+            "shopify_get_order",
+        ):
+            g = by_name.get(sname)
+            if not g:
+                err(f"catalog.json gated_tools missing {sname}")
+            elif g.get("fail") == "LICENSE_REQUIRED":
+                err(f"catalog.json {sname} must not be LICENSE_REQUIRED (local-free, not Polar)")
+            elif g.get("fail") != "SHOPIFY_NOT_CONNECTED":
+                err(f"catalog.json {sname} fail must be SHOPIFY_NOT_CONNECTED, got {g.get('fail')!r}")
+            elif sname in names:
+                err(f"catalog.json: Shopify tool {sname} must not be in Consent A tools[]")
+        for paid in ("gads_search", "meta_insights"):
+            g = by_name.get(paid)
+            if not g:
+                err(f"catalog.json gated_tools missing {paid}")
+            elif g.get("fail") != "LICENSE_REQUIRED":
+                err(f"catalog.json {paid} fail must be LICENSE_REQUIRED, got {g.get('fail')!r}")
 
 
 def check_manifests() -> None:

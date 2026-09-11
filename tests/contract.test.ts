@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it, before, after } from "node:test";
 import { dispatch } from "../src/tools/dispatch.js";
 import { installNetworkGuard, makeCtx, reportArgs } from "./helpers.js";
-import { FREE_TOOL_NAMES } from "../src/tools/registry.js";
+import { CONSENT_A_TOOLS } from "../src/tools/registry.js";
 
 const ARGS: Record<string, Record<string, unknown>> = {
   google_whoami: {},
@@ -47,7 +47,7 @@ describe("free tool contracts against fixtures", () => {
   });
   after(() => restore());
 
-  for (const name of FREE_TOOL_NAMES) {
+  for (const name of CONSENT_A_TOOLS) {
     it(`${name} returns ok envelope (no googleapis leak beyond fixture fetch)`, async () => {
       const ctx = makeCtx();
       const args = ARGS[name];
@@ -70,6 +70,16 @@ describe("free tool contracts against fixtures", () => {
       }
     });
   }
+
+  it("Consent A kernel is 24 Google tools; Shopify is not in this fixture loop", () => {
+    assert.equal(CONSENT_A_TOOLS.length, 24);
+    for (const name of CONSENT_A_TOOLS) {
+      assert.ok(ARGS[name], `missing ARGS for kernel tool ${name}`);
+      assert.ok(!name.startsWith("shopify_"), name);
+      assert.ok(!name.startsWith("gads_"), name);
+      assert.ok(!name.startsWith("meta_"), name);
+    }
+  });
 
   it("google_whoami never includes a bearer or refresh token", async () => {
     const ctx = makeCtx();

@@ -2,7 +2,9 @@
 
 **Closed free tool count: 24.** (the original 22 plus `ga4_list_account_summaries` plus `gsc_describe_schema`)
 
-If you need a 25th **free** tool, bump a version and update `schemas/v1/catalog.json` in the same change. Do not “just add it.” Quality over dump. Small typed tools, not a mega-query kitchen sink. GBP / Ads / Meta / Shopify are gated families: registered, fail closed (`GBP_NOT_ENABLED` / `LICENSE_REQUIRED` / `SHOPIFY_NOT_CONNECTED`). Shopify is **free local** (merchant token; no Polar).
+That 24 is the **Consent A kernel** (`CONSENT_A_TOOLS` / `FREE_TOOL_NAMES` alias). Shopify is **local-free** (`LOCAL_FREE_TOOLS`, merchant token, no Polar — fail `SHOPIFY_NOT_CONNECTED`). Ads/Meta are **license-gated** (`LICENSE_GATED_TOOLS`, Polar Pro — fail `LICENSE_REQUIRED`). GBP is local-free when enabled (still fail `GBP_NOT_ENABLED` until quota). Do not stuff Shopify into the 24-tool kernel.
+
+If you need a 25th **Consent A** tool, bump a version and update `schemas/v1/catalog.json` in the same change. Do not “just add it.” Quality over dump. Small typed tools, not a mega-query kitchen sink.
 
 Machine-readable list: [`schemas/v1/catalog.json`](../schemas/v1/catalog.json). Parameter schema: [`schemas/v1/tools.schema.json`](../schemas/v1/tools.schema.json). Error envelope: [`schemas/v1/error.schema.json`](../schemas/v1/error.schema.json).
 

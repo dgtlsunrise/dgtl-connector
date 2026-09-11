@@ -60,7 +60,7 @@ No implicit resource. Tools require IDs. `default` / `first` / `0` → `RESOURCE
 
 ## Paid (not live in this binary)
 
-Google Ads and Meta Ads tools are registered so the model does not poll. Without a DGTL license JWT (`DGTL_LICENSE_JWT` or `PLUGIN_DATA/license.jwt`) they return `LICENSE_REQUIRED`. Free GA4/GSC/GTM still work. License delivery (when Polar is live) is portal / `POST /v1/license`, not emailing the bearer. DGTL’s Ads developer token and Meta app secret are **not** in this plugin. The allowlisted gateway is a later deployable (`services/stamp/`), not this package.
+Google Ads and Meta Ads tools are registered so the model does not poll. Without a DGTL license JWT (`DGTL_LICENSE_JWT` or `PLUGIN_DATA/license.jwt`) they return `LICENSE_REQUIRED`. Free GA4/GSC/GTM and local Shopify still work. License delivery (when Polar is live) is portal / `POST /v1/license`, not emailing the bearer. DGTL’s Ads developer token and Meta app secret are **not** in this plugin. The allowlisted gateway is a later deployable (`services/stamp/`), not this package.
 
 ## Support intake
 

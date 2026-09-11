@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 import { buildGoogleAuthUrl, generatePkce } from "../src/auth/pkce.js";
 import { ROOT } from "./helpers.js";
-import { TOOLS } from "../src/tools/registry.js";
+import { CONSENT_A_TOOLS, LICENSE_GATED_TOOLS, LOCAL_FREE_TOOLS, TOOLS } from "../src/tools/registry.js";
 
 function walk(dir: string, acc: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
@@ -72,14 +72,18 @@ describe("packaging and secrets", () => {
     }
   });
 
-  it("catalog count 24 matches registry free tools and tools.schema $defs", () => {
+  it("catalog count 24 matches Consent A kernel; Shopify is local-free not LICENSE_REQUIRED", () => {
     const catalog = JSON.parse(readFileSync(join(ROOT, "schemas/v1/catalog.json"), "utf8"));
     assert.equal(catalog.count, 24);
     assert.equal(catalog.tools.length, 24);
+    assert.equal(CONSENT_A_TOOLS.length, 24);
+    const catalogNames = catalog.tools.map((t: { name: string }) => t.name).sort();
+    assert.deepEqual(catalogNames, [...CONSENT_A_TOOLS].sort());
     const schema = JSON.parse(readFileSync(join(ROOT, "schemas/v1/tools.schema.json"), "utf8"));
     for (const t of catalog.tools) {
       assert.ok(schema.$defs[t.name], `missing schema for ${t.name}`);
       assert.ok(TOOLS.some((x) => x.name === t.name), t.name);
+      assert.ok(!t.name.startsWith("shopify_"), t.name);
     }
     const plugin = JSON.parse(readFileSync(join(ROOT, "plugin.json"), "utf8"));
     assert.equal(plugin.name, "dgtl-connector");
@@ -101,6 +105,19 @@ describe("packaging and secrets", () => {
       assert.equal(g.fail, null, name);
       assert.ok(!catalog.tools.some((t: { name: string }) => t.name === name), name);
       assert.ok(schema.$defs[name], name);
+    }
+    for (const name of LOCAL_FREE_TOOLS.filter((n) => n.startsWith("shopify_"))) {
+      const g = catalog.gated_tools.find((x: { name: string }) => x.name === name);
+      assert.ok(g, name);
+      assert.notEqual(g.fail, "LICENSE_REQUIRED", name);
+      assert.equal(g.fail, "SHOPIFY_NOT_CONNECTED", name);
+      assert.ok(!catalog.tools.some((t: { name: string }) => t.name === name), name);
+    }
+    for (const name of ["gads_search", "meta_insights", "gads_describe_recipes", "meta_describe_insights_schema"]) {
+      assert.ok(LICENSE_GATED_TOOLS.includes(name), name);
+      const g = catalog.gated_tools.find((x: { name: string }) => x.name === name);
+      assert.ok(g, name);
+      assert.equal(g.fail, "LICENSE_REQUIRED", name);
     }
   });
 

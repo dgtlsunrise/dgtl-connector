@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { createAppContext } from "../src/context.js";
 import { dispatch } from "../src/tools/dispatch.js";
-import { FREE_TOOL_NAMES } from "../src/tools/registry.js";
+import { CONSENT_A_TOOLS, LICENSE_GATED_TOOLS } from "../src/tools/registry.js";
 import { META_BREAKDOWN_NAMES, META_FIELD_NAMES } from "../src/meta/insights-schema.js";
 import { GADS_RECIPE_NAMES } from "../src/ads/recipes-schema.js";
 import {
@@ -56,10 +56,12 @@ describe("Meta + Google MCP DX pass 2 (no live Ads/Meta)", () => {
   });
   after(() => restore());
 
-  it("free kernel stays 24 (describe tools are gated)", () => {
-    assert.equal(FREE_TOOL_NAMES.length, 24);
-    assert.ok(!FREE_TOOL_NAMES.includes("meta_describe_insights_schema"));
-    assert.ok(!FREE_TOOL_NAMES.includes("gads_describe_recipes"));
+  it("Consent A kernel stays 24 (describe tools are license-gated)", () => {
+    assert.equal(CONSENT_A_TOOLS.length, 24);
+    assert.ok(!CONSENT_A_TOOLS.includes("meta_describe_insights_schema"));
+    assert.ok(!CONSENT_A_TOOLS.includes("gads_describe_recipes"));
+    assert.ok(LICENSE_GATED_TOOLS.includes("meta_describe_insights_schema"));
+    assert.ok(LICENSE_GATED_TOOLS.includes("gads_describe_recipes"));
   });
 
   it("meta_describe_insights_schema is local (zero gateway) when licensed", async () => {

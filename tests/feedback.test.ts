@@ -4,7 +4,7 @@ import { createAppContext } from "../src/context.js";
 import { FEEDBACK_MAILBOX } from "../src/support/feedback.js";
 import { clearFeedbackDrafts } from "../src/support/feedback.js";
 import { dispatch } from "../src/tools/dispatch.js";
-import { FREE_TOOL_NAMES, TOOLS } from "../src/tools/registry.js";
+import { CONSENT_A_TOOLS, TOOLS } from "../src/tools/registry.js";
 import { PLUGIN_VERSION } from "../src/version.js";
 import { ROOT, installNetworkGuard, makeCtx, testEnv } from "./helpers.js";
 
@@ -228,9 +228,9 @@ describe("feedback_prepare / feedback_send", () => {
   it("diagnostics stay out of the 24 Consent A tools", () => {
     for (const name of ["support_packet", "feedback_prepare", "feedback_send"] as const) {
       assert.ok(TOOLS.some((t) => t.name === name), name);
-      assert.ok(!FREE_TOOL_NAMES.includes(name), name);
+      assert.ok(!CONSENT_A_TOOLS.includes(name), name);
     }
-    assert.equal(FREE_TOOL_NAMES.length, 24);
+    assert.equal(CONSENT_A_TOOLS.length, 24);
     const send = TOOLS.find((t) => t.name === "feedback_send");
     assert.equal(send?.annotations.readOnlyHint, false);
     const prep = TOOLS.find((t) => t.name === "feedback_prepare");
