@@ -7,6 +7,11 @@ export type Flags = {
    * Mirror of Worker ADS_MUTATE_ENABLED — both must be on for live mutate.
    */
   adsMutateEnabled: boolean;
+  /**
+   * Meta Ads mutate tools (meta_update_campaign/adset/ad). Default off.
+   * Mirror of Worker META_MUTATE_ENABLED — both must be on for live mutate.
+   */
+  metaMutateEnabled: boolean;
   /** Append redacted tool audit lines to PLUGIN_DATA/audit.jsonl. Default off. */
   auditLocal: boolean;
   /**
@@ -33,6 +38,7 @@ export function loadFlags(env: NodeJS.ProcessEnv = process.env): Flags {
     gbpEnabled: truthy(env.DGTL_GBP_ENABLED || env.GBP_ENABLED),
     writesEnabled: truthy(env.DGTL_WRITES_ENABLED || env.WRITES_ENABLED),
     adsMutateEnabled: truthy(env.DGTL_ADS_MUTATE_ENABLED || env.ADS_MUTATE_ENABLED),
+    metaMutateEnabled: truthy(env.DGTL_META_MUTATE_ENABLED || env.META_MUTATE_ENABLED),
     auditLocal: truthy(env.DGTL_AUDIT_LOCAL),
     gatewayUrl: raw ? raw.replace(/\/+$/, "") : undefined,
     feedbackUrl: feedbackRaw ? feedbackRaw.replace(/\/+$/, "") : undefined,

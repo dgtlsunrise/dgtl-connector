@@ -340,3 +340,40 @@ export const gadsUpdateCampaignBudget = z
       });
     }
   });
+
+/** Meta mutate — dry_run default true; live needs confirm_phrase with act_{ad_account_id} + object id. */
+export const metaUpdateCampaign = z
+  .object({
+    ad_account_id: str,
+    campaign_id: str,
+    status: z.enum(["ACTIVE", "PAUSED"]),
+    /** Default true — no Meta Graph mutate HTTP unless explicitly false. */
+    dry_run: z.boolean().default(true),
+    /** Required when dry_run=false; must include act_{ad_account_id} and campaign_id (checked in handler). */
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const metaUpdateAdset = z
+  .object({
+    ad_account_id: str,
+    adset_id: str,
+    status: z.enum(["ACTIVE", "PAUSED"]),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const metaUpdateAd = z
+  .object({
+    ad_account_id: str,
+    ad_id: str,
+    status: z.enum(["ACTIVE", "PAUSED"]),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+

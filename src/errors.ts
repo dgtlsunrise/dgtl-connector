@@ -23,6 +23,7 @@ export const ERROR_CODES = [
   "CONSENT_W_REQUIRED",
   "ADS_MUTATE_NOT_ENABLED",
   "META_MUTATE_NOT_ENABLED",
+  "META_SCOPE_MISSING",
   "SPEND_CAP_EXCEEDED",
 ] as const;
 
@@ -80,6 +81,8 @@ export const MSG = {
     "Google Ads mutate tools are flagged off (DGTL_ADS_MUTATE_ENABLED=false). Reads still work with Pro + Consent C. Enable only after Google Ads API mutate-capable access and Worker ADS_MUTATE_ENABLED=true — never on Consent A.",
   META_MUTATE_NOT_ENABLED:
     "Meta Ads mutate tools are flagged off until ads_management Advanced Access and DGTL_META_MUTATE_ENABLED. Reads stay ads_read-only.",
+  META_SCOPE_MISSING:
+    "This Meta login did not grant ads_management (or Graph denied the mutate). Re-authorize after ads_management Advanced Access. Do not silently retry. ads_read reads may still work.",
   SPEND_CAP_EXCEEDED:
     "Requested daily budget exceeds the product sanity cap ($100,000 / 100_000_000_000 micros). Lower amount_micros or daily_budget_dollars. No Ads mutate HTTP was sent.",
   ADS_SCOPE_MISSING:

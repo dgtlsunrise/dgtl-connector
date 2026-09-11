@@ -9,6 +9,7 @@ import * as gtmWrite from "../google/gtm-write.js";
 import { googleWhoami } from "../google/whoami.js";
 import { gadsDisabled, gadsDescribeRecipes, licenseStatus } from "../ads/gads.js";
 import { gadsSetCampaignStatus, gadsUpdateCampaignBudget } from "../ads/gads-write.js";
+import { metaUpdateCampaign, metaUpdateAdset, metaUpdateAd } from "../meta/meta-write.js";
 import { metaDisabled, metaDescribeInsightsSchema } from "../meta/meta.js";
 import { supportPacket } from "../support/packet.js";
 import { feedbackPrepare, feedbackSend } from "../support/feedback.js";
@@ -585,6 +586,39 @@ export const TOOLS: ToolSpec[] = [
     inputSchema: S.metaCreative,
     annotations: ANN_RO,
     handler: async (ctx, args) => metaDisabled(ctx, "meta_get_creative", args),
+  },
+  {
+    name: "meta_update_campaign",
+    group: "meta-write",
+    family: "meta",
+    title: "Meta update campaign status",
+    description:
+      "Paid mutate. Pause or enable a Meta campaign (ACTIVE/PAUSED only). Flagged off by default (META_MUTATE_NOT_ENABLED when DGTL_META_MUTATE_ENABLED=false). Prefer dry_run; live needs confirm_phrase containing act_{ad_account_id} AND campaign_id after a user message this turn. Pro meta feature + gateway. No budget/name/create this slice. Requires ads_management when scopes detectable.",
+    inputSchema: S.metaUpdateCampaign,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => metaUpdateCampaign(ctx, args),
+  },
+  {
+    name: "meta_update_adset",
+    group: "meta-write",
+    family: "meta",
+    title: "Meta update ad set status",
+    description:
+      "Paid mutate. Pause or enable a Meta ad set (ACTIVE/PAUSED only). Flagged off by default (META_MUTATE_NOT_ENABLED). Prefer dry_run; live needs confirm_phrase containing act_{ad_account_id} AND adset_id. No budget fields this slice.",
+    inputSchema: S.metaUpdateAdset,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => metaUpdateAdset(ctx, args),
+  },
+  {
+    name: "meta_update_ad",
+    group: "meta-write",
+    family: "meta",
+    title: "Meta update ad status",
+    description:
+      "Paid mutate. Pause or enable a Meta ad (ACTIVE/PAUSED only). Flagged off by default (META_MUTATE_NOT_ENABLED). Prefer dry_run; live needs confirm_phrase containing act_{ad_account_id} AND ad_id.",
+    inputSchema: S.metaUpdateAd,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => metaUpdateAd(ctx, args),
   },
 ];
 
