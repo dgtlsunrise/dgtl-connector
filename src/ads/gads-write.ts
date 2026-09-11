@@ -1,7 +1,7 @@
 /**
  * Google Ads mutate tools — Consent C + gateway only.
  * Flag DGTL_ADS_MUTATE_ENABLED defaults on (opt out with =false). Worker ADS_MUTATE_ENABLED still required for live hop.
- * Tools: gads_set_campaign_status, gads_update_campaign_budget.
+ * Tools: campaign status/budget + keyword/ad status + keyword add + RSA create + Search campaign create.
  * Never touches Consent A / GOOGLE_ACCESS_TOKEN.
  */
 
@@ -378,4 +378,473 @@ export async function gadsUpdateCampaignBudget(
   });
 
   return enrichGadsEnvelope(tool, hopArgs, env);
+}
+
+
+const ALLOWED_MATCH = new Set(["EXACT", "PHRASE", "BROAD"]);
+
+function optionalLoginCustomerId(args: Record<string, unknown>): string | undefined {
+  return typeof args.login_customer_id === "string" && args.login_customer_id.trim()
+    ? normalizeCustomerId(args.login_customer_id)
+    : undefined;
+}
+
+async function liveMutateHop(
+  ctx: AppContext,
+  tool: string,
+  hopArgs: Record<string, unknown>,
+): Promise<Envelope> {
+  const base = ctx.flags.gatewayUrl;
+  if (!base) {
+    return failEnvelope(tool, "GATEWAY_UNAVAILABLE", MSG.GATEWAY_UNAVAILABLE, {
+      hint: "License + mutate flag ok. Set DGTL_GATEWAY_URL. Free tools still work.",
+    });
+  }
+  const probe = await probeGatewayReachable(ctx);
+  if (!probe.reachable) {
+    return failEnvelope(tool, "GATEWAY_UNAVAILABLE", MSG.GATEWAY_UNAVAILABLE, {
+      hint: probe.note ?? "Gateway health probe failed.",
+    });
+  }
+  const adsTok = await ctx.authAds.getAccessToken();
+  if (!adsTok?.accessToken) {
+    return failEnvelope(tool, "ADS_SCOPE_MISSING", MSG.ADS_SCOPE_MISSING, {
+      hint: "Connect Consent C via GOOGLE_ADS_ACCESS_TOKEN or auth login-ads — never reuse Consent A.",
+      missing_scope: SCOPE.adwords,
+    });
+  }
+  void ctx.auth;
+  const env = await postGateway(ctx, {
+    family: "gads",
+    tool,
+    userAccessToken: adsTok.accessToken,
+    args: hopArgs,
+  });
+  return enrichGadsEnvelope(tool, hopArgs, env);
+}
+
+function gateMutateOrFail(ctx: AppContext, tool: string): Envelope | null {
+  if (!ctx.flags.adsMutateEnabled) {
+    return failEnvelope(tool, "ADS_MUTATE_NOT_ENABLED", MSG.ADS_MUTATE_NOT_ENABLED, {
+      hint: HINT_FLAG,
+      api: "google_ads",
+    });
+  }
+  return requireAdsLicense(ctx, tool);
+}
+
+export async function gadsSetKeywordStatus(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "gads_set_keyword_status";
+  const miss = gateMutateOrFail(ctx, tool);
+  if (miss) return miss;
+
+  const customer_id = normalizeCustomerId(requireId(args.customer_id, "customer_id"));
+  const ad_group_id = normalizeCampaignId(requireId(args.ad_group_id, "ad_group_id"));
+  const criterion_id = normalizeCampaignId(requireId(args.criterion_id, "criterion_id"));
+  const statusRaw = requireId(args.status, "status").trim().toUpperCase();
+  if (!ALLOWED_STATUS.has(statusRaw)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "status must be ENABLED or PAUSED", {
+      api: "google_ads",
+    });
+  }
+  const dryRun = dryRunDefault(args);
+  const login_customer_id = optionalLoginCustomerId(args);
+  const resource_name = `customers/${customer_id}/adGroupCriteria/${ad_group_id}~${criterion_id}`;
+  const proposed = {
+    customer_id,
+    ad_group_id,
+    criterion_id,
+    status: statusRaw,
+    resource_name,
+    ...(login_customer_id ? { login_customer_id } : {}),
+  };
+  if (dryRun) {
+    return okEnvelope(tool, {
+      resource: { type: "gads_keyword", id: resource_name, display_name: criterion_id },
+      data: {
+        dry_run: true,
+        proposed,
+        cited: { customer_id, ad_group_id, criterion_id, status: statusRaw },
+        note: "No Ads mutate HTTP. Pass dry_run=false with confirm_phrase containing this customer_id.",
+      },
+    });
+  }
+  assertConfirmContainsCustomerId(args.confirm_phrase, customer_id);
+  const hopArgs: Record<string, unknown> = {
+    customer_id,
+    ad_group_id,
+    criterion_id,
+    status: statusRaw,
+  };
+  if (login_customer_id) hopArgs.login_customer_id = login_customer_id;
+  return liveMutateHop(ctx, tool, hopArgs);
+}
+
+export async function gadsAddKeywords(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "gads_add_keywords";
+  const miss = gateMutateOrFail(ctx, tool);
+  if (miss) return miss;
+
+  const customer_id = normalizeCustomerId(requireId(args.customer_id, "customer_id"));
+  const ad_group_id = normalizeCampaignId(requireId(args.ad_group_id, "ad_group_id"));
+  if (!Array.isArray(args.keywords) || args.keywords.length === 0) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "keywords array required (1–20)", {
+      api: "google_ads",
+    });
+  }
+  if (args.keywords.length > 20) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "max 20 keywords per call", { api: "google_ads" });
+  }
+  const keywords: Array<{ text: string; match_type: string }> = [];
+  for (const item of args.keywords) {
+    if (!item || typeof item !== "object") {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "invalid keyword item", { api: "google_ads" });
+    }
+    const text =
+      typeof (item as { text?: unknown }).text === "string"
+        ? (item as { text: string }).text.trim()
+        : "";
+    if (!text) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "keyword text required", { api: "google_ads" });
+    }
+    const mt =
+      typeof (item as { match_type?: unknown }).match_type === "string"
+        ? (item as { match_type: string }).match_type.trim().toUpperCase()
+        : "BROAD";
+    if (!ALLOWED_MATCH.has(mt)) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "match_type must be EXACT|PHRASE|BROAD", {
+        api: "google_ads",
+      });
+    }
+    keywords.push({ text, match_type: mt });
+  }
+  const statusRaw =
+    typeof args.status === "string" && args.status.trim()
+      ? args.status.trim().toUpperCase()
+      : "ENABLED";
+  if (!ALLOWED_STATUS.has(statusRaw)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "status must be ENABLED or PAUSED", {
+      api: "google_ads",
+    });
+  }
+  const dryRun = dryRunDefault(args);
+  const login_customer_id = optionalLoginCustomerId(args);
+  const proposed = {
+    customer_id,
+    ad_group_id,
+    keywords,
+    status: statusRaw,
+    ...(login_customer_id ? { login_customer_id } : {}),
+  };
+  if (dryRun) {
+    return okEnvelope(tool, {
+      resource: {
+        type: "gads_ad_group",
+        id: `customers/${customer_id}/adGroups/${ad_group_id}`,
+        display_name: ad_group_id,
+      },
+      data: {
+        dry_run: true,
+        proposed,
+        cited: { customer_id, ad_group_id, keyword_count: keywords.length },
+        note: "No Ads mutate HTTP. Pass dry_run=false with confirm_phrase containing this customer_id.",
+      },
+    });
+  }
+  assertConfirmContainsCustomerId(args.confirm_phrase, customer_id);
+  const hopArgs: Record<string, unknown> = {
+    customer_id,
+    ad_group_id,
+    keywords,
+    status: statusRaw,
+  };
+  if (login_customer_id) hopArgs.login_customer_id = login_customer_id;
+  return liveMutateHop(ctx, tool, hopArgs);
+}
+
+export async function gadsSetAdStatus(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "gads_set_ad_status";
+  const miss = gateMutateOrFail(ctx, tool);
+  if (miss) return miss;
+
+  const customer_id = normalizeCustomerId(requireId(args.customer_id, "customer_id"));
+  const ad_group_id = normalizeCampaignId(requireId(args.ad_group_id, "ad_group_id"));
+  const ad_id = normalizeCampaignId(requireId(args.ad_id, "ad_id"));
+  const statusRaw = requireId(args.status, "status").trim().toUpperCase();
+  if (!ALLOWED_STATUS.has(statusRaw)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "status must be ENABLED or PAUSED", {
+      api: "google_ads",
+    });
+  }
+  const dryRun = dryRunDefault(args);
+  const login_customer_id = optionalLoginCustomerId(args);
+  const resource_name = `customers/${customer_id}/adGroupAds/${ad_group_id}~${ad_id}`;
+  const proposed = {
+    customer_id,
+    ad_group_id,
+    ad_id,
+    status: statusRaw,
+    resource_name,
+    ...(login_customer_id ? { login_customer_id } : {}),
+  };
+  if (dryRun) {
+    return okEnvelope(tool, {
+      resource: { type: "gads_ad", id: resource_name, display_name: ad_id },
+      data: {
+        dry_run: true,
+        proposed,
+        cited: { customer_id, ad_group_id, ad_id, status: statusRaw },
+        note: "No Ads mutate HTTP. Pass dry_run=false with confirm_phrase containing this customer_id.",
+      },
+    });
+  }
+  assertConfirmContainsCustomerId(args.confirm_phrase, customer_id);
+  const hopArgs: Record<string, unknown> = {
+    customer_id,
+    ad_group_id,
+    ad_id,
+    status: statusRaw,
+  };
+  if (login_customer_id) hopArgs.login_customer_id = login_customer_id;
+  return liveMutateHop(ctx, tool, hopArgs);
+}
+
+function assertHttpsFinalUrl(raw: unknown): { ok: true; final_url: string } | { ok: false; reason: string } {
+  if (typeof raw !== "string" || !raw.trim()) return { ok: false, reason: "missing_final_url" };
+  const s = raw.trim();
+  try {
+    const u = new URL(s);
+    if (u.protocol !== "https:") return { ok: false, reason: "final_url_must_be_https" };
+    if (u.username || u.password) return { ok: false, reason: "final_url_credentials_forbidden" };
+    if (s.length > 2048) return { ok: false, reason: "final_url_too_long" };
+    return { ok: true, final_url: s };
+  } catch {
+    return { ok: false, reason: "invalid_final_url" };
+  }
+}
+
+export async function gadsCreateResponsiveSearchAd(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "gads_create_responsive_search_ad";
+  const miss = gateMutateOrFail(ctx, tool);
+  if (miss) return miss;
+
+  const customer_id = normalizeCustomerId(requireId(args.customer_id, "customer_id"));
+  const ad_group_id = normalizeCampaignId(requireId(args.ad_group_id, "ad_group_id"));
+  if (!Array.isArray(args.headlines) || args.headlines.length < 3) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "≥3 headlines required (≤30 chars each)", {
+      api: "google_ads",
+    });
+  }
+  if (!Array.isArray(args.descriptions) || args.descriptions.length < 2) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "≥2 descriptions required (≤90 chars each)", {
+      api: "google_ads",
+    });
+  }
+  const url = assertHttpsFinalUrl(args.final_url);
+  if (!url.ok) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "final_url must be https://…", {
+      api: "google_ads",
+      hint: url.reason,
+    });
+  }
+  const statusRaw =
+    typeof args.status === "string" && args.status.trim()
+      ? args.status.trim().toUpperCase()
+      : "PAUSED";
+  if (!ALLOWED_STATUS.has(statusRaw)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "status must be ENABLED or PAUSED", {
+      api: "google_ads",
+    });
+  }
+  const dryRun = dryRunDefault(args);
+  const login_customer_id = optionalLoginCustomerId(args);
+  const proposed = {
+    customer_id,
+    ad_group_id,
+    headlines: args.headlines,
+    descriptions: args.descriptions,
+    final_url: url.final_url,
+    status: statusRaw,
+    ...(typeof args.path1 === "string" ? { path1: args.path1 } : {}),
+    ...(typeof args.path2 === "string" ? { path2: args.path2 } : {}),
+    ...(login_customer_id ? { login_customer_id } : {}),
+  };
+  if (dryRun) {
+    return okEnvelope(tool, {
+      resource: {
+        type: "gads_ad_group",
+        id: `customers/${customer_id}/adGroups/${ad_group_id}`,
+        display_name: ad_group_id,
+      },
+      data: {
+        dry_run: true,
+        proposed,
+        cited: { customer_id, ad_group_id, final_url: url.final_url, status: statusRaw },
+        note: "No Ads mutate HTTP. New RSA defaults PAUSED unless status=ENABLED. confirm_phrase must include customer_id for live.",
+      },
+    });
+  }
+  assertConfirmContainsCustomerId(args.confirm_phrase, customer_id);
+  const hopArgs: Record<string, unknown> = { ...proposed };
+  return liveMutateHop(ctx, tool, hopArgs);
+}
+
+export async function gadsCreateSearchCampaign(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "gads_create_search_campaign";
+  const miss = gateMutateOrFail(ctx, tool);
+  if (miss) return miss;
+
+  const customer_id = normalizeCustomerId(requireId(args.customer_id, "customer_id"));
+  const campaign_name = requireId(args.campaign_name, "campaign_name").trim();
+  const ad_group_name = requireId(args.ad_group_name, "ad_group_name").trim();
+  const amount = resolvePluginAmountMicros(args);
+  if (!amount.ok) {
+    return failEnvelope(
+      tool,
+      "INVALID_ARGUMENT",
+      "Provide amount_micros or daily_budget_dollars for the new campaign budget",
+      { api: "google_ads", hint: amount.reason },
+    );
+  }
+  if (amount.amount_micros_number > DEFAULT_MAX_DAILY_BUDGET_MICROS) {
+    return failEnvelope(tool, "SPEND_CAP_EXCEEDED", MSG.SPEND_CAP_EXCEEDED, {
+      api: "google_ads",
+      hint: `Max daily amount_micros is ${DEFAULT_MAX_DAILY_BUDGET_MICROS} ($100,000).`,
+    });
+  }
+  if (!Array.isArray(args.keywords) || args.keywords.length === 0) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "≥1 keyword stub required", { api: "google_ads" });
+  }
+  const keywords: Array<{ text: string; match_type: string }> = [];
+  for (const item of args.keywords) {
+    if (!item || typeof item !== "object") {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "invalid keyword item", { api: "google_ads" });
+    }
+    const text =
+      typeof (item as { text?: unknown }).text === "string"
+        ? (item as { text: string }).text.trim()
+        : "";
+    if (!text) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "keyword text required", { api: "google_ads" });
+    }
+    const mt =
+      typeof (item as { match_type?: unknown }).match_type === "string"
+        ? (item as { match_type: string }).match_type.trim().toUpperCase()
+        : "BROAD";
+    if (!ALLOWED_MATCH.has(mt)) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "match_type must be EXACT|PHRASE|BROAD", {
+        api: "google_ads",
+      });
+    }
+    keywords.push({ text, match_type: mt });
+  }
+
+  const hasRsa =
+    (Array.isArray(args.headlines) && args.headlines.length > 0) ||
+    (Array.isArray(args.descriptions) && args.descriptions.length > 0) ||
+    Boolean(args.final_url);
+  let rsa:
+    | {
+        headlines: unknown;
+        descriptions: unknown;
+        final_url: string;
+        path1?: string;
+        path2?: string;
+      }
+    | undefined;
+  if (hasRsa) {
+    if (!Array.isArray(args.headlines) || args.headlines.length < 3) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "RSA stub needs ≥3 headlines", {
+        api: "google_ads",
+      });
+    }
+    if (!Array.isArray(args.descriptions) || args.descriptions.length < 2) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "RSA stub needs ≥2 descriptions", {
+        api: "google_ads",
+      });
+    }
+    const url = assertHttpsFinalUrl(args.final_url);
+    if (!url.ok) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "RSA stub final_url must be https://…", {
+        api: "google_ads",
+        hint: url.reason,
+      });
+    }
+    rsa = {
+      headlines: args.headlines,
+      descriptions: args.descriptions,
+      final_url: url.final_url,
+      ...(typeof args.path1 === "string" ? { path1: args.path1 } : {}),
+      ...(typeof args.path2 === "string" ? { path2: args.path2 } : {}),
+    };
+  }
+
+  const statusRaw =
+    typeof args.status === "string" && args.status.trim()
+      ? args.status.trim().toUpperCase()
+      : "PAUSED";
+  if (!ALLOWED_STATUS.has(statusRaw)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "status must be ENABLED or PAUSED", {
+      api: "google_ads",
+    });
+  }
+
+  const dryRun = dryRunDefault(args);
+  const login_customer_id = optionalLoginCustomerId(args);
+  const proposed: Record<string, unknown> = {
+    customer_id,
+    campaign_name,
+    ad_group_name,
+    amount_micros: amount.amount_micros,
+    daily_budget_dollars: amount.daily_budget_dollars,
+    keywords,
+    status: statusRaw,
+    advertising_channel_type: "SEARCH",
+    ...(login_customer_id ? { login_customer_id } : {}),
+  };
+  if (rsa) {
+    proposed.headlines = rsa.headlines;
+    proposed.descriptions = rsa.descriptions;
+    proposed.final_url = rsa.final_url;
+    if (rsa.path1) proposed.path1 = rsa.path1;
+    if (rsa.path2) proposed.path2 = rsa.path2;
+  }
+  if (args.cpc_bid_micros !== undefined) proposed.cpc_bid_micros = args.cpc_bid_micros;
+
+  if (dryRun) {
+    return okEnvelope(tool, {
+      resource: { type: "gads_customer", id: customer_id, display_name: campaign_name },
+      data: {
+        dry_run: true,
+        proposed,
+        cited: {
+          customer_id,
+          campaign_name,
+          amount_micros: amount.amount_micros,
+          keyword_count: keywords.length,
+          has_rsa: Boolean(rsa),
+          status: statusRaw,
+        },
+        note: "No Ads mutate HTTP. Creates PAUSED Search campaign + budget + ad group + keywords (+ optional PAUSED RSA). Live needs confirm_phrase with customer_id.",
+        spend_cap_micros: DEFAULT_MAX_DAILY_BUDGET_MICROS,
+      },
+    });
+  }
+  assertConfirmContainsCustomerId(args.confirm_phrase, customer_id);
+  return liveMutateHop(ctx, tool, proposed);
 }

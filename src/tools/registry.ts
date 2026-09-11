@@ -8,7 +8,15 @@ import * as gtm from "../google/gtm.js";
 import * as gtmWrite from "../google/gtm-write.js";
 import { googleWhoami } from "../google/whoami.js";
 import { gadsDisabled, gadsDescribeRecipes, licenseStatus } from "../ads/gads.js";
-import { gadsSetCampaignStatus, gadsUpdateCampaignBudget } from "../ads/gads-write.js";
+import {
+  gadsAddKeywords,
+  gadsCreateResponsiveSearchAd,
+  gadsCreateSearchCampaign,
+  gadsSetAdStatus,
+  gadsSetCampaignStatus,
+  gadsSetKeywordStatus,
+  gadsUpdateCampaignBudget,
+} from "../ads/gads-write.js";
 import { metaUpdateCampaign, metaUpdateAdset, metaUpdateAd } from "../meta/meta-write.js";
 import { metaDisabled, metaDescribeInsightsSchema } from "../meta/meta.js";
 import { supportPacket } from "../support/packet.js";
@@ -450,7 +458,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gads",
     title: "Google Ads set campaign status (Consent C)",
     description:
-      "Paid mutate. Pause or enable a campaign (ENABLED/PAUSED only). Defaults on; opt out with DGTL_ADS_MUTATE_ENABLED=false (ADS_MUTATE_NOT_ENABLED). Worker ADS_MUTATE_ENABLED still required for live hop. Prefer dry_run; live needs confirm_phrase containing digits-only customer_id after a user message this turn. Consent C + Pro + gateway — never Consent A. No budget/create.",
+      "Paid mutate. Pause or enable a campaign (ENABLED/PAUSED only). Prefer dry_run; live needs confirm_phrase with digits-only customer_id. Consent C + Pro + gateway — never Consent A.",
     inputSchema: S.gadsSetCampaignStatus,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => gadsSetCampaignStatus(ctx, args),
@@ -461,10 +469,65 @@ export const TOOLS: ToolSpec[] = [
     family: "gads",
     title: "Google Ads update campaign budget (Consent C)",
     description:
-      "Paid mutate. Update campaign budget amount_micros only (optional daily_budget_dollars helper). Defaults on; opt out with DGTL_ADS_MUTATE_ENABLED=false (ADS_MUTATE_NOT_ENABLED). Worker ADS_MUTATE_ENABLED still required for live hop. Prefer dry_run; live needs confirm_phrase containing digits-only customer_id. Spend-cap gate ($100k/day micros). Consent C + Pro + gateway — never Consent A. No bid strategies/create.",
+      "Paid mutate. Update campaign budget amount_micros only (optional daily_budget_dollars). Prefer dry_run; confirm_phrase with customer_id; spend-cap $100k/day. Consent C + Pro + gateway — never Consent A.",
     inputSchema: S.gadsUpdateCampaignBudget,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => gadsUpdateCampaignBudget(ctx, args),
+  },
+  {
+    name: "gads_set_keyword_status",
+    group: "gads-write",
+    family: "gads",
+    title: "Google Ads set keyword status (Consent C)",
+    description:
+      "Paid mutate. Pause or enable a Search keyword (ad group criterion). Prefer dry_run; live confirm_phrase must include digits-only customer_id. Consent C + Pro + gateway.",
+    inputSchema: S.gadsSetKeywordStatus,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => gadsSetKeywordStatus(ctx, args),
+  },
+  {
+    name: "gads_add_keywords",
+    group: "gads-write",
+    family: "gads",
+    title: "Google Ads add keywords (Consent C)",
+    description:
+      "Paid mutate. Add up to 20 Search keywords to an ad group (EXACT/PHRASE/BROAD). Prefer dry_run; live confirm_phrase with customer_id. Consent C + Pro + gateway.",
+    inputSchema: S.gadsAddKeywords,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => gadsAddKeywords(ctx, args),
+  },
+  {
+    name: "gads_set_ad_status",
+    group: "gads-write",
+    family: "gads",
+    title: "Google Ads set ad status (Consent C)",
+    description:
+      "Paid mutate. Pause or enable an ad (AdGroupAd). Prefer dry_run; live confirm_phrase with customer_id. Consent C + Pro + gateway.",
+    inputSchema: S.gadsSetAdStatus,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => gadsSetAdStatus(ctx, args),
+  },
+  {
+    name: "gads_create_responsive_search_ad",
+    group: "gads-write",
+    family: "gads",
+    title: "Google Ads create RSA (Consent C)",
+    description:
+      "Paid mutate. Create a Responsive Search Ad on an existing ad group (≥3 headlines, ≥2 descriptions, https final_url). Defaults PAUSED. Prefer dry_run; live confirm_phrase with customer_id. Consent C + Pro + gateway.",
+    inputSchema: S.gadsCreateResponsiveSearchAd,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => gadsCreateResponsiveSearchAd(ctx, args),
+  },
+  {
+    name: "gads_create_search_campaign",
+    group: "gads-write",
+    family: "gads",
+    title: "Google Ads create Search campaign (Consent C)",
+    description:
+      "Paid mutate. Closed Search create: budget + campaign + ad group + ≥1 keyword stub; optional RSA. Defaults PAUSED. Spend-cap on daily budget. Prefer dry_run; live confirm_phrase with customer_id. Display/PMax out of scope. Consent C + Pro + gateway — never Consent A.",
+    inputSchema: S.gadsCreateSearchCampaign,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => gadsCreateSearchCampaign(ctx, args),
   },
   {
     name: "license_status",

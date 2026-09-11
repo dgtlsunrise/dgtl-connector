@@ -330,6 +330,36 @@
       "group": "meta-write",
       "flag": "meta.mutate.enabled",
       "fail": "META_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "gads_set_keyword_status",
+      "group": "gads-write",
+      "flag": "ads.mutate.enabled",
+      "fail": "ADS_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "gads_add_keywords",
+      "group": "gads-write",
+      "flag": "ads.mutate.enabled",
+      "fail": "ADS_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "gads_set_ad_status",
+      "group": "gads-write",
+      "flag": "ads.mutate.enabled",
+      "fail": "ADS_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "gads_create_responsive_search_ad",
+      "group": "gads-write",
+      "flag": "ads.mutate.enabled",
+      "fail": "ADS_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "gads_create_search_campaign",
+      "group": "gads-write",
+      "flag": "ads.mutate.enabled",
+      "fail": "ADS_MUTATE_NOT_ENABLED"
     }
   ]
 }

@@ -442,3 +442,237 @@ describe("Slice 3 gads_update_campaign_budget (fail closed)", () => {
     assert.equal(g.fail, "ADS_MUTATE_NOT_ENABLED");
   });
 });
+
+
+describe("Create speedrun keyword/ad/Search campaign (fail closed)", () => {
+  let restore: () => void;
+  before(() => {
+    restore = installNetworkGuard();
+  });
+  after(() => restore());
+
+  const createTools = [
+    "gads_set_keyword_status",
+    "gads_add_keywords",
+    "gads_set_ad_status",
+    "gads_create_responsive_search_ad",
+    "gads_create_search_campaign",
+  ] as const;
+
+  it("tools registered destructive; schemas dry_run default true", () => {
+    for (const name of createTools) {
+      const t = TOOLS.find((x) => x.name === name);
+      assert.ok(t, name);
+      assert.equal(t!.annotations.destructiveHint, true, name);
+    }
+    assert.equal(
+      S.gadsSetKeywordStatus.parse({
+        customer_id: "1234567890",
+        ad_group_id: "1",
+        criterion_id: "2",
+        status: "PAUSED",
+      }).dry_run,
+      true,
+    );
+    assert.equal(
+      S.gadsAddKeywords.parse({
+        customer_id: "1234567890",
+        ad_group_id: "1",
+        keywords: [{ text: "shoes", match_type: "EXACT" }],
+      }).dry_run,
+      true,
+    );
+    assert.equal(
+      S.gadsCreateResponsiveSearchAd.parse({
+        customer_id: "1234567890",
+        ad_group_id: "1",
+        headlines: ["a", "b", "c"],
+        descriptions: ["d1", "d2"],
+        final_url: "https://example.com",
+      }).dry_run,
+      true,
+    );
+    const liveMissing = S.gadsCreateSearchCampaign.safeParse({
+      customer_id: "1234567890",
+      campaign_name: "C",
+      ad_group_name: "A",
+      daily_budget_dollars: 10,
+      keywords: [{ text: "k" }],
+      dry_run: false,
+    });
+    assert.equal(liveMissing.success, false);
+  });
+
+  it("flag off → ADS_MUTATE_NOT_ENABLED zero hop for all create tools", async () => {
+    for (const name of createTools) {
+      let hops = 0;
+      const ctx = makeCtx({}, adsLicenseEnv({ DGTL_ADS_MUTATE_ENABLED: "false" }));
+      ctx.fetchImpl = (async (input) => {
+        const url = String(input instanceof Request ? input.url : input);
+        if (url.includes("/v1/gads/")) hops += 1;
+        throw new Error(`NETWORK_FORBIDDEN ${url}`);
+      }) as typeof fetch;
+      const args: Record<string, unknown> =
+        name === "gads_set_keyword_status"
+          ? {
+              customer_id: "1234567890",
+              ad_group_id: "1",
+              criterion_id: "2",
+              status: "PAUSED",
+              dry_run: false,
+              confirm_phrase: "customer 1234567890",
+            }
+          : name === "gads_add_keywords"
+            ? {
+                customer_id: "1234567890",
+                ad_group_id: "1",
+                keywords: [{ text: "a" }],
+                dry_run: false,
+                confirm_phrase: "customer 1234567890",
+              }
+            : name === "gads_set_ad_status"
+              ? {
+                  customer_id: "1234567890",
+                  ad_group_id: "1",
+                  ad_id: "9",
+                  status: "PAUSED",
+                  dry_run: false,
+                  confirm_phrase: "customer 1234567890",
+                }
+              : name === "gads_create_responsive_search_ad"
+                ? {
+                    customer_id: "1234567890",
+                    ad_group_id: "1",
+                    headlines: ["a", "b", "c"],
+                    descriptions: ["d1", "d2"],
+                    final_url: "https://example.com",
+                    dry_run: false,
+                    confirm_phrase: "customer 1234567890",
+                  }
+                : {
+                    customer_id: "1234567890",
+                    campaign_name: "C",
+                    ad_group_name: "A",
+                    daily_budget_dollars: 5,
+                    keywords: [{ text: "k" }],
+                    dry_run: false,
+                    confirm_phrase: "customer 1234567890",
+                  };
+      const env = await dispatch(ctx, name, args);
+      assert.equal(env.ok, false, name);
+      assert.equal(env.error_code, "ADS_MUTATE_NOT_ENABLED", name);
+      assert.equal(hops, 0, name);
+    }
+  });
+
+  it("dry_run create search campaign proposes with zero hop", async () => {
+    let hops = 0;
+    const ctx = makeCtx({}, adsLicenseEnv({ DGTL_ADS_MUTATE_ENABLED: "true" }));
+    ctx.fetchImpl = (async (input) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/v1/gads/")) hops += 1;
+      throw new Error(`NETWORK_FORBIDDEN ${url}`);
+    }) as typeof fetch;
+    const env = await dispatch(ctx, "gads_create_search_campaign", {
+      customer_id: "123-456-7890",
+      campaign_name: "Speedrun",
+      ad_group_name: "AG",
+      daily_budget_dollars: 15,
+      keywords: [{ text: "run", match_type: "PHRASE" }],
+      headlines: ["H1", "H2", "H3"],
+      descriptions: ["D1 long enough", "D2 long enough"],
+      final_url: "https://example.com/landing",
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    const data = env.data as { dry_run: boolean; proposed: { customer_id: string; status: string } };
+    assert.equal(data.dry_run, true);
+    assert.equal(data.proposed.customer_id, "1234567890");
+    assert.equal(data.proposed.status, "PAUSED");
+    assert.equal(hops, 0);
+  });
+
+  it("live without confirm customer_id → INVALID_ARGUMENT; spend cap blocks", async () => {
+    let hops = 0;
+    const ctx = makeCtx({}, adsLicenseEnv({ DGTL_ADS_MUTATE_ENABLED: "true" }));
+    ctx.fetchImpl = (async (input) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/v1/gads/")) hops += 1;
+      throw new Error(`NETWORK_FORBIDDEN ${url}`);
+    }) as typeof fetch;
+    const env = await dispatch(ctx, "gads_add_keywords", {
+      customer_id: "1234567890",
+      ad_group_id: "1",
+      keywords: [{ text: "a" }],
+      dry_run: false,
+      confirm_phrase: "please add keywords",
+    });
+    assert.equal(env.ok, false);
+    assert.equal(env.error_code, "INVALID_ARGUMENT");
+    assert.equal(hops, 0);
+
+    const cap = await dispatch(ctx, "gads_create_search_campaign", {
+      customer_id: "1234567890",
+      campaign_name: "C",
+      ad_group_name: "A",
+      amount_micros: "999999999999999",
+      keywords: [{ text: "k" }],
+      dry_run: false,
+      confirm_phrase: "customer 1234567890",
+    });
+    assert.equal(cap.ok, false);
+    assert.equal(cap.error_code, "SPEND_CAP_EXCEEDED");
+    assert.equal(hops, 0);
+  });
+
+  it("live + confirm hops gateway for keyword status with Consent C only", async () => {
+    let seenAuth = "";
+    let seenBody = "";
+    const ctx = makeCtx({}, adsLicenseEnv({ DGTL_ADS_MUTATE_ENABLED: "true" }));
+    ctx.fetchImpl = (async (input, init) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/v1/health")) {
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      if (url.includes("/v1/gads/gads_set_keyword_status")) {
+        const headers = init?.headers as Record<string, string>;
+        const h = Object.fromEntries(
+          Object.entries(headers || {}).map(([k, v]) => [k.toLowerCase(), v]),
+        );
+        seenAuth = h["x-dgtl-user-access-token"] || "";
+        seenBody = typeof init?.body === "string" ? init.body : "";
+        return new Response(
+          JSON.stringify({ ok: true, tool: "gads_set_keyword_status", data: {} }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      throw new Error(`NETWORK_FORBIDDEN ${url}`);
+    }) as typeof fetch;
+    const env = await dispatch(ctx, "gads_set_keyword_status", {
+      customer_id: "1234567890",
+      ad_group_id: "11",
+      criterion_id: "22",
+      status: "PAUSED",
+      dry_run: false,
+      confirm_phrase: "pause keyword on customer 1234567890",
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    assert.equal(seenAuth, "consent-c-ads-token");
+    const body = JSON.parse(seenBody) as { tool: string; params: Record<string, string> };
+    assert.equal(body.tool, "gads_set_keyword_status");
+    assert.equal(body.params.criterion_id, "22");
+    assert.ok(!("mutateOperations" in body.params));
+    assert.notEqual(seenAuth, TEST_TOKEN);
+  });
+
+  it("catalog gated_tools lists create tools", () => {
+    const catalog = JSON.parse(readFileSync(join(ROOT, "schemas/v1/catalog.json"), "utf8"));
+    for (const name of createTools) {
+      const g = catalog.gated_tools.find((x: { name: string }) => x.name === name);
+      assert.ok(g, name);
+      assert.equal(g.fail, "ADS_MUTATE_NOT_ENABLED", name);
+    }
+  });
+});

@@ -53,6 +53,19 @@ export type GatewayParams = {
   /** Meta ad set budget in cents (not micros). */
   daily_budget?: string | number;
   lifetime_budget?: string | number;
+  /** Google Ads create/keyword tools. */
+  ad_group_id?: string;
+  criterion_id?: string;
+  keywords?: Array<{ text: string; match_type?: string }>;
+  headlines?: string[];
+  descriptions?: string[];
+  /** Validated https landing URL for RSA finalUrls — not a hop URL. */
+  final_url?: string;
+  path1?: string;
+  path2?: string;
+  campaign_name?: string;
+  ad_group_name?: string;
+  cpc_bid_micros?: string | number;
 };
 
 export type GatewayRequest = {
@@ -154,10 +167,22 @@ function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
     "name",
     "daily_budget",
     "lifetime_budget",
+    "ad_group_id",
+    "criterion_id",
+    "keywords",
+    "headlines",
+    "descriptions",
+    "final_url",
+    "path1",
+    "path2",
+    "campaign_name",
+    "ad_group_name",
+    "cpc_bid_micros",
   ]);
   for (const [k, v] of Object.entries(params)) {
     if (!allow.has(k)) continue;
-    if (typeof v === "string" && /^https?:\/\//i.test(v)) continue;
+    // final_url is an ad landing page (https), not a hop target.
+    if (k !== "final_url" && typeof v === "string" && /^https?:\/\//i.test(v)) continue;
     if (k === "date_range" && v && typeof v === "object" && !Array.isArray(v)) {
       const dr = v as Record<string, unknown>;
       if (typeof dr.start_date === "string" && typeof dr.end_date === "string") {
@@ -200,6 +225,37 @@ function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
     }
     if ((k === "daily_budget" || k === "lifetime_budget") && (typeof v === "string" || typeof v === "number")) {
       (out as Record<string, unknown>)[k] = v;
+      continue;
+    }
+    if (k === "cpc_bid_micros" && (typeof v === "string" || typeof v === "number")) {
+      out.cpc_bid_micros = v;
+      continue;
+    }
+    if (k === "keywords" && Array.isArray(v)) {
+      const kws: Array<{ text: string; match_type?: string }> = [];
+      for (const item of v) {
+        if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+        const text =
+          typeof (item as { text?: unknown }).text === "string"
+            ? (item as { text: string }).text.trim()
+            : "";
+        if (!text) continue;
+        const mt =
+          typeof (item as { match_type?: unknown }).match_type === "string"
+            ? (item as { match_type: string }).match_type
+            : undefined;
+        kws.push(mt ? { text, match_type: mt } : { text });
+      }
+      if (kws.length) out.keywords = kws;
+      continue;
+    }
+    if ((k === "headlines" || k === "descriptions") && Array.isArray(v)) {
+      const arr = v.filter((x): x is string => typeof x === "string" && x.trim().length > 0).map((x) => x.trim());
+      if (arr.length) (out as Record<string, unknown>)[k] = arr;
+      continue;
+    }
+    if (k === "final_url" && typeof v === "string" && /^https:\/\//i.test(v.trim())) {
+      out.final_url = v.trim();
       continue;
     }
     if (typeof v === "string") {
