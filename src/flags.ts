@@ -3,13 +3,15 @@ export type Flags = {
   /** Consent W write tools. Default off until write OAuth client + scopes exist. */
   writesEnabled: boolean;
   /**
-   * Google Ads mutate tools (gads_set_campaign_status, gads_update_campaign_budget). Default off.
-   * Mirror of Worker ADS_MUTATE_ENABLED — both must be on for live mutate.
+   * Google Ads mutate tools (gads_set_campaign_status, gads_update_campaign_budget).
+   * Default on when env unset; opt out with DGTL_ADS_MUTATE_ENABLED / ADS_MUTATE_ENABLED=false.
+   * Mirror of Worker ADS_MUTATE_ENABLED — Worker flag still required for live mutate hop.
    */
   adsMutateEnabled: boolean;
   /**
-   * Meta Ads mutate tools (meta_update_campaign/adset/ad — status/name/adset budget). Default off.
-   * Mirror of Worker META_MUTATE_ENABLED — both must be on for live mutate.
+   * Meta Ads mutate tools (meta_update_campaign/adset/ad — status/name/adset budget).
+   * Default on when env unset; opt out with DGTL_META_MUTATE_ENABLED / META_MUTATE_ENABLED=false.
+   * Mirror of Worker META_MUTATE_ENABLED — Worker flag still required for live mutate hop.
    */
   metaMutateEnabled: boolean;
   /** Append redacted tool audit lines to PLUGIN_DATA/audit.jsonl. Default off. */
@@ -31,14 +33,25 @@ function truthy(raw: string | undefined): boolean {
   return v === "1" || v === "true" || v === "yes";
 }
 
+/** If primary or alt env is present, honor truthy(); otherwise return defaultValue. */
+function envFlag(
+  primary: string | undefined,
+  alt: string | undefined,
+  defaultValue: boolean,
+): boolean {
+  if (primary !== undefined) return truthy(primary);
+  if (alt !== undefined) return truthy(alt);
+  return defaultValue;
+}
+
 export function loadFlags(env: NodeJS.ProcessEnv = process.env): Flags {
   const raw = (env.DGTL_GATEWAY_URL || "").trim();
   const feedbackRaw = (env.DGTL_FEEDBACK_URL || "").trim();
   return {
     gbpEnabled: truthy(env.DGTL_GBP_ENABLED || env.GBP_ENABLED),
     writesEnabled: truthy(env.DGTL_WRITES_ENABLED || env.WRITES_ENABLED),
-    adsMutateEnabled: truthy(env.DGTL_ADS_MUTATE_ENABLED || env.ADS_MUTATE_ENABLED),
-    metaMutateEnabled: truthy(env.DGTL_META_MUTATE_ENABLED || env.META_MUTATE_ENABLED),
+    adsMutateEnabled: envFlag(env.DGTL_ADS_MUTATE_ENABLED, env.ADS_MUTATE_ENABLED, true),
+    metaMutateEnabled: envFlag(env.DGTL_META_MUTATE_ENABLED, env.META_MUTATE_ENABLED, true),
     auditLocal: truthy(env.DGTL_AUDIT_LOCAL),
     gatewayUrl: raw ? raw.replace(/\/+$/, "") : undefined,
     feedbackUrl: feedbackRaw ? feedbackRaw.replace(/\/+$/, "") : undefined,

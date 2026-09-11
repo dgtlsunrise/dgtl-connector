@@ -44,9 +44,10 @@ describe("Slice 4+5 meta_update_* status/name/budget (fail closed)", () => {
   });
   after(() => restore());
 
-  it("DGTL_META_MUTATE_ENABLED defaults off", () => {
-    assert.equal(loadFlags({}).metaMutateEnabled, false);
+  it("DGTL_META_MUTATE_ENABLED defaults on; explicit false opts out", () => {
+    assert.equal(loadFlags({}).metaMutateEnabled, true);
     assert.equal(loadFlags({ DGTL_META_MUTATE_ENABLED: "false" }).metaMutateEnabled, false);
+    assert.equal(loadFlags({ META_MUTATE_ENABLED: "false" }).metaMutateEnabled, false);
     assert.equal(loadFlags({ DGTL_META_MUTATE_ENABLED: "true" }).metaMutateEnabled, true);
     assert.equal(loadFlags({ META_MUTATE_ENABLED: "1" }).metaMutateEnabled, true);
   });
@@ -155,7 +156,7 @@ describe("Slice 4+5 meta_update_* status/name/budget (fail closed)", () => {
 
   it("flag off even on dry_run → META_MUTATE_NOT_ENABLED, zero HTTP", async () => {
     let calls = 0;
-    const ctx = makeCtx({}, metaLicenseEnv());
+    const ctx = makeCtx({}, metaLicenseEnv({ DGTL_META_MUTATE_ENABLED: "false" }));
     ctx.fetchImpl = (async () => {
       calls += 1;
       throw new Error("NETWORK_FORBIDDEN");

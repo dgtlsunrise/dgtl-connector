@@ -1,6 +1,6 @@
 /**
  * Meta Ads mutate tools — status / name / adset budget (Slice 4+5).
- * Flag DGTL_META_MUTATE_ENABLED defaults off (fail closed, zero Graph mutate HTTP).
+ * Flag DGTL_META_MUTATE_ENABLED defaults on (opt out with =false). Worker META_MUTATE_ENABLED still required for live hop.
  * Tools: meta_update_campaign, meta_update_adset, meta_update_ad.
  * Budgets are Meta **cents** (smallest currency unit), not Google Ads micros.
  * Never touches Consent A / GOOGLE_ACCESS_TOKEN. App secret stays on Worker.
@@ -14,7 +14,7 @@ import { probeGatewayReachable, postGateway } from "../gateway/client.js";
 import { hasFeature } from "../license/verify.js";
 
 const HINT_FLAG =
-  "Set DGTL_META_MUTATE_ENABLED=true on the plugin and META_MUTATE_ENABLED=true on stamp only after Meta ads_management Advanced Access. Default stays off. Reads stay ads_read-only.";
+  "Plugin Meta mutate defaults on; set DGTL_META_MUTATE_ENABLED=false (or META_MUTATE_ENABLED=false) to opt out. Live hop still needs Worker META_MUTATE_ENABLED=true after Meta ads_management Advanced Access. Reads stay ads_read-only.";
 
 const ALLOWED_STATUS = new Set(["ACTIVE", "PAUSED"]);
 const ADS_MANAGEMENT = "ads_management";

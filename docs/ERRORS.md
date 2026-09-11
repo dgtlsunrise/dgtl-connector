@@ -208,14 +208,14 @@ Use `UNSUPPORTED_DIMENSION`. Offer GSC after they pick `site_url`.
 
 ### `ADS_MUTATE_NOT_ENABLED`
 
-Google Ads mutate tools flagged off (`DGTL_ADS_MUTATE_ENABLED=false`).
+Google Ads mutate tools opted out (`DGTL_ADS_MUTATE_ENABLED=false`). Plugin defaults **on**; unset or set `true` to re-enable. Live hop still needs Worker `ADS_MUTATE_ENABLED=true`.
 
 **User-visible:**  
-"Google Ads mutate tools are flagged off (`DGTL_ADS_MUTATE_ENABLED=false`). Reads still work with Pro + Consent C. Enable only after Google Ads API mutate-capable access and Worker `ADS_MUTATE_ENABLED=true` — never on Consent A."
+"Google Ads mutate tools are opted out (`DGTL_ADS_MUTATE_ENABLED=false`). Plugin defaults on; unset the env or set true to re-enable. Live hop still needs Worker `ADS_MUTATE_ENABLED=true`. Reads still work with Pro + Consent C — never on Consent A."
 
 ### `META_MUTATE_NOT_ENABLED`
 
-Meta mutate tools flagged off until `ads_management` Advanced Access + `DGTL_META_MUTATE_ENABLED`.
+Meta mutate tools opted out (`DGTL_META_MUTATE_ENABLED=false`). Plugin defaults **on**; live hop still needs Worker `META_MUTATE_ENABLED=true` after `ads_management` Advanced Access.
 
 ### `META_SCOPE_MISSING`
 
