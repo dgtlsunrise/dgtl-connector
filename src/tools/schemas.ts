@@ -506,35 +506,81 @@ export const gadsCreateDisplayCampaign = z
   });
 
 /**
- * Performance Max create stub — always NOT_IMPLEMENTED (asset group + image upload gap).
- * Schema kept confirm-shaped so agents discover the gap via typed error, not missing tool.
+ * Performance Max create — requires existing image/logo asset resource names.
+ * Without assets → NOT_IMPLEMENTED (image upload still out of product).
  */
 export const gadsCreatePerformanceMaxCampaign = z
   .object({
     customer_id: str,
-    campaign_name: z.string().min(1).max(255).optional(),
+    campaign_name: z.string().min(1).max(255),
+    asset_group_name: z.string().min(1).max(255),
     amount_micros: z.union([z.string(), z.number()]).optional(),
     daily_budget_dollars: z.number().positive().optional(),
-    final_url: z.string().url().max(2048).optional(),
+    final_url: z.string().url().max(2048),
+    headlines: z.array(z.string().min(1).max(30)).min(3).max(15),
+    long_headlines: z.array(z.string().min(1).max(90)).min(1).max(5),
+    descriptions: z.array(z.string().min(1).max(90)).min(2).max(5),
+    business_name: z.string().min(1).max(25),
+    marketing_image_asset_resource_names: z.array(z.string().min(1)).min(1).max(20).optional(),
+    square_marketing_image_asset_resource_names: z.array(z.string().min(1)).min(1).max(20).optional(),
+    logo_asset_resource_names: z.array(z.string().min(1)).min(1).max(5).optional(),
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
     login_customer_id: str,
     dry_run: z.boolean().default(true),
     confirm_phrase: z.string().optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((val, ctx) => {
+    const hasAmt =
+      (val.amount_micros !== undefined && val.amount_micros !== null && val.amount_micros !== "") ||
+      typeof val.daily_budget_dollars === "number";
+    if (!hasAmt) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "amount_micros or daily_budget_dollars is required",
+        path: ["amount_micros"],
+      });
+    }
+    requireConfirmWhenLive(val, ctx);
+  });
 
 /**
- * Shopping create stub — MERCHANT_CENTER_REQUIRED (MC linkage not in product).
+ * Shopping create — needs merchant_center_id (discover via gads_list_merchant_center_links).
  */
 export const gadsCreateShoppingCampaign = z
   .object({
     customer_id: str,
-    campaign_name: z.string().min(1).max(255).optional(),
+    campaign_name: z.string().min(1).max(255),
     merchant_center_id: z.union([z.string(), z.number()]).optional(),
+    sales_country: z.string().length(2).optional(),
     amount_micros: z.union([z.string(), z.number()]).optional(),
     daily_budget_dollars: z.number().positive().optional(),
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
     login_customer_id: str,
     dry_run: z.boolean().default(true),
     confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    const hasAmt =
+      (val.amount_micros !== undefined && val.amount_micros !== null && val.amount_micros !== "") ||
+      typeof val.daily_budget_dollars === "number";
+    if (!hasAmt) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "amount_micros or daily_budget_dollars is required",
+        path: ["amount_micros"],
+      });
+    }
+    requireConfirmWhenLive(val, ctx);
+  });
+
+/** Discover linked Merchant Center product links (read; Consent C). */
+export const gadsListMerchantCenterLinks = z
+  .object({
+    customer_id: str,
+    login_customer_id: str,
+    limit: z.number().int().positive().max(200).optional(),
   })
   .strict();
 
@@ -730,7 +776,7 @@ export const metaCreateAdset = z
   .strict()
   .superRefine(requireMetaCreateAdsetBudget);
 
-/** Create ad — existing creative_id only (no upload / object_story_spec). */
+/** Create ad — existing creative_id only (use meta_create_ad_creative / upload first). */
 export const metaCreateAd = z
   .object({
     ad_account_id: z.string().min(1),
@@ -743,4 +789,76 @@ export const metaCreateAd = z
   })
   .strict()
   .superRefine(requireConfirmWhenLive);
+
+
+const META_CTA = [
+  "LEARN_MORE",
+  "SHOP_NOW",
+  "SIGN_UP",
+  "CONTACT_US",
+  "DOWNLOAD",
+  "BOOK_TRAVEL",
+  "GET_OFFER",
+  "SUBSCRIBE",
+  "APPLY_NOW",
+  "GET_QUOTE",
+  "BUY_NOW",
+  "NO_BUTTON",
+] as const;
+
+/** Upload Meta ad image (base64 bytes) → image_hash for AdCreative. */
+export const metaUploadAdImage = z
+  .object({
+    ad_account_id: z.string().min(1),
+    bytes: z.string().min(32).max(4_000_000),
+    name: z.string().min(1).max(400).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+/** Optional Meta ad video upload via https file_url (not a hop proxy). */
+export const metaUploadAdVideo = z
+  .object({
+    ad_account_id: z.string().min(1),
+    file_url: z.string().url().max(2048),
+    title: z.string().min(1).max(400).optional(),
+    name: z.string().min(1).max(400).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+/** Create Meta AdCreative from image_hash XOR video_id; returns creative_id. */
+export const metaCreateAdCreative = z
+  .object({
+    ad_account_id: z.string().min(1),
+    name: z.string().min(1).max(400),
+    page_id: z.string().min(1),
+    image_hash: z.string().min(8).max(128).optional(),
+    video_id: z.string().min(1).optional(),
+    link: z.string().url().max(2048),
+    message: z.string().max(2000).optional(),
+    title: z.string().max(255).optional(),
+    description: z.string().max(500).optional(),
+    call_to_action_type: z.enum(META_CTA).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    requireConfirmWhenLive(val, ctx);
+    const hasImage = Boolean(val.image_hash && String(val.image_hash).trim());
+    const hasVideo = Boolean(val.video_id && String(val.video_id).trim());
+    if (hasImage === hasVideo) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Provide image_hash XOR video_id",
+        path: ["image_hash"],
+      });
+    }
+  });
+
 

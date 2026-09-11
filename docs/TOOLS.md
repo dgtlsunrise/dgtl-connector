@@ -490,9 +490,15 @@ Free count stays **24**. These are Polar-gated; local describe tools need licens
 | `meta_update_campaign` / `meta_update_adset` / `meta_update_ad` | Confirm-gated status/name/ad-set budget updates; dry-run default; `ads_management` required. |
 | `meta_create_campaign` | Closed Outcome-objective campaign create; defaults PAUSED; confirm with `act_{ad_account_id}`. |
 | `meta_create_adset` | Existing campaign + country-code geo + capped budget cents; defaults PAUSED; confirm with act + campaign id. |
-| `meta_create_ad` | Existing ad set + existing `creative_id` only; no upload; defaults PAUSED; confirm with act + ad set + creative ids. |
+| `meta_create_ad` | Existing ad set + existing `creative_id` (from `meta_create_ad_creative`); defaults PAUSED; confirm with act + ad set + creative ids. |
+| `meta_upload_ad_image` | Base64 image upload → `image_hash`; confirm-gated; dry_run default. |
+| `meta_upload_ad_video` | https `file_url` video upload → `video_id` (media source, not hop proxy); confirm-gated. |
+| `meta_create_ad_creative` | `image_hash` XOR `video_id` + `page_id` + https `link` → `creative_id`; server-built object_story_spec. |
+| `gads_create_performance_max_campaign` | PMax foundation with **existing** marketing/square/logo asset RNs; else `NOT_IMPLEMENTED`. |
+| `gads_create_shopping_campaign` | Shopping when `merchant_center_id` known; else `MERCHANT_CENTER_REQUIRED`. |
+| `gads_list_merchant_center_links` | Read MC product_link discovery for Shopping create. |
 
-Catalogs, audiences, lift, creative upload, activity logs, and Meta hosted `ads_mcp_management` remain **deferred**. Meta live creates fail closed with `META_SCOPE_MISSING` until `ads_management` Advanced Access and a reauthorized token are present. See [ops/META-CREATE-SPEEDRUN-2026-09-11.md](ops/META-CREATE-SPEEDRUN-2026-09-11.md).
+Catalogs, audiences, lift, activity logs, and Meta hosted `ads_mcp_management` remain **deferred**. Google Ads **image asset upload** is still out of scope (PMax needs existing asset resource names). Meta live creates/uploads fail closed with `META_SCOPE_MISSING` until `ads_management` Advanced Access and a reauthorized token are present. See [ops/META-CREATE-SPEEDRUN-2026-09-11.md](ops/META-CREATE-SPEEDRUN-2026-09-11.md) and [ops/ADS-META-FOUNDATIONS-2026-09-11.md](ops/ADS-META-FOUNDATIONS-2026-09-11.md).
 
 ---
 

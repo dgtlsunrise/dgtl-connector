@@ -1,7 +1,7 @@
 /**
  * Meta Ads mutate tools — status / name / adset budget (Slice 4+5).
  * Flag DGTL_META_MUTATE_ENABLED defaults on (opt out with =false). Worker META_MUTATE_ENABLED still required for live hop.
- * Tools: meta_update_* + meta_create_campaign / meta_create_adset / meta_create_ad (creative_id-only).
+ * Tools: meta_update_* + meta_create_* + meta_upload_ad_image/video + meta_create_ad_creative.
  * Budgets are Meta **cents** (smallest currency unit), not Google Ads micros.
  * Never touches Consent A / GOOGLE_ACCESS_TOKEN. App secret stays on Worker.
  */
@@ -853,3 +853,342 @@ export async function metaCreateAd(
     throw err;
   }
 }
+
+const META_CTA = new Set([
+  "LEARN_MORE",
+  "SHOP_NOW",
+  "SIGN_UP",
+  "CONTACT_US",
+  "DOWNLOAD",
+  "BOOK_TRAVEL",
+  "GET_OFFER",
+  "SUBSCRIBE",
+  "APPLY_NOW",
+  "GET_QUOTE",
+  "BUY_NOW",
+  "NO_BUTTON",
+]);
+
+export type MetaCreativeTool =
+  | "meta_upload_ad_image"
+  | "meta_upload_ad_video"
+  | "meta_create_ad_creative";
+
+function gateMetaMutateOrFail(ctx: AppContext, tool: string): Envelope | null {
+  if (!ctx.flags.metaMutateEnabled) {
+    return failEnvelope(tool, "META_MUTATE_NOT_ENABLED", MSG.META_MUTATE_NOT_ENABLED, {
+      hint: HINT_FLAG,
+      api: "meta",
+    });
+  }
+  return requireMetaLicense(ctx, tool);
+}
+
+async function liveMetaCreativeHop(
+  ctx: AppContext,
+  tool: MetaCreativeTool,
+  hopArgs: Record<string, unknown>,
+): Promise<Envelope> {
+  const base = ctx.flags.gatewayUrl;
+  if (!base) {
+    return failEnvelope(tool, "GATEWAY_UNAVAILABLE", MSG.GATEWAY_UNAVAILABLE, {
+      hint: "License + mutate flag ok. Set DGTL_GATEWAY_URL. Free tools still work.",
+    });
+  }
+  const probe = await probeGatewayReachable(ctx);
+  if (!probe.reachable) {
+    return failEnvelope(tool, "GATEWAY_UNAVAILABLE", MSG.GATEWAY_UNAVAILABLE, {
+      hint: probe.note ?? "Gateway health probe failed.",
+    });
+  }
+  const metaTok = await ctx.authMeta.getAccessToken();
+  if (!metaTok?.accessToken) {
+    return failEnvelope(tool, "META_NOT_CONNECTED", MSG.META_NOT_CONNECTED, {
+      hint: "License and gateway are ok. Set META_ACCESS_TOKEN or run auth login-meta — never reuse Google Consent A.",
+    });
+  }
+  const scopeCheck = assertAdsManagementWhenDetectable(metaTok.scopes);
+  if (!scopeCheck.ok) {
+    return failEnvelope(tool, "META_SCOPE_MISSING", MSG.META_SCOPE_MISSING, {
+      api: "meta",
+      missing_scope: ADS_MANAGEMENT,
+      hint: "Granted scopes are present but lack ads_management. Re-authorize Meta after Advanced Access — do not silently retry.",
+    });
+  }
+  void ctx.auth;
+  const env = await postGateway(ctx, {
+    family: "meta",
+    tool,
+    userAccessToken: metaTok.accessToken,
+    args: hopArgs,
+  });
+  return enrichMetaMutateEnvelope(tool, hopArgs, env);
+}
+
+function assertHttpsLanding(raw: unknown, field: string): { ok: true; url: string } | { ok: false; reason: string } {
+  if (typeof raw !== "string" || !raw.trim()) return { ok: false, reason: `missing_${field}` };
+  const s = raw.trim();
+  try {
+    const u = new URL(s);
+    if (u.protocol !== "https:") return { ok: false, reason: `${field}_must_be_https` };
+    if (u.username || u.password) return { ok: false, reason: `${field}_credentials_forbidden` };
+    if (s.length > 2048) return { ok: false, reason: `${field}_too_long` };
+    return { ok: true, url: s };
+  } catch {
+    return { ok: false, reason: `invalid_${field}` };
+  }
+}
+
+/** Upload Meta ad image (base64) → image_hash for AdCreative. Confirm-gated; dry_run default. */
+export async function metaUploadAdImage(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "meta_upload_ad_image";
+  const miss = gateMetaMutateOrFail(ctx, tool);
+  if (miss) return miss;
+
+  const allowed = new Set(["ad_account_id", "bytes", "name", "dry_run", "confirm_phrase"]);
+  for (const key of Object.keys(args)) {
+    if (!allowed.has(key)) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", `Field ${key} is not allowed for ${tool}`, {
+        api: "meta",
+        hint: "Closed upload fields only — bytes (base64) + optional name. No open Graph proxy.",
+      });
+    }
+  }
+
+  let ad_account_id: string;
+  try {
+    ad_account_id = normalizeAdAccountId(requireId(args.ad_account_id, "ad_account_id"));
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope(tool, err.error_code, err.message, { ...err.extra, api: "meta" });
+    }
+    throw err;
+  }
+  if (!/^\d{5,20}$/.test(ad_account_id)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "ad_account_id must be digits-only (act_ prefix optional)", {
+      api: "meta",
+    });
+  }
+  const bytes = typeof args.bytes === "string" ? args.bytes.trim() : "";
+  if (bytes.length < 32 || bytes.length > 4_000_000) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "bytes must be base64 (32…4e6 chars)", { api: "meta" });
+  }
+  const hopArgs: Record<string, unknown> = { ad_account_id, bytes };
+  if (typeof args.name === "string" && args.name.trim()) {
+    const n = args.name.trim();
+    if (n.length > NAME_MAX || /[\u0000-\u001f\u007f]/.test(n)) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "name must be ≤400 chars", { api: "meta" });
+    }
+    hopArgs.name = n;
+  }
+
+  if (dryRunDefault(args)) {
+    return okEnvelope(tool, {
+      resource: { type: "meta_ad_account", id: ad_account_id, display_name: "adimages" },
+      data: {
+        dry_run: true,
+        proposed: { ad_account_id, bytes_len: bytes.length, name: hopArgs.name },
+        note: `No Meta Graph upload HTTP. Pass dry_run=false with confirm_phrase containing ${actPhrase(ad_account_id)}. Returns image_hash for meta_create_ad_creative.`,
+      },
+    });
+  }
+  try {
+    assertConfirmContainsActAndIds(args.confirm_phrase, ad_account_id, []);
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope(tool, err.error_code, err.message, { ...err.extra, api: "meta" });
+    }
+    throw err;
+  }
+  return liveMetaCreativeHop(ctx, tool, hopArgs);
+}
+
+/** Optional Meta ad video upload via https file_url (media source, not hop proxy). */
+export async function metaUploadAdVideo(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "meta_upload_ad_video";
+  const miss = gateMetaMutateOrFail(ctx, tool);
+  if (miss) return miss;
+
+  const allowed = new Set(["ad_account_id", "file_url", "title", "name", "dry_run", "confirm_phrase"]);
+  for (const key of Object.keys(args)) {
+    if (!allowed.has(key)) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", `Field ${key} is not allowed for ${tool}`, {
+        api: "meta",
+        hint: "Closed upload fields only — file_url (https media) + optional title/name. Not an open Graph proxy.",
+      });
+    }
+  }
+
+  let ad_account_id: string;
+  try {
+    ad_account_id = normalizeAdAccountId(requireId(args.ad_account_id, "ad_account_id"));
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope(tool, err.error_code, err.message, { ...err.extra, api: "meta" });
+    }
+    throw err;
+  }
+  if (!/^\d{5,20}$/.test(ad_account_id)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "ad_account_id must be digits-only (act_ prefix optional)", {
+      api: "meta",
+    });
+  }
+  const file = assertHttpsLanding(args.file_url, "file_url");
+  if (!file.ok) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "file_url must be https://…", {
+      api: "meta",
+      hint: file.reason,
+    });
+  }
+  const hopArgs: Record<string, unknown> = { ad_account_id, file_url: file.url };
+  for (const k of ["title", "name"] as const) {
+    if (typeof args[k] === "string" && String(args[k]).trim()) {
+      const n = String(args[k]).trim();
+      if (n.length > NAME_MAX || /[\u0000-\u001f\u007f]/.test(n)) {
+        return failEnvelope(tool, "INVALID_ARGUMENT", `${k} must be ≤400 chars`, { api: "meta" });
+      }
+      hopArgs[k] = n;
+    }
+  }
+
+  if (dryRunDefault(args)) {
+    return okEnvelope(tool, {
+      resource: { type: "meta_ad_account", id: ad_account_id, display_name: "advideos" },
+      data: {
+        dry_run: true,
+        proposed: { ...hopArgs, file_url: file.url },
+        note: `No Meta Graph upload HTTP. Pass dry_run=false with confirm_phrase containing ${actPhrase(ad_account_id)}. Returns video_id for meta_create_ad_creative.`,
+      },
+    });
+  }
+  try {
+    assertConfirmContainsActAndIds(args.confirm_phrase, ad_account_id, []);
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope(tool, err.error_code, err.message, { ...err.extra, api: "meta" });
+    }
+    throw err;
+  }
+  return liveMetaCreativeHop(ctx, tool, hopArgs);
+}
+
+/** Create Meta AdCreative from image_hash XOR video_id; returns creative_id for meta_create_ad. */
+export async function metaCreateAdCreative(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "meta_create_ad_creative";
+  const miss = gateMetaMutateOrFail(ctx, tool);
+  if (miss) return miss;
+
+  const allowed = new Set([
+    "ad_account_id",
+    "name",
+    "page_id",
+    "image_hash",
+    "video_id",
+    "link",
+    "message",
+    "title",
+    "description",
+    "call_to_action_type",
+    "dry_run",
+    "confirm_phrase",
+  ]);
+  for (const key of Object.keys(args)) {
+    if (!allowed.has(key)) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", `Field ${key} is not allowed for ${tool}`, {
+        api: "meta",
+        hint: "Closed AdCreative fields only — no object_story_spec bag / open Graph proxy.",
+      });
+    }
+  }
+
+  let ad_account_id: string;
+  try {
+    ad_account_id = normalizeAdAccountId(requireId(args.ad_account_id, "ad_account_id"));
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope(tool, err.error_code, err.message, { ...err.extra, api: "meta" });
+    }
+    throw err;
+  }
+  if (!/^\d{5,20}$/.test(ad_account_id)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "ad_account_id must be digits-only (act_ prefix optional)", {
+      api: "meta",
+    });
+  }
+  const nameN = typeof args.name === "string" ? args.name.trim() : "";
+  if (!nameN || nameN.length > NAME_MAX || /[\u0000-\u001f\u007f]/.test(nameN)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "name must be a non-empty string ≤400 chars", {
+      api: "meta",
+    });
+  }
+  const page_id = typeof args.page_id === "string" ? args.page_id.trim() : "";
+  if (!/^\d{1,30}$/.test(page_id)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "page_id must be digits-only", { api: "meta" });
+  }
+  const hasImage = Boolean(args.image_hash && String(args.image_hash).trim());
+  const hasVideo = Boolean(args.video_id && String(args.video_id).trim());
+  if (hasImage === hasVideo) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "Provide image_hash XOR video_id", { api: "meta" });
+  }
+  const link = assertHttpsLanding(args.link, "link");
+  if (!link.ok) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "link must be https://…", {
+      api: "meta",
+      hint: link.reason,
+    });
+  }
+  const cta =
+    typeof args.call_to_action_type === "string" && args.call_to_action_type.trim()
+      ? args.call_to_action_type.trim().toUpperCase()
+      : "LEARN_MORE";
+  if (!META_CTA.has(cta)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "call_to_action_type outside closed allowlist", {
+      api: "meta",
+    });
+  }
+
+  const hopArgs: Record<string, unknown> = {
+    ad_account_id,
+    name: nameN,
+    page_id,
+    link: link.url,
+    call_to_action_type: cta,
+  };
+  if (hasImage) hopArgs.image_hash = String(args.image_hash).trim();
+  if (hasVideo) hopArgs.video_id = String(args.video_id).trim();
+  if (typeof args.message === "string" && args.message.trim()) hopArgs.message = args.message.trim().slice(0, 2000);
+  if (typeof args.title === "string" && args.title.trim()) hopArgs.title = args.title.trim().slice(0, 255);
+  if (typeof args.description === "string" && args.description.trim()) {
+    hopArgs.description = args.description.trim().slice(0, 500);
+  }
+
+  if (dryRunDefault(args)) {
+    return okEnvelope(tool, {
+      resource: { type: "meta_ad_account", id: ad_account_id, display_name: nameN },
+      data: {
+        dry_run: true,
+        proposed: hopArgs,
+        note: `No Meta Graph mutate HTTP. Pass dry_run=false with confirm_phrase containing ${actPhrase(ad_account_id)} AND page_id. Returns creative_id for meta_create_ad.`,
+      },
+    });
+  }
+  try {
+    assertConfirmContainsActAndIds(args.confirm_phrase, ad_account_id, [page_id]);
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope(tool, err.error_code, err.message, { ...err.extra, api: "meta" });
+    }
+    throw err;
+  }
+  return liveMetaCreativeHop(ctx, tool, hopArgs);
+}
+

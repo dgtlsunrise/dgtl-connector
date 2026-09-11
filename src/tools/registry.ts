@@ -15,13 +15,24 @@ import {
   gadsCreateResponsiveSearchAd,
   gadsCreateSearchCampaign,
   gadsCreateShoppingCampaign,
+  gadsListMerchantCenterLinks,
   gadsSetAdGroupStatus,
   gadsSetAdStatus,
   gadsSetCampaignStatus,
   gadsSetKeywordStatus,
   gadsUpdateCampaignBudget,
 } from "../ads/gads-write.js";
-import { metaUpdateCampaign, metaUpdateAdset, metaUpdateAd, metaCreateCampaign, metaCreateAdset, metaCreateAd } from "../meta/meta-write.js";
+import {
+  metaUpdateCampaign,
+  metaUpdateAdset,
+  metaUpdateAd,
+  metaCreateCampaign,
+  metaCreateAdset,
+  metaCreateAd,
+  metaUploadAdImage,
+  metaUploadAdVideo,
+  metaCreateAdCreative,
+} from "../meta/meta-write.js";
 import { metaDisabled, metaDescribeInsightsSchema } from "../meta/meta.js";
 import { supportPacket } from "../support/packet.js";
 import { feedbackPrepare, feedbackSend } from "../support/feedback.js";
@@ -559,9 +570,9 @@ export const TOOLS: ToolSpec[] = [
     name: "gads_create_performance_max_campaign",
     group: "gads-write",
     family: "gads",
-    title: "Google Ads Performance Max create (gap stub)",
+    title: "Google Ads Performance Max create (Consent C)",
     description:
-      "Typed NOT_IMPLEMENTED stub. PMax needs asset groups + image/logo upload (out of scope). Always returns NOT_IMPLEMENTED with zero Ads mutate HTTP. Prefer Search or Display create.",
+      "Paid mutate. PMax foundation: budget + PERFORMANCE_MAX + asset group + text assets linked to **existing** marketing/square/logo asset resource names (image upload still out of scope). Without those assets → NOT_IMPLEMENTED (zero hop). Defaults PAUSED. Prefer dry_run; live confirm_phrase with customer_id. Consent C + Pro + gateway.",
     inputSchema: S.gadsCreatePerformanceMaxCampaign,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => gadsCreatePerformanceMaxCampaign(ctx, args),
@@ -570,12 +581,23 @@ export const TOOLS: ToolSpec[] = [
     name: "gads_create_shopping_campaign",
     group: "gads-write",
     family: "gads",
-    title: "Google Ads Shopping create (gap stub)",
+    title: "Google Ads Shopping create (Consent C)",
     description:
-      "Typed MERCHANT_CENTER_REQUIRED stub. Shopping needs Merchant Center linkage (not in product). Always returns MERCHANT_CENTER_REQUIRED with zero Ads mutate HTTP.",
+      "Paid mutate. Shopping create when merchant_center_id is known (discover via gads_list_merchant_center_links). Without merchant_center_id → MERCHANT_CENTER_REQUIRED (zero hop). Budget + SHOPPING campaign only (no product groups). Defaults PAUSED. Prefer dry_run; live confirm_phrase with customer_id. Consent C + Pro + gateway.",
     inputSchema: S.gadsCreateShoppingCampaign,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => gadsCreateShoppingCampaign(ctx, args),
+  },
+  {
+    name: "gads_list_merchant_center_links",
+    group: "gads",
+    family: "gads",
+    title: "Google Ads list Merchant Center links",
+    description:
+      "Paid read. Discover Merchant Center product_link ids for a customer (digits-only merchant_center_id for Shopping create). Consent C + Pro + gateway. Cite returned ids; do not invent.",
+    inputSchema: S.gadsListMerchantCenterLinks,
+    annotations: ANN_RO,
+    handler: (ctx, args) => gadsListMerchantCenterLinks(ctx, args),
   },
   {
     name: "license_status",
@@ -759,10 +781,43 @@ export const TOOLS: ToolSpec[] = [
     family: "meta",
     title: "Meta create ad",
     description:
-      "Paid mutate. Create a Meta ad on an existing ad set using an existing creative_id only (no image/video upload). Defaults PAUSED. dry_run default; live needs confirm_phrase containing act_{ad_account_id} AND adset_id AND creative_id. ads_management required when detectable.",
+      "Paid mutate. Create a Meta ad on an existing ad set using an existing creative_id (from meta_create_ad_creative / upload). Defaults PAUSED. dry_run default; live needs confirm_phrase containing act_{ad_account_id} AND adset_id AND creative_id. ads_management required when detectable.",
     inputSchema: S.metaCreateAd,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => metaCreateAd(ctx, args),
+  },
+  {
+    name: "meta_upload_ad_image",
+    group: "meta-write",
+    family: "meta",
+    title: "Meta upload ad image",
+    description:
+      "Paid mutate. Upload ad image bytes (base64) → image_hash for meta_create_ad_creative. dry_run default; live needs confirm_phrase containing act_{ad_account_id}. Closed hop — no open Graph proxy. ads_management required when detectable.",
+    inputSchema: S.metaUploadAdImage,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => metaUploadAdImage(ctx, args),
+  },
+  {
+    name: "meta_upload_ad_video",
+    group: "meta-write",
+    family: "meta",
+    title: "Meta upload ad video",
+    description:
+      "Paid mutate. Optional video upload via https file_url (media source, not a hop proxy) → video_id. dry_run default; live needs confirm_phrase containing act_{ad_account_id}. ads_management required when detectable.",
+    inputSchema: S.metaUploadAdVideo,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => metaUploadAdVideo(ctx, args),
+  },
+  {
+    name: "meta_create_ad_creative",
+    group: "meta-write",
+    family: "meta",
+    title: "Meta create ad creative",
+    description:
+      "Paid mutate. Create AdCreative from image_hash XOR video_id + page_id + https link; returns creative_id for meta_create_ad. dry_run default; live needs confirm_phrase containing act_{ad_account_id} AND page_id. Closed object_story_spec built server-side. ads_management required when detectable.",
+    inputSchema: S.metaCreateAdCreative,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => metaCreateAdCreative(ctx, args),
   },
 ];
 

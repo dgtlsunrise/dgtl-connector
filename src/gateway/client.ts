@@ -74,6 +74,33 @@ export type GatewayParams = {
   bid_strategy?: string;
   countries?: string | string[];
   end_time?: string;
+  /** Meta image upload — base64 bytes (not a URL). */
+  bytes?: string;
+  /** Meta video upload — https file_url (media source, not hop). */
+  file_url?: string;
+  /** Meta AdCreative page id. */
+  page_id?: string;
+  /** Meta image hash from adimages upload. */
+  image_hash?: string;
+  /** Meta video id from advideos upload. */
+  video_id?: string;
+  /** Meta AdCreative landing link (https). */
+  link?: string;
+  message?: string;
+  title?: string;
+  description?: string;
+  call_to_action_type?: string;
+  /** PMax asset group name. */
+  asset_group_name?: string;
+  /** Existing Google Ads asset resource names for PMax images. */
+  marketing_image_asset_resource_names?: string[];
+  square_marketing_image_asset_resource_names?: string[];
+  logo_asset_resource_names?: string[];
+  long_headlines?: string[];
+  business_name?: string;
+  /** Shopping / MC linkage. */
+  merchant_center_id?: string | number;
+  sales_country?: string;
 };
 
 export type GatewayRequest = {
@@ -193,11 +220,31 @@ function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
     "bid_strategy",
     "countries",
     "end_time",
+    "bytes",
+    "file_url",
+    "page_id",
+    "image_hash",
+    "video_id",
+    "link",
+    "message",
+    "title",
+    "description",
+    "call_to_action_type",
+    "asset_group_name",
+    "marketing_image_asset_resource_names",
+    "square_marketing_image_asset_resource_names",
+    "logo_asset_resource_names",
+    "long_headlines",
+    "business_name",
+    "merchant_center_id",
+    "sales_country",
   ]);
+  /** Closed https fields that are landing/media values — never hop targets. */
+  const CLOSED_HTTPS_FIELDS = new Set(["final_url", "file_url", "link"]);
   for (const [k, v] of Object.entries(params)) {
     if (!allow.has(k)) continue;
-    // final_url is an ad landing page (https), not a hop target.
-    if (k !== "final_url" && typeof v === "string" && /^https?:\/\//i.test(v)) continue;
+    // Reject https in open string fields (would be a proxy hop). Closed URL fields pass.
+    if (!CLOSED_HTTPS_FIELDS.has(k) && typeof v === "string" && /^https?:\/\//i.test(v)) continue;
     if (k === "date_range" && v && typeof v === "object" && !Array.isArray(v)) {
       const dr = v as Record<string, unknown>;
       if (typeof dr.start_date === "string" && typeof dr.end_date === "string") {
@@ -269,8 +316,29 @@ function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
       if (arr.length) (out as Record<string, unknown>)[k] = arr;
       continue;
     }
-    if (k === "final_url" && typeof v === "string" && /^https:\/\//i.test(v.trim())) {
-      out.final_url = v.trim();
+    if (CLOSED_HTTPS_FIELDS.has(k) && typeof v === "string" && /^https:\/\//i.test(v.trim())) {
+      (out as Record<string, unknown>)[k] = v.trim();
+      continue;
+    }
+    if (
+      (k === "headlines" ||
+        k === "descriptions" ||
+        k === "long_headlines" ||
+        k === "marketing_image_asset_resource_names" ||
+        k === "square_marketing_image_asset_resource_names" ||
+        k === "logo_asset_resource_names" ||
+        k === "countries" ||
+        k === "special_ad_categories") &&
+      Array.isArray(v)
+    ) {
+      const arr = v
+        .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+        .map((x) => x.trim());
+      if (arr.length) (out as Record<string, unknown>)[k] = arr;
+      continue;
+    }
+    if (k === "merchant_center_id" && (typeof v === "string" || typeof v === "number")) {
+      out.merchant_center_id = v;
       continue;
     }
     if (typeof v === "string") {
@@ -368,7 +436,7 @@ export type GatewayHopOpts = {
 
 /**
  * POST GatewayRequest to /v1/gads/{tool} or /v1/meta/{tool}.
- * Never attaches developer-token. Never sends a URL field.
+ * Never attaches developer-token. Never sends open proxy URL hops (closed final_url/file_url/link OK).
  * Does not read ctx.auth or GOOGLE_ACCESS_TOKEN.
  */
 export async function postGateway(ctx: AppContext, opts: GatewayHopOpts): Promise<Envelope> {
@@ -394,11 +462,18 @@ export async function postGateway(ctx: AppContext, opts: GatewayHopOpts): Promis
     params: stripUrlishParams(args),
   };
 
-  // Refuse accidental URL keys on the wire (contract: never send a URL).
-  const raw = JSON.stringify(body);
-  if (/https?:\/\//i.test(raw)) {
+  // Refuse open proxy / client hop URLs on the wire. Closed landing/media URL
+  // fields (final_url, file_url, link) are allowlisted after stripUrlishParams.
+  const CLOSED_HTTPS_KEYS = new Set(["final_url", "file_url", "link"]);
+  const scrubbedParams: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(body.params as Record<string, unknown>)) {
+    scrubbedParams[k] =
+      CLOSED_HTTPS_KEYS.has(k) && typeof v === "string" ? "<closed-https>" : v;
+  }
+  const scrubbed = JSON.stringify({ ...body, params: scrubbedParams });
+  if (/https?:\/\//i.test(scrubbed)) {
     return failEnvelope(opts.tool, "INVALID_ARGUMENT", MSG.INVALID_ARGUMENT, {
-      hint: "Gateway request must not contain URLs. Send recipe + params only.",
+      hint: "Gateway request must not contain open proxy URLs. Closed final_url/file_url/link only.",
     });
   }
 

@@ -247,6 +247,11 @@
       "fail": "LICENSE_REQUIRED"
     },
     {
+      "name": "gads_list_merchant_center_links",
+      "group": "gads",
+      "fail": "LICENSE_REQUIRED"
+    },
+    {
       "name": "gads_set_campaign_status",
       "group": "gads-write",
       "flag": "ads.mutate.enabled",
@@ -399,6 +404,24 @@
     },
     {
       "name": "meta_create_ad",
+      "group": "meta-write",
+      "flag": "meta.mutate.enabled",
+      "fail": "META_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "meta_upload_ad_image",
+      "group": "meta-write",
+      "flag": "meta.mutate.enabled",
+      "fail": "META_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "meta_upload_ad_video",
+      "group": "meta-write",
+      "flag": "meta.mutate.enabled",
+      "fail": "META_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "meta_create_ad_creative",
       "group": "meta-write",
       "flag": "meta.mutate.enabled",
       "fail": "META_MUTATE_NOT_ENABLED"
