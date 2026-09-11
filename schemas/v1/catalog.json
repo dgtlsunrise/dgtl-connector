@@ -384,6 +384,24 @@
       "group": "gads-write",
       "flag": "ads.mutate.enabled",
       "fail": "ADS_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "meta_create_campaign",
+      "group": "meta-write",
+      "flag": "meta.mutate.enabled",
+      "fail": "META_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "meta_create_adset",
+      "group": "meta-write",
+      "flag": "meta.mutate.enabled",
+      "fail": "META_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "meta_create_ad",
+      "group": "meta-write",
+      "flag": "meta.mutate.enabled",
+      "fail": "META_MUTATE_NOT_ENABLED"
     }
   ]
 }

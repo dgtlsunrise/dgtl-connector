@@ -66,6 +66,14 @@ export type GatewayParams = {
   campaign_name?: string;
   ad_group_name?: string;
   cpc_bid_micros?: string | number;
+  /** Meta create campaign objective (closed Outcome enum). */
+  objective?: string;
+  special_ad_categories?: string | string[];
+  billing_event?: string;
+  optimization_goal?: string;
+  bid_strategy?: string;
+  countries?: string | string[];
+  end_time?: string;
 };
 
 export type GatewayRequest = {
@@ -178,6 +186,13 @@ function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
     "campaign_name",
     "ad_group_name",
     "cpc_bid_micros",
+    "objective",
+    "special_ad_categories",
+    "billing_event",
+    "optimization_goal",
+    "bid_strategy",
+    "countries",
+    "end_time",
   ]);
   for (const [k, v] of Object.entries(params)) {
     if (!allow.has(k)) continue;

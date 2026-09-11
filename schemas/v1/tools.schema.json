@@ -1249,6 +1249,217 @@
         "ad_id",
         "status"
       ]
+    },
+    "meta_create_campaign": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ad_account_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400
+        },
+        "objective": {
+          "type": "string",
+          "enum": [
+            "OUTCOME_AWARENESS",
+            "OUTCOME_ENGAGEMENT",
+            "OUTCOME_LEADS",
+            "OUTCOME_SALES",
+            "OUTCOME_TRAFFIC",
+            "OUTCOME_APP_PROMOTION"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ACTIVE",
+            "PAUSED"
+          ]
+        },
+        "special_ad_categories": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "NONE",
+                  "EMPLOYMENT",
+                  "HOUSING",
+                  "CREDIT",
+                  "ISSUES_ELECTIONS_POLITICS"
+                ]
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ad_account_id",
+        "name",
+        "objective"
+      ]
+    },
+    "meta_create_adset": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ad_account_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "campaign_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ACTIVE",
+            "PAUSED"
+          ]
+        },
+        "daily_budget": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer",
+              "minimum": 1
+            }
+          ]
+        },
+        "lifetime_budget": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer",
+              "minimum": 1
+            }
+          ]
+        },
+        "billing_event": {
+          "type": "string",
+          "enum": [
+            "IMPRESSIONS",
+            "LINK_CLICKS"
+          ]
+        },
+        "optimization_goal": {
+          "type": "string",
+          "enum": [
+            "LINK_CLICKS",
+            "LANDING_PAGE_VIEWS",
+            "IMPRESSIONS",
+            "REACH",
+            "OFFSITE_CONVERSIONS",
+            "LEAD_GENERATION",
+            "VALUE",
+            "THRUPLAY"
+          ]
+        },
+        "bid_strategy": {
+          "type": "string",
+          "enum": [
+            "LOWEST_COST_WITHOUT_CAP"
+          ]
+        },
+        "countries": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "end_time": {
+          "type": "string"
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ad_account_id",
+        "campaign_id",
+        "name",
+        "countries"
+      ]
+    },
+    "meta_create_ad": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ad_account_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "adset_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400
+        },
+        "creative_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ACTIVE",
+            "PAUSED"
+          ]
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ad_account_id",
+        "adset_id",
+        "name",
+        "creative_id"
+      ]
     }
   }
 }

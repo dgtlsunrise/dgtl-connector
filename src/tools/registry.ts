@@ -21,7 +21,7 @@ import {
   gadsSetKeywordStatus,
   gadsUpdateCampaignBudget,
 } from "../ads/gads-write.js";
-import { metaUpdateCampaign, metaUpdateAdset, metaUpdateAd } from "../meta/meta-write.js";
+import { metaUpdateCampaign, metaUpdateAdset, metaUpdateAd, metaCreateCampaign, metaCreateAdset, metaCreateAd } from "../meta/meta-write.js";
 import { metaDisabled, metaDescribeInsightsSchema } from "../meta/meta.js";
 import { supportPacket } from "../support/packet.js";
 import { feedbackPrepare, feedbackSend } from "../support/feedback.js";
@@ -730,6 +730,39 @@ export const TOOLS: ToolSpec[] = [
     inputSchema: S.metaUpdateAd,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => metaUpdateAd(ctx, args),
+  },
+  {
+    name: "meta_create_campaign",
+    group: "meta-write",
+    family: "meta",
+    title: "Meta create campaign",
+    description:
+      "Paid mutate. Create a Meta campaign (closed Outcome objective + special_ad_categories). Defaults PAUSED. dry_run default; live needs confirm_phrase containing act_{ad_account_id}. Spend is not set at campaign level. Requires ads_management when scopes detectable (META_SCOPE_MISSING otherwise). Opt out with DGTL_META_MUTATE_ENABLED=false.",
+    inputSchema: S.metaCreateCampaign,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => metaCreateCampaign(ctx, args),
+  },
+  {
+    name: "meta_create_adset",
+    group: "meta-write",
+    family: "meta",
+    title: "Meta create ad set",
+    description:
+      "Paid mutate. Create a Meta ad set on an existing campaign. daily_budget XOR lifetime_budget in integer cents (not micros); countries → server-built geo targeting only. Spend-cap $100k. Defaults PAUSED. dry_run default; live needs confirm_phrase containing act_{ad_account_id} AND campaign_id. No targeting JSON / audiences. ads_management required when detectable.",
+    inputSchema: S.metaCreateAdset,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => metaCreateAdset(ctx, args),
+  },
+  {
+    name: "meta_create_ad",
+    group: "meta-write",
+    family: "meta",
+    title: "Meta create ad",
+    description:
+      "Paid mutate. Create a Meta ad on an existing ad set using an existing creative_id only (no image/video upload). Defaults PAUSED. dry_run default; live needs confirm_phrase containing act_{ad_account_id} AND adset_id AND creative_id. ads_management required when detectable.",
+    inputSchema: S.metaCreateAd,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => metaCreateAd(ctx, args),
   },
 ];
 
