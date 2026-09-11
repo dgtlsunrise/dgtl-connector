@@ -36,10 +36,10 @@ All three default `dry_run=true`; no Graph mutate request occurs until `dry_run=
 
 ## Delivery
 
-- Stamp PR: pending
-- Connector PR: pending
-- Stamp deployment: pending
-- Connector Origin `main` sync: pending
+- Stamp PR: [dgtlsunrise/dgtl-stamp#14](https://github.com/dgtlsunrise/dgtl-stamp/pull/14) — merged (`66a0a02`).
+- Connector PR: [dgtlsunrise/dgtl-connector#19](https://github.com/dgtlsunrise/dgtl-connector/pull/19) — merged (`fa7f8ea`).
+- Stamp deployment: `https://stamp.dgtlsunrise.com` / Worker version `6a569da8-d667-4992-9b85-9cfddb504a97`; `META_MUTATE_ENABLED=true`.
+- Connector Origin `main` sync: completed after this final ship-log merge.
 
 ## Remaining gaps / Noel gate
 
