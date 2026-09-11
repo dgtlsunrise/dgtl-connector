@@ -341,6 +341,130 @@ export const gadsUpdateCampaignBudget = z
     }
   });
 
+const keywordItem = z
+  .object({
+    text: z.string().min(1).max(80),
+    match_type: z.enum(["EXACT", "PHRASE", "BROAD"]).optional(),
+  })
+  .strict();
+
+export const gadsSetKeywordStatus = z
+  .object({
+    customer_id: str,
+    ad_group_id: str,
+    criterion_id: str,
+    status: z.enum(["ENABLED", "PAUSED"]),
+    login_customer_id: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsAddKeywords = z
+  .object({
+    customer_id: str,
+    ad_group_id: str,
+    keywords: z.array(keywordItem).min(1).max(20),
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
+    login_customer_id: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsSetAdStatus = z
+  .object({
+    customer_id: str,
+    ad_group_id: str,
+    ad_id: str,
+    status: z.enum(["ENABLED", "PAUSED"]),
+    login_customer_id: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsCreateResponsiveSearchAd = z
+  .object({
+    customer_id: str,
+    ad_group_id: str,
+    headlines: z.array(z.string().min(1).max(30)).min(3).max(15),
+    descriptions: z.array(z.string().min(1).max(90)).min(2).max(4),
+    final_url: z.string().url().max(2048),
+    path1: z.string().max(15).optional(),
+    path2: z.string().max(15).optional(),
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
+    login_customer_id: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsCreateSearchCampaign = z
+  .object({
+    customer_id: str,
+    campaign_name: z.string().min(1).max(255),
+    ad_group_name: z.string().min(1).max(255),
+    amount_micros: z.union([z.string(), z.number()]).optional(),
+    daily_budget_dollars: z.number().positive().optional(),
+    keywords: z.array(keywordItem).min(1).max(20),
+    cpc_bid_micros: z.union([z.string(), z.number()]).optional(),
+    /** Optional RSA stub on the new ad group. */
+    headlines: z.array(z.string().min(1).max(30)).min(3).max(15).optional(),
+    descriptions: z.array(z.string().min(1).max(90)).min(2).max(4).optional(),
+    final_url: z.string().url().max(2048).optional(),
+    path1: z.string().max(15).optional(),
+    path2: z.string().max(15).optional(),
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
+    login_customer_id: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    requireConfirmWhenLive(val, ctx);
+    const hasMicros = val.amount_micros !== undefined && val.amount_micros !== null && val.amount_micros !== "";
+    const hasDollars = val.daily_budget_dollars !== undefined;
+    if (!hasMicros && !hasDollars) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "amount_micros or daily_budget_dollars is required",
+        path: ["amount_micros"],
+      });
+    }
+    const hasRsa =
+      (val.headlines && val.headlines.length > 0) ||
+      (val.descriptions && val.descriptions.length > 0) ||
+      Boolean(val.final_url);
+    if (hasRsa) {
+      if (!val.headlines || val.headlines.length < 3) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "RSA stub requires ≥3 headlines",
+          path: ["headlines"],
+        });
+      }
+      if (!val.descriptions || val.descriptions.length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "RSA stub requires ≥2 descriptions",
+          path: ["descriptions"],
+        });
+      }
+      if (!val.final_url) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "RSA stub requires final_url (https)",
+          path: ["final_url"],
+        });
+      }
+    }
+  });
+
 /** Meta mutate — dry_run default true; live needs confirm_phrase with act_{ad_account_id} + object id. */
 function requireMetaUpdateFieldsCampaign(
   val: { dry_run: boolean; confirm_phrase?: string; status?: string; name?: string },
