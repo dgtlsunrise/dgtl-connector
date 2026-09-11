@@ -676,3 +676,155 @@ describe("Create speedrun keyword/ad/Search campaign (fail closed)", () => {
     }
   });
 });
+
+
+describe("Display / PMax / Shopping stubs + ad group status", () => {
+  let restore: () => void;
+  before(() => {
+    restore = installNetworkGuard();
+  });
+  after(() => restore());
+
+  const stubTools = [
+    "gads_set_ad_group_status",
+    "gads_create_display_campaign",
+    "gads_create_performance_max_campaign",
+    "gads_create_shopping_campaign",
+  ] as const;
+
+  it("tools registered destructive; Display schema dry_run default true", () => {
+    for (const name of stubTools) {
+      const t = TOOLS.find((x) => x.name === name);
+      assert.ok(t, name);
+      assert.equal(t!.annotations.destructiveHint, true, name);
+    }
+    assert.equal(
+      S.gadsSetAdGroupStatus.parse({
+        customer_id: "1234567890",
+        ad_group_id: "1",
+        status: "PAUSED",
+      }).dry_run,
+      true,
+    );
+    assert.equal(
+      S.gadsCreateDisplayCampaign.parse({
+        customer_id: "1234567890",
+        campaign_name: "D",
+        ad_group_name: "A",
+        daily_budget_dollars: 5,
+      }).dry_run,
+      true,
+    );
+  });
+
+  it("flag off → ADS_MUTATE_NOT_ENABLED zero hop for all stubs", async () => {
+    for (const name of stubTools) {
+      let calls = 0;
+      const ctx = makeCtx({}, adsLicenseEnv({ DGTL_ADS_MUTATE_ENABLED: "false" }));
+      ctx.fetchImpl = (async () => {
+        calls += 1;
+        throw new Error("NETWORK_FORBIDDEN");
+      }) as typeof fetch;
+      const args: Record<string, unknown> =
+        name === "gads_set_ad_group_status"
+          ? { customer_id: "1234567890", ad_group_id: "1", status: "PAUSED" }
+          : name === "gads_create_display_campaign"
+            ? {
+                customer_id: "1234567890",
+                campaign_name: "D",
+                ad_group_name: "A",
+                daily_budget_dollars: 5,
+              }
+            : { customer_id: "1234567890", campaign_name: "X" };
+      const env = await dispatch(ctx, name, args);
+      assert.equal(env.ok, false, name);
+      assert.equal(env.error_code, "ADS_MUTATE_NOT_ENABLED", name);
+      assert.equal(calls, 0, name);
+    }
+  });
+
+  it("Display dry_run proposes DISPLAY channel without hop", async () => {
+    let calls = 0;
+    const ctx = makeCtx({}, adsLicenseEnv());
+    ctx.fetchImpl = (async () => {
+      calls += 1;
+      throw new Error("NETWORK_FORBIDDEN");
+    }) as typeof fetch;
+    const env = await dispatch(ctx, "gads_create_display_campaign", {
+      customer_id: "1234567890",
+      campaign_name: "Display Stub",
+      ad_group_name: "DG",
+      daily_budget_dollars: 12,
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    assert.equal(calls, 0);
+    const data = env.data as { dry_run?: boolean; proposed?: { advertising_channel_type?: string; status?: string } };
+    assert.equal(data.dry_run, true);
+    assert.equal(data.proposed?.advertising_channel_type, "DISPLAY");
+    assert.equal(data.proposed?.status, "PAUSED");
+  });
+
+  it("Display spend cap before hop", async () => {
+    let calls = 0;
+    const ctx = makeCtx({}, adsLicenseEnv());
+    ctx.fetchImpl = (async () => {
+      calls += 1;
+      throw new Error("NETWORK_FORBIDDEN");
+    }) as typeof fetch;
+    const env = await dispatch(ctx, "gads_create_display_campaign", {
+      customer_id: "1234567890",
+      campaign_name: "D",
+      ad_group_name: "A",
+      amount_micros: "999999999999999",
+      dry_run: false,
+      confirm_phrase: "create display for 1234567890",
+    });
+    assert.equal(env.ok, false);
+    assert.equal(env.error_code, "SPEND_CAP_EXCEEDED");
+    assert.equal(calls, 0);
+  });
+
+  it("PMax always NOT_IMPLEMENTED with zero hop (even dry_run)", async () => {
+    let calls = 0;
+    const ctx = makeCtx({}, adsLicenseEnv());
+    ctx.fetchImpl = (async () => {
+      calls += 1;
+      throw new Error("NETWORK_FORBIDDEN");
+    }) as typeof fetch;
+    const env = await dispatch(ctx, "gads_create_performance_max_campaign", {
+      customer_id: "1234567890",
+      campaign_name: "PMax",
+      daily_budget_dollars: 10,
+    });
+    assert.equal(env.ok, false);
+    assert.equal(env.error_code, "NOT_IMPLEMENTED");
+    assert.equal(calls, 0);
+  });
+
+  it("Shopping always MERCHANT_CENTER_REQUIRED with zero hop", async () => {
+    let calls = 0;
+    const ctx = makeCtx({}, adsLicenseEnv());
+    ctx.fetchImpl = (async () => {
+      calls += 1;
+      throw new Error("NETWORK_FORBIDDEN");
+    }) as typeof fetch;
+    const env = await dispatch(ctx, "gads_create_shopping_campaign", {
+      customer_id: "1234567890",
+      campaign_name: "Shop",
+      merchant_center_id: "999",
+      daily_budget_dollars: 10,
+    });
+    assert.equal(env.ok, false);
+    assert.equal(env.error_code, "MERCHANT_CENTER_REQUIRED");
+    assert.equal(calls, 0);
+  });
+
+  it("catalog gated_tools lists Display/PMax/Shopping + ad group status", () => {
+    const catalog = JSON.parse(readFileSync(join(ROOT, "schemas/v1/catalog.json"), "utf8"));
+    for (const name of stubTools) {
+      const g = catalog.gated_tools.find((x: { name: string }) => x.name === name);
+      assert.ok(g, name);
+      assert.equal(g.fail, "ADS_MUTATE_NOT_ENABLED", name);
+    }
+  });
+});

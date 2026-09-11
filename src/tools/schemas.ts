@@ -465,6 +465,80 @@ export const gadsCreateSearchCampaign = z
     }
   });
 
+export const gadsSetAdGroupStatus = z
+  .object({
+    customer_id: str,
+    ad_group_id: str,
+    status: z.enum(["ENABLED", "PAUSED"]),
+    login_customer_id: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+/** Honest minimal Display create: budget + DISPLAY campaign + ad group (no RDA/images). */
+export const gadsCreateDisplayCampaign = z
+  .object({
+    customer_id: str,
+    campaign_name: z.string().min(1).max(255),
+    ad_group_name: z.string().min(1).max(255),
+    amount_micros: z.union([z.string(), z.number()]).optional(),
+    daily_budget_dollars: z.number().positive().optional(),
+    cpc_bid_micros: z.union([z.string(), z.number()]).optional(),
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
+    login_customer_id: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    requireConfirmWhenLive(val, ctx);
+    const hasMicros = val.amount_micros !== undefined && val.amount_micros !== null && val.amount_micros !== "";
+    const hasDollars = val.daily_budget_dollars !== undefined;
+    if (!hasMicros && !hasDollars) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "amount_micros or daily_budget_dollars is required",
+        path: ["amount_micros"],
+      });
+    }
+  });
+
+/**
+ * Performance Max create stub — always NOT_IMPLEMENTED (asset group + image upload gap).
+ * Schema kept confirm-shaped so agents discover the gap via typed error, not missing tool.
+ */
+export const gadsCreatePerformanceMaxCampaign = z
+  .object({
+    customer_id: str,
+    campaign_name: z.string().min(1).max(255).optional(),
+    amount_micros: z.union([z.string(), z.number()]).optional(),
+    daily_budget_dollars: z.number().positive().optional(),
+    final_url: z.string().url().max(2048).optional(),
+    login_customer_id: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict();
+
+/**
+ * Shopping create stub — MERCHANT_CENTER_REQUIRED (MC linkage not in product).
+ */
+export const gadsCreateShoppingCampaign = z
+  .object({
+    customer_id: str,
+    campaign_name: z.string().min(1).max(255).optional(),
+    merchant_center_id: z.union([z.string(), z.number()]).optional(),
+    amount_micros: z.union([z.string(), z.number()]).optional(),
+    daily_budget_dollars: z.number().positive().optional(),
+    login_customer_id: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict();
+
+
 /** Meta mutate — dry_run default true; live needs confirm_phrase with act_{ad_account_id} + object id. */
 function requireMetaUpdateFieldsCampaign(
   val: { dry_run: boolean; confirm_phrase?: string; status?: string; name?: string },

@@ -228,3 +228,19 @@ Requested budget exceeds the product sanity cap ($100,000/day equivalent). Googl
 **User-visible:**  
 "Requested budget exceeds the product sanity cap ($100,000/day equivalent). Google Ads: lower amount_micros / daily_budget_dollars (micros). Meta: lower daily_budget / lifetime_budget (cents, not micros). No mutate HTTP was sent."
 
+
+
+### `NOT_IMPLEMENTED`
+
+Performance Max create stub called. Asset-group + image/logo upload is out of scope.
+
+**User-visible:**  
+"Performance Max create is not implemented yet (needs asset groups and image upload). Use Search or Display create instead. No Ads mutate was sent."
+
+### `MERCHANT_CENTER_REQUIRED`
+
+Shopping create stub called without Merchant Center product support.
+
+**User-visible:**  
+"Shopping campaign create needs a linked Merchant Center account. That linkage is not in this product yet. No Ads mutate was sent."
+

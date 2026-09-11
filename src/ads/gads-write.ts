@@ -1,7 +1,8 @@
 /**
  * Google Ads mutate tools — Consent C + gateway only.
  * Flag DGTL_ADS_MUTATE_ENABLED defaults on (opt out with =false). Worker ADS_MUTATE_ENABLED still required for live hop.
- * Tools: campaign status/budget + keyword/ad status + keyword add + RSA create + Search campaign create.
+ * Tools: campaign/ad-group/keyword/ad status + keyword add + RSA + Search/Display create;
+ * PMax/Shopping return typed gaps (NOT_IMPLEMENTED / MERCHANT_CENTER_REQUIRED).
  * Never touches Consent A / GOOGLE_ACCESS_TOKEN.
  */
 
@@ -847,4 +848,165 @@ export async function gadsCreateSearchCampaign(
   }
   assertConfirmContainsCustomerId(args.confirm_phrase, customer_id);
   return liveMutateHop(ctx, tool, proposed);
+}
+
+
+export async function gadsSetAdGroupStatus(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "gads_set_ad_group_status";
+  const miss = gateMutateOrFail(ctx, tool);
+  if (miss) return miss;
+
+  const customer_id = normalizeCustomerId(requireId(args.customer_id, "customer_id"));
+  const ad_group_id = normalizeCampaignId(requireId(args.ad_group_id, "ad_group_id"));
+  const statusRaw = requireId(args.status, "status").trim().toUpperCase();
+  if (!ALLOWED_STATUS.has(statusRaw)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "status must be ENABLED or PAUSED", {
+      api: "google_ads",
+    });
+  }
+  const dryRun = dryRunDefault(args);
+  const login_customer_id = optionalLoginCustomerId(args);
+  const resource_name = `customers/${customer_id}/adGroups/${ad_group_id}`;
+  const proposed = {
+    customer_id,
+    ad_group_id,
+    status: statusRaw,
+    resource_name,
+    ...(login_customer_id ? { login_customer_id } : {}),
+  };
+  if (dryRun) {
+    return okEnvelope(tool, {
+      resource: { type: "gads_ad_group", id: resource_name, display_name: ad_group_id },
+      data: {
+        dry_run: true,
+        proposed,
+        cited: { customer_id, ad_group_id, status: statusRaw },
+        note: "No Ads mutate HTTP. Pass dry_run=false with confirm_phrase containing this customer_id.",
+      },
+    });
+  }
+  assertConfirmContainsCustomerId(args.confirm_phrase, customer_id);
+  const hopArgs: Record<string, unknown> = {
+    customer_id,
+    ad_group_id,
+    status: statusRaw,
+  };
+  if (login_customer_id) hopArgs.login_customer_id = login_customer_id;
+  return liveMutateHop(ctx, tool, hopArgs);
+}
+
+/**
+ * Honest minimal Display create: budget + DISPLAY campaign + DISPLAY_STANDARD ad group.
+ * No Responsive Display Ad (image/logo assets out of scope). Defaults PAUSED.
+ */
+export async function gadsCreateDisplayCampaign(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "gads_create_display_campaign";
+  const miss = gateMutateOrFail(ctx, tool);
+  if (miss) return miss;
+
+  const customer_id = normalizeCustomerId(requireId(args.customer_id, "customer_id"));
+  const campaign_name = requireId(args.campaign_name, "campaign_name").trim();
+  const ad_group_name = requireId(args.ad_group_name, "ad_group_name").trim();
+  const amount = resolvePluginAmountMicros(args);
+  if (!amount.ok) {
+    return failEnvelope(
+      tool,
+      "INVALID_ARGUMENT",
+      "Provide amount_micros or daily_budget_dollars for the new campaign budget",
+      { api: "google_ads", hint: amount.reason },
+    );
+  }
+  if (amount.amount_micros_number > DEFAULT_MAX_DAILY_BUDGET_MICROS) {
+    return failEnvelope(tool, "SPEND_CAP_EXCEEDED", MSG.SPEND_CAP_EXCEEDED, {
+      api: "google_ads",
+      hint: `Max daily amount_micros is ${DEFAULT_MAX_DAILY_BUDGET_MICROS} ($100,000).`,
+    });
+  }
+  const statusRaw =
+    typeof args.status === "string" && args.status.trim()
+      ? args.status.trim().toUpperCase()
+      : "PAUSED";
+  if (!ALLOWED_STATUS.has(statusRaw)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "status must be ENABLED or PAUSED", {
+      api: "google_ads",
+    });
+  }
+  const dryRun = dryRunDefault(args);
+  const login_customer_id = optionalLoginCustomerId(args);
+  const proposed: Record<string, unknown> = {
+    customer_id,
+    campaign_name,
+    ad_group_name,
+    amount_micros: amount.amount_micros,
+    daily_budget_dollars: amount.daily_budget_dollars,
+    status: statusRaw,
+    advertising_channel_type: "DISPLAY",
+    ...(login_customer_id ? { login_customer_id } : {}),
+  };
+  if (args.cpc_bid_micros !== undefined) proposed.cpc_bid_micros = args.cpc_bid_micros;
+
+  if (dryRun) {
+    return okEnvelope(tool, {
+      resource: { type: "gads_customer", id: customer_id, display_name: campaign_name },
+      data: {
+        dry_run: true,
+        proposed,
+        cited: {
+          customer_id,
+          campaign_name,
+          amount_micros: amount.amount_micros,
+          status: statusRaw,
+          advertising_channel_type: "DISPLAY",
+        },
+        note: "No Ads mutate HTTP. Creates PAUSED Display campaign + budget + DISPLAY_STANDARD ad group only — no RDA/images (asset upload out of scope). Live needs confirm_phrase with customer_id.",
+        spend_cap_micros: DEFAULT_MAX_DAILY_BUDGET_MICROS,
+      },
+    });
+  }
+  assertConfirmContainsCustomerId(args.confirm_phrase, customer_id);
+  return liveMutateHop(ctx, tool, proposed);
+}
+
+/**
+ * PMax create — typed NOT_IMPLEMENTED (asset group + image/logo upload not in product).
+ * Zero gateway HTTP always.
+ */
+export async function gadsCreatePerformanceMaxCampaign(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "gads_create_performance_max_campaign";
+  const miss = gateMutateOrFail(ctx, tool);
+  if (miss) return miss;
+  void args;
+  void ctx.auth;
+  return failEnvelope(tool, "NOT_IMPLEMENTED", MSG.NOT_IMPLEMENTED, {
+    api: "google_ads",
+    hint: "PMax needs AssetGroup + marketing/logo images. Ship Search (full) or Display (budget+campaign+ad group) create instead. Zero hop.",
+  });
+}
+
+/**
+ * Shopping create — typed MERCHANT_CENTER_REQUIRED (MC linkage not in product).
+ * Zero gateway HTTP always.
+ */
+export async function gadsCreateShoppingCampaign(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "gads_create_shopping_campaign";
+  const miss = gateMutateOrFail(ctx, tool);
+  if (miss) return miss;
+  void args;
+  void ctx.auth;
+  return failEnvelope(tool, "MERCHANT_CENTER_REQUIRED", MSG.MERCHANT_CENTER_REQUIRED, {
+    api: "google_ads",
+    hint: "Link Merchant Center + shoppingSetting.merchantCenterId before Shopping create can ship. Zero hop.",
+  });
 }
