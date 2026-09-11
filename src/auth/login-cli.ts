@@ -402,9 +402,11 @@ Consent W (writes) and Consent C (Ads/Meta) use separate stores and env tokens:
   META_ACCESS_TOKEN / meta-oauth.json              (or auth login-meta --code)
   They never reuse Consent A AuthPort. Do not add adwords to Consent A.
 
-Consent W: set GOOGLE_OAUTH_WRITE_CLIENT_ID (separate Desktop client) then
-  auth login-write → PLUGIN_DATA/google-oauth-write.json with CONSENT_W_GTM scopes.
-  Never reuse GOOGLE_OAUTH_CLIENT_SECRET. Does not turn on DGTL_WRITES_ENABLED.
+Consent W: set GOOGLE_OAUTH_WRITE_CLIENT_ID (separate Desktop client; or put
+  GOOGLE_OAUTH_WRITE_CLIENT_ID/SECRET in gitignored .env.write.local) then
+  auth login-write → PLUGIN_DATA/google-oauth-write.json with CONSENT_W_GTM
+  (tagmanager.edit.containers + tagmanager.publish). Never reuse
+  GOOGLE_OAUTH_CLIENT_SECRET / Consent A. Does not turn on DGTL_WRITES_ENABLED.
 
 Consent C Ads: set GOOGLE_OAUTH_ADS_CLIENT_ID (separate Desktop client) then
   auth login-ads. Fail-closed without that client id. Paid tools still need
