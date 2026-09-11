@@ -2,7 +2,7 @@
  * Google Ads mutate tools — Consent C + gateway only.
  * Flag DGTL_ADS_MUTATE_ENABLED defaults on (opt out with =false). Worker ADS_MUTATE_ENABLED still required for live hop.
  * Tools: campaign/ad-group/keyword/ad status + keyword add + RSA + Search/Display create;
- * PMax/Shopping return typed gaps (NOT_IMPLEMENTED / MERCHANT_CENTER_REQUIRED).
+ * PMax (existing image assets) + Shopping (merchant_center_id) + MC link discovery.
  * Never touches Consent A / GOOGLE_ACCESS_TOKEN.
  */
 
@@ -974,8 +974,8 @@ export async function gadsCreateDisplayCampaign(
 }
 
 /**
- * PMax create — typed NOT_IMPLEMENTED (asset group + image/logo upload not in product).
- * Zero gateway HTTP always.
+ * PMax create — hops when existing marketing/square/logo asset RNs are provided.
+ * Without image assets → NOT_IMPLEMENTED (image upload still out of product).
  */
 export async function gadsCreatePerformanceMaxCampaign(
   ctx: AppContext,
@@ -984,17 +984,93 @@ export async function gadsCreatePerformanceMaxCampaign(
   const tool = "gads_create_performance_max_campaign";
   const miss = gateMutateOrFail(ctx, tool);
   if (miss) return miss;
-  void args;
-  void ctx.auth;
-  return failEnvelope(tool, "NOT_IMPLEMENTED", MSG.NOT_IMPLEMENTED, {
-    api: "google_ads",
-    hint: "PMax needs AssetGroup + marketing/logo images. Ship Search (full) or Display (budget+campaign+ad group) create instead. Zero hop.",
-  });
+
+  const hasMarketing = Array.isArray(args.marketing_image_asset_resource_names) &&
+    args.marketing_image_asset_resource_names.length > 0;
+  const hasSquare = Array.isArray(args.square_marketing_image_asset_resource_names) &&
+    args.square_marketing_image_asset_resource_names.length > 0;
+  const hasLogo = Array.isArray(args.logo_asset_resource_names) &&
+    args.logo_asset_resource_names.length > 0;
+  if (!hasMarketing || !hasSquare || !hasLogo) {
+    return failEnvelope(tool, "NOT_IMPLEMENTED", MSG.NOT_IMPLEMENTED, {
+      api: "google_ads",
+      hint: "PMax foundation needs existing marketing_image_asset_resource_names, square_marketing_image_asset_resource_names, and logo_asset_resource_names. Image upload is out of scope. Zero hop.",
+    });
+  }
+
+  const customer_id = normalizeCustomerId(requireId(args.customer_id, "customer_id"));
+  const campaign_name = requireId(args.campaign_name, "campaign_name").trim();
+  const asset_group_name = requireId(args.asset_group_name, "asset_group_name").trim();
+  const url = assertHttpsFinalUrl(args.final_url);
+  if (!url.ok) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "final_url must be https://…", {
+      api: "google_ads",
+      hint: url.reason,
+    });
+  }
+  const final_url = url.final_url;
+  const business_name = requireId(args.business_name, "business_name").trim();
+  const amount = resolvePluginAmountMicros(args);
+  if (!amount.ok) {
+    return failEnvelope(
+      tool,
+      "INVALID_ARGUMENT",
+      "Provide amount_micros or daily_budget_dollars for the new campaign budget",
+      { api: "google_ads", hint: amount.reason },
+    );
+  }
+  if (amount.amount_micros_number > DEFAULT_MAX_DAILY_BUDGET_MICROS) {
+    return failEnvelope(tool, "SPEND_CAP_EXCEEDED", MSG.SPEND_CAP_EXCEEDED, {
+      api: "google_ads",
+      hint: `Max daily amount_micros is ${DEFAULT_MAX_DAILY_BUDGET_MICROS} ($100,000).`,
+    });
+  }
+  const statusRaw =
+    typeof args.status === "string" && args.status.trim()
+      ? args.status.trim().toUpperCase()
+      : "PAUSED";
+  if (!ALLOWED_STATUS.has(statusRaw)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "status must be ENABLED or PAUSED", {
+      api: "google_ads",
+    });
+  }
+  const login_customer_id = optionalLoginCustomerId(args);
+  const proposed: Record<string, unknown> = {
+    customer_id,
+    campaign_name,
+    asset_group_name,
+    amount_micros: amount.amount_micros,
+    daily_budget_dollars: amount.daily_budget_dollars,
+    final_url,
+    headlines: args.headlines,
+    long_headlines: args.long_headlines,
+    descriptions: args.descriptions,
+    business_name,
+    marketing_image_asset_resource_names: args.marketing_image_asset_resource_names,
+    square_marketing_image_asset_resource_names: args.square_marketing_image_asset_resource_names,
+    logo_asset_resource_names: args.logo_asset_resource_names,
+    status: statusRaw,
+    advertising_channel_type: "PERFORMANCE_MAX",
+    ...(login_customer_id ? { login_customer_id } : {}),
+  };
+  if (dryRunDefault(args)) {
+    return okEnvelope(tool, {
+      resource: { type: "gads_customer", id: customer_id, display_name: campaign_name },
+      data: {
+        dry_run: true,
+        proposed,
+        note: "No Ads mutate HTTP. PMax create uses existing image/logo assets + server-built text assets/asset group. Defaults PAUSED. Live needs confirm_phrase with customer_id.",
+        spend_cap_micros: DEFAULT_MAX_DAILY_BUDGET_MICROS,
+      },
+    });
+  }
+  assertConfirmContainsCustomerId(args.confirm_phrase, customer_id);
+  return liveMutateHop(ctx, tool, proposed);
 }
 
 /**
- * Shopping create — typed MERCHANT_CENTER_REQUIRED (MC linkage not in product).
- * Zero gateway HTTP always.
+ * Shopping create — MERCHANT_CENTER_REQUIRED without merchant_center_id;
+ * otherwise confirm-gated hop (PAUSED shopping campaign + budget).
  */
 export async function gadsCreateShoppingCampaign(
   ctx: AppContext,
@@ -1003,10 +1079,121 @@ export async function gadsCreateShoppingCampaign(
   const tool = "gads_create_shopping_campaign";
   const miss = gateMutateOrFail(ctx, tool);
   if (miss) return miss;
-  void args;
+
+  const mc = args.merchant_center_id;
+  if (mc === undefined || mc === null || mc === "") {
+    return failEnvelope(tool, "MERCHANT_CENTER_REQUIRED", MSG.MERCHANT_CENTER_REQUIRED, {
+      api: "google_ads",
+      hint: "Call gads_list_merchant_center_links first, then pass merchant_center_id. Zero hop.",
+    });
+  }
+
+  const customer_id = normalizeCustomerId(requireId(args.customer_id, "customer_id"));
+  const campaign_name = requireId(args.campaign_name, "campaign_name").trim();
+  const merchant_center_id = String(mc).trim();
+  if (!/^\d{1,20}$/.test(merchant_center_id)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "merchant_center_id must be digits-only", {
+      api: "google_ads",
+    });
+  }
+  const amount = resolvePluginAmountMicros(args);
+  if (!amount.ok) {
+    return failEnvelope(
+      tool,
+      "INVALID_ARGUMENT",
+      "Provide amount_micros or daily_budget_dollars for the new campaign budget",
+      { api: "google_ads", hint: amount.reason },
+    );
+  }
+  if (amount.amount_micros_number > DEFAULT_MAX_DAILY_BUDGET_MICROS) {
+    return failEnvelope(tool, "SPEND_CAP_EXCEEDED", MSG.SPEND_CAP_EXCEEDED, {
+      api: "google_ads",
+      hint: `Max daily amount_micros is ${DEFAULT_MAX_DAILY_BUDGET_MICROS} ($100,000).`,
+    });
+  }
+  const statusRaw =
+    typeof args.status === "string" && args.status.trim()
+      ? args.status.trim().toUpperCase()
+      : "PAUSED";
+  if (!ALLOWED_STATUS.has(statusRaw)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "status must be ENABLED or PAUSED", {
+      api: "google_ads",
+    });
+  }
+  const sales_country =
+    typeof args.sales_country === "string" && args.sales_country.trim()
+      ? args.sales_country.trim().toUpperCase()
+      : "US";
+  const login_customer_id = optionalLoginCustomerId(args);
+  const proposed: Record<string, unknown> = {
+    customer_id,
+    campaign_name,
+    merchant_center_id,
+    sales_country,
+    amount_micros: amount.amount_micros,
+    daily_budget_dollars: amount.daily_budget_dollars,
+    status: statusRaw,
+    advertising_channel_type: "SHOPPING",
+    ...(login_customer_id ? { login_customer_id } : {}),
+  };
+  if (dryRunDefault(args)) {
+    return okEnvelope(tool, {
+      resource: { type: "gads_customer", id: customer_id, display_name: campaign_name },
+      data: {
+        dry_run: true,
+        proposed,
+        note: "No Ads mutate HTTP. Shopping create is budget + SHOPPING campaign only (no product groups). Defaults PAUSED. Live needs confirm_phrase with customer_id.",
+        spend_cap_micros: DEFAULT_MAX_DAILY_BUDGET_MICROS,
+      },
+    });
+  }
+  assertConfirmContainsCustomerId(args.confirm_phrase, customer_id);
+  return liveMutateHop(ctx, tool, proposed);
+}
+
+/**
+ * Discover Merchant Center product links for a customer (read; Consent C + Pro).
+ */
+export async function gadsListMerchantCenterLinks(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "gads_list_merchant_center_links";
+  const miss = requireAdsLicense(ctx, tool);
+  if (miss) return miss;
+  const customer_id = normalizeCustomerId(requireId(args.customer_id, "customer_id"));
+  const login_customer_id = optionalLoginCustomerId(args);
+  const hopArgs: Record<string, unknown> = {
+    customer_id,
+    ...(login_customer_id ? { login_customer_id } : {}),
+  };
+  if (typeof args.limit === "number") hopArgs.limit = args.limit;
+
+  const base = ctx.flags.gatewayUrl;
+  if (!base) {
+    return failEnvelope(tool, "GATEWAY_UNAVAILABLE", MSG.GATEWAY_UNAVAILABLE, {
+      hint: "Set DGTL_GATEWAY_URL for Ads hops. Free tools still work.",
+    });
+  }
+  const probe = await probeGatewayReachable(ctx);
+  if (!probe.reachable) {
+    return failEnvelope(tool, "GATEWAY_UNAVAILABLE", MSG.GATEWAY_UNAVAILABLE, {
+      hint: probe.note ?? "Gateway health probe failed.",
+    });
+  }
+  const adsTok = await ctx.authAds.getAccessToken();
+  if (!adsTok?.accessToken) {
+    return failEnvelope(tool, "ADS_SCOPE_MISSING", MSG.ADS_SCOPE_MISSING, {
+      hint: "Connect Consent C via GOOGLE_ADS_ACCESS_TOKEN or auth login-ads — never reuse Consent A.",
+      missing_scope: SCOPE.adwords,
+    });
+  }
   void ctx.auth;
-  return failEnvelope(tool, "MERCHANT_CENTER_REQUIRED", MSG.MERCHANT_CENTER_REQUIRED, {
-    api: "google_ads",
-    hint: "Link Merchant Center + shoppingSetting.merchantCenterId before Shopping create can ship. Zero hop.",
+  const env = await postGateway(ctx, {
+    family: "gads",
+    tool,
+    userAccessToken: adsTok.accessToken,
+    args: hopArgs,
   });
+  return enrichGadsEnvelope(tool, hopArgs, env);
 }

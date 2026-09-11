@@ -678,7 +678,7 @@ describe("Create speedrun keyword/ad/Search campaign (fail closed)", () => {
 });
 
 
-describe("Display / PMax / Shopping stubs + ad group status", () => {
+describe("Display / PMax / Shopping foundations + ad group status", () => {
   let restore: () => void;
   before(() => {
     restore = installNetworkGuard();
@@ -784,7 +784,7 @@ describe("Display / PMax / Shopping stubs + ad group status", () => {
     assert.equal(calls, 0);
   });
 
-  it("PMax always NOT_IMPLEMENTED with zero hop (even dry_run)", async () => {
+  it("PMax without image assets → NOT_IMPLEMENTED with zero hop", async () => {
     let calls = 0;
     const ctx = makeCtx({}, adsLicenseEnv());
     ctx.fetchImpl = (async () => {
@@ -794,14 +794,65 @@ describe("Display / PMax / Shopping stubs + ad group status", () => {
     const env = await dispatch(ctx, "gads_create_performance_max_campaign", {
       customer_id: "1234567890",
       campaign_name: "PMax",
+      asset_group_name: "AG",
       daily_budget_dollars: 10,
+      final_url: "https://example.com/",
+      headlines: ["H1", "H2", "H3"],
+      long_headlines: ["Long headline one"],
+      descriptions: ["D1", "D2"],
+      business_name: "Biz",
     });
     assert.equal(env.ok, false);
     assert.equal(env.error_code, "NOT_IMPLEMENTED");
     assert.equal(calls, 0);
   });
 
-  it("Shopping always MERCHANT_CENTER_REQUIRED with zero hop", async () => {
+  it("PMax dry_run with existing assets proposes without hop", async () => {
+    let calls = 0;
+    const ctx = makeCtx({}, adsLicenseEnv());
+    ctx.fetchImpl = (async () => {
+      calls += 1;
+      throw new Error("NETWORK_FORBIDDEN");
+    }) as typeof fetch;
+    const env = await dispatch(ctx, "gads_create_performance_max_campaign", {
+      customer_id: "1234567890",
+      campaign_name: "PMax",
+      asset_group_name: "AG",
+      daily_budget_dollars: 10,
+      final_url: "https://example.com/",
+      headlines: ["H1", "H2", "H3"],
+      long_headlines: ["Long headline one"],
+      descriptions: ["D1", "D2"],
+      business_name: "Biz",
+      marketing_image_asset_resource_names: ["customers/1234567890/assets/1"],
+      square_marketing_image_asset_resource_names: ["customers/1234567890/assets/2"],
+      logo_asset_resource_names: ["customers/1234567890/assets/3"],
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    const data = env.data as { dry_run?: boolean; proposed?: { final_url?: string } };
+    assert.equal(data.dry_run, true);
+    assert.equal(data.proposed?.final_url, "https://example.com/");
+    assert.equal(calls, 0);
+  });
+
+  it("Shopping without merchant_center_id → MERCHANT_CENTER_REQUIRED with zero hop", async () => {
+    let calls = 0;
+    const ctx = makeCtx({}, adsLicenseEnv());
+    ctx.fetchImpl = (async () => {
+      calls += 1;
+      throw new Error("NETWORK_FORBIDDEN");
+    }) as typeof fetch;
+    const env = await dispatch(ctx, "gads_create_shopping_campaign", {
+      customer_id: "1234567890",
+      campaign_name: "Shop",
+      daily_budget_dollars: 10,
+    });
+    assert.equal(env.ok, false);
+    assert.equal(env.error_code, "MERCHANT_CENTER_REQUIRED");
+    assert.equal(calls, 0);
+  });
+
+  it("Shopping dry_run with merchant_center_id proposes without hop", async () => {
     let calls = 0;
     const ctx = makeCtx({}, adsLicenseEnv());
     ctx.fetchImpl = (async () => {
@@ -814,9 +865,18 @@ describe("Display / PMax / Shopping stubs + ad group status", () => {
       merchant_center_id: "999",
       daily_budget_dollars: 10,
     });
-    assert.equal(env.ok, false);
-    assert.equal(env.error_code, "MERCHANT_CENTER_REQUIRED");
+    assert.equal(env.ok, true, JSON.stringify(env));
+    const data = env.data as { dry_run?: boolean; proposed?: { merchant_center_id?: string } };
+    assert.equal(data.dry_run, true);
+    assert.equal(data.proposed?.merchant_center_id, "999");
     assert.equal(calls, 0);
+  });
+
+  it("gads_list_merchant_center_links is registered read-only", () => {
+    const t = TOOLS.find((x) => x.name === "gads_list_merchant_center_links");
+    assert.ok(t);
+    assert.equal(t!.annotations.readOnlyHint, true);
+    assert.equal(t!.annotations.destructiveHint, false);
   });
 
   it("catalog gated_tools lists Display/PMax/Shopping + ad group status", () => {

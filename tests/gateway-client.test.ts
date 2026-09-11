@@ -348,6 +348,93 @@ describe("PR-5 license-gated gateway client", () => {
     assert.equal(body.recipe, null);
   });
 
+  it("allows closed final_url https in mutate create params (RSA)", async () => {
+    const { fetchImpl, captures } = mockWorker({
+      healthOk: true,
+      hop: {
+        status: 200,
+        body: { ok: true, tool: "gads_create_responsive_search_ad", data: {} },
+      },
+    });
+    const jwt = signLicense({
+      sub: "gw-user",
+      exp: Math.floor(Date.now() / 1000) + 86400,
+      features: ["ads"],
+      jti: "gw-final-url",
+    });
+    const envVars = testEnv({
+      DGTL_LICENSE_JWT: jwt,
+      DGTL_GATEWAY_URL: GATEWAY,
+      GOOGLE_ADS_ACCESS_TOKEN: ADS_TOKEN,
+    });
+    const ctx = createAppContext({ pluginRoot: ROOT, env: envVars, fetchImpl });
+    const env = await postGateway(ctx, {
+      family: "gads",
+      tool: "gads_create_responsive_search_ad",
+      userAccessToken: ADS_TOKEN,
+      args: {
+        customer_id: "1234567890",
+        ad_group_id: "11",
+        headlines: ["H1", "H2", "H3"],
+        descriptions: ["D1", "D2"],
+        final_url: "https://example.com/landing",
+        path1: "sale",
+        status: "PAUSED",
+      },
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    const hop = captures.find((c) => c.url.includes("/v1/gads/gads_create_responsive_search_ad"));
+    assert.ok(hop, "expected RSA hop");
+    const body = hop!.body as { params: Record<string, unknown> };
+    assert.equal(body.params.final_url, "https://example.com/landing");
+    assert.equal(body.params.path1, "sale");
+    assert.ok(!("url" in body.params));
+  });
+
+  it("still rejects open proxy https outside closed URL fields", async () => {
+    const { fetchImpl, captures } = mockWorker({
+      healthOk: true,
+      hop: {
+        status: 200,
+        body: { ok: true, tool: "gads_search", data: {} },
+      },
+    });
+    const jwt = signLicense({
+      sub: "gw-user",
+      exp: Math.floor(Date.now() / 1000) + 86400,
+      features: ["ads"],
+      jti: "gw-open-url",
+    });
+    const envVars = testEnv({
+      DGTL_LICENSE_JWT: jwt,
+      DGTL_GATEWAY_URL: GATEWAY,
+      GOOGLE_ADS_ACCESS_TOKEN: ADS_TOKEN,
+    });
+    const ctx = createAppContext({ pluginRoot: ROOT, env: envVars, fetchImpl });
+    // Inject a smuggled https into a non-closed field that stripUrlishParams would
+    // otherwise keep if we only checked key names — name with https must be dropped,
+    // and any leftover open https in the wire body must fail closed.
+    const env = await postGateway(ctx, {
+      family: "gads",
+      tool: "gads_search",
+      userAccessToken: ADS_TOKEN,
+      args: {
+        customer_id: "1234567890",
+        recipe: "campaigns",
+        name: "https://evil.example/proxy",
+        url: "https://evil.example/hop",
+      },
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    const hop = captures.find((c) => c.url.includes("/v1/gads/gads_search"));
+    assert.ok(hop);
+    const body = hop!.body as { params: Record<string, unknown> };
+    assert.equal(body.params.customer_id, "1234567890");
+    assert.ok(!("url" in body.params));
+    assert.ok(!("name" in body.params), "https name must be stripped");
+    assert.ok(!/https?:\/\//i.test(JSON.stringify(body)));
+  });
+
   it("Worker 5xx on hop maps to GATEWAY_UNAVAILABLE", async () => {
     const { fetchImpl } = mockWorker({
       healthOk: true,
