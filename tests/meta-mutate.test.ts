@@ -6,6 +6,8 @@ import { loadFlags } from "../src/flags.js";
 import {
   harnessUserMessageContainsMetaConfirm,
   assertAdsManagementWhenDetectable,
+  DEFAULT_MAX_META_BUDGET_CENTS,
+  resolveMetaBudgetCents,
 } from "../src/meta/meta-write.js";
 import * as S from "../src/tools/schemas.js";
 import { dispatch } from "../src/tools/dispatch.js";
@@ -35,7 +37,7 @@ function metaLicenseEnv(extra: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
   });
 }
 
-describe("Slice 4 meta_update_* status (fail closed)", () => {
+describe("Slice 4+5 meta_update_* status/name/budget (fail closed)", () => {
   let restore: () => void;
   before(() => {
     restore = installNetworkGuard();
@@ -47,6 +49,14 @@ describe("Slice 4 meta_update_* status (fail closed)", () => {
     assert.equal(loadFlags({ DGTL_META_MUTATE_ENABLED: "false" }).metaMutateEnabled, false);
     assert.equal(loadFlags({ DGTL_META_MUTATE_ENABLED: "true" }).metaMutateEnabled, true);
     assert.equal(loadFlags({ META_MUTATE_ENABLED: "1" }).metaMutateEnabled, true);
+  });
+
+  it("budget cents helper + spend cap constant", () => {
+    const ok = resolveMetaBudgetCents("5000");
+    assert.equal(ok.ok, true);
+    if (ok.ok) assert.equal(ok.cents_number, 5000);
+    assert.equal(DEFAULT_MAX_META_BUDGET_CENTS, 10_000_000);
+    assert.equal(resolveMetaBudgetCents(-1).ok, false);
   });
 
   for (const name of [
@@ -86,6 +96,40 @@ describe("Slice 4 meta_update_* status (fail closed)", () => {
       assert.equal(liveMissing.success, false);
     });
   }
+
+  it("schema accepts name-only campaign and adset daily_budget cents", () => {
+    const camp = S.metaUpdateCampaign.parse({
+      ad_account_id: "111222333",
+      campaign_id: "12033001",
+      name: "Renamed",
+    });
+    assert.equal(camp.name, "Renamed");
+    assert.equal(camp.status, undefined);
+
+    const adset = S.metaUpdateAdset.parse({
+      ad_account_id: "111222333",
+      adset_id: "55",
+      daily_budget: "5000",
+    });
+    assert.equal(adset.daily_budget, "5000");
+
+    const both = S.metaUpdateAdset.safeParse({
+      ad_account_id: "111222333",
+      adset_id: "55",
+      daily_budget: "1000",
+      lifetime_budget: "2000",
+    });
+    assert.equal(both.success, false);
+
+    // Invented fields rejected by .strict()
+    const invent = S.metaUpdateCampaign.safeParse({
+      ad_account_id: "111222333",
+      campaign_id: "1",
+      status: "PAUSED",
+      objective: "OUTCOME_TRAFFIC",
+    });
+    assert.equal(invent.success, false);
+  });
 
   it("flag off → META_MUTATE_NOT_ENABLED with zero gateway mutate HTTP", async () => {
     let gatewayPosts = 0;
@@ -150,6 +194,51 @@ describe("Slice 4 meta_update_* status (fail closed)", () => {
     });
     assert.equal(env.ok, true);
     assert.equal((env.data as { dry_run?: boolean })?.dry_run, true);
+    assert.equal(hops, 0);
+  });
+
+  it("flag on + dry_run budget propose documents cents units", async () => {
+    let hops = 0;
+    const ctx = makeCtx({}, metaLicenseEnv({ DGTL_META_MUTATE_ENABLED: "true" }));
+    ctx.fetchImpl = (async (input) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/v1/meta/meta_update_")) hops += 1;
+      throw new Error(`unexpected ${url}`);
+    }) as typeof fetch;
+    const env = await dispatch(ctx, "meta_update_adset", {
+      ad_account_id: "111222333",
+      adset_id: "55",
+      daily_budget: "5000",
+    });
+    assert.equal(env.ok, true);
+    const data = env.data as {
+      dry_run?: boolean;
+      proposed?: { daily_budget?: string; budget_units?: string };
+    };
+    assert.equal(data.dry_run, true);
+    assert.equal(data.proposed?.daily_budget, "5000");
+    assert.equal(data.proposed?.budget_units, "cents");
+    assert.equal(hops, 0);
+  });
+
+  it("flag on + over spend cap → SPEND_CAP_EXCEEDED, no hop", async () => {
+    let hops = 0;
+    const ctx = makeCtx({}, metaLicenseEnv({ DGTL_META_MUTATE_ENABLED: "true" }));
+    ctx.fetchImpl = (async (input) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/v1/meta/meta_update_")) hops += 1;
+      throw new Error(`unexpected ${url}`);
+    }) as typeof fetch;
+    const env = await dispatch(ctx, "meta_update_adset", {
+      ad_account_id: "111222333",
+      adset_id: "55",
+      daily_budget: String(DEFAULT_MAX_META_BUDGET_CENTS + 1),
+      dry_run: false,
+      confirm_phrase: "set act_111222333 adset 55 budget",
+    });
+    assert.equal(env.ok, false);
+    assert.equal(env.error_code, "SPEND_CAP_EXCEEDED");
+    assert.match(env.hint || "", /cents/i);
     assert.equal(hops, 0);
   });
 
@@ -223,7 +312,77 @@ describe("Slice 4 meta_update_* status (fail closed)", () => {
     assert.equal(params.status, "ACTIVE");
     assert.equal(params.ad_account_id, "111222333");
     assert.ok(!("daily_budget" in params));
-    assert.ok(!("name" in params));
+    assert.ok(!("objective" in params));
+  });
+
+  it("flag on + live name update posts name in hop params", async () => {
+    let seenBody: Record<string, unknown> | null = null;
+    const ctx = makeCtx({}, metaLicenseEnv({ DGTL_META_MUTATE_ENABLED: "true" }));
+    ctx.fetchImpl = (async (input, init) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/v1/health")) {
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      if (url.includes("/v1/meta/meta_update_campaign")) {
+        seenBody = JSON.parse(String(init?.body || "{}")) as Record<string, unknown>;
+        return new Response(
+          JSON.stringify({ ok: true, tool: "meta_update_campaign", data: { success: true }, api: "meta" }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      throw new Error(`unexpected ${url}`);
+    }) as typeof fetch;
+
+    const env = await dispatch(ctx, "meta_update_campaign", {
+      ad_account_id: "111222333",
+      campaign_id: "12033001",
+      name: "Q4 Brand",
+      dry_run: false,
+      confirm_phrase: "rename act_111222333 campaign 12033001",
+    });
+    assert.equal(env.ok, true);
+    const params = seenBody!.params as Record<string, unknown>;
+    assert.equal(params.name, "Q4 Brand");
+    assert.ok(!("status" in params));
+  });
+
+  it("flag on + live adset budget within cap posts daily_budget cents", async () => {
+    let seenBody: Record<string, unknown> | null = null;
+    const ctx = makeCtx({}, metaLicenseEnv({ DGTL_META_MUTATE_ENABLED: "true" }));
+    ctx.fetchImpl = (async (input, init) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/v1/health")) {
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      if (url.includes("/v1/meta/meta_update_adset")) {
+        seenBody = JSON.parse(String(init?.body || "{}")) as Record<string, unknown>;
+        return new Response(
+          JSON.stringify({ ok: true, tool: "meta_update_adset", data: { success: true }, api: "meta" }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      throw new Error(`unexpected ${url}`);
+    }) as typeof fetch;
+
+    const env = await dispatch(ctx, "meta_update_adset", {
+      ad_account_id: "111222333",
+      adset_id: "998877",
+      daily_budget: 5000,
+      dry_run: false,
+      confirm_phrase: "set budget act_111222333 adset 998877",
+    });
+    assert.equal(env.ok, true);
+    const params = seenBody!.params as Record<string, unknown>;
+    assert.equal(params.adset_id, "998877");
+    assert.equal(params.daily_budget, "5000");
+    assert.ok(!("lifetime_budget" in params));
+    assert.ok(!("objective" in params));
   });
 
   it("detectable scopes without ads_management → META_SCOPE_MISSING, zero hop", async () => {

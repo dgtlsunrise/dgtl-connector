@@ -1,7 +1,8 @@
 /**
- * Meta Ads mutate tools — status pause/enable only (Slice 4).
+ * Meta Ads mutate tools — status / name / adset budget (Slice 4+5).
  * Flag DGTL_META_MUTATE_ENABLED defaults off (fail closed, zero Graph mutate HTTP).
  * Tools: meta_update_campaign, meta_update_adset, meta_update_ad.
+ * Budgets are Meta **cents** (smallest currency unit), not Google Ads micros.
  * Never touches Consent A / GOOGLE_ACCESS_TOKEN. App secret stays on Worker.
  */
 
@@ -17,6 +18,13 @@ const HINT_FLAG =
 
 const ALLOWED_STATUS = new Set(["ACTIVE", "PAUSED"]);
 const ADS_MANAGEMENT = "ads_management";
+const NAME_MAX = 400;
+
+/**
+ * Same $100k/day product sanity cap as Google Ads, expressed in Meta cents
+ * (USD-equivalent). Override is Worker-side (META_MUTATE_MAX_BUDGET_CENTS).
+ */
+export const DEFAULT_MAX_META_BUDGET_CENTS = 10_000_000; // $100,000.00
 
 export type MetaStatusUpdateTool =
   | "meta_update_campaign"
@@ -103,7 +111,197 @@ export function assertAdsManagementWhenDetectable(
   return { ok: false };
 }
 
-async function metaUpdateStatus(
+export function resolveMetaBudgetCents(
+  raw: unknown,
+): { ok: true; cents: string; cents_number: number } | { ok: false; reason: string } {
+  if (raw === undefined || raw === null || raw === "") {
+    return { ok: false, reason: "missing_budget" };
+  }
+  if (typeof raw === "number") {
+    if (!Number.isFinite(raw) || !Number.isInteger(raw) || raw <= 0) {
+      return { ok: false, reason: "invalid_budget" };
+    }
+    return { ok: true, cents: String(raw), cents_number: raw };
+  }
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    if (!/^\d{1,18}$/.test(s)) return { ok: false, reason: "invalid_budget" };
+    const n = Number(s);
+    if (!Number.isFinite(n) || n <= 0) return { ok: false, reason: "invalid_budget" };
+    return { ok: true, cents: s, cents_number: n };
+  }
+  return { ok: false, reason: "invalid_budget" };
+}
+
+function normalizeOptionalName(
+  raw: unknown,
+): { ok: true; name?: string } | { ok: false; reason: string } {
+  if (raw === undefined || raw === null || raw === "") return { ok: true };
+  if (typeof raw !== "string") return { ok: false, reason: "invalid_name" };
+  const name = raw.trim();
+  if (!name || name.length > NAME_MAX) return { ok: false, reason: "invalid_name" };
+  if (/[\u0000-\u001f\u007f]/.test(name)) return { ok: false, reason: "invalid_name" };
+  return { ok: true, name };
+}
+
+type ParsedUpdate = {
+  ad_account_id: string;
+  object_id: string;
+  idKey: "campaign_id" | "adset_id" | "ad_id";
+  status?: string;
+  name?: string;
+  daily_budget?: string;
+  lifetime_budget?: string;
+};
+
+function parseUpdateArgs(
+  tool: MetaStatusUpdateTool,
+  args: Record<string, unknown>,
+): { ok: true; parsed: ParsedUpdate } | { ok: false; envelope: Envelope } {
+  const ad_account_id = normalizeAdAccountId(requireId(args.ad_account_id, "ad_account_id"));
+  const idKey = objectIdKey(tool);
+  const object_id = requireId(args[idKey], idKey).trim();
+  if (!/^\d{1,30}$/.test(object_id)) {
+    return {
+      ok: false,
+      envelope: failEnvelope(tool, "INVALID_ARGUMENT", `${idKey} must be digits-only`, {
+        api: "meta",
+      }),
+    };
+  }
+
+  const parsed: ParsedUpdate = { ad_account_id, object_id, idKey };
+
+  if (args.status !== undefined && args.status !== null && args.status !== "") {
+    const statusRaw = requireId(args.status, "status").trim().toUpperCase();
+    if (!ALLOWED_STATUS.has(statusRaw)) {
+      return {
+        ok: false,
+        envelope: failEnvelope(tool, "INVALID_ARGUMENT", "status must be ACTIVE or PAUSED", {
+          api: "meta",
+          hint: "Only ACTIVE or PAUSED. DELETED and other statuses are not supported.",
+        }),
+      };
+    }
+    parsed.status = statusRaw;
+  }
+
+  const name = normalizeOptionalName(args.name);
+  if (!name.ok) {
+    return {
+      ok: false,
+      envelope: failEnvelope(tool, "INVALID_ARGUMENT", "name must be a non-empty string ≤400 chars", {
+        api: "meta",
+      }),
+    };
+  }
+  if (name.name) parsed.name = name.name;
+
+  const hasDaily =
+    args.daily_budget !== undefined && args.daily_budget !== null && args.daily_budget !== "";
+  const hasLife =
+    args.lifetime_budget !== undefined &&
+    args.lifetime_budget !== null &&
+    args.lifetime_budget !== "";
+
+  if (tool === "meta_update_adset") {
+    if (hasDaily && hasLife) {
+      return {
+        ok: false,
+        envelope: failEnvelope(
+          tool,
+          "INVALID_ARGUMENT",
+          "Provide daily_budget OR lifetime_budget (not both). Units: integer cents (Meta account currency smallest unit — not Google Ads micros).",
+          { api: "meta" },
+        ),
+      };
+    }
+    if (hasDaily) {
+      const b = resolveMetaBudgetCents(args.daily_budget);
+      if (!b.ok) {
+        return {
+          ok: false,
+          envelope: failEnvelope(
+            tool,
+            "INVALID_ARGUMENT",
+            "daily_budget must be a positive integer in cents",
+            {
+              api: "meta",
+              hint: "Meta budgets are cents (e.g. 5000 = $50.00 USD), not micros.",
+            },
+          ),
+        };
+      }
+      if (b.cents_number > DEFAULT_MAX_META_BUDGET_CENTS) {
+        return {
+          ok: false,
+          envelope: failEnvelope(tool, "SPEND_CAP_EXCEEDED", MSG.SPEND_CAP_EXCEEDED, {
+            api: "meta",
+            hint: `Max Meta daily_budget / lifetime_budget is ${DEFAULT_MAX_META_BUDGET_CENTS} cents ($100,000). Units are cents, not micros. No Graph mutate HTTP was sent.`,
+          }),
+        };
+      }
+      parsed.daily_budget = b.cents;
+    }
+    if (hasLife) {
+      const b = resolveMetaBudgetCents(args.lifetime_budget);
+      if (!b.ok) {
+        return {
+          ok: false,
+          envelope: failEnvelope(
+            tool,
+            "INVALID_ARGUMENT",
+            "lifetime_budget must be a positive integer in cents",
+            { api: "meta" },
+          ),
+        };
+      }
+      if (b.cents_number > DEFAULT_MAX_META_BUDGET_CENTS) {
+        return {
+          ok: false,
+          envelope: failEnvelope(tool, "SPEND_CAP_EXCEEDED", MSG.SPEND_CAP_EXCEEDED, {
+            api: "meta",
+            hint: `Max Meta daily_budget / lifetime_budget is ${DEFAULT_MAX_META_BUDGET_CENTS} cents ($100,000). Units are cents, not micros. No Graph mutate HTTP was sent.`,
+          }),
+        };
+      }
+      parsed.lifetime_budget = b.cents;
+    }
+  } else if (hasDaily || hasLife) {
+    return {
+      ok: false,
+      envelope: failEnvelope(
+        tool,
+        "INVALID_ARGUMENT",
+        "Budget fields are only allowed on meta_update_adset (closed allowlist). Do not invent campaign/ad budget fields.",
+        { api: "meta" },
+      ),
+    };
+  }
+
+  if (
+    !parsed.status &&
+    !parsed.name &&
+    !parsed.daily_budget &&
+    !parsed.lifetime_budget
+  ) {
+    return {
+      ok: false,
+      envelope: failEnvelope(
+        tool,
+        "INVALID_ARGUMENT",
+        tool === "meta_update_adset"
+          ? "Provide at least one of: status, name, daily_budget, lifetime_budget"
+          : "Provide at least one of: status, name",
+        { api: "meta" },
+      ),
+    };
+  }
+
+  return { ok: true, parsed };
+}
+
+async function metaUpdateFields(
   ctx: AppContext,
   tool: MetaStatusUpdateTool,
   args: Record<string, unknown>,
@@ -118,47 +316,66 @@ async function metaUpdateStatus(
   const miss = requireMetaLicense(ctx, tool);
   if (miss) return miss;
 
-  const ad_account_id = normalizeAdAccountId(requireId(args.ad_account_id, "ad_account_id"));
-  const idKey = objectIdKey(tool);
-  const object_id = requireId(args[idKey], idKey).trim();
-  if (!/^\d{1,30}$/.test(object_id)) {
-    return failEnvelope(tool, "INVALID_ARGUMENT", `${idKey} must be digits-only`, {
-      api: "meta",
-    });
+  let parsedResult: ReturnType<typeof parseUpdateArgs>;
+  try {
+    parsedResult = parseUpdateArgs(tool, args);
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope(tool, err.error_code, err.message, { ...err.extra, api: "meta" });
+    }
+    throw err;
   }
-  const statusRaw = requireId(args.status, "status").trim().toUpperCase();
-  if (!ALLOWED_STATUS.has(statusRaw)) {
-    return failEnvelope(tool, "INVALID_ARGUMENT", "status must be ACTIVE or PAUSED", {
-      api: "meta",
-      hint: "Only ACTIVE or PAUSED. DELETED and other statuses are not supported in Slice 4.",
-    });
-  }
+  if (!parsedResult.ok) return parsedResult.envelope;
+  const { parsed } = parsedResult;
 
   const dryRun = dryRunDefault(args);
-  const proposed = {
-    ad_account_id,
-    act: actPhrase(ad_account_id),
-    [idKey]: object_id,
-    status: statusRaw,
+  const proposed: Record<string, unknown> = {
+    ad_account_id: parsed.ad_account_id,
+    act: actPhrase(parsed.ad_account_id),
+    [parsed.idKey]: parsed.object_id,
   };
+  if (parsed.status) proposed.status = parsed.status;
+  if (parsed.name) proposed.name = parsed.name;
+  if (parsed.daily_budget) {
+    proposed.daily_budget = parsed.daily_budget;
+    proposed.budget_units = "cents";
+  }
+  if (parsed.lifetime_budget) {
+    proposed.lifetime_budget = parsed.lifetime_budget;
+    proposed.budget_units = "cents";
+  }
 
   if (dryRun) {
     return okEnvelope(tool, {
       resource: {
         type: resourceType(tool),
-        id: object_id,
-        display_name: object_id,
+        id: parsed.object_id,
+        display_name: parsed.name ?? parsed.object_id,
       },
       data: {
         dry_run: true,
         proposed,
-        cited: { ad_account_id, [idKey]: object_id, status: statusRaw },
-        note: `No Meta Graph mutate HTTP. Pass dry_run=false with confirm_phrase containing ${actPhrase(ad_account_id)} AND ${object_id} only after a user message this turn that includes both.`,
+        cited: {
+          ad_account_id: parsed.ad_account_id,
+          [parsed.idKey]: parsed.object_id,
+          ...(parsed.status ? { status: parsed.status } : {}),
+          ...(parsed.name ? { name: parsed.name } : {}),
+          ...(parsed.daily_budget ? { daily_budget: parsed.daily_budget } : {}),
+          ...(parsed.lifetime_budget ? { lifetime_budget: parsed.lifetime_budget } : {}),
+        },
+        note: `No Meta Graph mutate HTTP. Pass dry_run=false with confirm_phrase containing ${actPhrase(parsed.ad_account_id)} AND ${parsed.object_id} only after a user message this turn that includes both. Closed fields only — do not invent objective/creative/targeting.`,
       },
     });
   }
 
-  assertConfirmContainsActAndObject(args.confirm_phrase, ad_account_id, object_id);
+  try {
+    assertConfirmContainsActAndObject(args.confirm_phrase, parsed.ad_account_id, parsed.object_id);
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope(tool, err.error_code, err.message, { ...err.extra, api: "meta" });
+    }
+    throw err;
+  }
 
   const base = ctx.flags.gatewayUrl;
   if (!base) {
@@ -194,10 +411,13 @@ async function metaUpdateStatus(
   void ctx.auth;
 
   const hopArgs: Record<string, unknown> = {
-    ad_account_id,
-    [idKey]: object_id,
-    status: statusRaw,
+    ad_account_id: parsed.ad_account_id,
+    [parsed.idKey]: parsed.object_id,
   };
+  if (parsed.status) hopArgs.status = parsed.status;
+  if (parsed.name) hopArgs.name = parsed.name;
+  if (parsed.daily_budget) hopArgs.daily_budget = parsed.daily_budget;
+  if (parsed.lifetime_budget) hopArgs.lifetime_budget = parsed.lifetime_budget;
 
   const env = await postGateway(ctx, {
     family: "meta",
@@ -227,6 +447,9 @@ function enrichMetaMutateEnvelope(
   if (typeof args.adset_id === "string") cited.adset_id = args.adset_id;
   if (typeof args.ad_id === "string") cited.ad_id = args.ad_id;
   if (typeof args.status === "string") cited.status = args.status;
+  if (typeof args.name === "string") cited.name = args.name;
+  if (typeof args.daily_budget === "string") cited.daily_budget = args.daily_budget;
+  if (typeof args.lifetime_budget === "string") cited.lifetime_budget = args.lifetime_budget;
   if (Object.keys(cited).length) {
     const data: Record<string, unknown> =
       env.data && typeof env.data === "object" && !Array.isArray(env.data)
@@ -242,19 +465,19 @@ export async function metaUpdateCampaign(
   ctx: AppContext,
   args: Record<string, unknown>,
 ): Promise<Envelope> {
-  return metaUpdateStatus(ctx, "meta_update_campaign", args);
+  return metaUpdateFields(ctx, "meta_update_campaign", args);
 }
 
 export async function metaUpdateAdset(
   ctx: AppContext,
   args: Record<string, unknown>,
 ): Promise<Envelope> {
-  return metaUpdateStatus(ctx, "meta_update_adset", args);
+  return metaUpdateFields(ctx, "meta_update_adset", args);
 }
 
 export async function metaUpdateAd(
   ctx: AppContext,
   args: Record<string, unknown>,
 ): Promise<Envelope> {
-  return metaUpdateStatus(ctx, "meta_update_ad", args);
+  return metaUpdateFields(ctx, "meta_update_ad", args);
 }

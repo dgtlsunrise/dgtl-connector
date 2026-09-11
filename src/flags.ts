@@ -8,7 +8,7 @@ export type Flags = {
    */
   adsMutateEnabled: boolean;
   /**
-   * Meta Ads mutate tools (meta_update_campaign/adset/ad). Default off.
+   * Meta Ads mutate tools (meta_update_campaign/adset/ad — status/name/adset budget). Default off.
    * Mirror of Worker META_MUTATE_ENABLED — both must be on for live mutate.
    */
   metaMutateEnabled: boolean;
