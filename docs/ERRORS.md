@@ -129,6 +129,14 @@ Do **not** tell the user to “Reconnect Ads” for this code — that is `ADS_S
 
 The same code is used when `feedback_send` has no hosted endpoint (`DGTL_FEEDBACK_URL` and `DGTL_GATEWAY_URL` both unset). The message then points at those env vars and **support@dgtlsunrise.com** — not Ads reconnect, and not “email a token.”
 
+### `SHOPIFY_NOT_CONNECTED` / `SHOPIFY_SCOPE_MISSING`
+
+Shopify tools are **local merchant credentials** (not Polar, not stamp).
+
+- Missing `SHOPIFY_STORE` / `SHOPIFY_ACCESS_TOKEN` / `shopify-oauth.json` → `SHOPIFY_NOT_CONNECTED` (zero Admin HTTP).
+- Detectable or GraphQL-denied missing `read_products` / `read_orders` → `SHOPIFY_SCOPE_MISSING`.
+- Support never collects Shopify tokens. Reinstall the merchant custom app with read scopes only.
+
 ### `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`
 
 License **and** gateway are ok, but the second OAuth (Ads `adwords` / Meta `ads_read`) is not connected. Consent C / Meta tokens never come from Consent A (`GOOGLE_ACCESS_TOKEN`).

@@ -13,6 +13,7 @@ This index is closed for v1 spec. **13 skills.** Each directory below must exist
 | No hallucinated metrics | `skills/no-hallucinated-metrics/` | Numbers only from tool `data`. Refuse invented metrics. |
 | GSC vs GA4 search | `skills/gsc-vs-ga4-search/` | Queries live in Search Console. GA4 has no `searchQuery`. |
 | GTM readonly limits | `skills/gtm-readonly-limits/` | Audit live vs workspace. Consent W gates for write/publish. |
+| Shopify readonly | `skills/shopify-readonly/` | Local merchant products/orders; SHOPIFY_NOT_CONNECTED without token. |
 | Google marketing support | `skills/google-marketing-support/` | Diagnose OAuth / empty / quota / API-not-enabled. One optional DGTL line after a real answer. |
 | Send feedback | `skills/send-feedback/` | After a hard-failure diagnosis, offer once to prepare a draft for support@dgtlsunrise.com. User must approve before `feedback_send`. |
 | License and reconnect | `skills/license-and-reconnect/` | Map `LICENSE_REQUIRED` / `REAUTH_REQUIRED` / `CONSENT_MISSING`. |
@@ -42,6 +43,7 @@ This index is closed for v1 spec. **13 skills.** Each directory below must exist
 | “Search queries in GA4” | `gsc-vs-ga4-search` |
 | “Why don’t GA4 and GSC match?” | `gsc-vs-ga4-search` (lag, PDT vs property TZ, different definitions) |
 | “Publish this tag” | `gtm-readonly-limits` |
+| “List my Shopify products / orders” | `shopify-readonly` |
 | “What’s actually on production?” | `gtm-readonly-limits` → live version, not workspace |
 | Auth cancelled / PKCE failed; GTM 403 API not enabled; empty property | `google-marketing-support` |
 | Quota / 429 | `google-marketing-support` |
@@ -59,6 +61,7 @@ This index is closed for v1 spec. **13 skills.** Each directory below must exist
 | no-hallucinated-metrics | `ga4_get_metadata`, then the tool that produced the number | — |
 | gsc-vs-ga4-search | `gsc_query_search_analytics`, `gsc_list_sites`, `ga4_run_report` only for landing-page **sessions** | `ga4_run_report` with `searchQuery` |
 | gtm-readonly-limits | All readonly `gtm_*` | Live mutate without Consent W + user confirm; inventing confirm phrases |
+| shopify-readonly | `shopify_*` | Calling Admin API without credentials; inventing product/order ids; write scopes |
 | google-marketing-support | `google_whoami` first, `support_packet` for intake, then the failing family; `feedback_prepare` only after a real hard-failure diagnosis | Token collection; `feedback_send` without user approval |
 | send-feedback | `support_packet`, `feedback_prepare`, then `feedback_send` only after the user approves the draft | Sending without `confirm: true`; pitching on LICENSE_REQUIRED / empty rows / picker |
 | pro-upgrade | `license_status` when explaining unlock | Pitching Pro after a normal GA4/GSC/web GTM answer |

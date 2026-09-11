@@ -2,7 +2,7 @@
 
 **Closed free tool count: 24.** (the original 22 plus `ga4_list_account_summaries` plus `gsc_describe_schema`)
 
-If you need a 25th **free** tool, bump a version and update `schemas/v1/catalog.json` in the same change. Do not “just add it.” Quality over dump. Small typed tools, not a mega-query kitchen sink. GBP / Ads / Meta are gated families: registered, fail closed (`GBP_NOT_ENABLED` / `LICENSE_REQUIRED`).
+If you need a 25th **free** tool, bump a version and update `schemas/v1/catalog.json` in the same change. Do not “just add it.” Quality over dump. Small typed tools, not a mega-query kitchen sink. GBP / Ads / Meta / Shopify are gated families: registered, fail closed (`GBP_NOT_ENABLED` / `LICENSE_REQUIRED` / `SHOPIFY_NOT_CONNECTED`). Shopify is **free local** (merchant token; no Polar).
 
 Machine-readable list: [`schemas/v1/catalog.json`](../schemas/v1/catalog.json). Parameter schema: [`schemas/v1/tools.schema.json`](../schemas/v1/tools.schema.json). Error envelope: [`schemas/v1/error.schema.json`](../schemas/v1/error.schema.json).
 
@@ -527,3 +527,19 @@ Identity 1 + GA4 8 + GSC 7 + GTM 8 = **24**.
 | ga4-data | `ga4_get_metadata` (optional query/kind), `ga4_run_report` |
 | gsc | `gsc_list_sites`, `gsc_describe_schema`, `gsc_get_site`, `gsc_query_search_analytics`, `gsc_inspect_url`, `gsc_list_sitemaps`, `gsc_get_sitemap` |
 | gtm | `gtm_list_accounts`, `gtm_list_containers`, `gtm_get_container`, `gtm_list_workspaces`, `gtm_list_tags`, `gtm_list_triggers`, `gtm_list_variables`, `gtm_get_live_container_version` |
+
+
+## Shopify — products/orders read (local; free; not Consent A)
+
+Merchant-held Admin API credentials on the Bot computer. **No Polar. No stamp hop.** Fail closed `SHOPIFY_NOT_CONNECTED` without `SHOPIFY_STORE` + `SHOPIFY_ACCESS_TOKEN` (or `PLUGIN_DATA/shopify-oauth.json`). Scopes: `read_products` + `read_orders` only. Admin GraphQL API version **2026-04**. Closed free Google count stays **24**.
+
+| Tool | Notes |
+| --- | --- |
+| `shopify_get_shop` | Confirm shop domain + name. |
+| `shopify_list_products` | Paginated; title/handle/status/id. |
+| `shopify_get_product` | Requires `product_id` (gid or numeric). |
+| `shopify_list_orders` | Paginated; closed `status` / `financial_status` / `fulfillment_status` / date filters. |
+| `shopify_get_order` | Requires `order_id` (gid or numeric); line items. |
+
+**Out of v1:** writes, customers dump, ShopifyQL, raw GraphQL, themes, Multipass.
+

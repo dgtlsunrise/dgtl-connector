@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { buildGoogleAuthUrl, exchangeAuthorizationCode, generatePkce } from "./pkce.js";
 import { writeStore, STORE_FILE } from "./store.js";
-import { CONSENT_A, CONSENT_C_GOOGLE } from "../google/scopes.js";
+import { CONSENT_A, CONSENT_C_GOOGLE, CONSENT_W_GTM } from "../google/scopes.js";
 import { postMetaExchange } from "../gateway/meta-exchange.js";
 import { postLicenseRedeem } from "../gateway/license-redeem.js";
 import {
@@ -146,6 +146,30 @@ export async function runAuthLogin(opts: {
  * Writes PLUGIN_DATA/google-oauth-ads.json only. Fail-closed without GOOGLE_OAUTH_ADS_CLIENT_ID.
  * Tools still need DGTL_GATEWAY_URL + license (no developer-token in this binary).
  */
+
+/**
+ * Consent W GTM write PKCE — separate client; never merges write scopes into Consent A.
+ * Writes PLUGIN_DATA/google-oauth-write.json only. Fail-closed without GOOGLE_OAUTH_WRITE_CLIENT_ID.
+ * Does NOT enable DGTL_WRITES_ENABLED — flag stays default false until Noel opts in locally.
+ */
+export async function runAuthLoginWrite(opts: {
+  clientId: string;
+  clientSecret?: string;
+  pluginDataDir: string;
+  fetchImpl: typeof fetch;
+}): Promise<number> {
+  return runGooglePkceLogin({
+    clientId: opts.clientId,
+    clientSecret: opts.clientSecret,
+    allowConsentASecretFallback: false,
+    pluginDataDir: opts.pluginDataDir,
+    fetchImpl: opts.fetchImpl,
+    scopes: CONSENT_W_GTM,
+    storeFile: STORE_FILE.w,
+    laneLabel: "Consent W (GTM writes)",
+  });
+}
+
 export async function runAuthLoginAds(opts: {
   clientId: string;
   clientSecret?: string;
@@ -358,11 +382,13 @@ USAGE
   dgtl-connector-mcp doctor           Human checklist (no secrets); also: auth doctor
   dgtl-connector-mcp auth login       Installed-app PKCE (Consent A)
   dgtl-connector-mcp auth login-ads   Consent C Ads PKCE (separate client; adwords)
+  dgtl-connector-mcp auth login-write Consent W GTM write PKCE (separate client; never Consent A)
   dgtl-connector-mcp auth login-meta --code <grant>  Redeem hosted Meta Login code
   dgtl-connector-mcp auth redeem --code|--checkout-id  Redeem Polar license → license.jwt
   dgtl-connector-mcp auth status      Show whether token sources are configured
   dgtl-connector-mcp auth logout      Delete PLUGIN_DATA/google-oauth.json (A only)
   dgtl-connector-mcp auth logout-ads  Delete PLUGIN_DATA/google-oauth-ads.json
+  dgtl-connector-mcp auth logout-write Delete PLUGIN_DATA/google-oauth-write.json
   dgtl-connector-mcp auth logout-meta Delete PLUGIN_DATA/meta-oauth.json
 
 AUTH (stdio is Manual — there is no Gmail-style Connect card)
@@ -371,10 +397,14 @@ AUTH (stdio is Manual — there is no Gmail-style Connect card)
      then run auth login. Tokens stay in PLUGIN_DATA/google-oauth.json (Consent A).
 
 Consent W (writes) and Consent C (Ads/Meta) use separate stores and env tokens:
-  GOOGLE_WRITE_ACCESS_TOKEN / google-oauth-write.json
+  GOOGLE_WRITE_ACCESS_TOKEN / google-oauth-write.json  (or auth login-write)
   GOOGLE_ADS_ACCESS_TOKEN / google-oauth-ads.json  (or auth login-ads)
   META_ACCESS_TOKEN / meta-oauth.json              (or auth login-meta --code)
   They never reuse Consent A AuthPort. Do not add adwords to Consent A.
+
+Consent W: set GOOGLE_OAUTH_WRITE_CLIENT_ID (separate Desktop client) then
+  auth login-write → PLUGIN_DATA/google-oauth-write.json with CONSENT_W_GTM scopes.
+  Never reuse GOOGLE_OAUTH_CLIENT_SECRET. Does not turn on DGTL_WRITES_ENABLED.
 
 Consent C Ads: set GOOGLE_OAUTH_ADS_CLIENT_ID (separate Desktop client) then
   auth login-ads. Fail-closed without that client id. Paid tools still need
@@ -393,6 +423,10 @@ License: after Polar checkout, run auth redeem --code <code> or
   Checkout: https://buy.polar.sh/polar_cl_yZECJ26Ln9mGTQDwBETXCskJRMTwrYAd6thMJO1zHPk
   (site: https://www.dgtlsunrise.com/). Gateway example:
   https://stamp.dgtlsunrise.com (backup: https://dgtl-stamp.noel-4ea.workers.dev)
+
+Shopify (free local read): set SHOPIFY_STORE + SHOPIFY_ACCESS_TOKEN (merchant custom
+  app; read_products + read_orders only) or PLUGIN_DATA/shopify-oauth.json.
+  Fail closed SHOPIFY_NOT_CONNECTED. No Polar / stamp. No write_* scopes in v1.
 
 Paid Google Ads / Meta tools are listed and return LICENSE_REQUIRED until a
 DGTL license JWT is present. This binary never ships a developer-token.

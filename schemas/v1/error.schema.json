@@ -42,7 +42,12 @@
         "CONSENT_W_REQUIRED",
         "ADS_MUTATE_NOT_ENABLED",
         "META_MUTATE_NOT_ENABLED",
-        "SPEND_CAP_EXCEEDED"
+        "SPEND_CAP_EXCEEDED",
+        "META_SCOPE_MISSING",
+        "NOT_IMPLEMENTED",
+        "MERCHANT_CENTER_REQUIRED",
+        "SHOPIFY_NOT_CONNECTED",
+        "SHOPIFY_SCOPE_MISSING"
       ]
     },
     "message": {

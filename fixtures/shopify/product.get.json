@@ -1,0 +1,27 @@
+{
+  "data": {
+    "product": {
+      "id": "gid://shopify/Product/1001",
+      "title": "Blue Widget",
+      "handle": "blue-widget",
+      "status": "ACTIVE",
+      "description": "A blue widget",
+      "vendor": "Fixture Co",
+      "productType": "Widgets",
+      "tags": ["featured"],
+      "createdAt": "2026-08-01T12:00:00Z",
+      "updatedAt": "2026-09-01T12:00:00Z",
+      "variants": {
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/2001",
+            "title": "Default Title",
+            "sku": "BW-1",
+            "price": "19.99",
+            "inventoryQuantity": 12
+          }
+        ]
+      }
+    }
+  }
+}

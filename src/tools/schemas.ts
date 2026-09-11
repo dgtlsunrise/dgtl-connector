@@ -861,4 +861,51 @@ export const metaCreateAdCreative = z
     }
   });
 
+/** Shopify local read — merchant credentials; no Polar. */
+export const shopifyGetShop = emptyInput;
+
+export const shopifyListProducts = z
+  .object({
+    page_size: pageSize,
+    page_token: pageToken,
+  })
+  .strict();
+
+export const shopifyGetProduct = z
+  .object({
+    product_id: z.string().min(1),
+  })
+  .strict();
+
+export const shopifyListOrders = z
+  .object({
+    page_size: pageSize,
+    page_token: pageToken,
+    status: z.enum(["any", "open", "closed", "cancelled"]).optional(),
+    financial_status: z
+      .enum([
+        "any",
+        "authorized",
+        "pending",
+        "paid",
+        "partially_paid",
+        "refunded",
+        "voided",
+        "partially_refunded",
+        "unpaid",
+      ])
+      .optional(),
+    fulfillment_status: z
+      .enum(["any", "shipped", "partial", "unshipped", "unfulfilled", "fulfilled"])
+      .optional(),
+    created_at_min: z.string().min(1).optional(),
+    created_at_max: z.string().min(1).optional(),
+  })
+  .strict();
+
+export const shopifyGetOrder = z
+  .object({
+    order_id: z.string().min(1),
+  })
+  .strict();
 

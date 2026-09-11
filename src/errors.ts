@@ -27,6 +27,8 @@ export const ERROR_CODES = [
   "SPEND_CAP_EXCEEDED",
   "NOT_IMPLEMENTED",
   "MERCHANT_CENTER_REQUIRED",
+  "SHOPIFY_NOT_CONNECTED",
+  "SHOPIFY_SCOPE_MISSING",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -93,6 +95,10 @@ export const MSG = {
     "Shopping campaign create needs a linked Merchant Center (shoppingSetting.merchantCenterId). Merchant Center is not in this product yet. No Ads mutate HTTP was sent.",
   ADS_SCOPE_MISSING:
     "Google Ads is a second OAuth grant (scope adwords). It is not part of the free GA4/GSC/GTM consent. After a valid DGTL license, set GOOGLE_ADS_ACCESS_TOKEN or run `dgtl-connector-mcp auth login-ads` (separate Consent C client). Never reuse Consent A.",
+  SHOPIFY_NOT_CONNECTED:
+    "Shopify is not connected. Set SHOPIFY_STORE + SHOPIFY_ACCESS_TOKEN (merchant custom app with read_products + read_orders only) or PLUGIN_DATA/shopify-oauth.json. Free local lane — no Polar license or stamp gateway. Support never collects Shopify tokens.",
+  SHOPIFY_SCOPE_MISSING:
+    "This Shopify token is missing a required Admin API scope (read_products and/or read_orders). Reinstall the merchant custom app with those read scopes only — no write_* in v1.",
   META_NOT_CONNECTED:
     "Meta Ads is a separate OAuth (ads_read). After a valid DGTL license + gateway, set META_ACCESS_TOKEN or run `dgtl-connector-mcp auth login-meta --code <grant>`. Support never collects Meta tokens; the app secret is never in this plugin.",
   INVALID_ARGUMENT:

@@ -1,0 +1,13 @@
+{
+  "data": {
+    "shop": {
+      "id": "gid://shopify/Shop/1",
+      "name": "Fixture Store",
+      "email": "owner@example.com",
+      "myshopifyDomain": "fixture-store.myshopify.com",
+      "primaryDomain": { "host": "fixture-store.myshopify.com", "url": "https://fixture-store.myshopify.com" },
+      "plan": { "displayName": "Basic" },
+      "currencyCode": "USD"
+    }
+  }
+}

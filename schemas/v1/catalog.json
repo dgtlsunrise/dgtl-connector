@@ -425,6 +425,32 @@
       "group": "meta-write",
       "flag": "meta.mutate.enabled",
       "fail": "META_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "shopify_get_shop",
+      "group": "shopify",
+      "fail": "SHOPIFY_NOT_CONNECTED",
+      "note": "Local merchant credentials; free; no Polar/stamp; Admin API 2026-04"
+    },
+    {
+      "name": "shopify_list_products",
+      "group": "shopify",
+      "fail": "SHOPIFY_NOT_CONNECTED"
+    },
+    {
+      "name": "shopify_get_product",
+      "group": "shopify",
+      "fail": "SHOPIFY_NOT_CONNECTED"
+    },
+    {
+      "name": "shopify_list_orders",
+      "group": "shopify",
+      "fail": "SHOPIFY_NOT_CONNECTED"
+    },
+    {
+      "name": "shopify_get_order",
+      "group": "shopify",
+      "fail": "SHOPIFY_NOT_CONNECTED"
     }
   ]
 }
