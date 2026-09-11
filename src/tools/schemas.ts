@@ -300,3 +300,43 @@ export const gadsSetCampaignStatus = z
   .strict()
   .superRefine(requireConfirmWhenLive);
 
+/** Google Ads budget mutate — amount_micros canonical; dollars helper optional. */
+export const gadsUpdateCampaignBudget = z
+  .object({
+    customer_id: str,
+    /** Digits-only budget id (preferred; mirrors campaign_id on status tool). */
+    campaign_budget_id: str,
+    /** Optional full resource name customers/{customer_id}/campaignBudgets/{id}. */
+    campaign_budget_resource_name: str,
+    /** Canonical daily budget in micros (string or number). */
+    amount_micros: z.union([z.string(), z.number()]).optional(),
+    /** Dollars helper → amount_micros via ×1_000_000. */
+    daily_budget_dollars: z.number().positive().optional(),
+    login_customer_id: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    requireConfirmWhenLive(val, ctx);
+    const hasId = Boolean(val.campaign_budget_id && String(val.campaign_budget_id).trim());
+    const hasRn = Boolean(
+      val.campaign_budget_resource_name && String(val.campaign_budget_resource_name).trim(),
+    );
+    if (!hasId && !hasRn) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "campaign_budget_id or campaign_budget_resource_name is required",
+        path: ["campaign_budget_id"],
+      });
+    }
+    const hasMicros = val.amount_micros !== undefined && val.amount_micros !== null && val.amount_micros !== "";
+    const hasDollars = val.daily_budget_dollars !== undefined;
+    if (!hasMicros && !hasDollars) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "amount_micros or daily_budget_dollars is required",
+        path: ["amount_micros"],
+      });
+    }
+  });

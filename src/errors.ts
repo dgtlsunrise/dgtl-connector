@@ -23,6 +23,7 @@ export const ERROR_CODES = [
   "CONSENT_W_REQUIRED",
   "ADS_MUTATE_NOT_ENABLED",
   "META_MUTATE_NOT_ENABLED",
+  "SPEND_CAP_EXCEEDED",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -79,6 +80,8 @@ export const MSG = {
     "Google Ads mutate tools are flagged off (DGTL_ADS_MUTATE_ENABLED=false). Reads still work with Pro + Consent C. Enable only after Google Ads API mutate-capable access and Worker ADS_MUTATE_ENABLED=true — never on Consent A.",
   META_MUTATE_NOT_ENABLED:
     "Meta Ads mutate tools are flagged off until ads_management Advanced Access and DGTL_META_MUTATE_ENABLED. Reads stay ads_read-only.",
+  SPEND_CAP_EXCEEDED:
+    "Requested daily budget exceeds the product sanity cap ($100,000 / 100_000_000_000 micros). Lower amount_micros or daily_budget_dollars. No Ads mutate HTTP was sent.",
   ADS_SCOPE_MISSING:
     "Google Ads is a second OAuth grant (scope adwords). It is not part of the free GA4/GSC/GTM consent. After a valid DGTL license, set GOOGLE_ADS_ACCESS_TOKEN or run `dgtl-connector-mcp auth login-ads` (separate Consent C client). Never reuse Consent A.",
   META_NOT_CONNECTED:

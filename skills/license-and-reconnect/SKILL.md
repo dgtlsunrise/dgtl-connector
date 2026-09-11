@@ -28,7 +28,8 @@ Do not ask for a Google Ads developer-token or a Meta app secret.
 | `GBP_NOT_ENABLED` | GBP flag off / quota 0 | Not a license issue. Consent B is separate. Do not put `business.manage` on Consent A. |
 | `WRITE_NOT_ENABLED` | `DGTL_WRITES_ENABLED` false | Write/publish stubs fail closed. Free Consent A stays readonly. See `gtm-readonly-limits`. |
 | `CONSENT_W_REQUIRED` | Writes flagged on but Consent W missing | Separate write OAuth client — never add edit/publish scopes to Consent A. |
-| `ADS_MUTATE_NOT_ENABLED` | Ads mutate flag off (`DGTL_ADS_MUTATE_ENABLED`) | Reads still work. Mutates (pause/enable) stay off until Google mutate access + Worker `ADS_MUTATE_ENABLED` + plugin flag. Never Consent A. |
+| `ADS_MUTATE_NOT_ENABLED` | Ads mutate flag off (`DGTL_ADS_MUTATE_ENABLED`) | Reads still work. Mutates (pause/enable, budget update) stay off until Google mutate access + Worker `ADS_MUTATE_ENABLED` + plugin flag. Never Consent A. |
+| `SPEND_CAP_EXCEEDED` | Budget above sanity cap | Lower `amount_micros` / `daily_budget_dollars` (cap $100k/day). No mutate hop. |
 | `ADS_SCOPE_MISSING` | License + gateway ok, Ads OAuth missing | Consent C (`adwords`) is a second grant — never reuse Consent A / `GOOGLE_ACCESS_TOKEN`. |
 | `META_NOT_CONNECTED` | License + gateway ok, Meta OAuth missing | Separate Meta login (`ads_read`). App secret is never in the plugin. |
 

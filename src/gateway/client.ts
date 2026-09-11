@@ -32,6 +32,10 @@ export type GatewayParams = {
   limit?: number;
   campaign_id?: string;
   status?: string;
+  campaign_budget_id?: string;
+  campaign_budget_resource_name?: string;
+  amount_micros?: string | number;
+  daily_budget_dollars?: number;
   ad_account_id?: string;
   object_id?: string;
   level?: "account" | "campaign" | "adset" | "ad";
@@ -124,6 +128,10 @@ function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
     "limit",
     "campaign_id",
     "status",
+    "campaign_budget_id",
+    "campaign_budget_resource_name",
+    "amount_micros",
+    "daily_budget_dollars",
     "ad_account_id",
     "object_id",
     "level",
@@ -168,6 +176,14 @@ function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
     }
     if (k === "time_increment" && (typeof v === "string" || typeof v === "number")) {
       out.time_increment = v;
+      continue;
+    }
+    if (k === "amount_micros" && (typeof v === "string" || typeof v === "number")) {
+      out.amount_micros = v;
+      continue;
+    }
+    if (k === "daily_budget_dollars" && typeof v === "number") {
+      out.daily_budget_dollars = v;
       continue;
     }
     if (typeof v === "string") {
@@ -218,6 +234,7 @@ const KNOWN_ERROR_CODES = new Set<string>([
   "CONSENT_W_REQUIRED",
   "ADS_MUTATE_NOT_ENABLED",
   "META_MUTATE_NOT_ENABLED",
+  "SPEND_CAP_EXCEEDED",
 ]);
 
 function mapGatewayResponse(tool: string, body: Record<string, unknown>, httpStatus: number): Envelope {

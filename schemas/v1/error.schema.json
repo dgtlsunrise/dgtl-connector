@@ -41,7 +41,8 @@
         "WRITE_NOT_ENABLED",
         "CONSENT_W_REQUIRED",
         "ADS_MUTATE_NOT_ENABLED",
-        "META_MUTATE_NOT_ENABLED"
+        "META_MUTATE_NOT_ENABLED",
+        "SPEND_CAP_EXCEEDED"
       ]
     },
     "message": {

@@ -241,3 +241,203 @@ describe("Slice 0/1 gads_set_campaign_status (fail closed)", () => {
     assert.ok(!(CONSENT_A as readonly string[]).includes(SCOPE.adwords));
   });
 });
+
+describe("Slice 3 gads_update_campaign_budget (fail closed)", () => {
+  let restore: () => void;
+  before(() => {
+    restore = installNetworkGuard();
+  });
+  after(() => restore());
+
+  it("tool registered with destructiveHint; schema dry_run default true", () => {
+    const t = TOOLS.find((x) => x.name === "gads_update_campaign_budget");
+    assert.ok(t);
+    assert.equal(t!.annotations.destructiveHint, true);
+    assert.equal(t!.annotations.readOnlyHint, false);
+    const parsed = S.gadsUpdateCampaignBudget.parse({
+      customer_id: "1234567890",
+      campaign_budget_id: "555",
+      amount_micros: "10000000",
+    });
+    assert.equal(parsed.dry_run, true);
+    const dollars = S.gadsUpdateCampaignBudget.parse({
+      customer_id: "1234567890",
+      campaign_budget_id: "555",
+      daily_budget_dollars: 50,
+    });
+    assert.equal(dollars.daily_budget_dollars, 50);
+    const liveMissing = S.gadsUpdateCampaignBudget.safeParse({
+      customer_id: "1234567890",
+      campaign_budget_id: "555",
+      amount_micros: "1000000",
+      dry_run: false,
+    });
+    assert.equal(liveMissing.success, false);
+    const missingAmount = S.gadsUpdateCampaignBudget.safeParse({
+      customer_id: "1234567890",
+      campaign_budget_id: "555",
+    });
+    assert.equal(missingAmount.success, false);
+  });
+
+  it("flag off → ADS_MUTATE_NOT_ENABLED with zero gateway mutate HTTP", async () => {
+    let gatewayPosts = 0;
+    const ctx = makeCtx({}, adsLicenseEnv({ DGTL_ADS_MUTATE_ENABLED: "false" }));
+    const orig = ctx.fetchImpl;
+    ctx.fetchImpl = (async (input, init) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/v1/gads/")) gatewayPosts += 1;
+      return orig(input, init);
+    }) as typeof fetch;
+
+    const env = await dispatch(ctx, "gads_update_campaign_budget", {
+      customer_id: "1234567890",
+      campaign_budget_id: "555",
+      amount_micros: "10000000",
+      dry_run: false,
+      confirm_phrase: "set budget on customer 1234567890",
+    });
+    assert.equal(env.ok, false);
+    assert.equal(env.error_code, "ADS_MUTATE_NOT_ENABLED");
+    assert.equal(gatewayPosts, 0);
+  });
+
+  it("flag on + dry_run proposes with zero mutate hop", async () => {
+    let hops = 0;
+    const ctx = makeCtx(
+      {},
+      adsLicenseEnv({ DGTL_ADS_MUTATE_ENABLED: "true", DGTL_GATEWAY_URL: "https://stamp.test" }),
+    );
+    ctx.fetchImpl = (async (input) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("googleAds.mutate") || url.includes("/v1/gads/gads_update_campaign_budget")) {
+        hops += 1;
+      }
+      if (url.includes("/v1/health")) {
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      throw new Error(`NETWORK_FORBIDDEN ${url}`);
+    }) as typeof fetch;
+
+    const env = await dispatch(ctx, "gads_update_campaign_budget", {
+      customer_id: "123-456-7890",
+      campaign_budget_id: "555",
+      daily_budget_dollars: 40,
+    });
+    assert.equal(env.ok, true);
+    const data = env.data as {
+      dry_run: boolean;
+      proposed: { customer_id: string; amount_micros: string; daily_budget_dollars: number };
+    };
+    assert.equal(data.dry_run, true);
+    assert.equal(data.proposed.customer_id, "1234567890");
+    assert.equal(data.proposed.amount_micros, "40000000");
+    assert.equal(data.proposed.daily_budget_dollars, 40);
+    assert.equal(hops, 0);
+  });
+
+  it("flag on + over spend cap → SPEND_CAP_EXCEEDED, no hop", async () => {
+    let hops = 0;
+    const ctx = makeCtx({}, adsLicenseEnv({ DGTL_ADS_MUTATE_ENABLED: "true" }));
+    ctx.fetchImpl = (async (input) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/v1/gads/")) hops += 1;
+      throw new Error(`NETWORK_FORBIDDEN ${url}`);
+    }) as typeof fetch;
+    const env = await dispatch(ctx, "gads_update_campaign_budget", {
+      customer_id: "1234567890",
+      campaign_budget_id: "555",
+      amount_micros: "999999999999999",
+      dry_run: false,
+      confirm_phrase: "set budget customer 1234567890",
+    });
+    assert.equal(env.ok, false);
+    assert.equal(env.error_code, "SPEND_CAP_EXCEEDED");
+    assert.equal(hops, 0);
+  });
+
+  it("flag on + live without customer_id in confirm → INVALID_ARGUMENT, no hop", async () => {
+    let hops = 0;
+    const ctx = makeCtx({}, adsLicenseEnv({ DGTL_ADS_MUTATE_ENABLED: "true" }));
+    ctx.fetchImpl = (async (input) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/v1/gads/")) hops += 1;
+      throw new Error(`NETWORK_FORBIDDEN ${url}`);
+    }) as typeof fetch;
+    const env = await dispatch(ctx, "gads_update_campaign_budget", {
+      customer_id: "1234567890",
+      campaign_budget_id: "555",
+      amount_micros: "10000000",
+      dry_run: false,
+      confirm_phrase: "please update the budget",
+    });
+    assert.equal(env.ok, false);
+    assert.equal(env.error_code, "INVALID_ARGUMENT");
+    assert.equal(hops, 0);
+  });
+
+  it("flag on + live + confirm hops gateway with closed budget params", async () => {
+    let seenAuth = "";
+    let seenBody = "";
+    let seenUrl = "";
+    const ctx = makeCtx({}, adsLicenseEnv({ DGTL_ADS_MUTATE_ENABLED: "true" }));
+    ctx.fetchImpl = (async (input, init) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/v1/health")) {
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      if (url.includes("/v1/gads/gads_update_campaign_budget")) {
+        seenUrl = url;
+        const headers = init?.headers as Record<string, string>;
+        const h = Object.fromEntries(
+          Object.entries(headers || {}).map(([k, v]) => [k.toLowerCase(), v]),
+        );
+        seenAuth = h["x-dgtl-user-access-token"] || "";
+        seenBody = typeof init?.body === "string" ? init.body : "";
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            tool: "gads_update_campaign_budget",
+            data: { mutateOperationResponses: [{ ok: true }] },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      throw new Error(`NETWORK_FORBIDDEN ${url}`);
+    }) as typeof fetch;
+
+    const env = await dispatch(ctx, "gads_update_campaign_budget", {
+      customer_id: "1234567890",
+      campaign_budget_resource_name: "customers/1234567890/campaignBudgets/555",
+      amount_micros: "25000000",
+      dry_run: false,
+      confirm_phrase: "set budget on customer 1234567890 to 25",
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    assert.ok(seenUrl.includes("/v1/gads/gads_update_campaign_budget"));
+    assert.equal(seenAuth, "consent-c-ads-token");
+    const body = JSON.parse(seenBody) as { tool: string; params: Record<string, string> };
+    assert.equal(body.tool, "gads_update_campaign_budget");
+    assert.equal(body.params.customer_id, "1234567890");
+    assert.equal(body.params.campaign_budget_id, "555");
+    assert.equal(body.params.amount_micros, "25000000");
+    assert.ok(!("mutateOperations" in body.params));
+    assert.ok(!("campaignBudgetOperation" in body.params));
+    assert.notEqual(seenAuth, TEST_TOKEN);
+  });
+
+  it("catalog gated_tools lists budget tool ADS_MUTATE_NOT_ENABLED", () => {
+    const catalog = JSON.parse(readFileSync(join(ROOT, "schemas/v1/catalog.json"), "utf8"));
+    const g = catalog.gated_tools.find(
+      (x: { name: string }) => x.name === "gads_update_campaign_budget",
+    );
+    assert.ok(g);
+    assert.equal(g.fail, "ADS_MUTATE_NOT_ENABLED");
+  });
+});
