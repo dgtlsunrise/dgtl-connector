@@ -46,6 +46,13 @@ export type GatewayParams = {
   fields?: string[];
   time_increment?: string | number;
   creative_id?: string;
+  adset_id?: string;
+  ad_id?: string;
+  /** Optional Meta rename (Slice 5). */
+  name?: string;
+  /** Meta ad set budget in cents (not micros). */
+  daily_budget?: string | number;
+  lifetime_budget?: string | number;
 };
 
 export type GatewayRequest = {
@@ -142,6 +149,11 @@ function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
     "fields",
     "time_increment",
     "creative_id",
+    "adset_id",
+    "ad_id",
+    "name",
+    "daily_budget",
+    "lifetime_budget",
   ]);
   for (const [k, v] of Object.entries(params)) {
     if (!allow.has(k)) continue;
@@ -184,6 +196,10 @@ function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
     }
     if (k === "daily_budget_dollars" && typeof v === "number") {
       out.daily_budget_dollars = v;
+      continue;
+    }
+    if ((k === "daily_budget" || k === "lifetime_budget") && (typeof v === "string" || typeof v === "number")) {
+      (out as Record<string, unknown>)[k] = v;
       continue;
     }
     if (typeof v === "string") {

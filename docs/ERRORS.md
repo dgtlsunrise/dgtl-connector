@@ -217,10 +217,14 @@ Google Ads mutate tools flagged off (`DGTL_ADS_MUTATE_ENABLED=false`).
 
 Meta mutate tools flagged off until `ads_management` Advanced Access + `DGTL_META_MUTATE_ENABLED`.
 
+### `META_SCOPE_MISSING`
+
+Meta token lacks `ads_management` (or Graph denied the mutate). Re-authorize after Advanced Access. Do not silently retry.
+
 ### `SPEND_CAP_EXCEEDED`
 
-Requested daily budget exceeds the product sanity cap ($100,000 / `100_000_000_000` micros). No Ads mutate HTTP was sent.
+Requested budget exceeds the product sanity cap ($100,000/day equivalent). Google Ads uses micros; Meta uses **cents**. No mutate HTTP was sent.
 
 **User-visible:**  
-"Requested daily budget exceeds the product sanity cap ($100,000 / 100_000_000_000 micros). Lower amount_micros or daily_budget_dollars. No Ads mutate HTTP was sent."
+"Requested budget exceeds the product sanity cap ($100,000/day equivalent). Google Ads: lower amount_micros / daily_budget_dollars (micros). Meta: lower daily_budget / lifetime_budget (cents, not micros). No mutate HTTP was sent."
 

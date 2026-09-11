@@ -84,7 +84,7 @@ export const MSG = {
   META_SCOPE_MISSING:
     "This Meta login did not grant ads_management (or Graph denied the mutate). Re-authorize after ads_management Advanced Access. Do not silently retry. ads_read reads may still work.",
   SPEND_CAP_EXCEEDED:
-    "Requested daily budget exceeds the product sanity cap ($100,000 / 100_000_000_000 micros). Lower amount_micros or daily_budget_dollars. No Ads mutate HTTP was sent.",
+    "Requested budget exceeds the product sanity cap ($100,000/day equivalent). Google Ads: lower amount_micros / daily_budget_dollars (micros). Meta: lower daily_budget / lifetime_budget (cents, not micros). No mutate HTTP was sent.",
   ADS_SCOPE_MISSING:
     "Google Ads is a second OAuth grant (scope adwords). It is not part of the free GA4/GSC/GTM consent. After a valid DGTL license, set GOOGLE_ADS_ACCESS_TOKEN or run `dgtl-connector-mcp auth login-ads` (separate Consent C client). Never reuse Consent A.",
   META_NOT_CONNECTED:

@@ -342,38 +342,97 @@ export const gadsUpdateCampaignBudget = z
   });
 
 /** Meta mutate — dry_run default true; live needs confirm_phrase with act_{ad_account_id} + object id. */
+function requireMetaUpdateFieldsCampaign(
+  val: { dry_run: boolean; confirm_phrase?: string; status?: string; name?: string },
+  ctx: z.RefinementCtx,
+): void {
+  requireConfirmWhenLive(val, ctx);
+  if (!val.status && !(val.name && String(val.name).trim())) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Provide at least one of: status, name",
+      path: ["status"],
+    });
+  }
+}
+
+function requireMetaUpdateFieldsAdset(
+  val: {
+    dry_run: boolean;
+    confirm_phrase?: string;
+    status?: string;
+    name?: string;
+    daily_budget?: string | number;
+    lifetime_budget?: string | number;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  requireConfirmWhenLive(val, ctx);
+  const hasStatus = Boolean(val.status);
+  const hasName = Boolean(val.name && String(val.name).trim());
+  const hasDaily = val.daily_budget !== undefined && val.daily_budget !== null && val.daily_budget !== "";
+  const hasLife =
+    val.lifetime_budget !== undefined && val.lifetime_budget !== null && val.lifetime_budget !== "";
+  if (hasDaily && hasLife) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Provide daily_budget OR lifetime_budget (not both). Units: integer cents.",
+      path: ["daily_budget"],
+    });
+  }
+  if (!hasStatus && !hasName && !hasDaily && !hasLife) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Provide at least one of: status, name, daily_budget, lifetime_budget",
+      path: ["status"],
+    });
+  }
+}
+
 export const metaUpdateCampaign = z
   .object({
     ad_account_id: str,
     campaign_id: str,
-    status: z.enum(["ACTIVE", "PAUSED"]),
+    status: z.enum(["ACTIVE", "PAUSED"]).optional(),
+    /** Optional rename (closed allowlist; no creative fields). */
+    name: str,
     /** Default true — no Meta Graph mutate HTTP unless explicitly false. */
     dry_run: z.boolean().default(true),
     /** Required when dry_run=false; must include act_{ad_account_id} and campaign_id (checked in handler). */
     confirm_phrase: z.string().optional(),
   })
   .strict()
-  .superRefine(requireConfirmWhenLive);
+  .superRefine(requireMetaUpdateFieldsCampaign);
 
 export const metaUpdateAdset = z
   .object({
     ad_account_id: str,
     adset_id: str,
-    status: z.enum(["ACTIVE", "PAUSED"]),
+    status: z.enum(["ACTIVE", "PAUSED"]).optional(),
+    name: str,
+    /**
+     * Primary budget field. Meta Marketing API integer in **cents**
+     * (account currency smallest unit). Not Google Ads micros. XOR lifetime_budget.
+     */
+    daily_budget: z.union([z.string(), z.number().int().positive()]).optional(),
+    /** Alternative to daily_budget — same cents units. Do not send both. */
+    lifetime_budget: z.union([z.string(), z.number().int().positive()]).optional(),
     dry_run: z.boolean().default(true),
     confirm_phrase: z.string().optional(),
   })
   .strict()
-  .superRefine(requireConfirmWhenLive);
+  .superRefine(requireMetaUpdateFieldsAdset);
 
 export const metaUpdateAd = z
   .object({
     ad_account_id: str,
     ad_id: str,
-    status: z.enum(["ACTIVE", "PAUSED"]),
+    status: z.enum(["ACTIVE", "PAUSED"]).optional(),
+    /** Optional rename — creative fields remain out of allowlist. */
+    name: str,
     dry_run: z.boolean().default(true),
     confirm_phrase: z.string().optional(),
   })
   .strict()
-  .superRefine(requireConfirmWhenLive);
+  .superRefine(requireMetaUpdateFieldsCampaign);
 

@@ -1,6 +1,6 @@
 ---
 name: license-and-reconnect
-description: Map LICENSE_REQUIRED, GATEWAY_UNAVAILABLE, REAUTH_REQUIRED, CONSENT_MISSING, GBP_NOT_ENABLED, WRITE_NOT_ENABLED, CONSENT_W_REQUIRED, ADS_MUTATE_NOT_ENABLED, ADS_SCOPE_MISSING, META_NOT_CONNECTED. Use when a paid tool failed, Google access expired, a scope was unchecked, writes are gated, gateway is down, or the user asks about Ads/Meta unlock. Free GA4/GSC/GTM keep working without a license.
+description: Map LICENSE_REQUIRED, GATEWAY_UNAVAILABLE, REAUTH_REQUIRED, CONSENT_MISSING, GBP_NOT_ENABLED, WRITE_NOT_ENABLED, CONSENT_W_REQUIRED, ADS_MUTATE_NOT_ENABLED, META_MUTATE_NOT_ENABLED, META_SCOPE_MISSING, SPEND_CAP_EXCEEDED, ADS_SCOPE_MISSING, META_NOT_CONNECTED. Use when a paid tool failed, Google access expired, a scope was unchecked, writes are gated, gateway is down, or the user asks about Ads/Meta unlock. Free GA4/GSC/GTM keep working without a license.
 ---
 
 # License and reconnect
@@ -29,7 +29,9 @@ Do not ask for a Google Ads developer-token or a Meta app secret.
 | `WRITE_NOT_ENABLED` | `DGTL_WRITES_ENABLED` false | Write/publish stubs fail closed. Free Consent A stays readonly. See `gtm-readonly-limits`. |
 | `CONSENT_W_REQUIRED` | Writes flagged on but Consent W missing | Separate write OAuth client — never add edit/publish scopes to Consent A. |
 | `ADS_MUTATE_NOT_ENABLED` | Ads mutate flag off (`DGTL_ADS_MUTATE_ENABLED`) | Reads still work. Mutates (pause/enable, budget update) stay off until Google mutate access + Worker `ADS_MUTATE_ENABLED` + plugin flag. Never Consent A. |
-| `SPEND_CAP_EXCEEDED` | Budget above sanity cap | Lower `amount_micros` / `daily_budget_dollars` (cap $100k/day). No mutate hop. |
+| `META_MUTATE_NOT_ENABLED` | Meta mutate flag off (`DGTL_META_MUTATE_ENABLED`) | Reads stay `ads_read`. Mutates (status/name/adset budget) stay off until `ads_management` Advanced Access + Worker `META_MUTATE_ENABLED` + plugin flag. Closed fields only — do not invent objective/creative. |
+| `META_SCOPE_MISSING` | Token lacks `ads_management` (or Graph denied mutate) | Re-authorize Meta after Advanced Access. Do not silently retry. Reads may still work. |
+| `SPEND_CAP_EXCEEDED` | Budget above sanity cap | Google: lower `amount_micros` / `daily_budget_dollars` (micros). Meta: lower `daily_budget` / `lifetime_budget` (**cents**, not micros). Cap $100k/day equivalent. No mutate hop. |
 | `ADS_SCOPE_MISSING` | License + gateway ok, Ads OAuth missing | Consent C (`adwords`) is a second grant — never reuse Consent A / `GOOGLE_ACCESS_TOKEN`. |
 | `META_NOT_CONNECTED` | License + gateway ok, Meta OAuth missing | Separate Meta login (`ads_read`). App secret is never in the plugin. |
 
