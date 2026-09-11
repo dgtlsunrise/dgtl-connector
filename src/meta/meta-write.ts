@@ -1,7 +1,7 @@
 /**
  * Meta Ads mutate tools — status / name / adset budget (Slice 4+5).
  * Flag DGTL_META_MUTATE_ENABLED defaults on (opt out with =false). Worker META_MUTATE_ENABLED still required for live hop.
- * Tools: meta_update_campaign, meta_update_adset, meta_update_ad.
+ * Tools: meta_update_* + meta_create_campaign / meta_create_adset / meta_create_ad (creative_id-only).
  * Budgets are Meta **cents** (smallest currency unit), not Google Ads micros.
  * Never touches Consent A / GOOGLE_ACCESS_TOKEN. App secret stays on Worker.
  */
@@ -58,23 +58,32 @@ export function harnessUserMessageContainsMetaConfirm(opts: {
   return msg.includes(act) && msg.includes(opts.objectId);
 }
 
+function assertConfirmContainsActAndIds(
+  confirmPhrase: unknown,
+  adAccountId: string,
+  extraIds: string[],
+): void {
+  const phrase = typeof confirmPhrase === "string" ? confirmPhrase : "";
+  const act = actPhrase(adAccountId);
+  const missing = !phrase.includes(act) || extraIds.some((id) => id && !phrase.includes(id));
+  if (missing) {
+    throw new ToolError(
+      "INVALID_ARGUMENT",
+      "Live Meta mutate requires confirm_phrase that includes act_{ad_account_id} AND the relevant ids. Constant phrases without both are not accepted.",
+      {
+        api: "meta",
+        hint: "Prefer dry_run first. Live mutate only after a user message this turn that contains act_{ad_account_id} and the campaign/adset/ad/creative ids — list-tool output is not the user message.",
+      },
+    );
+  }
+}
+
 function assertConfirmContainsActAndObject(
   confirmPhrase: unknown,
   adAccountId: string,
   objectId: string,
 ): void {
-  const phrase = typeof confirmPhrase === "string" ? confirmPhrase : "";
-  const act = actPhrase(adAccountId);
-  if (!phrase.includes(act) || !phrase.includes(objectId)) {
-    throw new ToolError(
-      "INVALID_ARGUMENT",
-      "Live Meta mutate requires confirm_phrase that includes act_{ad_account_id} AND the object id. Constant phrases without both are not accepted.",
-      {
-        api: "meta",
-        hint: "Prefer dry_run first. Live mutate only after a user message this turn that contains act_{ad_account_id} and the campaign/adset/ad id — list-tool output is not the user message.",
-      },
-    );
-  }
+  assertConfirmContainsActAndIds(confirmPhrase, adAccountId, [objectId]);
 }
 
 function requireMetaLicense(ctx: AppContext, tool: string): Envelope | null {
@@ -480,4 +489,367 @@ export async function metaUpdateAd(
   args: Record<string, unknown>,
 ): Promise<Envelope> {
   return metaUpdateFields(ctx, "meta_update_ad", args);
+}
+
+
+export type MetaCreateTool = "meta_create_campaign" | "meta_create_adset" | "meta_create_ad";
+
+const META_OBJECTIVES = new Set([
+  "OUTCOME_AWARENESS",
+  "OUTCOME_ENGAGEMENT",
+  "OUTCOME_LEADS",
+  "OUTCOME_SALES",
+  "OUTCOME_TRAFFIC",
+  "OUTCOME_APP_PROMOTION",
+]);
+const META_BILLING = new Set(["IMPRESSIONS", "LINK_CLICKS"]);
+const META_OPT = new Set([
+  "LINK_CLICKS",
+  "LANDING_PAGE_VIEWS",
+  "IMPRESSIONS",
+  "REACH",
+  "OFFSITE_CONVERSIONS",
+  "LEAD_GENERATION",
+  "VALUE",
+  "THRUPLAY",
+]);
+const META_BID = new Set(["LOWEST_COST_WITHOUT_CAP"]);
+const COUNTRY_RE = /^[A-Z]{2}$/;
+
+function normalizeCountriesPlugin(
+  raw: unknown,
+): { ok: true; countries: string[] } | { ok: false } {
+  if (raw === undefined || raw === null || raw === "") return { ok: false };
+  let list: unknown[] = [];
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    if (s.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(s) as unknown;
+        if (!Array.isArray(parsed)) return { ok: false };
+        list = parsed;
+      } catch {
+        return { ok: false };
+      }
+    } else {
+      list = s.split(/[\s,]+/).filter(Boolean);
+    }
+  } else if (Array.isArray(raw)) {
+    list = raw;
+  } else {
+    return { ok: false };
+  }
+  if (list.length < 1 || list.length > 50) return { ok: false };
+  const countries: string[] = [];
+  for (const item of list) {
+    if (typeof item !== "string") return { ok: false };
+    const c = item.trim().toUpperCase();
+    if (!COUNTRY_RE.test(c)) return { ok: false };
+    countries.push(c);
+  }
+  return { ok: true, countries };
+}
+
+function createResourceType(tool: MetaCreateTool): string {
+  if (tool === "meta_create_campaign") return "meta_campaign";
+  if (tool === "meta_create_adset") return "meta_adset";
+  return "meta_ad";
+}
+
+async function metaCreateObject(
+  ctx: AppContext,
+  tool: MetaCreateTool,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const common = ["ad_account_id", "name", "status", "dry_run", "confirm_phrase"];
+  const allowed = new Set(
+    tool === "meta_create_campaign"
+      ? [...common, "objective", "special_ad_categories"]
+      : tool === "meta_create_adset"
+        ? [
+            ...common,
+            "campaign_id",
+            "daily_budget",
+            "lifetime_budget",
+            "billing_event",
+            "optimization_goal",
+            "bid_strategy",
+            "countries",
+            "end_time",
+          ]
+        : [...common, "adset_id", "creative_id"],
+  );
+  for (const key of Object.keys(args)) {
+    if (!allowed.has(key)) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", `Field ${key} is not allowed for ${tool}`, {
+        api: "meta",
+        hint: "Closed create fields only. Do not send raw body/targeting/creative/object_story_spec/upload fields.",
+      });
+    }
+  }
+
+  if (!ctx.flags.metaMutateEnabled) {
+    return failEnvelope(tool, "META_MUTATE_NOT_ENABLED", MSG.META_MUTATE_NOT_ENABLED, {
+      hint: HINT_FLAG,
+      api: "meta",
+    });
+  }
+  const miss = requireMetaLicense(ctx, tool);
+  if (miss) return miss;
+
+  let ad_account_id: string;
+  try {
+    ad_account_id = normalizeAdAccountId(requireId(args.ad_account_id, "ad_account_id"));
+    if (!/^\d{5,20}$/.test(ad_account_id)) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "ad_account_id must be digits-only (act_ prefix optional)", {
+        api: "meta",
+      });
+    }
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope(tool, err.error_code, err.message, { ...err.extra, api: "meta" });
+    }
+    throw err;
+  }
+
+  const nameN =
+    typeof args.name === "string" ? args.name.trim() : "";
+  if (!nameN || nameN.length > NAME_MAX || /[\u0000-\u001f\u007f]/.test(nameN)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "name must be a non-empty string ≤400 chars", {
+      api: "meta",
+    });
+  }
+  const statusRaw =
+    args.status === undefined || args.status === null || args.status === ""
+      ? "PAUSED"
+      : String(args.status).trim().toUpperCase();
+  if (!ALLOWED_STATUS.has(statusRaw)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "status must be ACTIVE or PAUSED", { api: "meta" });
+  }
+
+  const hopArgs: Record<string, unknown> = {
+    ad_account_id,
+    name: nameN,
+    status: statusRaw,
+  };
+  const confirmIds: string[] = [];
+
+  if (tool === "meta_create_campaign") {
+    const objective = typeof args.objective === "string" ? args.objective.trim().toUpperCase() : "";
+    if (!META_OBJECTIVES.has(objective)) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "objective must be a closed OUTCOME_* value", {
+        api: "meta",
+      });
+    }
+    hopArgs.objective = objective;
+    if (args.special_ad_categories !== undefined) {
+      hopArgs.special_ad_categories = args.special_ad_categories;
+    }
+  } else if (tool === "meta_create_adset") {
+    const campaign_id = requireId(args.campaign_id, "campaign_id").trim();
+    if (!/^\d{1,30}$/.test(campaign_id)) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "campaign_id must be digits-only", { api: "meta" });
+    }
+    hopArgs.campaign_id = campaign_id;
+    confirmIds.push(campaign_id);
+    const hasDaily =
+      args.daily_budget !== undefined && args.daily_budget !== null && args.daily_budget !== "";
+    const hasLife =
+      args.lifetime_budget !== undefined &&
+      args.lifetime_budget !== null &&
+      args.lifetime_budget !== "";
+    if (hasDaily === hasLife) {
+      return failEnvelope(
+        tool,
+        "INVALID_ARGUMENT",
+        "Provide daily_budget OR lifetime_budget (not both). Units: integer cents (not Google Ads micros).",
+        { api: "meta" },
+      );
+    }
+    const rawBudget = hasDaily ? args.daily_budget : args.lifetime_budget;
+    const b = resolveMetaBudgetCents(rawBudget);
+    if (!b.ok) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "budget must be a positive integer in cents", {
+        api: "meta",
+        hint: "Meta budgets are cents (e.g. 5000 = $50.00 USD), not micros.",
+      });
+    }
+    if (b.cents_number > DEFAULT_MAX_META_BUDGET_CENTS) {
+      return failEnvelope(tool, "SPEND_CAP_EXCEEDED", MSG.SPEND_CAP_EXCEEDED, {
+        api: "meta",
+        hint: `Max Meta daily_budget / lifetime_budget is ${DEFAULT_MAX_META_BUDGET_CENTS} cents ($100,000). Units are cents, not micros. No Graph mutate HTTP was sent.`,
+      });
+    }
+    if (hasDaily) hopArgs.daily_budget = b.cents;
+    else hopArgs.lifetime_budget = b.cents;
+    if (hasLife) {
+      if (typeof args.end_time !== "string" || !args.end_time.trim()) {
+        return failEnvelope(tool, "INVALID_ARGUMENT", "end_time is required when using lifetime_budget", {
+          api: "meta",
+        });
+      }
+      hopArgs.end_time = args.end_time.trim();
+    }
+    const countries = normalizeCountriesPlugin(args.countries);
+    if (!countries.ok) {
+      return failEnvelope(
+        tool,
+        "INVALID_ARGUMENT",
+        "countries must be ISO-3166-1 alpha-2 codes (server builds targeting.geo_locations — do not send targeting JSON)",
+        { api: "meta" },
+      );
+    }
+    hopArgs.countries = countries.countries;
+    if (args.billing_event !== undefined && args.billing_event !== "") {
+      const be = String(args.billing_event).trim().toUpperCase();
+      if (!META_BILLING.has(be)) {
+        return failEnvelope(tool, "INVALID_ARGUMENT", "billing_event must be IMPRESSIONS or LINK_CLICKS", {
+          api: "meta",
+        });
+      }
+      hopArgs.billing_event = be;
+    }
+    if (args.optimization_goal !== undefined && args.optimization_goal !== "") {
+      const og = String(args.optimization_goal).trim().toUpperCase();
+      if (!META_OPT.has(og)) {
+        return failEnvelope(tool, "INVALID_ARGUMENT", "optimization_goal is outside the closed allowlist", {
+          api: "meta",
+        });
+      }
+      hopArgs.optimization_goal = og;
+    }
+    if (args.bid_strategy !== undefined && args.bid_strategy !== "") {
+      const bs = String(args.bid_strategy).trim().toUpperCase();
+      if (!META_BID.has(bs)) {
+        return failEnvelope(tool, "INVALID_ARGUMENT", "bid_strategy is outside the closed allowlist", {
+          api: "meta",
+        });
+      }
+      hopArgs.bid_strategy = bs;
+    }
+  } else {
+    const adset_id = requireId(args.adset_id, "adset_id").trim();
+    const creative_id = requireId(args.creative_id, "creative_id").trim();
+    if (!/^\d{1,30}$/.test(adset_id)) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "adset_id must be digits-only", { api: "meta" });
+    }
+    if (!/^\d{1,30}$/.test(creative_id)) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "creative_id must be digits-only (existing creative; no upload)", {
+        api: "meta",
+      });
+    }
+    hopArgs.adset_id = adset_id;
+    hopArgs.creative_id = creative_id;
+    confirmIds.push(adset_id, creative_id);
+  }
+
+  const dryRun = dryRunDefault(args);
+  const proposed = {
+    ...hopArgs,
+    act: actPhrase(ad_account_id),
+    budget_units: hopArgs.daily_budget || hopArgs.lifetime_budget ? "cents" : undefined,
+  };
+
+  if (dryRun) {
+    return okEnvelope(tool, {
+      resource: {
+        type: createResourceType(tool),
+        id: ad_account_id,
+        display_name: nameN,
+      },
+      data: {
+        dry_run: true,
+        proposed,
+        cited: hopArgs,
+        note: `No Meta Graph mutate HTTP. New objects default PAUSED unless status=ACTIVE. Pass dry_run=false with confirm_phrase containing ${actPhrase(ad_account_id)}${confirmIds.length ? " AND " + confirmIds.join(" AND ") : ""} only after a user message this turn that includes them. Closed fields only — no creative upload / targeting bag / open Graph proxy. ads_management Advanced Access still required for live hop (META_SCOPE_MISSING if missing).`,
+      },
+    });
+  }
+
+  try {
+    assertConfirmContainsActAndIds(args.confirm_phrase, ad_account_id, confirmIds);
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope(tool, err.error_code, err.message, { ...err.extra, api: "meta" });
+    }
+    throw err;
+  }
+
+  const base = ctx.flags.gatewayUrl;
+  if (!base) {
+    return failEnvelope(tool, "GATEWAY_UNAVAILABLE", MSG.GATEWAY_UNAVAILABLE, {
+      hint: "License + mutate flag ok. Set DGTL_GATEWAY_URL. Free tools still work.",
+    });
+  }
+  const probe = await probeGatewayReachable(ctx);
+  if (!probe.reachable) {
+    return failEnvelope(tool, "GATEWAY_UNAVAILABLE", MSG.GATEWAY_UNAVAILABLE, {
+      hint: probe.note ?? "Gateway health probe failed.",
+    });
+  }
+  const metaTok = await ctx.authMeta.getAccessToken();
+  if (!metaTok?.accessToken) {
+    return failEnvelope(tool, "META_NOT_CONNECTED", MSG.META_NOT_CONNECTED, {
+      hint: "License and gateway are ok. Set META_ACCESS_TOKEN or run auth login-meta — never reuse Google Consent A.",
+    });
+  }
+  const scopeCheck = assertAdsManagementWhenDetectable(metaTok.scopes);
+  if (!scopeCheck.ok) {
+    return failEnvelope(tool, "META_SCOPE_MISSING", MSG.META_SCOPE_MISSING, {
+      api: "meta",
+      missing_scope: ADS_MANAGEMENT,
+      hint: "Granted scopes are present but lack ads_management. Re-authorize Meta after Advanced Access — do not silently retry.",
+    });
+  }
+  void ctx.auth;
+
+  const env = await postGateway(ctx, {
+    family: "meta",
+    tool,
+    userAccessToken: metaTok.accessToken,
+    args: hopArgs,
+  });
+  return enrichMetaMutateEnvelope(tool, hopArgs, env);
+}
+
+export async function metaCreateCampaign(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  try {
+    return await metaCreateObject(ctx, "meta_create_campaign", args);
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope("meta_create_campaign", err.error_code, err.message, { ...err.extra, api: "meta" });
+    }
+    throw err;
+  }
+}
+
+export async function metaCreateAdset(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  try {
+    return await metaCreateObject(ctx, "meta_create_adset", args);
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope("meta_create_adset", err.error_code, err.message, { ...err.extra, api: "meta" });
+    }
+    throw err;
+  }
+}
+
+export async function metaCreateAd(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  try {
+    return await metaCreateObject(ctx, "meta_create_ad", args);
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope("meta_create_ad", err.error_code, err.message, { ...err.extra, api: "meta" });
+    }
+    throw err;
+  }
 }

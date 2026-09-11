@@ -634,3 +634,113 @@ export const metaUpdateAd = z
   .strict()
   .superRefine(requireMetaUpdateFieldsCampaign);
 
+const META_OBJECTIVES = [
+  "OUTCOME_AWARENESS",
+  "OUTCOME_ENGAGEMENT",
+  "OUTCOME_LEADS",
+  "OUTCOME_SALES",
+  "OUTCOME_TRAFFIC",
+  "OUTCOME_APP_PROMOTION",
+] as const;
+
+const META_SPECIAL_AD_CATS = [
+  "NONE",
+  "EMPLOYMENT",
+  "HOUSING",
+  "CREDIT",
+  "ISSUES_ELECTIONS_POLITICS",
+] as const;
+
+const META_BILLING = ["IMPRESSIONS", "LINK_CLICKS"] as const;
+const META_OPT_GOALS = [
+  "LINK_CLICKS",
+  "LANDING_PAGE_VIEWS",
+  "IMPRESSIONS",
+  "REACH",
+  "OFFSITE_CONVERSIONS",
+  "LEAD_GENERATION",
+  "VALUE",
+  "THRUPLAY",
+] as const;
+const META_BID = ["LOWEST_COST_WITHOUT_CAP"] as const;
+
+function requireMetaCreateAdsetBudget(
+  val: {
+    dry_run: boolean;
+    confirm_phrase?: string;
+    daily_budget?: string | number;
+    lifetime_budget?: string | number;
+    end_time?: string;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  requireConfirmWhenLive(val, ctx);
+  const hasDaily = val.daily_budget !== undefined && val.daily_budget !== null && val.daily_budget !== "";
+  const hasLife =
+    val.lifetime_budget !== undefined && val.lifetime_budget !== null && val.lifetime_budget !== "";
+  if (hasDaily === hasLife) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Provide daily_budget OR lifetime_budget (not both). Units: integer cents.",
+      path: ["daily_budget"],
+    });
+  }
+  if (hasLife && !(val.end_time && String(val.end_time).trim())) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "end_time is required when using lifetime_budget",
+      path: ["end_time"],
+    });
+  }
+}
+
+/** Create campaign — defaults PAUSED; confirm live with act_{ad_account_id}. */
+export const metaCreateCampaign = z
+  .object({
+    ad_account_id: z.string().min(1),
+    name: z.string().min(1).max(400),
+    objective: z.enum(META_OBJECTIVES),
+    status: z.enum(["ACTIVE", "PAUSED"]).optional(),
+    special_ad_categories: z
+      .union([z.array(z.enum(META_SPECIAL_AD_CATS)), z.string()])
+      .optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+/** Create ad set — geo from countries only; spend-cap on budget cents. */
+export const metaCreateAdset = z
+  .object({
+    ad_account_id: z.string().min(1),
+    campaign_id: z.string().min(1),
+    name: z.string().min(1).max(400),
+    status: z.enum(["ACTIVE", "PAUSED"]).optional(),
+    daily_budget: z.union([z.string(), z.number().int().positive()]).optional(),
+    lifetime_budget: z.union([z.string(), z.number().int().positive()]).optional(),
+    billing_event: z.enum(META_BILLING).optional(),
+    optimization_goal: z.enum(META_OPT_GOALS).optional(),
+    bid_strategy: z.enum(META_BID).optional(),
+    countries: z.union([z.array(z.string().min(2).max(2)), z.string().min(2)]),
+    end_time: z.string().min(10).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireMetaCreateAdsetBudget);
+
+/** Create ad — existing creative_id only (no upload / object_story_spec). */
+export const metaCreateAd = z
+  .object({
+    ad_account_id: z.string().min(1),
+    adset_id: z.string().min(1),
+    name: z.string().min(1).max(400),
+    creative_id: z.string().min(1),
+    status: z.enum(["ACTIVE", "PAUSED"]).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+

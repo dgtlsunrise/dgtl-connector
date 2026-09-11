@@ -9,7 +9,7 @@ export type Flags = {
    */
   adsMutateEnabled: boolean;
   /**
-   * Meta Ads mutate tools (meta_update_campaign/adset/ad — status/name/adset budget).
+   * Meta Ads mutate tools (update + create campaign/adset/ad — creative_id-only).
    * Default on when env unset; opt out with DGTL_META_MUTATE_ENABLED / META_MUTATE_ENABLED=false.
    * Mirror of Worker META_MUTATE_ENABLED — Worker flag still required for live mutate hop.
    */

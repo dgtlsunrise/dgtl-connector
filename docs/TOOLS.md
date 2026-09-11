@@ -487,8 +487,12 @@ Free count stays **24**. These are Polar-gated; local describe tools need licens
 | `meta_describe_insights_schema` | Local levels / date_presets / breakdowns / fields — call before `meta_insights`. |
 | `meta_insights` | `date_preset` or dates; optional `breakdowns` / `fields` / `time_increment`; cite `data.cited`. ads_read only. |
 | `meta_list_*` / `meta_get_creative` | Read lists + creative metadata (URLs, not bytes). |
+| `meta_update_campaign` / `meta_update_adset` / `meta_update_ad` | Confirm-gated status/name/ad-set budget updates; dry-run default; `ads_management` required. |
+| `meta_create_campaign` | Closed Outcome-objective campaign create; defaults PAUSED; confirm with `act_{ad_account_id}`. |
+| `meta_create_adset` | Existing campaign + country-code geo + capped budget cents; defaults PAUSED; confirm with act + campaign id. |
+| `meta_create_ad` | Existing ad set + existing `creative_id` only; no upload; defaults PAUSED; confirm with act + ad set + creative ids. |
 
-Writes, catalogs, audiences, lift, activity logs, and Meta hosted `ads_mcp_management` are **deferred** — see [ops/META-AND-GOOGLE-MCP-DX-PASS2.md](ops/META-AND-GOOGLE-MCP-DX-PASS2.md).
+Catalogs, audiences, lift, creative upload, activity logs, and Meta hosted `ads_mcp_management` remain **deferred**. Meta live creates fail closed with `META_SCOPE_MISSING` until `ads_management` Advanced Access and a reauthorized token are present. See [ops/META-CREATE-SPEEDRUN-2026-09-11.md](ops/META-CREATE-SPEEDRUN-2026-09-11.md).
 
 ---
 
