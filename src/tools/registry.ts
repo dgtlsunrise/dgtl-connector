@@ -10,8 +10,12 @@ import { googleWhoami } from "../google/whoami.js";
 import { gadsDisabled, gadsDescribeRecipes, licenseStatus } from "../ads/gads.js";
 import {
   gadsAddKeywords,
+  gadsCreateDisplayCampaign,
+  gadsCreatePerformanceMaxCampaign,
   gadsCreateResponsiveSearchAd,
   gadsCreateSearchCampaign,
+  gadsCreateShoppingCampaign,
+  gadsSetAdGroupStatus,
   gadsSetAdStatus,
   gadsSetCampaignStatus,
   gadsSetKeywordStatus,
@@ -524,10 +528,54 @@ export const TOOLS: ToolSpec[] = [
     family: "gads",
     title: "Google Ads create Search campaign (Consent C)",
     description:
-      "Paid mutate. Closed Search create: budget + campaign + ad group + ≥1 keyword stub; optional RSA. Defaults PAUSED. Spend-cap on daily budget. Prefer dry_run; live confirm_phrase with customer_id. Display/PMax out of scope. Consent C + Pro + gateway — never Consent A.",
+      "Paid mutate. Closed Search create: budget + campaign + ad group + ≥1 keyword stub; optional RSA. Defaults PAUSED. Spend-cap on daily budget. Prefer dry_run; live confirm_phrase with customer_id. Consent C + Pro + gateway — never Consent A.",
     inputSchema: S.gadsCreateSearchCampaign,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => gadsCreateSearchCampaign(ctx, args),
+  },
+  {
+    name: "gads_set_ad_group_status",
+    group: "gads-write",
+    family: "gads",
+    title: "Google Ads set ad group status (Consent C)",
+    description:
+      "Paid mutate. Pause or enable an ad group. Prefer dry_run; live confirm_phrase with customer_id. Consent C + Pro + gateway.",
+    inputSchema: S.gadsSetAdGroupStatus,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => gadsSetAdGroupStatus(ctx, args),
+  },
+  {
+    name: "gads_create_display_campaign",
+    group: "gads-write",
+    family: "gads",
+    title: "Google Ads create Display campaign (Consent C)",
+    description:
+      "Paid mutate. Honest minimal Display create: budget + DISPLAY campaign + DISPLAY_STANDARD ad group (no RDA/images). Defaults PAUSED. Spend-cap. Prefer dry_run; live confirm_phrase with customer_id. Consent C + Pro + gateway — never Consent A.",
+    inputSchema: S.gadsCreateDisplayCampaign,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => gadsCreateDisplayCampaign(ctx, args),
+  },
+  {
+    name: "gads_create_performance_max_campaign",
+    group: "gads-write",
+    family: "gads",
+    title: "Google Ads Performance Max create (gap stub)",
+    description:
+      "Typed NOT_IMPLEMENTED stub. PMax needs asset groups + image/logo upload (out of scope). Always returns NOT_IMPLEMENTED with zero Ads mutate HTTP. Prefer Search or Display create.",
+    inputSchema: S.gadsCreatePerformanceMaxCampaign,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => gadsCreatePerformanceMaxCampaign(ctx, args),
+  },
+  {
+    name: "gads_create_shopping_campaign",
+    group: "gads-write",
+    family: "gads",
+    title: "Google Ads Shopping create (gap stub)",
+    description:
+      "Typed MERCHANT_CENTER_REQUIRED stub. Shopping needs Merchant Center linkage (not in product). Always returns MERCHANT_CENTER_REQUIRED with zero Ads mutate HTTP.",
+    inputSchema: S.gadsCreateShoppingCampaign,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => gadsCreateShoppingCampaign(ctx, args),
   },
   {
     name: "license_status",

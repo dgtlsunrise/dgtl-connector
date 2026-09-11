@@ -25,6 +25,8 @@ export const ERROR_CODES = [
   "META_MUTATE_NOT_ENABLED",
   "META_SCOPE_MISSING",
   "SPEND_CAP_EXCEEDED",
+  "NOT_IMPLEMENTED",
+  "MERCHANT_CENTER_REQUIRED",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -85,6 +87,10 @@ export const MSG = {
     "This Meta login did not grant ads_management (or Graph denied the mutate). Re-authorize after ads_management Advanced Access. Do not silently retry. ads_read reads may still work.",
   SPEND_CAP_EXCEEDED:
     "Requested budget exceeds the product sanity cap ($100,000/day equivalent). Google Ads: lower amount_micros / daily_budget_dollars (micros). Meta: lower daily_budget / lifetime_budget (cents, not micros). No mutate HTTP was sent.",
+  NOT_IMPLEMENTED:
+    "This create path is not implemented yet. Performance Max needs asset-group + image/logo upload which is out of scope. Use Search or Display create stubs instead. No Ads mutate HTTP was sent.",
+  MERCHANT_CENTER_REQUIRED:
+    "Shopping campaign create needs a linked Merchant Center (shoppingSetting.merchantCenterId). Merchant Center is not in this product yet. No Ads mutate HTTP was sent.",
   ADS_SCOPE_MISSING:
     "Google Ads is a second OAuth grant (scope adwords). It is not part of the free GA4/GSC/GTM consent. After a valid DGTL license, set GOOGLE_ADS_ACCESS_TOKEN or run `dgtl-connector-mcp auth login-ads` (separate Consent C client). Never reuse Consent A.",
   META_NOT_CONNECTED:

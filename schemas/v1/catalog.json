@@ -360,6 +360,30 @@
       "group": "gads-write",
       "flag": "ads.mutate.enabled",
       "fail": "ADS_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "gads_set_ad_group_status",
+      "group": "gads-write",
+      "flag": "ads.mutate.enabled",
+      "fail": "ADS_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "gads_create_display_campaign",
+      "group": "gads-write",
+      "flag": "ads.mutate.enabled",
+      "fail": "ADS_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "gads_create_performance_max_campaign",
+      "group": "gads-write",
+      "flag": "ads.mutate.enabled",
+      "fail": "ADS_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "gads_create_shopping_campaign",
+      "group": "gads-write",
+      "flag": "ads.mutate.enabled",
+      "fail": "ADS_MUTATE_NOT_ENABLED"
     }
   ]
 }
