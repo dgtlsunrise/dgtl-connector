@@ -204,3 +204,15 @@ On Consent A / flag off: refuse (`UNSUPPORTED_OPERATION` or `WRITE_NOT_ENABLED`)
 ## “Search queries in GA4” scenario (copy)
 
 Use `UNSUPPORTED_DIMENSION`. Offer GSC after they pick `site_url`.
+
+
+### `ADS_MUTATE_NOT_ENABLED`
+
+Google Ads mutate tools flagged off (`DGTL_ADS_MUTATE_ENABLED=false`).
+
+**User-visible:**  
+"Google Ads mutate tools are flagged off (`DGTL_ADS_MUTATE_ENABLED=false`). Reads still work with Pro + Consent C. Enable only after Google Ads API mutate-capable access and Worker `ADS_MUTATE_ENABLED=true` — never on Consent A."
+
+### `META_MUTATE_NOT_ENABLED`
+
+Meta mutate tools flagged off until `ads_management` Advanced Access + `DGTL_META_MUTATE_ENABLED`.

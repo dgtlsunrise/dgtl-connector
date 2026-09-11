@@ -1070,6 +1070,42 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {}
+    },
+    "gads_set_campaign_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customer_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "campaign_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ENABLED",
+            "PAUSED"
+          ]
+        },
+        "login_customer_id": {
+          "type": "string"
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "customer_id",
+        "campaign_id",
+        "status"
+      ]
     }
   }
 }

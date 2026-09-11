@@ -88,7 +88,7 @@ export async function gadsDisabled(
   return enrichGadsEnvelope(tool, args, env);
 }
 
-function enrichGadsEnvelope(tool: string, args: Record<string, unknown>, env: Envelope): Envelope {
+export function enrichGadsEnvelope(tool: string, args: Record<string, unknown>, env: Envelope): Envelope {
   if (!env.ok) {
     if ((env.error_code === "NOT_FOUND" || env.error_code === "PERMISSION_DENIED") && !env.hint) {
       env.hint =
@@ -105,6 +105,8 @@ function enrichGadsEnvelope(tool: string, args: Record<string, unknown>, env: En
     cited.login_customer_id = String(args.login_customer_id).replace(/-/g, "");
   }
   if (typeof args.recipe === "string") cited.recipe = args.recipe;
+  if (typeof args.campaign_id === "string") cited.campaign_id = String(args.campaign_id).replace(/-/g, "");
+  if (typeof args.status === "string") cited.status = args.status;
   if (args.date_range && typeof args.date_range === "object") cited.date_range = args.date_range;
   if (tool === "gads_campaign_performance") cited.recipe = cited.recipe ?? "performance";
 

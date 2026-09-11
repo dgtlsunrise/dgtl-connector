@@ -284,3 +284,19 @@ export const gtmPublishContainer = z
   })
   .strict()
   .superRefine(requireConfirmWhenLive);
+
+/** Google Ads mutate — dry_run default true; live needs confirm_phrase with customer_id. */
+export const gadsSetCampaignStatus = z
+  .object({
+    customer_id: str,
+    campaign_id: str,
+    status: z.enum(["ENABLED", "PAUSED"]),
+    login_customer_id: str,
+    /** Default true — no Ads mutate HTTP unless explicitly false. */
+    dry_run: z.boolean().default(true),
+    /** Required when dry_run=false; must include digits-only customer_id (checked in handler). */
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
