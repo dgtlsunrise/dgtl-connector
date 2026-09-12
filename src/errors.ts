@@ -129,7 +129,7 @@ export const MSG = {
   PERMISSION_DENIED:
     "This Google account cannot access that resource. In GA4: Admin → Property access. In Search Console: Settings → Users. In GTM: Account user management. Being signed into Google is not the same as being a user on that property.",
   ACCESS_NOT_CONFIGURED:
-    "Google returned 403 accessNotConfigured. That means the API is not Enabled on the OAuth client's Google Cloud project — not that your GA4 property is empty.",
+    "Google Cloud project / API access is not configured for this call (API disabled, or Merchant API GCP project not registered with Merchant Center). This is not an empty property and usually not a re-login.",
   QUOTA:
     "Google quota or rate limit hit. I cap reports at 1,000 rows per call. Wait, narrow the date range, or inspect fewer URLs.",
   GOOGLE_UNAVAILABLE:

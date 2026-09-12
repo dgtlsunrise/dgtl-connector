@@ -138,6 +138,21 @@ export class PkceTokenSource implements AccessTokenSource {
       source: "pkce",
     };
   }
+
+  /** Force next getAccessToken() through the refresh_token path when present. */
+  invalidateAccessToken(): void {
+    const stored = readStore(this.pluginDataDir, this.storeFile);
+    if (!stored?.refresh_token) return;
+    writeStore(
+      this.pluginDataDir,
+      {
+        ...stored,
+        // Expire immediately so getAccessToken refreshes (60s skew).
+        expiry: 0,
+      },
+      this.storeFile,
+    );
+  }
 }
 
 /**

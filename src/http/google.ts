@@ -85,7 +85,7 @@ export class GoogleHttp {
   }
 
   async request(req: GoogleRequest): Promise<unknown> {
-    const token = await this.opts.tokenSource.getAccessToken();
+    let token = await this.opts.tokenSource.getAccessToken();
     if (!token?.accessToken) {
       throw new ToolError("UNAUTHENTICATED", MSG.UNAUTHENTICATED);
     }
@@ -133,6 +133,7 @@ export class GoogleHttp {
 
     let lastStatus = 0;
     let parsed: unknown = undefined;
+    let authRetried = false;
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       this.opts.calls.push({
         method: req.method,
@@ -159,6 +160,22 @@ export class GoogleHttp {
         }
       }
       if (res.ok) return parsed;
+      // One-shot: on 401, invalidate PKCE cache and refresh when possible, then retry.
+      if (
+        res.status === 401 &&
+        !authRetried &&
+        typeof this.opts.tokenSource.invalidateAccessToken === "function"
+      ) {
+        authRetried = true;
+        this.opts.tokenSource.invalidateAccessToken();
+        const refreshed = await this.opts.tokenSource.getAccessToken();
+        if (refreshed?.accessToken && refreshed.accessToken !== token.accessToken) {
+          token = refreshed;
+          headers.authorization = `Bearer ${token.accessToken}`;
+          attempt -= 1; // do not consume a rate-limit retry slot
+          continue;
+        }
+      }
       const retryable = res.status === 429 || res.status === 503;
       if (retryable && attempt < MAX_RETRIES) {
         await sleep(retryAfterMs(res, attempt));

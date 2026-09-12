@@ -9,6 +9,12 @@ export type AccessToken = {
 export interface AccessTokenSource {
   readonly name: string;
   getAccessToken(): Promise<AccessToken | null>;
+  /**
+   * Drop a cached access token so the next getAccessToken() refreshes when a
+   * refresh_token is present (PKCE stores). Used for one-shot 401 retry.
+   * Host-injected sources typically no-op.
+   */
+  invalidateAccessToken?(): void;
 }
 
 /** PLUGIN_DATA filenames — one file per consent lane. Never share A with W/C/MC/B. */

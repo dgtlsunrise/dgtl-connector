@@ -35,6 +35,8 @@ export type FixtureOpts = {
   emptyGscQuery?: boolean;
   oversizeTags?: boolean;
   agencySummaries?: boolean;
+  /** Merchant API 401: GCP project not registered with MC (not REAUTH). */
+  mcProjectNotRegistered?: boolean;
 };
 
 export function installNetworkGuard(): () => void {
@@ -215,6 +217,10 @@ function route(method: string, url: URL, opts: FixtureOpts): unknown {
   }
 
   if (host === "merchantapi.googleapis.com") {
+    if (opts.mcProjectNotRegistered) {
+      const err = loadFixture("errors/merchantProjectNotRegistered.json") as { error: unknown };
+      return { ...err, __status: 401 };
+    }
     if (p === "/accounts/v1/accounts" && method === "GET") {
       return opts.emptyList ? { accounts: [] } : loadFixture("mc/accounts.list.json");
     }
