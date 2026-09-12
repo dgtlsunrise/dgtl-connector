@@ -36,6 +36,7 @@ export type ConsentStorePresence = {
   consent_c: boolean;
   consent_w: boolean;
   consent_mc: boolean;
+  consent_b: boolean;
   meta: boolean;
   shopify: boolean;
 };
@@ -74,6 +75,7 @@ export function consentStorePresence(pluginDataDir: string): ConsentStorePresenc
     consent_c: existsSync(join(pluginDataDir, STORE_FILE.ads)),
     consent_w: existsSync(join(pluginDataDir, STORE_FILE.w)),
     consent_mc: existsSync(join(pluginDataDir, STORE_FILE.mc)),
+    consent_b: existsSync(join(pluginDataDir, STORE_FILE.gbp)),
     meta: existsSync(join(pluginDataDir, STORE_FILE.meta)),
     shopify: existsSync(join(pluginDataDir, SHOPIFY_STORE_FILE)),
   };

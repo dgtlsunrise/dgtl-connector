@@ -1,0 +1,12 @@
+{
+  "searchKeywordsCounts": [
+    {
+      "searchKeyword": "example brand",
+      "insightsValue": { "value": "42" }
+    },
+    {
+      "searchKeyword": "example store near me",
+      "insightsValue": { "value": "11" }
+    }
+  ]
+}

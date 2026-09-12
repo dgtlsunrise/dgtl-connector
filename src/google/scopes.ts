@@ -48,6 +48,13 @@ export const CONSENT_C_GOOGLE = [SCOPE.adwords] as const;
  */
 export const CONSENT_MC = [SCOPE.content] as const;
 
+/**
+ * Consent B — Google Business Profile. Separate Desktop client.
+ * Never merge into CONSENT_A. Google has no readonly GBP scope;
+ * Wave 5 tools are GET-only (no posts/replies/location mutate).
+ */
+export const CONSENT_B = [SCOPE.business] as const;
+
 export const APIS = {
   admin: "analyticsadmin.googleapis.com",
   data: "analyticsdata.googleapis.com",
@@ -59,4 +66,10 @@ export const APIS = {
   accounts: "accounts.google.com",
   /** Merchant API host (products / accounts / datasources sub-APIs). */
   merchant: "merchantapi.googleapis.com",
+  gbpAccounts: "mybusinessaccountmanagement.googleapis.com",
+  gbpLocations: "mybusinessbusinessinformation.googleapis.com",
+  gbpPerformance: "businessprofileperformance.googleapis.com",
 } as const;
+
+/** GBP hosts only — used by httpGbp. Never on Consent A GoogleHttp. */
+export const GBP_HOSTS = new Set<string>([APIS.gbpAccounts, APIS.gbpLocations, APIS.gbpPerformance]);

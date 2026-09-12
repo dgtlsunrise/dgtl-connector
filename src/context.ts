@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { AuthPort } from "./auth/port.js";
 import type { AccessTokenSource } from "./auth/types.js";
 import { loadFlags, type Flags } from "./flags.js";
+import { GBP_HOSTS } from "./google/scopes.js";
 import { GoogleHttp } from "./http/google.js";
 import { GoogleWriteHttp } from "./http/google-write.js";
 import type { HttpCall } from "./http/calls.js";
@@ -20,6 +21,8 @@ export type AppContext = {
   authAds: AccessTokenSource;
   /** Consent MC Merchant API — GOOGLE_MC_ACCESS_TOKEN / google-oauth-mc.json */
   authMc: AccessTokenSource;
+  /** Consent B GBP — GOOGLE_GBP_ACCESS_TOKEN / google-oauth-gbp.json */
+  authGbp: AccessTokenSource;
   /** Meta user — META_ACCESS_TOKEN / meta-oauth.json */
   authMeta: AccessTokenSource;
   http: GoogleHttp;
@@ -27,6 +30,8 @@ export type AppContext = {
   httpWrite: GoogleWriteHttp;
   /** Consent MC Merchant API client — never wired to ctx.auth / Consent A. */
   httpMc: GoogleHttp;
+  /** Consent B GBP client — never wired to ctx.auth / Consent A. GET-only hosts. */
+  httpGbp: GoogleHttp;
   fetchImpl: typeof fetch;
   flags: Flags;
   license: LicenseStatus;
@@ -59,6 +64,7 @@ export function createAppContext(opts: {
   authWrite?: AccessTokenSource;
   authAds?: AccessTokenSource;
   authMc?: AccessTokenSource;
+  authGbp?: AccessTokenSource;
   authMeta?: AccessTokenSource;
 }): AppContext {
   const env = opts.env ?? process.env;
@@ -69,6 +75,7 @@ export function createAppContext(opts: {
   const authWrite = opts.authWrite ?? AuthPort.writeFromEnv({ env, pluginDataDir, fetchImpl });
   const authAds = opts.authAds ?? AuthPort.adsFromEnv({ env, pluginDataDir, fetchImpl });
   const authMc = opts.authMc ?? AuthPort.mcFromEnv({ env, pluginDataDir, fetchImpl });
+  const authGbp = opts.authGbp ?? AuthPort.gbpFromEnv({ env, pluginDataDir, fetchImpl });
   const authMeta = opts.authMeta ?? AuthPort.metaFromEnv({ env, pluginDataDir });
   const http = new GoogleHttp({ tokenSource: auth, fetchImpl, calls });
   const httpWrite = new GoogleWriteHttp({ tokenSource: authWrite, fetchImpl, calls });
@@ -78,6 +85,12 @@ export function createAppContext(opts: {
     calls,
     allowedHosts: new Set(["merchantapi.googleapis.com"]),
   });
+  const httpGbp = new GoogleHttp({
+    tokenSource: authGbp,
+    fetchImpl,
+    calls,
+    allowedHosts: GBP_HOSTS,
+  });
   const license = verifyLicenseJwt(loadLicenseToken(env, pluginDataDir));
   return {
     pluginRoot: opts.pluginRoot,
@@ -86,10 +99,12 @@ export function createAppContext(opts: {
     authWrite,
     authAds,
     authMc,
+    authGbp,
     authMeta,
     http,
     httpWrite,
     httpMc,
+    httpGbp,
     fetchImpl,
     flags: loadFlags(env),
     license,

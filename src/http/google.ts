@@ -29,20 +29,40 @@ const ALLOWED_HOSTS = new Set([
   "tagmanager.googleapis.com",
   "oauth2.googleapis.com",
   "accounts.google.com",
+]);
+
+/** GET-only families (GBP Consent B, Merchant API Consent MC). Never POST even if Google's scope is write-capable. */
+const GET_ONLY_HOSTS = new Set([
   "mybusinessaccountmanagement.googleapis.com",
   "mybusinessbusinessinformation.googleapis.com",
   "businessprofileperformance.googleapis.com",
+  "merchantapi.googleapis.com",
 ]);
+
+export type GoogleQueryValue = string | number | readonly string[];
 
 export type GoogleRequest = {
   method: "GET" | "POST";
   url: string;
-  query?: Record<string, string | number | undefined>;
+  query?: Record<string, GoogleQueryValue | undefined>;
   body?: unknown;
   api: string;
   requiredScope?: string;
   tool: string;
 };
+
+function applyQuery(url: URL, query: Record<string, GoogleQueryValue | undefined>): void {
+  for (const [k, v] of Object.entries(query)) {
+    if (v === undefined || v === "") continue;
+    if (Array.isArray(v)) {
+      for (const item of v) {
+        if (item !== undefined && item !== "") url.searchParams.append(k, String(item));
+      }
+    } else {
+      url.searchParams.set(k, String(v));
+    }
+  }
+}
 
 export class GoogleHttp {
   constructor(
@@ -51,7 +71,7 @@ export class GoogleHttp {
       fetchImpl: typeof fetch;
       calls: HttpCall[];
       userAgent?: string;
-      /** Override host allowlist. Consent MC uses merchantapi only. */
+      /** Override host allowlist. Consent MC uses merchantapi only; Consent B uses GBP hosts. */
       allowedHosts?: ReadonlySet<string>;
     },
   ) {}
@@ -89,11 +109,14 @@ export class GoogleHttp {
         { api: req.api },
       );
     }
-    if (req.query) {
-      for (const [k, v] of Object.entries(req.query)) {
-        if (v !== undefined && v !== "") url.searchParams.set(k, String(v));
-      }
+    if (GET_ONLY_HOSTS.has(url.hostname) && req.method !== "GET") {
+      throw new ToolError(
+        "UNSUPPORTED_OPERATION",
+        "GBP and Merchant API clients are GET-only in this binary. No posts, replies, or product mutate.",
+        { api: req.api },
+      );
     }
+    if (req.query) applyQuery(url, req.query);
 
     const headers: Record<string, string> = {
       authorization: `Bearer ${token.accessToken}`,
@@ -146,7 +169,7 @@ export class GoogleHttp {
     throw mapGoogleHttpError({ status: lastStatus || 503, body: parsed, api: req.api });
   }
 
-  get(apiHost: string, path: string, query: Record<string, string | number | undefined> | undefined, meta: { api: string; requiredScope?: string; tool: string }): Promise<unknown> {
+  get(apiHost: string, path: string, query: Record<string, GoogleQueryValue | undefined> | undefined, meta: { api: string; requiredScope?: string; tool: string }): Promise<unknown> {
     return this.request({
       method: "GET",
       url: `https://${apiHost}${path}`,

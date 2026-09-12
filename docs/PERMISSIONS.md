@@ -116,6 +116,27 @@ Merchant API reads use a **third Google Desktop client**. Not Consent A (no `con
 
 Do **not** add `content` to Consent A verification. Merchant API Products / Accounts / DataSources must be Enabled on the **MC OAuth client's** GCP project (Noel gate). `ACCESS_NOT_CONFIGURED` is that enablement, not an empty catalog.
 
+## Consent B (Google Business Profile) — separate from Consent A
+
+GBP reads use a **separate Google Desktop client**. Not Consent A (no `business.manage` on the free screen). Not stamp (no DGTL secret). Commercially free-local when `DGTL_GBP_ENABLED=true`.
+
+| Path | How |
+| --- | --- |
+| GBP | `GOOGLE_GBP_ACCESS_TOKEN` or `dgtl-connector-mcp auth login-gbp` → `PLUGIN_DATA/google-oauth-gbp.json` (`GOOGLE_OAUTH_GBP_CLIENT_ID`) |
+| Scope | `https://www.googleapis.com/auth/business.manage` only. Google has no readonly GBP scope; Wave 5 tools are GET-only. |
+| Flag | `DGTL_GBP_ENABLED` default **false**. `auth login-gbp` does not flip it. |
+| Fail closed | `GBP_NOT_ENABLED` (flag off) → `GBP_NOT_CONNECTED` → `GBP_SCOPE_MISSING` |
+
+Do **not** add `business.manage` to Consent A verification. Account Management / Business Information / Performance APIs must be Enabled on the **GBP OAuth client's** GCP project, and Basic API Access quota must be non-zero (Noel gate). `ACCESS_NOT_CONFIGURED` is that enablement / quota, not an empty location list.
+
+### Google Cloud APIs to Enable (Consent B project)
+
+| API | Host / path | If missing |
+| --- | --- | --- |
+| My Business Account Management API | `mybusinessaccountmanagement.googleapis.com/v1` | 403 `accessNotConfigured` on `gbp_list_accounts` |
+| My Business Business Information API | `mybusinessbusinessinformation.googleapis.com/v1` | 403 on `gbp_list_locations` / `gbp_get_location` |
+| Business Profile Performance API | `businessprofileperformance.googleapis.com/v1` | 403 on `gbp_performance` / `gbp_search_keywords` |
+
 ### Google Cloud APIs to Enable (Consent MC project)
 
 | API | Host / path | If missing |

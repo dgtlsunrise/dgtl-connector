@@ -25,6 +25,7 @@ describe("PR-10 auth login-ads / login-meta --code", () => {
     const h = helpText();
     assert.ok(h.includes("auth login-ads"));
     assert.ok(h.includes("auth login-mc"));
+    assert.ok(h.includes("auth login-gbp"));
     assert.ok(h.includes("auth login-meta --code"));
     assert.ok(h.includes("POST /v1/meta/exchange") || h.includes("/v1/meta/exchange"));
     assert.ok(!h.includes("land in a later PR"));

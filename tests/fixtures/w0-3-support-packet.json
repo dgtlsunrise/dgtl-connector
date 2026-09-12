@@ -19,7 +19,7 @@
     "worker_flag_known",
     "live_mutate_possible"
   ],
-  "store_keys": ["consent_a", "consent_c", "consent_w", "consent_mc", "meta", "shopify"],
+  "store_keys": ["consent_a", "consent_c", "consent_w", "consent_mc", "consent_b", "meta", "shopify"],
   "plugin_mutate_defaults": {
     "adsMutateEnabled": true,
     "metaMutateEnabled": true,

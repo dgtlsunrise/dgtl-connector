@@ -110,6 +110,27 @@ export class HostInjectedMcTokenSource implements AccessTokenSource {
   }
 }
 
+/** Consent B GBP host-injected — GOOGLE_GBP_ACCESS_TOKEN only. Never Consent A. */
+export class HostInjectedGbpTokenSource implements AccessTokenSource {
+  readonly name = "host-injected-gbp";
+
+  constructor(private readonly env: NodeJS.ProcessEnv = process.env) {}
+
+  async getAccessToken(): Promise<AccessToken | null> {
+    const accessToken = this.env.GOOGLE_GBP_ACCESS_TOKEN?.trim();
+    if (!accessToken) return null;
+    const expiresRaw = this.env.GOOGLE_GBP_ACCESS_TOKEN_EXPIRES_IN;
+    const expiresIn = expiresRaw ? Number(expiresRaw) : undefined;
+    return {
+      accessToken,
+      expiresIn: Number.isFinite(expiresIn) ? expiresIn : undefined,
+      scopes: parseScopeList(this.env.GOOGLE_GBP_GRANTED_SCOPES),
+      email: this.env.GOOGLE_GBP_ACCOUNT_EMAIL?.trim() || undefined,
+      source: "host-injected",
+    };
+  }
+}
+
 /** Meta user host-injected — META_ACCESS_TOKEN only. Never Google A. */
 export class HostInjectedMetaTokenSource implements AccessTokenSource {
   readonly name = "host-injected-meta";

@@ -96,6 +96,42 @@ export function normalizeMcProductId(raw: string): string {
   return id;
 }
 
+/** GBP account — digits, accounts/{id}, or accounts/- (Google wildcard). Never guess. */
+export function normalizeGbpAccount(raw: string): { id: string; name: string } {
+  const trimmed = raw.trim();
+  if (trimmed === "-" || trimmed === "accounts/-") {
+    return { id: "-", name: "accounts/-" };
+  }
+  const id = trimmed.startsWith("accounts/") ? trimmed.slice("accounts/".length) : trimmed;
+  if (!/^[0-9]+$/.test(id)) {
+    throw new ToolError(
+      "INVALID_ARGUMENT",
+      `account_name must be accounts/{id}, digits, or accounts/- (wildcard), got ${trimmed}`,
+      { resource_id: trimmed },
+    );
+  }
+  return { id, name: `accounts/${id}` };
+}
+
+/** GBP location — digits or locations/{id}. Never accounts/{id}/locations/{id} on get. */
+export function normalizeGbpLocation(raw: string): { id: string; name: string } {
+  const trimmed = raw.trim();
+  const nested = trimmed.match(/^accounts\/[^/]+\/locations\/([^/]+)$/);
+  const id = nested?.[1]
+    ? nested[1]
+    : trimmed.startsWith("locations/")
+      ? trimmed.slice("locations/".length)
+      : trimmed;
+  if (!/^[0-9]+$/.test(id)) {
+    throw new ToolError(
+      "INVALID_ARGUMENT",
+      `location_name must be locations/{id} or digits, got ${trimmed}`,
+      { resource_id: trimmed },
+    );
+  }
+  return { id, name: `locations/${id}` };
+}
+
 export function normalizeGa4Property(raw: string): { id: string; name: string } {
   const trimmed = raw.trim();
   const id = trimmed.startsWith("properties/")

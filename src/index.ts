@@ -6,6 +6,7 @@ import {
   parseRedeemArgs,
   runAuthLogin,
   runAuthLoginAds,
+  runAuthLoginGbp,
   runAuthLoginMc,
   runAuthLoginWrite,
   runAuthLoginMeta,
@@ -124,6 +125,23 @@ async function main(argv: string[]): Promise<void> {
       });
       return;
     }
+    if (sub === "login-gbp") {
+      const clientId = ctx.env.GOOGLE_OAUTH_GBP_CLIENT_ID?.trim();
+      if (!clientId) {
+        process.stderr.write(
+          "Set GOOGLE_OAUTH_GBP_CLIENT_ID (separate Consent B Desktop client). Do not add business.manage to Consent A. Never commit GOOGLE_OAUTH_GBP_CLIENT_SECRET. login-gbp does not enable DGTL_GBP_ENABLED.\n",
+        );
+        process.exitCode = 1;
+        return;
+      }
+      process.exitCode = await runAuthLoginGbp({
+        clientId,
+        clientSecret: ctx.env.GOOGLE_OAUTH_GBP_CLIENT_SECRET,
+        pluginDataDir: ctx.pluginDataDir,
+        fetchImpl: ctx.fetchImpl,
+      });
+      return;
+    }
     if (sub === "login-meta") {
       const code = parseLoginMetaCode(args.slice(2));
       if (!code) {
@@ -164,7 +182,7 @@ async function main(argv: string[]): Promise<void> {
     }
     if (sub === "logout") {
       clearStore(ctx.pluginDataDir, STORE_FILE.a);
-      process.stderr.write("Cleared PLUGIN_DATA/google-oauth.json (Consent A only; W/C/MC stores untouched)\n");
+      process.stderr.write("Cleared PLUGIN_DATA/google-oauth.json (Consent A only; W/C/MC/B stores untouched)\n");
       return;
     }
     if (sub === "logout-write") {
@@ -182,6 +200,11 @@ async function main(argv: string[]): Promise<void> {
       process.stderr.write("Cleared PLUGIN_DATA/google-oauth-mc.json (Consent MC)\n");
       return;
     }
+    if (sub === "logout-gbp") {
+      clearStore(ctx.pluginDataDir, STORE_FILE.gbp);
+      process.stderr.write("Cleared PLUGIN_DATA/google-oauth-gbp.json (Consent B GBP)\n");
+      return;
+    }
     if (sub === "logout-meta") {
       clearStore(ctx.pluginDataDir, STORE_FILE.meta);
       process.stderr.write("Cleared PLUGIN_DATA/meta-oauth.json (Meta user)\n");
@@ -193,6 +216,7 @@ async function main(argv: string[]): Promise<void> {
       const writeTok = await ctx.authWrite.getAccessToken();
       const adsTok = await ctx.authAds.getAccessToken();
       const mcTok = await ctx.authMc.getAccessToken();
+      const gbpTok = await ctx.authGbp.getAccessToken();
       const metaTok = await ctx.authMeta.getAccessToken();
       process.stdout.write(
         JSON.stringify(
@@ -217,6 +241,12 @@ async function main(argv: string[]): Promise<void> {
               host_injected: Boolean(ctx.env.GOOGLE_MC_ACCESS_TOKEN?.trim()),
               store: Boolean(readStore(ctx.pluginDataDir, STORE_FILE.mc)?.access_token),
               present: Boolean(mcTok?.accessToken),
+            },
+            consent_b_gbp: {
+              host_injected: Boolean(ctx.env.GOOGLE_GBP_ACCESS_TOKEN?.trim()),
+              store: Boolean(readStore(ctx.pluginDataDir, STORE_FILE.gbp)?.access_token),
+              present: Boolean(gbpTok?.accessToken),
+              flag: ctx.flags.gbpEnabled,
             },
             consent_c_meta: {
               host_injected: Boolean(ctx.env.META_ACCESS_TOKEN?.trim()),

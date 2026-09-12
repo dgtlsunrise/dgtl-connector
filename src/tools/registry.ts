@@ -1,7 +1,13 @@
 import type { z } from "zod";
 import type { AppContext } from "../context.js";
 import type { Envelope } from "../envelope.js";
-import { gbpNotEnabled } from "../google/gbp.js";
+import {
+  gbpGetLocation,
+  gbpListAccounts,
+  gbpListLocations,
+  gbpPerformance,
+  gbpSearchKeywords,
+} from "../google/gbp.js";
 import * as ga4 from "../google/ga4.js";
 import * as gsc from "../google/gsc.js";
 import * as gtm from "../google/gtm.js";
@@ -421,56 +427,59 @@ export const TOOLS: ToolSpec[] = [
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => gtmWrite.gtmPublishContainer(ctx, args),
   },
-  // GBP — schemas + flag only
+  // GBP — Consent B GET-only. Flag default off. Never Consent A / stamp.
   {
     name: "gbp_list_accounts",
     group: "gbp",
     family: "gbp",
     title: "GBP list accounts",
-    description: "Google Business Profile accounts. Flagged off until GBP quota is non-zero. Returns GBP_NOT_ENABLED.",
+    description:
+      "Google Business Profile accounts (Account Management API). Flag off → GBP_NOT_ENABLED. Flag on needs Consent B (business.manage). GET-only; not Consent A.",
     inputSchema: S.gbpAccounts,
     annotations: ANN_RO,
-    handler: async (ctx) => gbpNotEnabled("gbp_list_accounts", ctx),
+    handler: (ctx, args) => gbpListAccounts(ctx, args),
   },
   {
     name: "gbp_list_locations",
     group: "gbp",
     family: "gbp",
     title: "GBP list locations",
-    description: "GBP locations for an account. Flagged off (GBP_NOT_ENABLED). Consent B is business.manage, not Consent A.",
+    description:
+      "GBP locations for an account. Requires account_name from gbp_list_accounts. Consent B, not Consent A. GET-only.",
     inputSchema: S.gbpLocations,
     annotations: ANN_RO,
-    handler: async (ctx) => gbpNotEnabled("gbp_list_locations", ctx),
+    handler: (ctx, args) => gbpListLocations(ctx, args),
   },
   {
     name: "gbp_get_location",
     group: "gbp",
     family: "gbp",
     title: "GBP get location",
-    description: "GBP location (name, place_id, website, labels). Flagged off.",
+    description: "GBP location (title, place_id, website, labels). Requires location_name. GET-only; no location mutate.",
     inputSchema: S.gbpGetLocation,
     annotations: ANN_RO,
-    handler: async (ctx) => gbpNotEnabled("gbp_get_location", ctx),
+    handler: (ctx, args) => gbpGetLocation(ctx, args),
   },
   {
     name: "gbp_performance",
     group: "gbp",
     family: "gbp",
     title: "GBP performance",
-    description: "GBP Performance time series. Flagged off. Performance API does not list locations.",
+    description:
+      "GBP Performance daily metrics time series. Requires location_name + start_date + end_date. Performance API does not list locations. GET-only.",
     inputSchema: S.gbpPerformance,
     annotations: ANN_RO,
-    handler: async (ctx) => gbpNotEnabled("gbp_performance", ctx),
+    handler: (ctx, args) => gbpPerformance(ctx, args),
   },
   {
     name: "gbp_search_keywords",
     group: "gbp",
     family: "gbp",
     title: "GBP search keywords",
-    description: "Monthly search-keyword impressions. Flagged off.",
+    description: "Monthly search-keyword impressions for a location. Requires location_name. GET-only.",
     inputSchema: S.gbpKeywords,
     annotations: ANN_RO,
-    handler: async (ctx) => gbpNotEnabled("gbp_search_keywords", ctx),
+    handler: (ctx, args) => gbpSearchKeywords(ctx, args),
   },
   // Paid Ads — LICENSE_REQUIRED
   {

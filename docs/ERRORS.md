@@ -113,10 +113,24 @@ Do not ask for a Google Ads developer-token.
 
 ### `GBP_NOT_ENABLED`
 
-GBP feature flag off (default) **or** flag on. Live HTTP is **not in this binary** (Wave 5 — quota + Consent B). Flag-on is not a successful read.
+GBP feature flag off (`DGTL_GBP_ENABLED` default false). Not a missing Consent A reconnect. Consent B is a separate grant.
 
 **User-visible:**  
-“Google Business Profile tools return GBP_NOT_ENABLED until live HTTP ships (Wave 5). Turning the flag on does not enable HTTP in this binary. They are not on the free GA4/GSC/GTM consent screen.”
+“Google Business Profile tools are flagged off (DGTL_GBP_ENABLED=false). They are not on the free GA4/GSC/GTM consent screen. Consent B (business.manage) is a separate grant. Enable the flag only after GBP Basic API Access quota is non-zero.”
+
+### `GBP_NOT_CONNECTED`
+
+Flag is on, but Consent B token is missing. Direct GBP hop — not stamp, not Polar.
+
+**User-visible:**  
+“Google Business Profile is a separate OAuth grant (scope business.manage). It is not part of free Consent A. With DGTL_GBP_ENABLED=true, set GOOGLE_GBP_ACCESS_TOKEN or run `dgtl-connector-mcp auth login-gbp` (separate Consent B client). Never reuse Consent A.”
+
+### `GBP_SCOPE_MISSING`
+
+Consent B token present but missing `https://www.googleapis.com/auth/business.manage`. Do not add that scope to Consent A. Tools stay GET-only.
+
+**User-visible:**  
+“This Google Business Profile login did not grant https://www.googleapis.com/auth/business.manage. Re-authorize Consent B (`auth login-gbp` or GOOGLE_GBP_ACCESS_TOKEN). Do not add business.manage to Consent A. Tools are GET-only even though the scope is write-capable.”
 
 ### `GATEWAY_UNAVAILABLE`
 

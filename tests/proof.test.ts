@@ -132,11 +132,13 @@ describe("session proofs", () => {
     assert.equal(ga4.ok, true);
   });
 
-  it("GBP tools return GBP_NOT_ENABLED with zero HTTP", async () => {
+  it("GBP tools return GBP_NOT_ENABLED with zero HTTP when flag off", async () => {
     const ctx = makeCtx();
     for (const name of ["gbp_list_accounts", "gbp_list_locations", "gbp_get_location", "gbp_performance", "gbp_search_keywords"]) {
       const env = await dispatch(ctx, name, {});
       assert.equal(env.error_code, "GBP_NOT_ENABLED", name);
+      assert.ok(!env.hint?.includes("Phase 7"), name);
+      assert.ok(!env.hint?.includes("not in this binary"), name);
     }
     assert.equal(ctx.calls.length, 0);
   });

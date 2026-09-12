@@ -184,6 +184,32 @@ function route(method: string, url: URL, opts: FixtureOpts): unknown {
     if (p.includes(":publish") && method === "POST") return loadFixture("gtm/versions.publish.json");
   }
 
+  if (host === "mybusinessaccountmanagement.googleapis.com") {
+    if (p === "/v1/accounts" && method === "GET") {
+      return opts.emptyList ? { accounts: [] } : loadFixture("gbp/accounts.list.json");
+    }
+  }
+
+  if (host === "mybusinessbusinessinformation.googleapis.com") {
+    if (/^\/v1\/accounts\/[^/]+\/locations$/.test(p) && method === "GET") {
+      return opts.emptyList ? { locations: [] } : loadFixture("gbp/locations.list.json");
+    }
+    if (/^\/v1\/locations\/[^/]+$/.test(p) && method === "GET") {
+      const id = p.split("/").pop();
+      const base = loadFixture("gbp/locations.get.json") as Record<string, unknown>;
+      return { ...base, name: `locations/${id}` };
+    }
+  }
+
+  if (host === "businessprofileperformance.googleapis.com") {
+    if (p.includes(":fetchMultiDailyMetricsTimeSeries") && method === "GET") {
+      return loadFixture("gbp/performance.json");
+    }
+    if (p.includes("/searchkeywords/impressions/monthly") && method === "GET") {
+      return opts.emptyList ? { searchKeywordsCounts: [] } : loadFixture("gbp/searchKeywords.json");
+    }
+  }
+
   if (host === "merchantapi.googleapis.com") {
     if (p === "/accounts/v1/accounts" && method === "GET") {
       return opts.emptyList ? { accounts: [] } : loadFixture("mc/accounts.list.json");

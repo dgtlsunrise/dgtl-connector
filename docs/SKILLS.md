@@ -31,9 +31,9 @@ This index is closed for v1 spec plus Wave 4. **14 skills.** Each directory belo
 5. Write/publish requests: **Consent W gates** — if writes are flagged off or Consent W is absent, refuse (`WRITE_NOT_ENABLED` / `CONSENT_W_REQUIRED`) and point at Google UI or the separate write client (`auth login-write` is shipped; it does not flip `DGTL_WRITES_ENABLED`). Do **not** eternally claim “there is no publish tool” once stubs exist; do **not** invent confirm phrases or publish on Consent A.
 6. Support pitches: **only** the support skill, **only** after a real answer, **only** the approved sentence in [SUPPORT_AND_CLIENTS.md](SUPPORT_AND_CLIENTS.md). Pro unlock ($19/mo): **only** `pro-upgrade`, and only on Ads / Meta / sGTM / `LICENSE_REQUIRED` / `GATEWAY_UNAVAILABLE` — never on a normal GA4 answer. Other skills: **zero** sales lines.
 7. Never ask the user to paste refresh tokens, `client_secret`, or `token.json`.
-8. **Not all tools are read.** Consent A + Shopify + GBP stubs are read (or fail-closed). GTM write and Ads/Meta mutate/create are registered writes. See [TOOLS.md](TOOLS.md) Mutate honesty.
+8. **Not all tools are read.** Consent A + Shopify + GBP (when flag on) are read (or fail-closed). GTM write and Ads/Meta mutate/create are registered writes. See [TOOLS.md](TOOLS.md) Mutate honesty.
 9. **ACTIVE / ENABLED on confirm only.** `dry_run` defaults true. Live needs `confirm_phrase` with resource IDs **and** a user message this turn containing those IDs. Meta **ACTIVE** / Ads **ENABLED** only with explicit `status` + confirm. Campaign/RSA/Meta creates default **PAUSED**. Standalone `gads_add_keywords` defaults **PAUSED**. Search/Display-create **children stay ENABLED** under a PAUSED campaign (intentional). Omitted keyword `match_type` is **BROAD** — do not flip.
-10. **Dual-gate.** Plugin Ads/Meta mutate flags default **on**; Worker flags fail-closed. Live hop needs both. Do not flip plugin defaults. GBP flag-on still `GBP_NOT_ENABLED` (HTTP is Wave 5, not this binary).
+10. **Dual-gate.** Plugin Ads/Meta mutate flags default **on**; Worker flags fail-closed. Live hop needs both. Do not flip plugin defaults. GBP: flag off → `GBP_NOT_ENABLED`; flag on hops Consent B (never Consent A).
 
 ## Failure modes these skills exist to catch
 

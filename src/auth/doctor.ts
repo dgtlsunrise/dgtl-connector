@@ -31,6 +31,9 @@ export const DOCTOR_ENV_NAMES = [
   "GOOGLE_OAUTH_MC_CLIENT_ID",
   "GOOGLE_OAUTH_MC_CLIENT_SECRET",
   "GOOGLE_MC_ACCESS_TOKEN",
+  "GOOGLE_OAUTH_GBP_CLIENT_ID",
+  "GOOGLE_OAUTH_GBP_CLIENT_SECRET",
+  "GOOGLE_GBP_ACCESS_TOKEN",
   "GOOGLE_WRITE_ACCESS_TOKEN",
   "GOOGLE_OAUTH_WRITE_CLIENT_ID",
   "META_ACCESS_TOKEN",
@@ -75,6 +78,7 @@ export type DoctorReport = {
     google_oauth_ads_json: boolean;
     google_oauth_write_json: boolean;
     google_oauth_mc_json: boolean;
+    google_oauth_gbp_json: boolean;
     meta_oauth_json: boolean;
     shopify_oauth_json: boolean;
     license_jwt: boolean;
@@ -190,6 +194,7 @@ export async function collectDoctor(opts: DoctorOpts): Promise<DoctorReport> {
       google_oauth_ads_json: stores.consent_c,
       google_oauth_write_json: stores.consent_w,
       google_oauth_mc_json: stores.consent_mc,
+      google_oauth_gbp_json: stores.consent_b,
       meta_oauth_json: stores.meta,
       shopify_oauth_json: stores.shopify,
       license_jwt: licenseJwtFile,
@@ -241,6 +246,7 @@ export function formatDoctorReport(report: DoctorReport): string {
     `  google-oauth-ads.json (Consent C): ${report.plugin_data.google_oauth_ads_json ? "present" : "absent"}`,
     `  google-oauth-write.json (Consent W): ${report.plugin_data.google_oauth_write_json ? "present" : "absent"}`,
     `  google-oauth-mc.json (Consent MC): ${report.plugin_data.google_oauth_mc_json ? "present" : "absent"}`,
+    `  google-oauth-gbp.json (Consent B): ${report.plugin_data.google_oauth_gbp_json ? "present" : "absent"}`,
     `  meta-oauth.json: ${report.plugin_data.meta_oauth_json ? "present" : "absent"}`,
     `  shopify-oauth.json: ${report.plugin_data.shopify_oauth_json ? "present" : "absent"}`,
     `  license.jwt: ${report.plugin_data.license_jwt ? "present" : "absent"}`,

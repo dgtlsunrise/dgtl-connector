@@ -49,7 +49,9 @@
         "SHOPIFY_NOT_CONNECTED",
         "SHOPIFY_SCOPE_MISSING",
         "MC_NOT_CONNECTED",
-        "MC_SCOPE_MISSING"
+        "MC_SCOPE_MISSING",
+        "GBP_NOT_CONNECTED",
+        "GBP_SCOPE_MISSING"
       ]
     },
     "message": {

@@ -2,13 +2,13 @@
 
 **Closed free tool count: 24.** (the original 22 plus `ga4_list_account_summaries` plus `gsc_describe_schema`)
 
-That 24 is the **Consent A kernel** (`CONSENT_A_TOOLS` / `FREE_TOOL_NAMES` alias). Shopify is **local-free** (`LOCAL_FREE_TOOLS`, merchant token, no Polar — fail `SHOPIFY_NOT_CONNECTED`). Ads/Meta/Merchant Center are **license-gated** (`LICENSE_GATED_TOOLS`, Polar Pro — fail `LICENSE_REQUIRED`). GBP is local-free when the flag is on — **flag-on still returns `GBP_NOT_ENABLED`** (live HTTP is Wave 5, not this binary). Do not stuff Shopify into the 24-tool kernel.
+That 24 is the **Consent A kernel** (`CONSENT_A_TOOLS` / `FREE_TOOL_NAMES` alias). Shopify is **local-free** (`LOCAL_FREE_TOOLS`, merchant token, no Polar — fail `SHOPIFY_NOT_CONNECTED`). Ads/Meta/Merchant Center are **license-gated** (`LICENSE_GATED_TOOLS`, Polar Pro — fail `LICENSE_REQUIRED`). GBP is local-free when the flag is on (Consent B, not Consent A). Flag off → `GBP_NOT_ENABLED`. Flag on without Consent B → `GBP_NOT_CONNECTED`. Do not stuff Shopify into the 24-tool kernel.
 
 If you need a 25th **Consent A** tool, bump a version and update `schemas/v1/catalog.json` in the same change. Do not “just add it.” Quality over dump. Small typed tools, not a mega-query kitchen sink.
 
 Machine-readable list: [`schemas/v1/catalog.json`](../schemas/v1/catalog.json). Parameter schema: [`schemas/v1/tools.schema.json`](../schemas/v1/tools.schema.json). Error envelope: [`schemas/v1/error.schema.json`](../schemas/v1/error.schema.json).
 
-**Not all tools are read.** Consent A GA4 / GSC / GTM, Shopify products/orders, and GBP stubs are read (or fail-closed). GTM write (`gtm_create_tag`, `gtm_update_tag`, `gtm_publish_container`) and Ads / Meta mutate + create tools are registered **writes**. Repeating a **read** call is safe (**idempotent** as HTTP GET/list/query). Write tools are **not** idempotent. Read results are **not bit-stable** (GA4 processing, GSC data_state, GTM workspace edits).
+**Not all tools are read.** Consent A GA4 / GSC / GTM, Shopify products/orders, and GBP (when enabled) are read (or fail-closed). GTM write (`gtm_create_tag`, `gtm_update_tag`, `gtm_publish_container`) and Ads / Meta mutate + create tools are registered **writes**. Repeating a **read** call is safe (**idempotent** as HTTP GET/list/query). Write tools are **not** idempotent. Read results are **not bit-stable** (GA4 processing, GSC data_state, GTM workspace edits).
 
 ## Mutate honesty (Wave 0)
 
@@ -41,13 +41,13 @@ Live Ads / Meta mutate requires **plugin AND Worker**. Plugin Ads / Meta mutate 
 | Ads mutate (`DGTL_ADS_MUTATE_ENABLED` / `ADS_MUTATE_ENABLED`) | **on** | fail-closed (`false` until health `ads_mutate_enabled=true`) | both true |
 | Meta mutate (`DGTL_META_MUTATE_ENABLED` / `META_MUTATE_ENABLED`) | **on** | fail-closed | both true |
 | Consent W writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `GoogleWriteHttp`) | flag on + Consent W token |
-| GBP (`DGTL_GBP_ENABLED`) | **off** | n/a | **never HTTP in this binary** |
+| GBP (`DGTL_GBP_ENABLED`) | **off** | n/a | flag on + Consent B token → GET hop (no stamp) |
 
 `support_packet` / `doctor` print this matrix (booleans only; never tokens).
 
-### GBP flag-on ≠ HTTP
+### GBP live HTTP (Wave 5)
 
-GBP tools (`gbp_list_accounts`, `gbp_list_locations`, `gbp_get_location`, `gbp_performance`, `gbp_search_keywords`) are registered. Flag off **or** flag on → `GBP_NOT_ENABLED`. Flag-on hint: live GBP HTTP is **not in this binary** (Wave 5 — quota + Consent B). Do not treat `gbpEnabled=true` as a successful read.
+GBP tools (`gbp_list_accounts`, `gbp_list_locations`, `gbp_get_location`, `gbp_performance`, `gbp_search_keywords`) hop Google APIs when `DGTL_GBP_ENABLED=true` **and** Consent B is connected. Fail order: `GBP_NOT_ENABLED` (flag off) → `GBP_NOT_CONNECTED` → `GBP_SCOPE_MISSING` → hop. Direct Google (Account Management / Business Information / Performance). **Not** stamp. **Never** Consent A. Tools are GET-only even though `business.manage` is write-capable. Posts/replies are not registered (`UNSUPPORTED_OPERATION` if asked). Live quota (Basic API Access) is a **Noel gate**; without it Google returns `ACCESS_NOT_CONFIGURED`.
 
 ## Universal rules
 
@@ -588,7 +588,27 @@ Auth: `GOOGLE_MC_ACCESS_TOKEN` or `dgtl-connector-mcp auth login-mc` (`GOOGLE_OA
 | `mc_list_account_issues` | Account/feed/website diagnostics. |
 | `mc_list_data_sources` | Feeds (primary/supplemental). Pair with account issues. |
 
-Skill: [`skills/shopping-mc-readiness/`](../skills/shopping-mc-readiness/SKILL.md). Shopping **campaign** create still uses stamp `gads_create_shopping_campaign` + product_link id. Product data is `mc_*`. No MC insert/update/delete in this wave. No GBP/TikTok/Consent W E2E.
+Skill: [`skills/shopping-mc-readiness/`](../skills/shopping-mc-readiness/SKILL.md). Shopping **campaign** create still uses stamp `gads_create_shopping_campaign` + product_link id. Product data is `mc_*`. No MC insert/update/delete in this wave. No TikTok / Consent W E2E.
+
+---
+
+## Google Business Profile — GET-only (Wave 5; direct Google; not stamp)
+
+**Hop decision:** plugin-direct GBP APIs with Consent B. **Not** stamp. **Not** Consent A. Same hop class as GA4/GSC/MC (`direct_google`). Commercially free-local when the flag is on — no Polar bit.
+
+Auth: `GOOGLE_GBP_ACCESS_TOKEN` or `dgtl-connector-mcp auth login-gbp` (`GOOGLE_OAUTH_GBP_CLIENT_ID` → `PLUGIN_DATA/google-oauth-gbp.json`). Scope `https://www.googleapis.com/auth/business.manage` (Google has no readonly GBP scope; **tools are GET-only**). Fail `GBP_NOT_ENABLED` (flag off) → `GBP_NOT_CONNECTED` → `GBP_SCOPE_MISSING`. **No** `GATEWAY_UNAVAILABLE` (no Worker hop). Live Basic API Access quota on the GBP OAuth client's GCP project is a **Noel gate** (`ACCESS_NOT_CONFIGURED`). `auth login-gbp` does **not** flip `DGTL_GBP_ENABLED`.
+
+`account_name` / `location_name` are required on location/performance/keyword tools. Never guess. Discover via `gbp_list_accounts` then `gbp_list_locations`. Location names are `locations/{id}`.
+
+| Tool | Notes |
+| --- | --- |
+| `gbp_list_accounts` | Account Management API `accounts.list`. |
+| `gbp_list_locations` | Business Information API `accounts.locations.list` (`readMask` closed). Requires `account_name`. |
+| `gbp_get_location` | Business Information API `locations.get`. Requires `location_name`. |
+| `gbp_performance` | Performance API `fetchMultiDailyMetricsTimeSeries`. Requires `location_name` + `start_date` + `end_date`. Does not list locations. |
+| `gbp_search_keywords` | Performance API monthly search-keyword impressions. Requires `location_name`. Optional `month` (`YYYY-MM`). |
+
+No posts, replies, Q&A, or location mutate in this wave.
 
 ---
 
@@ -600,7 +620,7 @@ Skill: [`skills/shopping-mc-readiness/`](../skills/shopping-mc-readiness/SKILL.m
 | Request indexing | No tool |
 | Create GA4–GSC link | No tool; `analytics.readonly` cannot |
 | Google Ads / Meta (live HTTP) | Tools are registered; fail closed: `LICENSE_REQUIRED` → `GATEWAY_UNAVAILABLE` → `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`. Consent C via `auth login-ads` / `auth login-meta --code` or host-injected tokens. No developer-token in this plugin. |
-| GBP live HTTP | Tools are registered; flag off **or** flag on → `GBP_NOT_ENABLED`. HTTP is **not in this binary** (Wave 5). |
+| GBP write (posts / replies) | No tool. Scope is write-capable; Wave 5 tools are GET-only. |
 | GA4 realtime, funnel, pivot, batch | No tool |
 | GTM clients (server-side), users, environments | No tool |
 | Gmail / Drive | No tool |

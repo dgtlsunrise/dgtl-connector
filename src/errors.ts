@@ -31,6 +31,8 @@ export const ERROR_CODES = [
   "SHOPIFY_SCOPE_MISSING",
   "MC_NOT_CONNECTED",
   "MC_SCOPE_MISSING",
+  "GBP_NOT_CONNECTED",
+  "GBP_SCOPE_MISSING",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -78,7 +80,11 @@ export const MSG = {
   FEEDBACK_CONFIRM_REQUIRED:
     "feedback_send requires confirm: true after the user approves the draft from feedback_prepare. Do not send without that approval.",
   GBP_NOT_ENABLED:
-    "Google Business Profile tools are flagged off until DGTL's GCP project has non-zero GBP API quota (Basic API Access). They are not on the free GA4/GSC/GTM consent screen. Consent B (business.manage) is a separate grant.",
+    "Google Business Profile tools are flagged off (DGTL_GBP_ENABLED=false). They are not on the free GA4/GSC/GTM consent screen. Consent B (business.manage) is a separate grant. Enable the flag only after GBP Basic API Access quota is non-zero.",
+  GBP_NOT_CONNECTED:
+    "Google Business Profile is a separate OAuth grant (scope business.manage). It is not part of free Consent A. With DGTL_GBP_ENABLED=true, set GOOGLE_GBP_ACCESS_TOKEN or run `dgtl-connector-mcp auth login-gbp` (separate Consent B client). Never reuse Consent A.",
+  GBP_SCOPE_MISSING:
+    "This Google Business Profile login did not grant https://www.googleapis.com/auth/business.manage. Re-authorize Consent B (`auth login-gbp` or GOOGLE_GBP_ACCESS_TOKEN). Do not add business.manage to Consent A. Tools are GET-only even though the scope is write-capable.",
   WRITE_NOT_ENABLED:
     "Write/publish tools are flagged off (DGTL_WRITES_ENABLED=false). Free Consent A stays readonly (analytics/webmasters/tagmanager.readonly). Writes use a separate Consent W OAuth client — see docs/ops/FULL-STACK-ACCELERATE.md.",
   CONSENT_W_REQUIRED:

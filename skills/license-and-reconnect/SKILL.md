@@ -1,6 +1,6 @@
 ---
 name: license-and-reconnect
-description: Map LICENSE_REQUIRED, GATEWAY_UNAVAILABLE, REAUTH_REQUIRED, CONSENT_MISSING, GBP_NOT_ENABLED, WRITE_NOT_ENABLED, CONSENT_W_REQUIRED, ADS_MUTATE_NOT_ENABLED, META_MUTATE_NOT_ENABLED, META_SCOPE_MISSING, SPEND_CAP_EXCEEDED, ADS_SCOPE_MISSING, META_NOT_CONNECTED. Use when a paid tool failed, Google access expired, a scope was unchecked, writes are gated, gateway is down, or the user asks about Ads/Meta unlock. Free GA4/GSC/GTM keep working without a license.
+description: Map LICENSE_REQUIRED, GATEWAY_UNAVAILABLE, REAUTH_REQUIRED, CONSENT_MISSING, GBP_NOT_ENABLED, GBP_NOT_CONNECTED, GBP_SCOPE_MISSING, WRITE_NOT_ENABLED, CONSENT_W_REQUIRED, ADS_MUTATE_NOT_ENABLED, META_MUTATE_NOT_ENABLED, META_SCOPE_MISSING, SPEND_CAP_EXCEEDED, ADS_SCOPE_MISSING, META_NOT_CONNECTED. Use when a paid tool failed, Google access expired, a scope was unchecked, writes are gated, gateway is down, or the user asks about Ads/Meta unlock. Free GA4/GSC/GTM keep working without a license.
 ---
 
 # License and reconnect
@@ -25,7 +25,9 @@ Do not ask for a Google Ads developer-token or a Meta app secret.
 | `GATEWAY_UNAVAILABLE` | License ok, but `DGTL_GATEWAY_URL` unset / Worker down / paused | Set or fix the gateway URL (live: `https://stamp.dgtlsunrise.com`; backup: `https://dgtl-stamp.noel-4ea.workers.dev`). **Do not** tell the user to reconnect Ads. Free tools still work. |
 | `REAUTH_REQUIRED` | Google token expired or revoked | Host-injected token refresh, or `dgtl-connector-mcp auth login` (PKCE / AuthPort). Not a Gmail Connect card on stdio. |
 | `CONSENT_MISSING` | A product scope was unchecked | Same Consent A (GA4+GSC+GTM). Do not start a second product login. |
-| `GBP_NOT_ENABLED` | Flag off **or** flag on | Live GBP HTTP is **not in this binary** (Wave 5). Flag-on ≠ a successful read. Consent B is separate. Do not put `business.manage` on Consent A. |
+| `GBP_NOT_ENABLED` | `DGTL_GBP_ENABLED` false | Flag default off. Not a Consent A reconnect. Enable only after GBP quota is non-zero. |
+| `GBP_NOT_CONNECTED` | Flag on, no Consent B token | `GOOGLE_GBP_ACCESS_TOKEN` or `auth login-gbp`. Never reuse Consent A / `GOOGLE_ACCESS_TOKEN`. No stamp hop. |
+| `GBP_SCOPE_MISSING` | Token lacks `business.manage` | Re-authorize Consent B. Do not add `business.manage` to Consent A. Tools are GET-only. |
 | `WRITE_NOT_ENABLED` | `DGTL_WRITES_ENABLED` false | Write/publish stubs fail closed. Free Consent A stays readonly. See `gtm-readonly-limits`. |
 | `CONSENT_W_REQUIRED` | Writes flagged on but Consent W missing | Separate write OAuth client — never add edit/publish scopes to Consent A. |
 | `ADS_MUTATE_NOT_ENABLED` | Ads mutate opted out (`DGTL_ADS_MUTATE_ENABLED=false`) | Plugin defaults **on**. Opt out with env=`false`. Live hop still needs Worker `ADS_MUTATE_ENABLED=true`. Never Consent A. |

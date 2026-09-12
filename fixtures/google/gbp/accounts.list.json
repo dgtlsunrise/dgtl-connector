@@ -1,0 +1,11 @@
+{
+  "accounts": [
+    {
+      "name": "accounts/111111111111111111111",
+      "accountName": "Example Brand",
+      "type": "PERSONAL",
+      "verificationState": "VERIFIED",
+      "vettedState": "VETTED"
+    }
+  ]
+}

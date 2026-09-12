@@ -6,7 +6,7 @@ import { describe, it, before, after } from "node:test";
 import { buildGoogleAuthUrl, generatePkce } from "../src/auth/pkce.js";
 import { AuthPort } from "../src/auth/port.js";
 import { STORE_FILE, readStore, writeStore, tokenPath } from "../src/auth/store.js";
-import { CONSENT_A, CONSENT_C_GOOGLE, CONSENT_MC, CONSENT_W, SCOPE } from "../src/google/scopes.js";
+import { CONSENT_A, CONSENT_B, CONSENT_C_GOOGLE, CONSENT_MC, CONSENT_W, SCOPE } from "../src/google/scopes.js";
 import { ADS_MANAGEMENT } from "../src/meta/meta-write.js";
 import { dispatch } from "../src/tools/dispatch.js";
 import { installNetworkGuard, makeCtx, signLicense, testEnv, TEST_TOKEN } from "./helpers.js";
@@ -35,13 +35,23 @@ describe("Consent C token stores separate from AuthPort A (fail closed)", () => 
     assert.deepEqual(granted, [...CONSENT_A]);
   });
 
-  it("W0.5: CONSENT_A ∩ (CONSENT_W ∪ CONSENT_C ∪ CONSENT_MC ∪ adwords ∪ content ∪ Meta ads_management) = ∅", () => {
+  it("W0.5: CONSENT_A ∩ (CONSENT_W ∪ CONSENT_C ∪ CONSENT_MC ∪ CONSENT_B ∪ adwords ∪ content ∪ business.manage ∪ Meta ads_management) = ∅", () => {
     const a = new Set<string>(CONSENT_A);
     const adsWrite = new Set<string>(CONSENT_C_GOOGLE);
     const gtmWrite = new Set<string>(CONSENT_W);
     const mc = new Set<string>(CONSENT_MC);
+    const gbp = new Set<string>(CONSENT_B);
     const metaWrite = new Set<string>([ADS_MANAGEMENT]);
-    const write = new Set<string>([...gtmWrite, ...adsWrite, ...mc, ...metaWrite, SCOPE.adwords, SCOPE.content]);
+    const write = new Set<string>([
+      ...gtmWrite,
+      ...adsWrite,
+      ...mc,
+      ...gbp,
+      ...metaWrite,
+      SCOPE.adwords,
+      SCOPE.content,
+      SCOPE.business,
+    ]);
     const intersection = [...a].filter((s) => write.has(s));
     assert.deepEqual(
       intersection,
@@ -54,8 +64,10 @@ describe("Consent C token stores separate from AuthPort A (fail closed)", () => 
     assert.deepEqual([...a].filter((s) => metaWrite.has(s)), []);
     assert.ok(!a.has(SCOPE.adwords));
     assert.ok(!a.has(SCOPE.content));
+    assert.ok(!a.has(SCOPE.business));
     assert.ok(!a.has(ADS_MANAGEMENT));
     assert.deepEqual([...a].filter((s) => mc.has(s)), []);
+    assert.deepEqual([...a].filter((s) => gbp.has(s)), []);
     assert.equal(ADS_MANAGEMENT, "ads_management");
     assert.ok(adsWrite.has(SCOPE.adwords));
     assert.ok(write.has(SCOPE.tagmanagerEditContainers));
@@ -78,6 +90,7 @@ describe("Consent C token stores separate from AuthPort A (fail closed)", () => 
     );
     assert.ok(!url.includes("adwords"));
     assert.ok(!url.includes("auth/content"));
+    assert.ok(!url.includes("business.manage"));
     assert.ok(!url.includes(ADS_MANAGEMENT));
     for (const bad of write) {
       assert.ok(!granted.includes(bad), bad);

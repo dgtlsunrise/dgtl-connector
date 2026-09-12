@@ -2,6 +2,7 @@ import type { AccessToken, AccessTokenSource } from "./types.js";
 import { STORE_FILE } from "./types.js";
 import {
   HostInjectedAdsTokenSource,
+  HostInjectedGbpTokenSource,
   HostInjectedMcTokenSource,
   HostInjectedMetaTokenSource,
   HostInjectedTokenSource,
@@ -96,6 +97,25 @@ export class AuthPort implements AccessTokenSource {
         }),
       ],
       "authport-mc",
+    );
+  }
+
+  /** Consent B GBP — GOOGLE_GBP_ACCESS_TOKEN / google-oauth-gbp.json */
+  static gbpFromEnv(opts: {
+    env?: NodeJS.ProcessEnv;
+    pluginDataDir: string;
+    fetchImpl: typeof fetch;
+  }): AuthPort {
+    const env = opts.env ?? process.env;
+    return new AuthPort(
+      [
+        new HostInjectedGbpTokenSource(env),
+        new PkceTokenSource(opts.pluginDataDir, env.GOOGLE_OAUTH_GBP_CLIENT_ID, opts.fetchImpl, {
+          storeFile: STORE_FILE.gbp,
+          clientSecret: env.GOOGLE_OAUTH_GBP_CLIENT_SECRET,
+        }),
+      ],
+      "authport-gbp",
     );
   }
 

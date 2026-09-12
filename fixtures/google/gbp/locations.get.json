@@ -1,0 +1,25 @@
+{
+  "name": "locations/12345678901234567890",
+  "title": "Example Brand Store",
+  "storeCode": "STORE-1",
+  "websiteUri": "https://example.com",
+  "labels": ["flagship"],
+  "phoneNumbers": {
+    "primaryPhone": "+1-415-555-0100"
+  },
+  "storefrontAddress": {
+    "addressLines": ["1 Market St"],
+    "locality": "San Francisco",
+    "administrativeArea": "CA",
+    "postalCode": "94105",
+    "regionCode": "US"
+  },
+  "latlng": {
+    "latitude": 37.7937,
+    "longitude": -122.3965
+  },
+  "metadata": {
+    "placeId": "ChIJexampleplaceid0001",
+    "mapsUri": "https://maps.google.com/?cid=1"
+  }
+}

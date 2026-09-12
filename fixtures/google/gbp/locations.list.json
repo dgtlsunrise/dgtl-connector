@@ -1,0 +1,16 @@
+{
+  "locations": [
+    {
+      "name": "locations/12345678901234567890",
+      "title": "Example Brand Store",
+      "storeCode": "STORE-1",
+      "websiteUri": "https://example.com",
+      "labels": ["flagship"],
+      "metadata": {
+        "placeId": "ChIJexampleplaceid0001",
+        "mapsUri": "https://maps.google.com/?cid=1"
+      }
+    }
+  ],
+  "totalSize": 1
+}
