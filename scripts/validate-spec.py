@@ -54,6 +54,7 @@ SKILLS = [
     "gsc-vs-ads-keywords",
     "ga4-vs-ads-conversions",
     "shopify-readonly",
+    "shopify-ads-mc-join",
     "shopping-mc-readiness",
 ]
 
@@ -204,6 +205,8 @@ def check_catalog_and_tools() -> None:
             "shopify_get_product",
             "shopify_list_orders",
             "shopify_get_order",
+            "shopify_list_locations",
+            "shopify_list_inventory_levels",
         ):
             g = by_name.get(sname)
             if not g:
@@ -214,6 +217,15 @@ def check_catalog_and_tools() -> None:
                 err(f"catalog.json {sname} fail must be SHOPIFY_NOT_CONNECTED, got {g.get('fail')!r}")
             elif sname in names:
                 err(f"catalog.json: Shopify tool {sname} must not be in Consent A tools[]")
+        gwrite = by_name.get("shopify_adjust_inventory")
+        if not gwrite:
+            err("catalog.json gated_tools missing shopify_adjust_inventory")
+        elif gwrite.get("fail") != "WRITE_NOT_ENABLED":
+            err(
+                f"catalog.json shopify_adjust_inventory fail must be WRITE_NOT_ENABLED, got {gwrite.get('fail')!r}"
+            )
+        elif "shopify_adjust_inventory" in names:
+            err("catalog.json: Shopify write tool must not be in Consent A tools[]")
         for paid in ("gads_search", "meta_insights", "mc_list_products"):
             g = by_name.get(paid)
             if not g:

@@ -1,0 +1,16 @@
+{
+  "data": {
+    "locations": {
+      "pageInfo": { "hasNextPage": false, "endCursor": null },
+      "nodes": [
+        {
+          "id": "gid://shopify/Location/1",
+          "name": "Shop location",
+          "isActive": true,
+          "fulfillsOnlineOrders": true,
+          "address": { "city": "Austin", "province": "Texas", "country": "United States", "countryCode": "US" }
+        }
+      ]
+    }
+  }
+}

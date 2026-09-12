@@ -10,7 +10,14 @@ export const SHOPIFY_STORE_FILE = "shopify-oauth.json";
 /** Admin API version pin — document in TOOLS.md / skill. */
 export const SHOPIFY_API_VERSION = "2026-04";
 
-export const SHOPIFY_READ_SCOPES = ["read_products", "read_orders"] as const;
+export const SHOPIFY_READ_SCOPES = [
+  "read_products",
+  "read_orders",
+  "read_inventory",
+  "read_locations",
+] as const;
+
+export const SHOPIFY_WRITE_SCOPES = ["write_inventory"] as const;
 
 export type ShopifyCredentials = {
   /** Normalized host e.g. example.myshopify.com (no scheme/path). */
@@ -235,12 +242,27 @@ async function fetchClientCredentialsToken(opts: {
   }
 }
 
-/** True when detectable scopes omit a required read scope. */
+/**
+ * True when detectable scopes omit a required Admin scope.
+ * Undetectable (empty) → do not fail closed (Admin 403 still maps SHOPIFY_SCOPE_MISSING).
+ * `write_X` satisfies `read_X` (Shopify write grants typically include the read).
+ */
+export function missingShopifyScope(scopes: string[] | undefined, needed: string): boolean {
+  if (!scopes || scopes.length === 0) return false;
+  const set = new Set(scopes.map((s) => s.trim().toLowerCase()));
+  const want = needed.trim().toLowerCase();
+  if (set.has(want)) return false;
+  if (want.startsWith("read_")) {
+    const writeEquiv = `write_${want.slice("read_".length)}`;
+    if (set.has(writeEquiv)) return false;
+  }
+  return true;
+}
+
+/** @deprecated use missingShopifyScope */
 export function missingShopifyReadScope(
   scopes: string[] | undefined,
   needed: (typeof SHOPIFY_READ_SCOPES)[number],
 ): boolean {
-  if (!scopes || scopes.length === 0) return false; // undetectable → do not fail closed
-  const set = new Set(scopes.map((s) => s.trim().toLowerCase()));
-  return !set.has(needed.toLowerCase());
+  return missingShopifyScope(scopes, needed);
 }

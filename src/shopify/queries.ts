@@ -1,7 +1,7 @@
 /**
- * Allowlisted Admin GraphQL documents — read-only only.
+ * Allowlisted Admin GraphQL documents.
  * Handlers must never interpolate user strings into the document body
- * (variables only). Mutations are refused by ShopifyHttp.
+ * (variables only). Read path refuses mutations; write path uses ALLOWED_MUTATIONS only.
  */
 
 export const OP_SHOP = "Shop";
@@ -9,6 +9,9 @@ export const OP_PRODUCTS = "Products";
 export const OP_PRODUCT = "Product";
 export const OP_ORDERS = "Orders";
 export const OP_ORDER = "Order";
+export const OP_LOCATIONS = "Locations";
+export const OP_INVENTORY_LEVELS = "InventoryLevels";
+export const OP_INVENTORY_ADJUST = "InventoryAdjust";
 
 export const ALLOWED_OPERATIONS = new Set([
   OP_SHOP,
@@ -16,7 +19,11 @@ export const ALLOWED_OPERATIONS = new Set([
   OP_PRODUCT,
   OP_ORDERS,
   OP_ORDER,
+  OP_LOCATIONS,
+  OP_INVENTORY_LEVELS,
 ]);
+
+export const ALLOWED_MUTATIONS = new Set([OP_INVENTORY_ADJUST]);
 
 export const Q_SHOP = `query Shop {
   shop {
@@ -64,6 +71,7 @@ export const Q_PRODUCT = `query Product($id: ID!) {
         sku
         price
         inventoryQuantity
+        inventoryItem { id sku }
       }
     }
   }
@@ -109,10 +117,75 @@ export const Q_ORDER = `query Order($id: ID!) {
   }
 }`;
 
+export const Q_LOCATIONS = `query Locations($first: Int!, $after: String) {
+  locations(first: $first, after: $after) {
+    pageInfo { hasNextPage endCursor }
+    nodes {
+      id
+      name
+      isActive
+      fulfillsOnlineOrders
+      address { city province country countryCode }
+    }
+  }
+}`;
+
+export const Q_INVENTORY_LEVELS = `query InventoryLevels($id: ID!, $first: Int!, $after: String) {
+  location(id: $id) {
+    id
+    name
+    inventoryLevels(first: $first, after: $after) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        id
+        updatedAt
+        quantities(names: ["available", "on_hand", "committed", "incoming", "reserved"]) {
+          name
+          quantity
+        }
+        item {
+          id
+          sku
+          tracked
+          variant {
+            id
+            title
+            sku
+            product { id title handle }
+          }
+        }
+      }
+    }
+  }
+}`;
+
+export const M_INVENTORY_ADJUST = `mutation InventoryAdjust($input: InventoryAdjustQuantitiesInput!) {
+  inventoryAdjustQuantities(input: $input) {
+    userErrors { field message code }
+    inventoryAdjustmentGroup {
+      createdAt
+      reason
+      changes {
+        name
+        delta
+        quantityAfterChange
+        item { id sku }
+        location { id name }
+      }
+    }
+  }
+}`;
+
 export const DOC_BY_OP: Record<string, string> = {
   [OP_SHOP]: Q_SHOP,
   [OP_PRODUCTS]: Q_PRODUCTS,
   [OP_PRODUCT]: Q_PRODUCT,
   [OP_ORDERS]: Q_ORDERS,
   [OP_ORDER]: Q_ORDER,
+  [OP_LOCATIONS]: Q_LOCATIONS,
+  [OP_INVENTORY_LEVELS]: Q_INVENTORY_LEVELS,
+};
+
+export const MUTATION_DOC_BY_OP: Record<string, string> = {
+  [OP_INVENTORY_ADJUST]: M_INVENTORY_ADJUST,
 };

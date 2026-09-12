@@ -1601,3 +1601,32 @@ export const shopifyGetOrder = z
   })
   .strict();
 
+export const shopifyListLocations = z
+  .object({
+    page_size: pageSize,
+    page_token: pageToken,
+  })
+  .strict();
+
+export const shopifyListInventoryLevels = z
+  .object({
+    location_id: z.string().min(1),
+    page_size: pageSize,
+    page_token: pageToken,
+  })
+  .strict();
+
+/** Shopify inventory write — dry_run defaults true; live needs confirm_phrase with shop domain. */
+export const shopifyAdjustInventory = z
+  .object({
+    inventory_item_id: z.string().min(1),
+    location_id: z.string().min(1),
+    delta: z.number().int(),
+    reason: z.enum(["correction", "restock", "shrinkage", "received", "damaged", "other"]).optional(),
+    quantity_name: z.enum(["available", "on_hand"]).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+

@@ -1,0 +1,20 @@
+{
+  "data": {
+    "inventoryAdjustQuantities": {
+      "userErrors": [],
+      "inventoryAdjustmentGroup": {
+        "createdAt": "2026-09-11T18:00:00Z",
+        "reason": "correction",
+        "changes": [
+          {
+            "name": "available",
+            "delta": -1,
+            "quantityAfterChange": 11,
+            "item": { "id": "gid://shopify/InventoryItem/3001", "sku": "BW-1" },
+            "location": { "id": "gid://shopify/Location/1", "name": "Shop location" }
+          }
+        ]
+      }
+    }
+  }
+}

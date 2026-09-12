@@ -18,7 +18,8 @@
             "title": "Default Title",
             "sku": "BW-1",
             "price": "19.99",
-            "inventoryQuantity": 12
+            "inventoryQuantity": 12,
+            "inventoryItem": { "id": "gid://shopify/InventoryItem/3001", "sku": "BW-1" }
           }
         ]
       }

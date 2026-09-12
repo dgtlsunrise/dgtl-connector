@@ -119,7 +119,13 @@ describe("packaging and secrets", () => {
       const g = catalog.gated_tools.find((x: { name: string }) => x.name === name);
       assert.ok(g, name);
       assert.notEqual(g.fail, "LICENSE_REQUIRED", name);
-      assert.equal(g.fail, "SHOPIFY_NOT_CONNECTED", name);
+      const spec = TOOLS.find((t) => t.name === name);
+      assert.ok(spec, name);
+      if (spec!.family === "shopify_write") {
+        assert.equal(g.fail, "WRITE_NOT_ENABLED", name);
+      } else {
+        assert.equal(g.fail, "SHOPIFY_NOT_CONNECTED", name);
+      }
       assert.ok(!catalog.tools.some((t: { name: string }) => t.name === name), name);
     }
     for (const name of [

@@ -4,13 +4,29 @@ import { MSG, ToolError } from "../errors.js";
 import { asInt, requireId } from "../ids.js";
 import type { HttpCall } from "../http/calls.js";
 import {
-  missingShopifyReadScope,
+  missingShopifyScope,
   resolveShopifyCredentials,
   SHOPIFY_API_VERSION,
   type ShopifyCredentials,
 } from "./auth.js";
 import { ShopifyHttp } from "./http.js";
-import { OP_ORDER, OP_ORDERS, OP_PRODUCT, OP_PRODUCTS, OP_SHOP } from "./queries.js";
+import {
+  OP_INVENTORY_LEVELS,
+  OP_LOCATIONS,
+  OP_ORDER,
+  OP_ORDERS,
+  OP_PRODUCT,
+  OP_PRODUCTS,
+  OP_SHOP,
+} from "./queries.js";
+
+export type ShopifyNeededScope =
+  | "read_products"
+  | "read_orders"
+  | "read_inventory"
+  | "read_locations"
+  | "write_inventory"
+  | null;
 
 const FINANCIAL = new Set([
   "any",
@@ -33,7 +49,10 @@ const FULFILLMENT = new Set([
   "fulfilled",
 ]);
 
-function normalizeGid(raw: string, resource: "Product" | "Order"): string {
+export function normalizeGid(
+  raw: string,
+  resource: "Product" | "Order" | "Location" | "InventoryItem",
+): string {
   const trimmed = raw.trim();
   if (trimmed.startsWith("gid://shopify/")) return trimmed;
   if (/^\d+$/.test(trimmed)) return `gid://shopify/${resource}/${trimmed}`;
@@ -44,10 +63,10 @@ function normalizeGid(raw: string, resource: "Product" | "Order"): string {
   );
 }
 
-async function withShopify(
+export async function withShopify(
   ctx: AppContext,
   tool: string,
-  neededScope: "read_products" | "read_orders" | null,
+  neededScope: ShopifyNeededScope,
   run: (http: ShopifyHttp, creds: ShopifyCredentials) => Promise<Envelope>,
 ): Promise<Envelope> {
   const creds = await resolveShopifyCredentials({
@@ -57,14 +76,14 @@ async function withShopify(
   });
   if (!creds) {
     return failEnvelope(tool, "SHOPIFY_NOT_CONNECTED", MSG.SHOPIFY_NOT_CONNECTED, {
-      hint: "Set SHOPIFY_STORE + SHOPIFY_ACCESS_TOKEN (merchant custom app; read_products + read_orders only), or PLUGIN_DATA/shopify-oauth.json. Free local lane — no Polar / stamp required. Support never collects Shopify tokens.",
+      hint: "Set SHOPIFY_STORE + SHOPIFY_ACCESS_TOKEN (merchant custom app) or PLUGIN_DATA/shopify-oauth.json. Reads: read_products + read_orders + read_inventory + read_locations. Writes: write_inventory + DGTL_WRITES_ENABLED (local only). Free local — no Polar / stamp. Support never collects Shopify tokens.",
       api: "shopify-admin-graphql",
     });
   }
-  if (neededScope && missingShopifyReadScope(creds.scopes, neededScope)) {
+  if (neededScope && missingShopifyScope(creds.scopes, neededScope)) {
     return failEnvelope(tool, "SHOPIFY_SCOPE_MISSING", MSG.SHOPIFY_SCOPE_MISSING, {
       missing_scope: neededScope,
-      hint: `Detectable scopes omit ${neededScope}. Reinstall the merchant custom app with read_products + read_orders only (no write_*).`,
+      hint: `Detectable scopes omit ${neededScope}. Reinstall the merchant custom app. Default install is read_* only; write_inventory is an explicit scope expansion (not a stamp vault, not Polar).`,
       api: "shopify-admin-graphql",
     });
   }
@@ -316,6 +335,115 @@ export async function shopifyGetOrder(
         display_name: String(order.name ?? id),
       },
       page: { truncated: false, row_count: 1 },
+    });
+  });
+}
+
+export async function shopifyListLocations(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  return withShopify(ctx, "shopify_list_locations", "read_locations", async (http, creds) => {
+    const first = asInt(args.page_size, 25, 1, 50);
+    const after =
+      typeof args.page_token === "string" && args.page_token.trim()
+        ? args.page_token.trim()
+        : undefined;
+    const data = await http.graphql({
+      operation: OP_LOCATIONS,
+      variables: { first, after: after ?? null },
+      tool: "shopify_list_locations",
+    });
+    const conn = data.locations as
+      | {
+          pageInfo?: { hasNextPage?: boolean; endCursor?: string | null };
+          nodes?: unknown[];
+        }
+      | undefined;
+    const nodes = Array.isArray(conn?.nodes) ? conn!.nodes! : [];
+    const next =
+      conn?.pageInfo?.hasNextPage && conn.pageInfo.endCursor
+        ? String(conn.pageInfo.endCursor)
+        : undefined;
+    return okEnvelope("shopify_list_locations", {
+      data: {
+        locations: nodes,
+        cited: { store: creds.storeHost, api_version: SHOPIFY_API_VERSION },
+      },
+      page: {
+        row_count: nodes.length,
+        truncated: Boolean(next),
+        next_page_token: next,
+      },
+      hint: nodes.length === 0 ? HINT_EMPTY_LIST : "Copy location id for shopify_list_inventory_levels.",
+    });
+  });
+}
+
+export async function shopifyListInventoryLevels(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  return withShopify(ctx, "shopify_list_inventory_levels", "read_inventory", async (http, creds) => {
+    const locationId = normalizeGid(requireId(args.location_id, "location_id"), "Location");
+    const first = asInt(args.page_size, 25, 1, 50);
+    const after =
+      typeof args.page_token === "string" && args.page_token.trim()
+        ? args.page_token.trim()
+        : undefined;
+    const data = await http.graphql({
+      operation: OP_INVENTORY_LEVELS,
+      variables: { id: locationId, first, after: after ?? null },
+      tool: "shopify_list_inventory_levels",
+    });
+    const location = data.location as
+      | {
+          id?: string;
+          name?: string;
+          inventoryLevels?: {
+            pageInfo?: { hasNextPage?: boolean; endCursor?: string | null };
+            nodes?: unknown[];
+          };
+        }
+      | null
+      | undefined;
+    if (!location) {
+      return failEnvelope("shopify_list_inventory_levels", "NOT_FOUND", MSG.NOT_FOUND, {
+        resource_id: locationId,
+        api: "shopify-admin-graphql",
+        hint: "Copy location id from shopify_list_locations (gid or numeric).",
+      });
+    }
+    const conn = location.inventoryLevels;
+    const nodes = Array.isArray(conn?.nodes) ? conn!.nodes! : [];
+    const next =
+      conn?.pageInfo?.hasNextPage && conn.pageInfo.endCursor
+        ? String(conn.pageInfo.endCursor)
+        : undefined;
+    return okEnvelope("shopify_list_inventory_levels", {
+      data: {
+        location: { id: location.id, name: location.name },
+        inventory_levels: nodes,
+        cited: {
+          store: creds.storeHost,
+          location_id: locationId,
+          api_version: SHOPIFY_API_VERSION,
+        },
+      },
+      resource: {
+        type: "shopify_location",
+        id: String(location.id ?? locationId),
+        display_name: String(location.name ?? locationId),
+      },
+      page: {
+        row_count: nodes.length,
+        truncated: Boolean(next),
+        next_page_token: next,
+      },
+      hint:
+        nodes.length === 0
+          ? HINT_EMPTY_LIST
+          : "Join item.sku to Merchant Center offerId. inventoryItem id is required for shopify_adjust_inventory.",
     });
   });
 }

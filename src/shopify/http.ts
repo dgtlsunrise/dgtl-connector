@@ -3,7 +3,7 @@ import type { HttpCall } from "../http/calls.js";
 import { headerMap } from "../http/calls.js";
 import type { ShopifyCredentials } from "./auth.js";
 import { SHOPIFY_API_VERSION } from "./auth.js";
-import { ALLOWED_OPERATIONS, DOC_BY_OP } from "./queries.js";
+import { ALLOWED_MUTATIONS, ALLOWED_OPERATIONS, DOC_BY_OP, MUTATION_DOC_BY_OP } from "./queries.js";
 
 const MAX_RETRIES = 2;
 const BASE_BACKOFF_MS = 400;
@@ -21,6 +21,10 @@ function retryAfterMs(res: Response, attempt: number): number {
   return Math.min(BASE_BACKOFF_MS * 2 ** attempt, 5_000);
 }
 
+function stripGraphql(document: string): string {
+  return document.replace(/#[^\n]*/g, " ").replace(/\s+/g, " ").trim();
+}
+
 /** Refuse anything that looks like a GraphQL mutation or non-allowlisted op. */
 export function assertReadOnlyDocument(operation: string, document: string): void {
   if (!ALLOWED_OPERATIONS.has(operation)) {
@@ -28,11 +32,11 @@ export function assertReadOnlyDocument(operation: string, document: string): voi
       api: "shopify-admin-graphql",
     });
   }
-  const stripped = document.replace(/#[^\n]*/g, " ").replace(/\s+/g, " ").trim();
+  const stripped = stripGraphql(document);
   if (/\bmutation\b/i.test(stripped)) {
     throw new ToolError(
       "UNSUPPORTED_OPERATION",
-      "Shopify v1 slice is read-only; mutations are refused",
+      "Shopify read client refuses mutations; use the write path after DGTL_WRITES_ENABLED + write_inventory + shop-domain confirm",
       { api: "shopify-admin-graphql" },
     );
   }
@@ -43,6 +47,31 @@ export function assertReadOnlyDocument(operation: string, document: string): voi
         api: "shopify-admin-graphql",
       });
     }
+  }
+}
+
+/** Allowlisted named mutations only. Read documents are refused here. */
+export function assertMutationDocument(operation: string, document: string): void {
+  if (!ALLOWED_MUTATIONS.has(operation)) {
+    throw new ToolError("UNSUPPORTED_OPERATION", `Shopify mutation ${operation} is not allowlisted`, {
+      api: "shopify-admin-graphql",
+    });
+  }
+  const stripped = stripGraphql(document);
+  if (/\bquery\b/i.test(stripped) && !/\bmutation\b/i.test(stripped)) {
+    throw new ToolError("UNSUPPORTED_OPERATION", "Write path refuses query documents", {
+      api: "shopify-admin-graphql",
+    });
+  }
+  if (!/\bmutation\b/i.test(stripped)) {
+    throw new ToolError("UNSUPPORTED_OPERATION", `Document is not a mutation (${operation})`, {
+      api: "shopify-admin-graphql",
+    });
+  }
+  if (!stripped.toLowerCase().includes(`mutation ${operation.toLowerCase()}`)) {
+    throw new ToolError("UNSUPPORTED_OPERATION", `Document does not match mutation ${operation}`, {
+      api: "shopify-admin-graphql",
+    });
   }
 }
 
@@ -73,7 +102,29 @@ export class ShopifyHttp {
       });
     }
     assertReadOnlyDocument(opts.operation, document);
+    return this.postGraphql(opts.operation, document, opts.variables);
+  }
 
+  async graphqlMutation(opts: {
+    operation: string;
+    variables?: Record<string, unknown>;
+    tool: string;
+  }): Promise<Record<string, unknown>> {
+    const document = MUTATION_DOC_BY_OP[opts.operation];
+    if (!document) {
+      throw new ToolError("UNSUPPORTED_OPERATION", `Unknown Shopify mutation ${opts.operation}`, {
+        api: "shopify-admin-graphql",
+      });
+    }
+    assertMutationDocument(opts.operation, document);
+    return this.postGraphql(opts.operation, document, opts.variables);
+  }
+
+  private async postGraphql(
+    operation: string,
+    document: string,
+    variables?: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
     const url = new URL(
       `https://${this.opts.credentials.storeHost}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`,
     );
@@ -91,8 +142,8 @@ export class ShopifyHttp {
     };
     const body = JSON.stringify({
       query: document,
-      variables: opts.variables ?? {},
-      operationName: opts.operation,
+      variables: variables ?? {},
+      operationName: operation,
     });
 
     let lastStatus = 0;
@@ -146,7 +197,7 @@ export class ShopifyHttp {
       throw new ToolError("SHOPIFY_SCOPE_MISSING", MSG.SHOPIFY_SCOPE_MISSING, {
         google_status: 403,
         api: "shopify-admin-graphql",
-        hint: "Merchant custom app needs read_products and/or read_orders. No write_* scopes in v1.",
+        hint: "Merchant custom app needs the matching Admin scope (read_products / read_orders / read_inventory / read_locations, or write_inventory for writes). write_* is opt-in — not the default install.",
       });
     }
     if (lastStatus === 429) {

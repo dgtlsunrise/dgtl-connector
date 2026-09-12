@@ -13,7 +13,7 @@ import {
   writeShopifyStore,
 } from "../src/shopify/auth.js";
 import { assertReadOnlyDocument } from "../src/shopify/http.js";
-import { ALLOWED_OPERATIONS, DOC_BY_OP, OP_SHOP } from "../src/shopify/queries.js";
+import { ALLOWED_MUTATIONS, ALLOWED_OPERATIONS, DOC_BY_OP, OP_SHOP } from "../src/shopify/queries.js";
 import { helpText } from "../src/auth/login-cli.js";
 import {
   applyWriteEnvLocal,
@@ -83,7 +83,7 @@ function createShopifyFetch(): {
 
     const parsed = body ? (JSON.parse(body) as { operationName?: string; query?: string }) : {};
     const op = parsed.operationName ?? "";
-    if (/\bmutation\b/i.test(parsed.query ?? "")) {
+    if (/\bmutation\b/i.test(parsed.query ?? "") && op !== "InventoryAdjust") {
       return new Response(JSON.stringify({ errors: [{ message: "mutation refused by fixture" }] }), {
         status: 200,
         headers: { "content-type": "application/json" },
@@ -107,6 +107,15 @@ function createShopifyFetch(): {
       case "Order":
         fixture = loadShopFixture("order.get.json");
         break;
+      case "Locations":
+        fixture = loadShopFixture("locations.list.json");
+        break;
+      case "InventoryLevels":
+        fixture = loadShopFixture("inventory.levels.json");
+        break;
+      case "InventoryAdjust":
+        fixture = loadShopFixture("inventory.adjust.json");
+        break;
       default:
         return new Response(JSON.stringify({ errors: [{ message: `unknown op ${op}` }] }), {
           status: 200,
@@ -121,12 +130,14 @@ function createShopifyFetch(): {
   return { fetchImpl, calls };
 }
 
-const SHOPIFY_TOOLS = [
+const SHOPIFY_READ_TOOLS = [
   "shopify_get_shop",
   "shopify_list_products",
   "shopify_get_product",
   "shopify_list_orders",
   "shopify_get_order",
+  "shopify_list_locations",
+  "shopify_list_inventory_levels",
 ] as const;
 
 describe("Shopify read-only slice (local merchant credentials)", () => {
@@ -136,27 +147,31 @@ describe("Shopify read-only slice (local merchant credentials)", () => {
   });
   after(() => restore());
 
-  it("registers five readonly tools; no write tools", () => {
-    for (const name of SHOPIFY_TOOLS) {
+  it("registers readonly tools plus a separate shopify_write family", () => {
+    for (const name of SHOPIFY_READ_TOOLS) {
       const t = TOOLS.find((x) => x.name === name);
       assert.ok(t, name);
       assert.equal(t!.family, "shopify");
       assert.equal(t!.annotations.readOnlyHint, true);
       assert.equal(t!.annotations.destructiveHint, false);
     }
-    assert.equal(
-      TOOLS.filter((t) => t.name.startsWith("shopify_") && !t.annotations.readOnlyHint).length,
-      0,
-    );
+    const writes = TOOLS.filter((t) => t.name.startsWith("shopify_") && !t.annotations.readOnlyHint);
+    assert.equal(writes.length, 1);
+    assert.equal(writes[0]!.name, "shopify_adjust_inventory");
+    assert.equal(writes[0]!.family, "shopify_write");
+    assert.ok(ALLOWED_MUTATIONS.has("InventoryAdjust"));
   });
 
   it("W0.4: Shopify is LOCAL_FREE, not Consent A kernel, not Polar license-gated", () => {
     assert.equal(CONSENT_A_TOOLS.length, 24);
-    for (const name of SHOPIFY_TOOLS) {
+    for (const name of SHOPIFY_READ_TOOLS) {
       assert.ok(LOCAL_FREE_TOOLS.includes(name), name);
       assert.ok(!CONSENT_A_TOOLS.includes(name), name);
       assert.ok(!LICENSE_GATED_TOOLS.includes(name), name);
     }
+    assert.ok(LOCAL_FREE_TOOLS.includes("shopify_adjust_inventory"));
+    assert.ok(!CONSENT_A_TOOLS.includes("shopify_adjust_inventory"));
+    assert.ok(!LICENSE_GATED_TOOLS.includes("shopify_adjust_inventory"));
     assert.ok(!LOCAL_FREE_TOOLS.includes("gads_search"));
     assert.ok(!LOCAL_FREE_TOOLS.includes("meta_insights"));
     assert.ok(LICENSE_GATED_TOOLS.includes("gads_search"));
@@ -167,6 +182,8 @@ describe("Shopify read-only slice (local merchant credentials)", () => {
     assert.equal(S.shopifyGetProduct.safeParse({}).success, false);
     assert.equal(S.shopifyGetProduct.safeParse({ product_id: "1001" }).success, true);
     assert.equal(S.shopifyGetOrder.safeParse({ order_id: "5001" }).success, true);
+    assert.equal(S.shopifyListInventoryLevels.safeParse({}).success, false);
+    assert.equal(S.shopifyListInventoryLevels.safeParse({ location_id: "1" }).success, true);
     assert.equal(
       S.shopifyListOrders.safeParse({ status: "bogus" }).success,
       false,
@@ -223,7 +240,7 @@ describe("Shopify read-only slice (local merchant credentials)", () => {
     const ctx = shopifyCtx(testEnv({
         SHOPIFY_STORE: "fixture-store.myshopify.com",
         SHOPIFY_ACCESS_TOKEN: secret,
-        SHOPIFY_GRANTED_SCOPES: "read_products,read_orders",
+        SHOPIFY_GRANTED_SCOPES: "read_products,read_orders,read_inventory,read_locations",
       }), fetchImpl);
 
     const shop = await dispatch(ctx, "shopify_get_shop", {});
@@ -251,6 +268,15 @@ describe("Shopify read-only slice (local merchant credentials)", () => {
     assert.equal(order.ok, true);
     assert.equal((order.data as { order: { name: string } }).order.name, "#1001");
 
+    const locations = await dispatch(ctx, "shopify_list_locations", {});
+    assert.equal(locations.ok, true);
+    assert.equal(locations.page?.row_count, 1);
+
+    const levels = await dispatch(ctx, "shopify_list_inventory_levels", { location_id: "1" });
+    assert.equal(levels.ok, true);
+    const levelData = levels.data as { inventory_levels: Array<{ item?: { sku?: string } }> };
+    assert.equal(levelData.inventory_levels[0]?.item?.sku, "BW-1");
+
     assert.ok(calls.length >= 5);
     for (const c of calls) {
       assert.ok(c.path.includes("/admin/api/2026-04/graphql.json"));
@@ -261,6 +287,19 @@ describe("Shopify read-only slice (local merchant credentials)", () => {
     }
     // No Polar / gateway required
     assert.equal(ctx.license.ok, false);
+  });
+
+  it("SHOPIFY_SCOPE_MISSING when detectable scopes omit read_locations", async () => {
+    const { fetchImpl, calls } = createShopifyFetch();
+    const ctx = shopifyCtx(testEnv({
+        SHOPIFY_STORE: "fixture-store",
+        SHOPIFY_ACCESS_TOKEN: "shpat_x",
+        SHOPIFY_GRANTED_SCOPES: "read_products,read_orders",
+      }), fetchImpl);
+    const env = await dispatch(ctx, "shopify_list_locations", {});
+    assert.equal(env.ok, false);
+    assert.equal(env.error_code, "SHOPIFY_SCOPE_MISSING");
+    assert.equal(calls.length, 0);
   });
 
   it("SHOPIFY_SCOPE_MISSING when detectable scopes omit read_orders", async () => {

@@ -8,14 +8,14 @@ If you need a 25th **Consent A** tool, bump a version and update `schemas/v1/cat
 
 Machine-readable list: [`schemas/v1/catalog.json`](../schemas/v1/catalog.json). Parameter schema: [`schemas/v1/tools.schema.json`](../schemas/v1/tools.schema.json). Error envelope: [`schemas/v1/error.schema.json`](../schemas/v1/error.schema.json).
 
-**Not all tools are read.** Consent A GA4 / GSC / GTM, Shopify products/orders, and GBP (when enabled) are read (or fail-closed). GTM write (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`) and Ads / Meta mutate + create tools are registered **writes**. Repeating a **read** call is safe (**idempotent** as HTTP GET/list/query). Write tools are **not** idempotent. Read results are **not bit-stable** (GA4 processing, GSC data_state, GTM workspace edits).
+**Not all tools are read.** Consent A GA4 / GSC / GTM, Shopify products/orders/inventory/locations, and GBP (when enabled) are read (or fail-closed). GTM write (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`), `shopify_adjust_inventory`, and Ads / Meta mutate + create tools are registered **writes**. Repeating a **read** call is safe (**idempotent** as HTTP GET/list/query). Write tools are **not** idempotent. Read results are **not bit-stable** (GA4 processing, GSC data_state, GTM workspace edits).
 
 ## Mutate honesty (Wave 0)
 
 ### ACTIVE / ENABLED only on confirm
 
 - `dry_run` **defaults true**. Omitted or `true` → proposed payload, **zero** mutate HTTP.
-- Live (`dry_run=false`) requires `confirm_phrase` containing the resource IDs for that tool (Ads: digits-only `customer_id`; Meta: `act_{ad_account_id}` plus child ids; Consent W: container `publicId`).
+- Live (`dry_run=false`) requires `confirm_phrase` containing the resource IDs for that tool (Ads: digits-only `customer_id`; Meta: `act_{ad_account_id}` plus child ids; Consent W: container `publicId`; Shopify writes: shop domain `*.myshopify.com`).
 - **Harness:** a **user** message this turn must contain those IDs. List-tool output is not the user message (`harnessUserMessageContainsCustomerId` in `src/ads/gads-write.ts`).
 - Campaign / RSA / Meta **creates** default **PAUSED**.
 - **ACTIVE** (Meta) / **ENABLED** (Google Ads) only when the caller passes **explicit** `status` **and** live confirm. Do not infer ENABLED/ACTIVE from a dry-run or from a PAUSED parent.
@@ -41,6 +41,7 @@ Live Ads / Meta mutate requires **plugin AND Worker**. Plugin Ads / Meta mutate 
 | Ads mutate (`DGTL_ADS_MUTATE_ENABLED` / `ADS_MUTATE_ENABLED`) | **on** | fail-closed (`false` until health `ads_mutate_enabled=true`) | both true |
 | Meta mutate (`DGTL_META_MUTATE_ENABLED` / `META_MUTATE_ENABLED`) | **on** | fail-closed | both true |
 | Consent W writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `GoogleWriteHttp`) | flag on + Consent W token |
+| Shopify writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `ShopifyHttp` mutation) | flag on + merchant `write_inventory` + shop-domain confirm |
 | GBP (`DGTL_GBP_ENABLED`) | **off** | n/a | flag on + Consent B token → GET hop (no stamp) |
 
 `support_packet` / `doctor` print this matrix (booleans only; never tokens).
@@ -654,17 +655,26 @@ Identity 1 + GA4 8 + GSC 7 + GTM 8 = **24**.
 | gtm | `gtm_list_accounts`, `gtm_list_containers`, `gtm_get_container`, `gtm_list_workspaces`, `gtm_list_tags`, `gtm_list_triggers`, `gtm_list_variables`, `gtm_get_live_container_version` |
 
 
-## Shopify — products/orders read (local; free; not Consent A)
+## Shopify — products/orders/inventory read + confirm-gated inventory write (local; not Consent A)
 
-Merchant-held Admin API credentials on the Bot computer. **No Polar. No stamp hop.** Fail closed `SHOPIFY_NOT_CONNECTED` without `SHOPIFY_STORE` + `SHOPIFY_ACCESS_TOKEN` (or `PLUGIN_DATA/shopify-oauth.json`). Scopes: `read_products` + `read_orders` only. Admin GraphQL API version **2026-04**. Closed free Google count stays **24**.
+Merchant-held Admin API credentials on the Bot computer. **No Polar. No stamp hop. No multi-store vault.** Fail closed `SHOPIFY_NOT_CONNECTED` without `SHOPIFY_STORE` + `SHOPIFY_ACCESS_TOKEN` (or `PLUGIN_DATA/shopify-oauth.json`). Admin GraphQL API version **2026-04**. Closed free Google count stays **24**.
+
+**Consent decision:** Shopify is not Google OAuth. Reads stay **LOCAL_FREE** with `read_products` + `read_orders` + `read_inventory` + `read_locations`. Writes use the **same** merchant token after an explicit custom-app `write_inventory` expansion **and** `DGTL_WRITES_ENABLED` (default **false**). There is no second Shopify OAuth family and no Worker vault.
 
 | Tool | Notes |
 | --- | --- |
 | `shopify_get_shop` | Confirm shop domain + name. |
 | `shopify_list_products` | Paginated; title/handle/status/id. |
-| `shopify_get_product` | Requires `product_id` (gid or numeric). |
+| `shopify_get_product` | Requires `product_id` (gid or numeric). Variants include `sku` + `inventoryItem.id`. |
 | `shopify_list_orders` | Paginated; closed `status` / `financial_status` / `fulfillment_status` / date filters. |
 | `shopify_get_order` | Requires `order_id` (gid or numeric); line items. |
+| `shopify_list_locations` | Paginated locations. `read_locations`. |
+| `shopify_list_inventory_levels` | Requires `location_id`. `read_inventory`. |
+| `shopify_adjust_inventory` | Write. `inventoryAdjustQuantities` delta. `dry_run` default true. Live: `confirm_phrase` must contain the shop domain. Flag off → `WRITE_NOT_ENABLED` (zero HTTP). Missing `write_inventory` → `SHOPIFY_SCOPE_MISSING`. |
 
-**Out of v1:** writes, customers dump, ShopifyQL, raw GraphQL, themes, Multipass.
+Fail order for writes: `WRITE_NOT_ENABLED` → `SHOPIFY_NOT_CONNECTED` → `SHOPIFY_SCOPE_MISSING` → dry-run (shop domain, zero mutation HTTP) → live needs shop domain in `confirm_phrase`.
+
+**Out of this wave:** customers dump, ShopifyQL, raw GraphQL, themes, Multipass, stamp multi-store vault, draft orders, price writes.
+
+Skill: `shopify-ads-mc-join` joins Shopify SKU → MC `offerId` → Ads listing groups. `shopify-readonly` covers list/get.
 

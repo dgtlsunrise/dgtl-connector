@@ -89,7 +89,10 @@ import {
   shopifyGetProduct,
   shopifyListOrders,
   shopifyGetOrder,
+  shopifyListLocations,
+  shopifyListInventoryLevels,
 } from "../shopify/shopify.js";
+import { shopifyAdjustInventory } from "../shopify/shopify-write.js";
 import { supportPacket } from "../support/packet.js";
 import { feedbackPrepare, feedbackSend } from "../support/feedback.js";
 import * as S from "./schemas.js";
@@ -105,6 +108,7 @@ export type ToolFamily =
   | "meta"
   | "mc"
   | "shopify"
+  | "shopify_write"
   | "license";
 
 export type ToolAnnotations = {
@@ -1390,6 +1394,37 @@ export const TOOLS: ToolSpec[] = [
     annotations: ANN_RO,
     handler: (ctx, args) => shopifyGetOrder(ctx, args),
   },
+  {
+    name: "shopify_list_locations",
+    group: "shopify",
+    family: "shopify",
+    title: "Shopify list locations",
+    description: `${RO} Paginated locations (id, name, active, fulfillsOnlineOrders). Merchant token with read_locations. SHOPIFY_NOT_CONNECTED without credentials. No Polar / stamp.`,
+    inputSchema: S.shopifyListLocations,
+    annotations: ANN_RO,
+    handler: (ctx, args) => shopifyListLocations(ctx, args),
+  },
+  {
+    name: "shopify_list_inventory_levels",
+    group: "shopify",
+    family: "shopify",
+    title: "Shopify list inventory levels",
+    description: `${RO} Inventory quantities at one location. Requires location_id. read_inventory. Copy inventoryItem id + sku for Ads/MC join or shopify_adjust_inventory. No Polar.`,
+    inputSchema: S.shopifyListInventoryLevels,
+    annotations: ANN_RO,
+    handler: (ctx, args) => shopifyListInventoryLevels(ctx, args),
+  },
+  {
+    name: "shopify_adjust_inventory",
+    group: "shopify-write",
+    family: "shopify_write",
+    title: "Shopify adjust inventory",
+    description:
+      "Write. inventoryAdjustQuantities (delta) at one location. dry_run defaults true. Live needs confirm_phrase containing the shop domain (*.myshopify.com) plus DGTL_WRITES_ENABLED and write_inventory on the merchant app. Local — no Polar, no stamp vault.",
+    inputSchema: S.shopifyAdjustInventory,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => shopifyAdjustInventory(ctx, args),
+  },
 ];
 
 export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
@@ -1409,10 +1444,10 @@ export const CONSENT_A_TOOLS = TOOLS.filter(
  */
 export const FREE_TOOL_NAMES = CONSENT_A_TOOLS;
 
-/** Local-free, not Polar: Shopify merchant token; GBP (flag still fail-closed). */
-export const LOCAL_FREE_TOOLS = TOOLS.filter((t) => t.family === "shopify" || t.family === "gbp").map(
-  (t) => t.name,
-);
+/** Local-free, not Polar: Shopify merchant token (reads + flag-gated writes); GBP. */
+export const LOCAL_FREE_TOOLS = TOOLS.filter(
+  (t) => t.family === "shopify" || t.family === "shopify_write" || t.family === "gbp",
+).map((t) => t.name);
 
 /** Polar Pro surface: Google Ads + Meta Ads + Merchant Center (including plugin-local describe tools). */
 export const LICENSE_GATED_TOOLS = TOOLS.filter(

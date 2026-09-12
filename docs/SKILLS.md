@@ -2,7 +2,7 @@
 
 Skills are Agent Skills (`skills/<name>/SKILL.md`). They are how the plugin behaves in conversation. Tools are dumb and typed; skills carry the product judgment.
 
-This index is closed for v1 spec plus Wave 4. **14 skills.** Each directory below must exist.
+This index is closed for v1 spec plus Waves 4–7. **16 skills.** Each directory below must exist.
 
 | Skill | Directory | Job |
 | --- | --- | --- |
@@ -13,7 +13,8 @@ This index is closed for v1 spec plus Wave 4. **14 skills.** Each directory belo
 | No hallucinated metrics | `skills/no-hallucinated-metrics/` | Numbers only from tool `data`. Refuse invented metrics. |
 | GSC vs GA4 search | `skills/gsc-vs-ga4-search/` | Queries live in Search Console. GA4 has no `searchQuery`. |
 | GTM readonly limits | `skills/gtm-readonly-limits/` | Audit live vs workspace. Consent W gates for write/publish. |
-| Shopify readonly | `skills/shopify-readonly/` | Local merchant products/orders; SHOPIFY_NOT_CONNECTED without token. |
+| Shopify readonly | `skills/shopify-readonly/` | Local merchant products/orders/locations/inventory; SHOPIFY_NOT_CONNECTED without token. |
+| Shopify ↔ Ads/MC join | `skills/shopify-ads-mc-join/` | Join Shopify SKU/handle/inventory to MC offerId and Ads listing groups. Never invent SKUs. |
 | Shopping ↔ MC readiness | `skills/shopping-mc-readiness/` | Merchant API products/status/issues then Shopping campaign create. Consent MC, not Consent A. |
 | Google marketing support | `skills/google-marketing-support/` | Diagnose OAuth / empty / quota / API-not-enabled. One optional DGTL line after a real answer. |
 | Send feedback | `skills/send-feedback/` | After a hard-failure diagnosis, offer once to prepare a draft for support@dgtlsunrise.com. User must approve before `feedback_send`. |
@@ -47,7 +48,8 @@ This index is closed for v1 spec plus Wave 4. **14 skills.** Each directory belo
 | “Search queries in GA4” | `gsc-vs-ga4-search` |
 | “Why don’t GA4 and GSC match?” | `gsc-vs-ga4-search` (lag, PDT vs property TZ, different definitions) |
 | “Publish this tag” | `gtm-readonly-limits` |
-| “List my Shopify products / orders” | `shopify-readonly` |
+| “List my Shopify products / orders / inventory” | `shopify-readonly` |
+| “Which Shopify SKUs are in Merchant Center / Shopping ads?” | `shopify-ads-mc-join` |
 | “Are my products ready for Shopping ads?” / feed issues | `shopping-mc-readiness` |
 | “What’s actually on production?” | `gtm-readonly-limits` → live version, not workspace |
 | Auth cancelled / PKCE failed; GTM 403 API not enabled; empty property | `google-marketing-support` |
@@ -66,7 +68,8 @@ This index is closed for v1 spec plus Wave 4. **14 skills.** Each directory belo
 | no-hallucinated-metrics | `ga4_get_metadata`, then the tool that produced the number | — |
 | gsc-vs-ga4-search | `gsc_query_search_analytics`, `gsc_list_sites`, `ga4_run_report` only for landing-page **sessions** | `ga4_run_report` with `searchQuery` |
 | gtm-readonly-limits | All readonly `gtm_*` | Live mutate without Consent W + user confirm; inventing confirm phrases |
-| shopify-readonly | `shopify_*` | Calling Admin API without credentials; inventing product/order ids; write scopes |
+| shopify-readonly | `shopify_get_shop`, `shopify_list_*`, `shopify_get_*` | Calling Admin API without credentials; inventing ids; live writes without flag+confirm |
+| shopify-ads-mc-join | `shopify_list_products`, `shopify_get_product`, `shopify_list_locations`, `shopify_list_inventory_levels`, `mc_*`, `gads_list_merchant_center_links`, `gads_add_shopping_listing_groups` | Inventing SKU/offerId; Consent A for MC; stamp Shopify hop |
 | shopping-mc-readiness | `mc_*`, `gads_list_merchant_center_links`, `gads_create_shopping_campaign`, `gads_add_shopping_listing_groups` | Consent A for MC; stamp Merchant API hop; inventing merchant_id; MC mutates |
 | google-marketing-support | `google_whoami` first, `support_packet` for intake, then the failing family; `feedback_prepare` only after a real hard-failure diagnosis | Token collection; `feedback_send` without user approval |
 | send-feedback | `support_packet`, `feedback_prepare`, then `feedback_send` only after the user approves the draft | Sending without `confirm: true`; pitching on LICENSE_REQUIRED / empty rows / picker |

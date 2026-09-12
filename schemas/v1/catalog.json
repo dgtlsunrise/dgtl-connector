@@ -662,6 +662,25 @@
       "name": "shopify_get_order",
       "group": "shopify",
       "fail": "SHOPIFY_NOT_CONNECTED"
+    },
+    {
+      "name": "shopify_list_locations",
+      "group": "shopify",
+      "fail": "SHOPIFY_NOT_CONNECTED",
+      "note": "Wave 7 inventory/locations read; read_locations; local-free"
+    },
+    {
+      "name": "shopify_list_inventory_levels",
+      "group": "shopify",
+      "fail": "SHOPIFY_NOT_CONNECTED",
+      "note": "Requires location_id; read_inventory"
+    },
+    {
+      "name": "shopify_adjust_inventory",
+      "group": "shopify-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED",
+      "note": "Local write; dry_run default; confirm shop domain; write_inventory; not stamp vault"
     }
   ]
 }
