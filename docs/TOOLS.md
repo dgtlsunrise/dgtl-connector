@@ -2,13 +2,52 @@
 
 **Closed free tool count: 24.** (the original 22 plus `ga4_list_account_summaries` plus `gsc_describe_schema`)
 
-That 24 is the **Consent A kernel** (`CONSENT_A_TOOLS` / `FREE_TOOL_NAMES` alias). Shopify is **local-free** (`LOCAL_FREE_TOOLS`, merchant token, no Polar — fail `SHOPIFY_NOT_CONNECTED`). Ads/Meta are **license-gated** (`LICENSE_GATED_TOOLS`, Polar Pro — fail `LICENSE_REQUIRED`). GBP is local-free when enabled (still fail `GBP_NOT_ENABLED` until quota). Do not stuff Shopify into the 24-tool kernel.
+That 24 is the **Consent A kernel** (`CONSENT_A_TOOLS` / `FREE_TOOL_NAMES` alias). Shopify is **local-free** (`LOCAL_FREE_TOOLS`, merchant token, no Polar — fail `SHOPIFY_NOT_CONNECTED`). Ads/Meta are **license-gated** (`LICENSE_GATED_TOOLS`, Polar Pro — fail `LICENSE_REQUIRED`). GBP is local-free when the flag is on — **flag-on still returns `GBP_NOT_ENABLED`** (live HTTP is Wave 5, not this binary). Do not stuff Shopify into the 24-tool kernel.
 
 If you need a 25th **Consent A** tool, bump a version and update `schemas/v1/catalog.json` in the same change. Do not “just add it.” Quality over dump. Small typed tools, not a mega-query kitchen sink.
 
 Machine-readable list: [`schemas/v1/catalog.json`](../schemas/v1/catalog.json). Parameter schema: [`schemas/v1/tools.schema.json`](../schemas/v1/tools.schema.json). Error envelope: [`schemas/v1/error.schema.json`](../schemas/v1/error.schema.json).
 
-All tools are **read**. Repeating a call is safe (**idempotent** as HTTP GET/list/query). Results are **not bit-stable** (GA4 processing, GSC data_state, GTM workspace edits).
+**Not all tools are read.** Consent A GA4 / GSC / GTM, Shopify products/orders, and GBP stubs are read (or fail-closed). GTM write (`gtm_create_tag`, `gtm_update_tag`, `gtm_publish_container`) and Ads / Meta mutate + create tools are registered **writes**. Repeating a **read** call is safe (**idempotent** as HTTP GET/list/query). Write tools are **not** idempotent. Read results are **not bit-stable** (GA4 processing, GSC data_state, GTM workspace edits).
+
+## Mutate honesty (Wave 0)
+
+### ACTIVE / ENABLED only on confirm
+
+- `dry_run` **defaults true**. Omitted or `true` → proposed payload, **zero** mutate HTTP.
+- Live (`dry_run=false`) requires `confirm_phrase` containing the resource IDs for that tool (Ads: digits-only `customer_id`; Meta: `act_{ad_account_id}` plus child ids; Consent W: container `publicId`).
+- **Harness:** a **user** message this turn must contain those IDs. List-tool output is not the user message (`harnessUserMessageContainsCustomerId` in `src/ads/gads-write.ts`).
+- Campaign / RSA / Meta **creates** default **PAUSED**.
+- **ACTIVE** (Meta) / **ENABLED** (Google Ads) only when the caller passes **explicit** `status` **and** live confirm. Do not infer ENABLED/ACTIVE from a dry-run or from a PAUSED parent.
+
+### Standalone keywords vs Search / Display-create children
+
+| Path | Omitted `status` | Notes |
+| --- | --- | --- |
+| `gads_add_keywords` (standalone) | **PAUSED** | ENABLED only with explicit `status` + confirm. |
+| `gads_create_search_campaign` children (ad group + stub keywords) | **ENABLED** under a **PAUSED** campaign | Intentional Google pattern. Do **not** pause children in Wave 0. |
+| `gads_create_display_campaign` child ad group | **ENABLED** under a **PAUSED** campaign | Same. |
+
+### Keyword match type
+
+Omitted `match_type` → **BROAD** (`gads_add_keywords` and Search-create stub keywords). Documented; **do not flip** to PHRASE. Status is the spend gate, not match type.
+
+### Dual-gate flag matrix
+
+Live Ads / Meta mutate requires **plugin AND Worker**. Plugin Ads / Meta mutate flags **stay default on** so Pro tools remain listed. Worker flags are **fail-closed** (unset / unknown → no live hop). Do **not** flip plugin defaults as safety theater.
+
+| Surface | Plugin default | Worker default | Live mutate |
+| --- | --- | --- | --- |
+| Ads mutate (`DGTL_ADS_MUTATE_ENABLED` / `ADS_MUTATE_ENABLED`) | **on** | fail-closed (`false` until health `ads_mutate_enabled=true`) | both true |
+| Meta mutate (`DGTL_META_MUTATE_ENABLED` / `META_MUTATE_ENABLED`) | **on** | fail-closed | both true |
+| Consent W writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `GoogleWriteHttp`) | flag on + Consent W token |
+| GBP (`DGTL_GBP_ENABLED`) | **off** | n/a | **never HTTP in this binary** |
+
+`support_packet` / `doctor` print this matrix (booleans only; never tokens).
+
+### GBP flag-on ≠ HTTP
+
+GBP tools (`gbp_list_accounts`, `gbp_list_locations`, `gbp_get_location`, `gbp_performance`, `gbp_search_keywords`) are registered. Flag off **or** flag on → `GBP_NOT_ENABLED`. Flag-on hint: live GBP HTTP is **not in this binary** (Wave 5 — quota + Consent B). Do not treat `gbpEnabled=true` as a successful read.
 
 ## Universal rules
 
@@ -464,7 +503,7 @@ JSON body includes `to` (`support@dgtlsunrise.com`), `reply_to`, `kind`, `messag
 
 ## Consent W — GTM write (gated; not free Consent A)
 
-Flag `DGTL_WRITES_ENABLED` defaults **false** → `WRITE_NOT_ENABLED` (zero HTTP). When on, tools use **`GoogleWriteHttp`** + Consent W token store (`GOOGLE_WRITE_ACCESS_TOKEN` / `google-oauth-write.json`) — never `ctx.auth` / Consent A.
+Flag `DGTL_WRITES_ENABLED` defaults **false** → `WRITE_NOT_ENABLED` (zero HTTP). When on, tools use **`GoogleWriteHttp`** + Consent W token store (`GOOGLE_WRITE_ACCESS_TOKEN` / `google-oauth-write.json`) — never `ctx.auth` / Consent A. PKCE CLI **`dgtl-connector-mcp auth login-write`** is shipped (separate Desktop client; never Consent A; does **not** flip `DGTL_WRITES_ENABLED`).
 
 | Tool | Notes |
 | --- | --- |
@@ -485,14 +524,18 @@ Free count stays **24**. These are Polar-gated; local describe tools need licens
 | `gads_list_accessible_customers` | Use first for customer ids (digits, no hyphens). |
 | `gads_describe_recipes` | Local closed-recipe catalog — call before `gads_search`. No GAQL. |
 | `gads_get_customer` / `gads_search` / `gads_campaign_performance` | Closed recipes; cite `data.cited.customer_id`. |
+| `gads_add_keywords` | Standalone criterion add. Omitted `status` → **PAUSED**. ENABLED only with explicit `status` + confirm. Omitted `match_type` → **BROAD** (do not flip). |
+| `gads_create_search_campaign` | Closed Search create: budget + campaign + ad group + ≥1 keyword stub; optional RSA. Campaign defaults **PAUSED**. Child ad group + stub keywords stay **ENABLED** under that PAUSED campaign (intentional). |
+| `gads_create_display_campaign` | Minimal Display: budget + DISPLAY campaign + DISPLAY_STANDARD ad group (no RDA). Campaign defaults **PAUSED**; child ad group **ENABLED**. |
+| `gads_create_responsive_search_ad` / `gads_set_*` / `gads_update_campaign_budget` | Creates default PAUSED; status/budget updates are confirm-gated. ENABLED only with explicit `status` + confirm. |
 | `meta_list_ad_accounts` | Use first for `ad_account_id`. |
 | `meta_describe_insights_schema` | Local levels / date_presets / breakdowns / fields — call before `meta_insights`. |
 | `meta_insights` | `date_preset` or dates; optional `breakdowns` / `fields` / `time_increment`; cite `data.cited`. ads_read only. |
 | `meta_list_*` / `meta_get_creative` | Read lists + creative metadata (URLs, not bytes). |
 | `meta_update_campaign` / `meta_update_adset` / `meta_update_ad` | Confirm-gated status/name/ad-set budget updates; dry-run default; `ads_management` required. |
-| `meta_create_campaign` | Closed Outcome-objective campaign create; defaults PAUSED; confirm with `act_{ad_account_id}`. |
-| `meta_create_adset` | Existing campaign + country-code geo + capped budget cents; defaults PAUSED; confirm with act + campaign id. |
-| `meta_create_ad` | Existing ad set + existing `creative_id` (from `meta_create_ad_creative`); defaults PAUSED; confirm with act + ad set + creative ids. |
+| `meta_create_campaign` | Closed Outcome-objective campaign create; defaults **PAUSED**; **ACTIVE** only with explicit `status` + confirm with `act_{ad_account_id}`. |
+| `meta_create_adset` | Existing campaign + country-code geo + capped budget cents; defaults PAUSED; ACTIVE only with explicit status + confirm with act + campaign id. |
+| `meta_create_ad` | Existing ad set + existing `creative_id` (from `meta_create_ad_creative`); defaults PAUSED; ACTIVE only with explicit status + confirm with act + ad set + creative ids. |
 | `meta_upload_ad_image` | Base64 image upload → `image_hash`; confirm-gated; dry_run default. |
 | `meta_upload_ad_video` | https `file_url` video upload → `video_id` (media source, not hop proxy); confirm-gated. |
 | `meta_create_ad_creative` | `image_hash` XOR `video_id` + `page_id` + https `link` → `creative_id`; server-built object_story_spec. |
@@ -512,7 +555,7 @@ Catalogs, audiences, lift, activity logs, and Meta hosted `ads_mcp_management` r
 | Request indexing | No tool |
 | Create GA4–GSC link | No tool; `analytics.readonly` cannot |
 | Google Ads / Meta (live HTTP) | Tools are registered; fail closed: `LICENSE_REQUIRED` → `GATEWAY_UNAVAILABLE` → `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`. Consent C via `auth login-ads` / `auth login-meta --code` or host-injected tokens. No developer-token in this plugin. |
-| GBP live HTTP | Tools are registered; they return `GBP_NOT_ENABLED` until the project flag is on |
+| GBP live HTTP | Tools are registered; flag off **or** flag on → `GBP_NOT_ENABLED`. HTTP is **not in this binary** (Wave 5). |
 | GA4 realtime, funnel, pivot, batch | No tool |
 | GTM clients (server-side), users, environments | No tool |
 | Gmail / Drive | No tool |

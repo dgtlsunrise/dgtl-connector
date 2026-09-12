@@ -83,10 +83,10 @@ Plugin denylist (GA4 `searchQuery` / `query` / `searchTerm` / `keyword`).
 
 ### `UNSUPPORTED_OPERATION`
 
-Write/publish/index request.
+Write/publish/index request on a surface that has **no** registered write tool (or Consent A cannot do it).
 
 **User-visible:**  
-“v1 is read-only. I cannot publish Tag Manager containers, create tags, submit sitemaps, request indexing, or create GA4–Search Console links (`analytics.readonly` cannot create those links). Use the Google UI, or wait for a later product that is explicitly scoped for writes.”
+“This Consent A tool cannot publish Tag Manager containers, create tags, submit sitemaps, request indexing, or create GA4–Search Console links (`analytics.readonly` cannot create those links). Use the Google UI. GTM write stubs exist behind Consent W (`WRITE_NOT_ENABLED` until flagged on). Ads/Meta mutates are separate Pro tools — not all tools are read.”
 
 ### `QUOTA_EXCEEDED` / `RATE_LIMITED`
 
@@ -113,10 +113,10 @@ Do not ask for a Google Ads developer-token.
 
 ### `GBP_NOT_ENABLED`
 
-GBP feature flag off (default) or project quota still 0.
+GBP feature flag off (default) **or** flag on. Live HTTP is **not in this binary** (Wave 5 — quota + Consent B). Flag-on is not a successful read.
 
 **User-visible:**  
-“Google Business Profile tools are flagged off until DGTL's GCP project has non-zero GBP API quota. They are not on the free GA4/GSC/GTM consent screen.”
+“Google Business Profile tools return GBP_NOT_ENABLED until live HTTP ships (Wave 5). Turning the flag on does not enable HTTP in this binary. They are not on the free GA4/GSC/GTM consent screen.”
 
 ### `GATEWAY_UNAVAILABLE`
 

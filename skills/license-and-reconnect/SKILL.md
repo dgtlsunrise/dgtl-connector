@@ -25,7 +25,7 @@ Do not ask for a Google Ads developer-token or a Meta app secret.
 | `GATEWAY_UNAVAILABLE` | License ok, but `DGTL_GATEWAY_URL` unset / Worker down / paused | Set or fix the gateway URL (live: `https://stamp.dgtlsunrise.com`; backup: `https://dgtl-stamp.noel-4ea.workers.dev`). **Do not** tell the user to reconnect Ads. Free tools still work. |
 | `REAUTH_REQUIRED` | Google token expired or revoked | Host-injected token refresh, or `dgtl-connector-mcp auth login` (PKCE / AuthPort). Not a Gmail Connect card on stdio. |
 | `CONSENT_MISSING` | A product scope was unchecked | Same Consent A (GA4+GSC+GTM). Do not start a second product login. |
-| `GBP_NOT_ENABLED` | GBP flag off / quota 0 | Not a license issue. Consent B is separate. Do not put `business.manage` on Consent A. |
+| `GBP_NOT_ENABLED` | Flag off **or** flag on | Live GBP HTTP is **not in this binary** (Wave 5). Flag-on ≠ a successful read. Consent B is separate. Do not put `business.manage` on Consent A. |
 | `WRITE_NOT_ENABLED` | `DGTL_WRITES_ENABLED` false | Write/publish stubs fail closed. Free Consent A stays readonly. See `gtm-readonly-limits`. |
 | `CONSENT_W_REQUIRED` | Writes flagged on but Consent W missing | Separate write OAuth client — never add edit/publish scopes to Consent A. |
 | `ADS_MUTATE_NOT_ENABLED` | Ads mutate opted out (`DGTL_ADS_MUTATE_ENABLED=false`) | Plugin defaults **on**. Opt out with env=`false`. Live hop still needs Worker `ADS_MUTATE_ENABLED=true`. Never Consent A. |

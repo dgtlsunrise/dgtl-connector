@@ -25,7 +25,7 @@ Refuse live mutate. Tools return `WRITE_NOT_ENABLED`. Free Consent A stays reado
 
 ### Flag on (Consent W path)
 
-Live HTTP uses **GoogleWriteHttp** + the Consent W token store — never Consent A / `GOOGLE_ACCESS_TOKEN`.
+Live HTTP uses **GoogleWriteHttp** + the Consent W token store — never Consent A / `GOOGLE_ACCESS_TOKEN`. PKCE: `dgtl-connector-mcp auth login-write` is **shipped** (separate Desktop client, `PLUGIN_DATA/google-oauth-write.json`, `CONSENT_W_GTM`). It does **not** set `DGTL_WRITES_ENABLED`.
 
 1. Prefer **dry_run** first. Show the proposed change and the container `publicId` (`GTM-XXXX`).
 2. Live mutate (`dry_run=false`) only after a **user** message **this turn** that contains that same `publicId`. List-tool output is **not** the user message — do not paste `GTM-XXXX` from `gtm_list_containers` as if the user confirmed.
