@@ -8,7 +8,7 @@ If you need a 25th **Consent A** tool, bump a version and update `schemas/v1/cat
 
 Machine-readable list: [`schemas/v1/catalog.json`](../schemas/v1/catalog.json). Parameter schema: [`schemas/v1/tools.schema.json`](../schemas/v1/tools.schema.json). Error envelope: [`schemas/v1/error.schema.json`](../schemas/v1/error.schema.json).
 
-**Not all tools are read.** Consent A GA4 / GSC / GTM, Shopify products/orders, and GBP (when enabled) are read (or fail-closed). GTM write (`gtm_create_tag`, `gtm_update_tag`, `gtm_publish_container`) and Ads / Meta mutate + create tools are registered **writes**. Repeating a **read** call is safe (**idempotent** as HTTP GET/list/query). Write tools are **not** idempotent. Read results are **not bit-stable** (GA4 processing, GSC data_state, GTM workspace edits).
+**Not all tools are read.** Consent A GA4 / GSC / GTM, Shopify products/orders, and GBP (when enabled) are read (or fail-closed). GTM write (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`) and Ads / Meta mutate + create tools are registered **writes**. Repeating a **read** call is safe (**idempotent** as HTTP GET/list/query). Write tools are **not** idempotent. Read results are **not bit-stable** (GA4 processing, GSC data_state, GTM workspace edits).
 
 ## Mutate honesty (Wave 0)
 
@@ -509,9 +509,24 @@ Flag `DGTL_WRITES_ENABLED` defaults **false** → `WRITE_NOT_ENABLED` (zero HTTP
 | --- | --- |
 | `gtm_create_tag` | Workspace tag create. `dry_run` **defaults true**. Live (`dry_run=false`) requires `confirm_phrase` containing the resolved container `publicId`. |
 | `gtm_update_tag` | Workspace tag update. Same dry-run / publicId confirm rules. |
-| `gtm_publish_container` | Highest risk: `create_version` then `:publish`. Same dry-run / publicId confirm. No hosted Approval. **No live publish in CI** (fixtures only). |
+| `gtm_create_trigger` | Workspace trigger create. Same dry-run / publicId confirm rules. |
+| `gtm_update_trigger` | Workspace trigger update. Same dry-run / publicId confirm rules. |
+| `gtm_create_variable` | Workspace variable create. Optional closed `parameter` `{type,key,value}`. Same dry-run / publicId confirm. |
+| `gtm_update_variable` | Workspace variable update. Same dry-run / publicId confirm rules. |
+| `gtm_publish_container` | Highest risk: `create_version` then `:publish`. **Publish last.** Same dry-run / publicId confirm. No hosted Approval. **No live publish in CI** (fixtures only). |
 
-Do **not** put the expected confirm phrase or an example `GTM-XXXX` value in the tool description. Skill: live mutate only after a **user** message this turn containing that publicId (list-tool output ≠ user message).
+Marketplace / shipped default: `DGTL_WRITES_ENABLED` is **false** (`mcp.json` does not set it; `.env.example` is `false`). Flag on is **local only**. Do **not** put the expected confirm phrase or an example `GTM-XXXX` value in the tool description. Skill: live mutate only after a **user** message this turn containing that publicId (list-tool output ≠ user message).
+
+**Live disposable container is a Noel gate.** Prefer fixtures in CI. Do not run live create/publish against Axos. GA4 / GSC write tools are **not** registered until a live GTM publish is proven.
+
+### Consent W E2E order (Wave 6)
+
+1. Flag off → any write tool `WRITE_NOT_ENABLED` (zero HTTP).
+2. Local only: `DGTL_WRITES_ENABLED=true` + Consent W token (`auth login-write` or `GOOGLE_WRITE_ACCESS_TOKEN`).
+3. Dry-run create tag / trigger / variable → proposed + `publicId`, GET-only.
+4. User message this turn contains that `publicId` → live create (`dry_run=false`, `confirm_phrase` includes publicId).
+5. Consent A `gtm_list_*` can read the workspace draft.
+6. **Publish last:** dry-run `gtm_publish_container` then live once Noel confirms with publicId.
 
 ---
 

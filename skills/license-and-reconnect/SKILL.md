@@ -43,6 +43,6 @@ Do not ask for a Google Ads developer-token or a Meta app secret.
 2. Never collect refresh tokens, `developer-token`, Meta app secrets, or license JWTs into chat.
 3. Do not hide paid or gated write tools; they are listed and fail closed.
 4. Do not tell the user GA4 is broken because Ads is locked.
-5. For GTM write/publish: follow `gtm-readonly-limits` — refuse when flag off; when on, dry-run + user publicId confirm — never invent confirm.
+5. For GTM write/publish: follow `gtm-readonly-limits` — refuse when flag off; when on, dry-run + user publicId confirm — never invent confirm. Trigger/variable create uses the same gates. Publish last.
 6. For `GATEWAY_UNAVAILABLE`: check `license_status.gateway` / `DGTL_GATEWAY_URL` — never say “Reconnect Ads.”
 7. For `LICENSE_REQUIRED`: walk the ladder (buy → redeem → Ads/Meta → gateway). Prefer `auth redeem` over asking the user to paste a bearer.

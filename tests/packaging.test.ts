@@ -95,7 +95,15 @@ describe("packaging and secrets", () => {
     assert.equal(pkg.name, "dgtl-connector");
     assert.ok(pkg.bin["dgtl-connector-mcp"]);
     assert.ok(typeof pkg.scripts.doctor === "string" && pkg.scripts.doctor.includes("doctor"));
-    for (const name of ["gtm_create_tag", "gtm_update_tag", "gtm_publish_container"]) {
+    for (const name of [
+      "gtm_create_tag",
+      "gtm_update_tag",
+      "gtm_create_trigger",
+      "gtm_update_trigger",
+      "gtm_create_variable",
+      "gtm_update_variable",
+      "gtm_publish_container",
+    ]) {
       const g = catalog.gated_tools.find((x: { name: string }) => x.name === name);
       assert.ok(g, name);
       assert.equal(g.fail, "WRITE_NOT_ENABLED", name);

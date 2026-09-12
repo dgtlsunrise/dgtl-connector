@@ -7,3 +7,5 @@ Names are `Example Brand`, `sc-domain:example.com`, `properties/111111111`. No l
 `gtm/tags.oversize.json` has 80 tags for truncation tests.
 
 `gbp/` is Wave 5 Account Management / Business Information / Performance API shapes. Names are `Example Brand Store` / `locations/12345678901234567890`. No live customer data.
+
+`gtm/triggers.create.json`, `triggers.update.json`, `variables.create.json`, `variables.update.json` are Wave 6 Consent W mutate shapes. No live container data.

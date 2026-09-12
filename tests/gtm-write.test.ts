@@ -85,6 +85,35 @@ describe("GoogleWriteHttp GTM mutate (PR-8)", () => {
     );
     assert.equal(
       googleWritePathAllowed("POST", "/tagmanager/v2/accounts/1/containers/2/workspaces/3/triggers"),
+      true,
+    );
+    assert.equal(
+      googleWritePathAllowed(
+        "PUT",
+        "/tagmanager/v2/accounts/1/containers/2/workspaces/3/triggers/88",
+      ),
+      true,
+    );
+    assert.equal(
+      googleWritePathAllowed("POST", "/tagmanager/v2/accounts/1/containers/2/workspaces/3/variables"),
+      true,
+    );
+    assert.equal(
+      googleWritePathAllowed(
+        "PUT",
+        "/tagmanager/v2/accounts/1/containers/2/workspaces/3/variables/77",
+      ),
+      true,
+    );
+    assert.equal(
+      googleWritePathAllowed(
+        "DELETE",
+        "/tagmanager/v2/accounts/1/containers/2/workspaces/3/triggers/88",
+      ),
+      false,
+    );
+    assert.equal(
+      googleWritePathAllowed("POST", "/tagmanager/v2/accounts/1/containers/2/workspaces/3/folders"),
       false,
     );
   });
@@ -169,6 +198,184 @@ describe("GoogleWriteHttp GTM mutate (PR-8)", () => {
     assert.ok(ctx.calls.some((c) => c.method === "PUT" && c.path.includes("/tags/1")));
   });
 
+  it("dry_run create trigger returns proposed body + publicId with zero mutate HTTP", async () => {
+    const ctx = makeCtx({}, WRITE_ENV());
+    const env = await dispatch(ctx, "gtm_create_trigger", {
+      account_id: "444444",
+      container_id: "555555",
+      workspace_id: "6",
+      name: "All Pages",
+      type: "pageview",
+    });
+    assert.equal(env.ok, true);
+    const data = env.data as { dry_run: boolean; publicId: string; proposed: { name: string; type: string } };
+    assert.equal(data.dry_run, true);
+    assert.equal(data.publicId, "GTM-XXXX000");
+    assert.equal(data.proposed.name, "All Pages");
+    assert.equal(data.proposed.type, "pageview");
+    assert.ok(ctx.calls.every((c) => c.method === "GET"));
+    assert.ok(!ctx.calls.some((c) => c.path.endsWith("/triggers") && c.method === "POST"));
+  });
+
+  it("live create trigger without publicId in confirm_phrase → INVALID_ARGUMENT, no POST", async () => {
+    const ctx = makeCtx({}, WRITE_ENV());
+    const env = await dispatch(ctx, "gtm_create_trigger", {
+      account_id: "444444",
+      container_id: "555555",
+      workspace_id: "6",
+      name: "All Pages",
+      type: "pageview",
+      dry_run: false,
+      confirm_phrase: "PUBLISH",
+    });
+    assert.equal(env.ok, false);
+    assert.equal(env.error_code, "INVALID_ARGUMENT");
+    assert.ok(!ctx.calls.some((c) => c.method === "POST" || c.method === "PUT"));
+  });
+
+  it("live create trigger with publicId confirm mutates via httpWrite, never ctx.auth", async () => {
+    const ctx = makeCtx({}, WRITE_ENV());
+    let authCalls = 0;
+    const orig = ctx.auth.getAccessToken.bind(ctx.auth);
+    ctx.auth.getAccessToken = async () => {
+      authCalls += 1;
+      return orig();
+    };
+    const env = await dispatch(ctx, "gtm_create_trigger", {
+      account_id: "444444",
+      container_id: "555555",
+      workspace_id: "6",
+      name: "All Pages",
+      type: "pageview",
+      dry_run: false,
+      confirm_phrase: "Please create trigger on GTM-XXXX000",
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    assert.equal(authCalls, 0);
+    assert.ok(ctx.calls.some((c) => c.method === "POST" && c.path.endsWith("/triggers")));
+    assert.ok(ctx.calls.every((c) => c.host === "tagmanager.googleapis.com"));
+  });
+
+  it("live update trigger with publicId confirm uses PUT", async () => {
+    const ctx = makeCtx({}, WRITE_ENV());
+    const env = await dispatch(ctx, "gtm_update_trigger", {
+      account_id: "444444",
+      container_id: "555555",
+      workspace_id: "6",
+      trigger_id: "2147479572",
+      name: "All Pages Updated",
+      type: "pageview",
+      dry_run: false,
+      confirm_phrase: "update GTM-XXXX000",
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    assert.ok(ctx.calls.some((c) => c.method === "PUT" && c.path.includes("/triggers/2147479572")));
+  });
+
+  it("dry_run create variable returns proposed body + publicId with zero mutate HTTP", async () => {
+    const ctx = makeCtx({}, WRITE_ENV());
+    const env = await dispatch(ctx, "gtm_create_variable", {
+      account_id: "444444",
+      container_id: "555555",
+      workspace_id: "6",
+      name: "GA4 Measurement ID",
+      type: "c",
+      parameter: [{ type: "template", key: "value", value: "G-XXXXXXXX" }],
+    });
+    assert.equal(env.ok, true);
+    const data = env.data as {
+      dry_run: boolean;
+      publicId: string;
+      proposed: { name: string; type: string; parameter?: unknown[] };
+    };
+    assert.equal(data.dry_run, true);
+    assert.equal(data.publicId, "GTM-XXXX000");
+    assert.equal(data.proposed.name, "GA4 Measurement ID");
+    assert.equal(data.proposed.type, "c");
+    assert.ok(Array.isArray(data.proposed.parameter));
+    assert.ok(ctx.calls.every((c) => c.method === "GET"));
+    assert.ok(!ctx.calls.some((c) => c.path.endsWith("/variables") && c.method === "POST"));
+  });
+
+  it("live create variable without publicId in confirm_phrase → INVALID_ARGUMENT, no POST", async () => {
+    const ctx = makeCtx({}, WRITE_ENV());
+    const env = await dispatch(ctx, "gtm_create_variable", {
+      account_id: "444444",
+      container_id: "555555",
+      workspace_id: "6",
+      name: "GA4 Measurement ID",
+      type: "c",
+      dry_run: false,
+      confirm_phrase: "PUBLISH",
+    });
+    assert.equal(env.ok, false);
+    assert.equal(env.error_code, "INVALID_ARGUMENT");
+    assert.ok(!ctx.calls.some((c) => c.method === "POST" || c.method === "PUT"));
+  });
+
+  it("live create variable with publicId confirm mutates via httpWrite", async () => {
+    const ctx = makeCtx({}, WRITE_ENV());
+    const env = await dispatch(ctx, "gtm_create_variable", {
+      account_id: "444444",
+      container_id: "555555",
+      workspace_id: "6",
+      name: "GA4 Measurement ID",
+      type: "c",
+      parameter: [{ type: "template", key: "value", value: "G-XXXXXXXX" }],
+      dry_run: false,
+      confirm_phrase: "Please create variable on GTM-XXXX000",
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    assert.ok(ctx.calls.some((c) => c.method === "POST" && c.path.endsWith("/variables")));
+  });
+
+  it("live update variable with publicId confirm uses PUT", async () => {
+    const ctx = makeCtx({}, WRITE_ENV());
+    const env = await dispatch(ctx, "gtm_update_variable", {
+      account_id: "444444",
+      container_id: "555555",
+      workspace_id: "6",
+      variable_id: "1",
+      name: "GA4 Measurement ID Updated",
+      type: "c",
+      dry_run: false,
+      confirm_phrase: "update GTM-XXXX000",
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    assert.ok(ctx.calls.some((c) => c.method === "PUT" && c.path.includes("/variables/1")));
+  });
+
+  it("schemas: trigger/variable dry_run defaults true; live needs confirm_phrase", () => {
+    const created = S.gtmCreateTrigger.parse({
+      account_id: "1",
+      container_id: "2",
+      workspace_id: "3",
+      name: "t",
+      type: "pageview",
+    });
+    assert.equal(created.dry_run, true);
+    const liveMissing = S.gtmCreateVariable.safeParse({
+      account_id: "1",
+      container_id: "2",
+      workspace_id: "3",
+      name: "v",
+      type: "c",
+      dry_run: false,
+    });
+    assert.equal(liveMissing.success, false);
+    const liveOk = S.gtmUpdateVariable.safeParse({
+      account_id: "1",
+      container_id: "2",
+      workspace_id: "3",
+      variable_id: "1",
+      name: "v",
+      type: "c",
+      dry_run: false,
+      confirm_phrase: "please update GTM-XXXX000",
+    });
+    assert.equal(liveOk.success, true);
+  });
+
   it("live publish with publicId confirm creates version then publishes (fixtures only)", async () => {
     const ctx = makeCtx({}, WRITE_ENV());
     const env = await dispatch(ctx, "gtm_publish_container", {
@@ -182,6 +389,32 @@ describe("GoogleWriteHttp GTM mutate (PR-8)", () => {
     assert.equal(env.ok, true, JSON.stringify(env));
     assert.ok(ctx.calls.some((c) => c.path.includes(":create_version")));
     assert.ok(ctx.calls.some((c) => c.path.includes(":publish")));
+  });
+
+  it("GTM write hop does not require DGTL_GATEWAY_URL or Polar license", async () => {
+    const ctx = makeCtx(
+      {},
+      testEnv({
+        DGTL_WRITES_ENABLED: "true",
+        GOOGLE_WRITE_ACCESS_TOKEN: "write-test-token",
+        GOOGLE_ACCESS_TOKEN: TEST_TOKEN,
+        DGTL_GATEWAY_URL: "",
+        DGTL_LICENSE_JWT: "",
+      }),
+    );
+    const env = await dispatch(ctx, "gtm_create_trigger", {
+      account_id: "444444",
+      container_id: "555555",
+      workspace_id: "6",
+      name: "All Pages",
+      type: "pageview",
+      dry_run: false,
+      confirm_phrase: "Please create trigger on GTM-XXXX000",
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    assert.equal(env.error_code, undefined);
+    assert.ok(ctx.calls.some((c) => c.method === "POST" && c.path.endsWith("/triggers")));
+    assert.ok(!ctx.calls.some((c) => c.host.includes("stamp") || c.path.includes("/v1/gads")));
   });
 
   it("Consent A GoogleHttp refuses Tag Manager POST", async () => {

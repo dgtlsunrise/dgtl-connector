@@ -1,0 +1,10 @@
+{
+  "path": "accounts/444444/containers/555555/workspaces/6/variables/77",
+  "accountId": "444444",
+  "containerId": "555555",
+  "workspaceId": "6",
+  "variableId": "77",
+  "name": "GA4 Measurement ID",
+  "type": "c",
+  "parameter": [{ "type": "template", "key": "value", "value": "G-XXXXXXXX" }]
+}

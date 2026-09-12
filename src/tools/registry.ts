@@ -417,6 +417,50 @@ export const TOOLS: ToolSpec[] = [
     handler: (ctx, args) => gtmWrite.gtmUpdateTag(ctx, args),
   },
   {
+    name: "gtm_create_trigger",
+    group: "gtm-write",
+    family: "gtm_write",
+    title: "GTM create trigger (Consent W)",
+    description:
+      "Create a workspace trigger. Consent W only (not free Consent A). Returns WRITE_NOT_ENABLED when DGTL_WRITES_ENABLED is false. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
+    inputSchema: S.gtmCreateTrigger,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => gtmWrite.gtmCreateTrigger(ctx, args),
+  },
+  {
+    name: "gtm_update_trigger",
+    group: "gtm-write",
+    family: "gtm_write",
+    title: "GTM update trigger (Consent W)",
+    description:
+      "Update a workspace trigger. Consent W only. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
+    inputSchema: S.gtmUpdateTrigger,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => gtmWrite.gtmUpdateTrigger(ctx, args),
+  },
+  {
+    name: "gtm_create_variable",
+    group: "gtm-write",
+    family: "gtm_write",
+    title: "GTM create variable (Consent W)",
+    description:
+      "Create a workspace variable. Consent W only (not free Consent A). Returns WRITE_NOT_ENABLED when DGTL_WRITES_ENABLED is false. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
+    inputSchema: S.gtmCreateVariable,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => gtmWrite.gtmCreateVariable(ctx, args),
+  },
+  {
+    name: "gtm_update_variable",
+    group: "gtm-write",
+    family: "gtm_write",
+    title: "GTM update variable (Consent W)",
+    description:
+      "Update a workspace variable. Consent W only. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
+    inputSchema: S.gtmUpdateVariable,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => gtmWrite.gtmUpdateVariable(ctx, args),
+  },
+  {
     name: "gtm_publish_container",
     group: "gtm-write",
     family: "gtm_write",

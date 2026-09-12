@@ -1,6 +1,8 @@
 # Consent W / GTM publish readiness — 2026-09-11 (PT)
 
 > **SUPERSEDED (2026-09-11, W0.7):** the `auth login-write` **Missing** row below is stale. The CLI **shipped** (`dgtl-connector-mcp auth login-write` in `src/auth/login-cli.ts` / `src/index.ts`; tests in `tests/shopify-readonly.test.ts`). It writes `PLUGIN_DATA/google-oauth-write.json` with `CONSENT_W_GTM` and does **not** enable `DGTL_WRITES_ENABLED`. See `docs/TOOLS.md` Consent W section. Planning pointer: `/workspace/dgtl-planning/ops/CONSENT-W-CLIENT-CREATED-2026-09-11.md`. **Keep this file’s E2E checklist** (§3 Noel + local smoke, §4 DONE WHEN). Noel still owns the W Desktop client, scopes, and live tag create. Do not delete this note.
+>
+> **Wave 6 (2026-09-12):** trigger/variable create+update tools shipped (`gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`). Same gates as tags. Marketplace default remains `DGTL_WRITES_ENABLED=false`. Live disposable-container E2E is still a **Noel gate** — fixtures cover the HTTP path. GA4/GSC write tools are **not** registered until a live GTM publish is proven.
 
 Publisher: Sunrise Consulting LLC / DGTL Sunrise  
 Lane: Track A — turn Consent W on safely **without** bolting writes onto Consent A.  

@@ -120,7 +120,7 @@ Rules:
 - `ga4_run_report` is the only GA4 report tool. No batch, funnel, or realtime in v1 (quota + complexity).
 - Read calls are **retry-safe**. They are not snapshot-stable (processing lag).
 
-Closed Consent A kernel: [TOOLS.md](TOOLS.md). Machine copy: `schemas/v1/catalog.json` (`count`: **24**). Shopify is local-free (not Polar, not the 24 kernel). Ads/Meta/Merchant Center are Polar `LICENSE_REQUIRED`. MC hops **direct** to Merchant API (Consent MC) — not stamp. GBP hops **direct** to GBP APIs (Consent B, `DGTL_GBP_ENABLED`) — not stamp, not Consent A. Write/publish stubs (if registered) are gated (`WRITE_NOT_ENABLED` / Consent W) and are **not** Consent A listing promises.
+Closed Consent A kernel: [TOOLS.md](TOOLS.md). Machine copy: `schemas/v1/catalog.json` (`count`: **24**). Shopify is local-free (not Polar, not the 24 kernel). Ads/Meta/Merchant Center are Polar `LICENSE_REQUIRED`. MC hops **direct** to Merchant API (Consent MC) — not stamp. GBP hops **direct** to GBP APIs (Consent B, `DGTL_GBP_ENABLED`) — not stamp, not Consent A. Consent W GTM writes (tag / trigger / variable / publish) hop **direct** via `GoogleWriteHttp` — not stamp. They are gated (`WRITE_NOT_ENABLED` / Consent W; flag default **off**) and are **not** Consent A listing promises.
 
 ## How paid hosted Ads plugs in without rewriting GA4
 

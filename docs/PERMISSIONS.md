@@ -85,7 +85,7 @@ Free Consent A stays **readonly** forever for the Desktop client used in demos a
 | Env / flag | Meaning |
 | --- | --- |
 | `GOOGLE_OAUTH_WRITE_CLIENT_ID` / `GOOGLE_OAUTH_WRITE_CLIENT_SECRET` | Consent W client (gitignored `.env` only; placeholders in `.env.example`) |
-| `DGTL_WRITES_ENABLED` | Default `false`. When off, GTM write stubs return `WRITE_NOT_ENABLED` |
+| `DGTL_WRITES_ENABLED` | Default `false` (marketplace / `.env.example`). When off, GTM write tools return `WRITE_NOT_ENABLED`. Never ship `true` as the package default. |
 | When flag on but Consent W missing | Tools return `CONSENT_W_REQUIRED` |
 | Live mutate | `GoogleWriteHttp` only; `dry_run` default true; `confirm_phrase` must include resolved `GTM-XXXX` or `INVALID_ARGUMENT` |
 
@@ -147,7 +147,7 @@ Do **not** add `business.manage` to Consent A verification. Account Management /
 
 ## Least privilege in the tools
 
-- Free GA4 / GSC / GTM tools are read/list/get on Consent A. GTM write/publish tools (`gtm_create_tag`, `gtm_update_tag`, `gtm_publish_container`) are registered, flagged off by default (`WRITE_NOT_ENABLED`), and use Consent W + `GoogleWriteHttp` when enabled — they are **not** on the free consent screen.
+- Free GA4 / GSC / GTM tools are read/list/get on Consent A. GTM write/publish tools (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`) are registered, flagged off by default (`WRITE_NOT_ENABLED`), and use Consent W + `GoogleWriteHttp` when enabled — they are **not** on the free consent screen. GA4 / GSC write tools are **not** registered until GTM publish is proven live.
 - `ga4_run_report` defaults to small row limits (see [TOOLS.md](TOOLS.md)) so one prompt cannot burn a property's daily Data API tokens.
 - URL Inspection is read of index state, not request indexing (`webmasters.readonly` cannot submit anyway).
 - Workspace GTM lists may include **unpublished drafts**. Live tags come from `gtm_get_live_container_version`. Skills must not imply a draft tag is in production.

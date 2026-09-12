@@ -296,6 +296,73 @@ export const gtmUpdateTag = z
   .strict()
   .superRefine(requireConfirmWhenLive);
 
+/** Closed GTM parameter (trigger/variable). Keys are type/key/value only. */
+const gtmParameter = z
+  .object({
+    type: z.string().min(1),
+    key: z.string().min(1).optional(),
+    value: z.string().optional(),
+  })
+  .strict();
+
+export const gtmCreateTrigger = z
+  .object({
+    account_id: str,
+    container_id: str,
+    workspace_id: str,
+    name: str,
+    type: str,
+    parameter: z.array(gtmParameter).max(20).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gtmUpdateTrigger = z
+  .object({
+    account_id: str,
+    container_id: str,
+    workspace_id: str,
+    trigger_id: str,
+    name: str,
+    type: str,
+    parameter: z.array(gtmParameter).max(20).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gtmCreateVariable = z
+  .object({
+    account_id: str,
+    container_id: str,
+    workspace_id: str,
+    name: str,
+    type: str,
+    parameter: z.array(gtmParameter).max(20).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gtmUpdateVariable = z
+  .object({
+    account_id: str,
+    container_id: str,
+    workspace_id: str,
+    variable_id: str,
+    name: str,
+    type: str,
+    parameter: z.array(gtmParameter).max(20).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
 export const gtmPublishContainer = z
   .object({
     account_id: str,

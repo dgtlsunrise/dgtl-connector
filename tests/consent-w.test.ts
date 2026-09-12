@@ -9,7 +9,15 @@ import { dispatch } from "../src/tools/dispatch.js";
 import { CONSENT_A_TOOLS, LICENSE_GATED_TOOLS, TOOLS } from "../src/tools/registry.js";
 import { installNetworkGuard, makeCtx, ROOT, testEnv, TEST_TOKEN } from "./helpers.js";
 
-const WRITE_TOOLS = ["gtm_create_tag", "gtm_update_tag", "gtm_publish_container"] as const;
+const WRITE_TOOLS = [
+  "gtm_create_tag",
+  "gtm_update_tag",
+  "gtm_create_trigger",
+  "gtm_update_trigger",
+  "gtm_create_variable",
+  "gtm_update_variable",
+  "gtm_publish_container",
+] as const;
 
 describe("Consent W scaffold — Consent A stays readonly", () => {
   let restore: () => void;
@@ -96,6 +104,8 @@ describe("Consent W scaffold — Consent A stays readonly", () => {
         name: "Example",
         type: "html",
         tag_id: "1",
+        trigger_id: "1",
+        variable_id: "1",
       });
       assert.equal(env.ok, false, name);
       assert.equal(env.error_code, "WRITE_NOT_ENABLED", name);
@@ -134,7 +144,14 @@ describe("Consent W scaffold — Consent A stays readonly", () => {
     assert.equal(publish!.annotations.destructiveHint, true);
     assert.equal(publish!.annotations.idempotentHint, false);
 
-    for (const name of ["gtm_create_tag", "gtm_update_tag"] as const) {
+    for (const name of [
+      "gtm_create_tag",
+      "gtm_update_tag",
+      "gtm_create_trigger",
+      "gtm_update_trigger",
+      "gtm_create_variable",
+      "gtm_update_variable",
+    ] as const) {
       const spec = TOOLS.find((t) => t.name === name);
       assert.ok(spec, name);
       assert.equal(spec!.annotations.readOnlyHint, false, name);
@@ -314,6 +331,35 @@ describe("Consent W token store separate from AuthPort A", () => {
     // May GET container to resolve publicId via httpWrite; must not POST :publish.
     assert.ok(!ctx.calls.some((c) => c.method !== "GET"));
     assert.ok(!ctx.calls.some((c) => c.path.includes(":publish")));
+  });
+
+  it("marketplace / shipped defaults never enable writes", () => {
+    assert.equal(loadFlags({}).writesEnabled, false);
+    const envExample = readFileSync(join(ROOT, ".env.example"), "utf8");
+    assert.ok(/DGTL_WRITES_ENABLED=false/.test(envExample));
+    assert.ok(!/DGTL_WRITES_ENABLED=true/.test(envExample));
+    const mcp = JSON.parse(readFileSync(join(ROOT, "mcp.json"), "utf8")) as {
+      mcpServers: { "dgtl-connector": { env?: Record<string, string> } };
+    };
+    const mcpEnv = mcp.mcpServers["dgtl-connector"].env ?? {};
+    assert.ok(!mcpEnv.DGTL_WRITES_ENABLED || mcpEnv.DGTL_WRITES_ENABLED === "false");
+    const plugin = JSON.parse(readFileSync(join(ROOT, "plugin.json"), "utf8")) as Record<string, unknown>;
+    assert.ok(!JSON.stringify(plugin).includes("DGTL_WRITES_ENABLED=true"));
+  });
+
+  it("GA4 / GSC write tools are not registered (wait until GTM publish is proven live)", () => {
+    const banned = [
+      "ga4_create_property",
+      "ga4_update_property",
+      "ga4_create_data_stream",
+      "gsc_submit_sitemap",
+      "gsc_delete_sitemap",
+      "gsc_inspect_url_index",
+      "gsc_request_indexing",
+    ];
+    for (const name of banned) {
+      assert.ok(!TOOLS.some((t) => t.name === name), name);
+    }
   });
 
   it("default scopes URL builders never request CONSENT_W", () => {

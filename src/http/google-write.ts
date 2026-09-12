@@ -41,6 +41,26 @@ const ALLOWED: Array<{ method: GoogleWriteMethod; pattern: RegExp }> = [
     method: "PUT",
     pattern: /^\/tagmanager\/v2\/accounts\/[^/]+\/containers\/[^/]+\/workspaces\/[^/]+\/tags\/[^/]+$/,
   },
+  // Create trigger
+  {
+    method: "POST",
+    pattern: /^\/tagmanager\/v2\/accounts\/[^/]+\/containers\/[^/]+\/workspaces\/[^/]+\/triggers$/,
+  },
+  // Update trigger
+  {
+    method: "PUT",
+    pattern: /^\/tagmanager\/v2\/accounts\/[^/]+\/containers\/[^/]+\/workspaces\/[^/]+\/triggers\/[^/]+$/,
+  },
+  // Create variable
+  {
+    method: "POST",
+    pattern: /^\/tagmanager\/v2\/accounts\/[^/]+\/containers\/[^/]+\/workspaces\/[^/]+\/variables$/,
+  },
+  // Update variable
+  {
+    method: "PUT",
+    pattern: /^\/tagmanager\/v2\/accounts\/[^/]+\/containers\/[^/]+\/workspaces\/[^/]+\/variables\/[^/]+$/,
+  },
   // Create container version from workspace
   {
     method: "POST",

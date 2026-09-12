@@ -182,7 +182,15 @@ def check_catalog_and_tools() -> None:
         err("catalog.json: gated_tools must be an array")
     else:
         by_name = {g.get("name"): g for g in gated if isinstance(g, dict)}
-        for wname in ("gtm_create_tag", "gtm_update_tag", "gtm_publish_container"):
+        for wname in (
+            "gtm_create_tag",
+            "gtm_update_tag",
+            "gtm_create_trigger",
+            "gtm_update_trigger",
+            "gtm_create_variable",
+            "gtm_update_variable",
+            "gtm_publish_container",
+        ):
             g = by_name.get(wname)
             if not g:
                 err(f"catalog.json gated_tools missing {wname}")

@@ -1,11 +1,11 @@
 ---
 name: gtm-readonly-limits
-description: Audit Google Tag Manager live vs workspace. Use when the user wants tags, triggers, variables, container IDs, or to publish/edit/create a tag. Consent A is readonly; write stubs are gated (WRITE_NOT_ENABLED / CONSENT_W_REQUIRED). When writes are enabled, require dry-run then a user confirm that includes the container publicId — never invent confirm. GTM 403 accessNotConfigured means the Tag Manager API is not enabled on the OAuth client's Cloud project.
+description: Audit Google Tag Manager live vs workspace. Use when the user wants tags, triggers, variables, container IDs, or to publish/edit/create a tag. Consent A is readonly; write tools (tag/trigger/variable/publish) are gated (WRITE_NOT_ENABLED / CONSENT_W_REQUIRED). When writes are enabled, require dry-run then a user confirm that includes the container publicId — never invent confirm. Publish last. GTM 403 accessNotConfigured means the Tag Manager API is not enabled on the OAuth client's Cloud project.
 ---
 
 # GTM readonly limits (and Consent W gates)
 
-Consent A GTM tools are **read-only**. Write/publish stubs (`gtm_create_tag`, `gtm_update_tag`, `gtm_publish_container`) exist but are **gated**.
+Consent A GTM tools are **read-only**. Write/publish tools (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`) exist but are **gated**. Marketplace default is flag **off**.
 
 ## When they want an audit
 
@@ -30,8 +30,10 @@ Live HTTP uses **GoogleWriteHttp** + the Consent W token store — never Consent
 1. Prefer **dry_run** first. Show the proposed change and the container `publicId` (`GTM-XXXX`).
 2. Live mutate (`dry_run=false`) only after a **user** message **this turn** that contains that same `publicId`. List-tool output is **not** the user message — do not paste `GTM-XXXX` from `gtm_list_containers` as if the user confirmed.
 3. **Never invent** a confirm phrase. Do not use a constant like `PUBLISH` alone. Do not invent a publicId.
-4. Create/update hit **workspace**. Publish is the irreversible step — say which.
+4. Create/update tag, trigger, or variable hit **workspace**. **Publish last** (`gtm_publish_container`) — it is irreversible. Say which step you are on.
 5. If Consent W / write client is missing → `CONSENT_W_REQUIRED`. Do not add write scopes to Consent A.
+6. Do **not** enable `DGTL_WRITES_ENABLED` in marketplace defaults. Local only.
+7. Do **not** call GA4 / GSC write tools — they are not registered until a live GTM publish is proven.
 
 Do not collect tokens “so DGTL can publish.” Do not imply hosted Ads will publish tags.
 

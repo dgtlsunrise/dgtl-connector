@@ -221,7 +221,7 @@ Use `REAUTH_REQUIRED`. After reconnect, call `google_whoami` and confirm email *
 
 ## “Publish this tag” scenario (copy)
 
-On Consent A / flag off: refuse (`UNSUPPORTED_OPERATION` or `WRITE_NOT_ENABLED`). Add: “I can show the live container and the workspace draft so you can see the diff. Publishing needs Consent W (separate OAuth client) when that path is enabled — not the free readonly consent.”
+On Consent A / flag off: refuse (`UNSUPPORTED_OPERATION` or `WRITE_NOT_ENABLED`). Add: “I can show the live container and the workspace draft so you can see the diff. Publishing needs Consent W (separate OAuth client) when that path is enabled — not the free readonly consent. Trigger/variable create uses the same flag + publicId confirm; publish last.”
 
 ## “Search queries in GA4” scenario (copy)
 

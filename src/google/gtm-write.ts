@@ -215,6 +215,148 @@ export async function gtmUpdateTag(ctx: AppContext, args: Rec): Promise<Envelope
   });
 }
 
+function gtmParameters(raw: unknown): Rec[] | undefined {
+  if (!Array.isArray(raw) || raw.length === 0) return undefined;
+  const out: Rec[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const rec = item as Rec;
+    if (typeof rec.type !== "string" || !rec.type) continue;
+    const param: Rec = { type: rec.type };
+    if (typeof rec.key === "string" && rec.key) param.key = rec.key;
+    if (typeof rec.value === "string") param.value = rec.value;
+    out.push(param);
+  }
+  return out.length ? out : undefined;
+}
+
+async function mutateWorkspaceChild(
+  ctx: AppContext,
+  opts: {
+    tool: string;
+    args: Rec;
+    collection: "triggers" | "variables";
+    resultKey: "trigger" | "variable";
+    method: "POST" | "PUT";
+    childId?: string;
+    proposed: Rec;
+  },
+): Promise<Envelope> {
+  const gated = await gateWrites(opts.tool, ctx);
+  if (gated) return gated;
+
+  const { accountId, containerId, workspaceId } = ids(opts.args);
+  const dryRun = dryRunDefault(opts.args);
+  const { publicId } = await resolveContainerPublicId(ctx, opts.tool, accountId, containerId);
+  const workspaceName = await resolveWorkspaceName(ctx, opts.tool, accountId, containerId, workspaceId);
+
+  if (dryRun) {
+    return okEnvelope(opts.tool, {
+      resource: gtmResource(accountId, containerId, publicId),
+      data: {
+        dry_run: true,
+        publicId,
+        workspace_id: workspaceId,
+        workspace_name: workspaceName,
+        proposed: opts.proposed,
+        note: "No Google mutate. Pass dry_run=false with confirm_phrase containing this publicId only after a user message this turn that includes it.",
+      },
+    });
+  }
+
+  assertConfirmContainsPublicId(opts.args.confirm_phrase, publicId);
+
+  const base = workspacePath(accountId, containerId, workspaceId);
+  const path = opts.childId ? `${base}/${opts.collection}/${opts.childId}` : `${base}/${opts.collection}`;
+  const body = { ...opts.proposed };
+  delete body.triggerId;
+  delete body.variableId;
+
+  const result =
+    opts.method === "POST"
+      ? await ctx.httpWrite.post(path, body, {
+          tool: opts.tool,
+          requiredScope: SCOPE.tagmanagerEditContainers,
+        })
+      : await ctx.httpWrite.put(path, body, {
+          tool: opts.tool,
+          requiredScope: SCOPE.tagmanagerEditContainers,
+        });
+
+  return okEnvelope(opts.tool, {
+    resource: gtmResource(accountId, containerId, publicId),
+    data: { dry_run: false, publicId, [opts.resultKey]: result },
+  });
+}
+
+export async function gtmCreateTrigger(ctx: AppContext, args: Rec): Promise<Envelope> {
+  const name = requireId(args.name, "name");
+  const type = requireId(args.type, "type");
+  const proposed: Rec = { name, type };
+  const parameter = gtmParameters(args.parameter);
+  if (parameter) proposed.parameter = parameter;
+  return mutateWorkspaceChild(ctx, {
+    tool: "gtm_create_trigger",
+    args,
+    collection: "triggers",
+    resultKey: "trigger",
+    method: "POST",
+    proposed,
+  });
+}
+
+export async function gtmUpdateTrigger(ctx: AppContext, args: Rec): Promise<Envelope> {
+  const triggerId = requireId(args.trigger_id, "trigger_id");
+  const name = requireId(args.name, "name");
+  const type = requireId(args.type, "type");
+  const proposed: Rec = { name, type, triggerId };
+  const parameter = gtmParameters(args.parameter);
+  if (parameter) proposed.parameter = parameter;
+  return mutateWorkspaceChild(ctx, {
+    tool: "gtm_update_trigger",
+    args,
+    collection: "triggers",
+    resultKey: "trigger",
+    method: "PUT",
+    childId: triggerId,
+    proposed,
+  });
+}
+
+export async function gtmCreateVariable(ctx: AppContext, args: Rec): Promise<Envelope> {
+  const name = requireId(args.name, "name");
+  const type = requireId(args.type, "type");
+  const proposed: Rec = { name, type };
+  const parameter = gtmParameters(args.parameter);
+  if (parameter) proposed.parameter = parameter;
+  return mutateWorkspaceChild(ctx, {
+    tool: "gtm_create_variable",
+    args,
+    collection: "variables",
+    resultKey: "variable",
+    method: "POST",
+    proposed,
+  });
+}
+
+export async function gtmUpdateVariable(ctx: AppContext, args: Rec): Promise<Envelope> {
+  const variableId = requireId(args.variable_id, "variable_id");
+  const name = requireId(args.name, "name");
+  const type = requireId(args.type, "type");
+  const proposed: Rec = { name, type, variableId };
+  const parameter = gtmParameters(args.parameter);
+  if (parameter) proposed.parameter = parameter;
+  return mutateWorkspaceChild(ctx, {
+    tool: "gtm_update_variable",
+    args,
+    collection: "variables",
+    resultKey: "variable",
+    method: "PUT",
+    childId: variableId,
+    proposed,
+  });
+}
+
 export async function gtmPublishContainer(ctx: AppContext, args: Rec): Promise<Envelope> {
   const tool = "gtm_publish_container";
   const gated = await gateWrites(tool, ctx);

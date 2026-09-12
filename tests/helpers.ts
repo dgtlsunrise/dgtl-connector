@@ -177,7 +177,11 @@ function route(method: string, url: URL, opts: FixtureOpts): unknown {
     if (p.endsWith("/tags")) {
       return opts.oversizeTags ? loadFixture("gtm/tags.oversize.json") : loadFixture("gtm/tags.list.json");
     }
+    if (p.endsWith("/triggers") && method === "POST") return loadFixture("gtm/triggers.create.json");
+    if (/\/triggers\/[^/]+$/.test(p) && method === "PUT") return loadFixture("gtm/triggers.update.json");
     if (p.endsWith("/triggers")) return loadFixture("gtm/triggers.list.json");
+    if (p.endsWith("/variables") && method === "POST") return loadFixture("gtm/variables.create.json");
+    if (/\/variables\/[^/]+$/.test(p) && method === "PUT") return loadFixture("gtm/variables.update.json");
     if (p.endsWith("/variables")) return loadFixture("gtm/variables.list.json");
     if (p.endsWith("/versions:live") || p.endsWith("/versions/live")) return loadFixture("gtm/liveVersion.json");
     if (p.includes(":create_version") && method === "POST") return loadFixture("gtm/create_version.json");
