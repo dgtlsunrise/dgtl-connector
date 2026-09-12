@@ -121,6 +121,50 @@ export type GatewayParams = {
   /** Shopping / MC linkage. */
   merchant_center_id?: string | number;
   sales_country?: string;
+  long_headline?: string;
+  youtube_video_id?: string;
+  app_id?: string;
+  app_store?: string;
+  hotel_center_id?: string | number;
+  listing_group_type?: string;
+  listing_group_values?: string[];
+  brands?: string[];
+  audience_resource_name?: string;
+  geo_target_constant_ids?: string[];
+  language_constant_ids?: string[];
+  language_ids?: string[];
+  age_ranges?: string[];
+  genders?: string[];
+  parental_statuses?: string[];
+  income_ranges?: string[];
+  schedules?: Array<{
+    day_of_week: string;
+    start_hour: number;
+    start_minute?: string;
+    end_hour: number;
+    end_minute?: string;
+  }>;
+  negative?: boolean;
+  bid_strategy_type?: string;
+  target_cpa_micros?: string | number;
+  target_roas?: number;
+  target_cpm_micros?: string | number;
+  cpc_bid_ceiling_micros?: string | number;
+  location?: string;
+  location_fraction_micros?: string | number;
+  bidding_strategy_resource_name?: string;
+  bidding_strategy_name?: string;
+  conversion_action_name?: string;
+  conversion_action_type?: string;
+  conversion_category?: string;
+  default_value?: number;
+  recommendation_resource_name?: string;
+  recommendation_id?: string;
+  product_link_resource_name?: string;
+  product_link_id?: string;
+  experiment_name?: string;
+  experiment_type?: string;
+  traffic_split_percent?: number;
 };
 
 export type GatewayRequest = {
@@ -283,6 +327,44 @@ export const GATEWAY_PARAM_ALLOW = new Set([
   "marketing_image_bytes",
   "square_marketing_image_bytes",
   "logo_bytes",
+  "long_headline",
+  "youtube_video_id",
+  "app_id",
+  "app_store",
+  "hotel_center_id",
+  "listing_group_type",
+  "listing_group_values",
+  "brands",
+  "audience_resource_name",
+  "geo_target_constant_ids",
+  "language_constant_ids",
+  "language_ids",
+  "age_ranges",
+  "genders",
+  "parental_statuses",
+  "income_ranges",
+  "schedules",
+  "negative",
+  "bid_strategy_type",
+  "target_cpa_micros",
+  "target_roas",
+  "target_cpm_micros",
+  "cpc_bid_ceiling_micros",
+  "location",
+  "location_fraction_micros",
+  "bidding_strategy_resource_name",
+  "bidding_strategy_name",
+  "conversion_action_name",
+  "conversion_action_type",
+  "conversion_category",
+  "default_value",
+  "recommendation_resource_name",
+  "recommendation_id",
+  "product_link_resource_name",
+  "product_link_id",
+  "experiment_name",
+  "experiment_type",
+  "traffic_split_percent",
 ]);
 
 /**
@@ -408,6 +490,70 @@ function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
     }
     if (k === "merchant_center_id" && (typeof v === "string" || typeof v === "number")) {
       out.merchant_center_id = v;
+      continue;
+    }
+    if (
+      (k === "listing_group_values" ||
+        k === "brands" ||
+        k === "geo_target_constant_ids" ||
+        k === "language_constant_ids" ||
+        k === "language_ids" ||
+        k === "age_ranges" ||
+        k === "genders" ||
+        k === "parental_statuses" ||
+        k === "income_ranges") &&
+      Array.isArray(v)
+    ) {
+      const arr = v
+        .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+        .map((x) => x.trim());
+      if (arr.length) (out as Record<string, unknown>)[k] = arr;
+      continue;
+    }
+    if (k === "schedules" && Array.isArray(v)) {
+      const schedules: Array<{
+        day_of_week: string;
+        start_hour: number;
+        start_minute?: string;
+        end_hour: number;
+        end_minute?: string;
+      }> = [];
+      for (const item of v) {
+        if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+        const rec = item as Record<string, unknown>;
+        const day = typeof rec.day_of_week === "string" ? rec.day_of_week.trim() : "";
+        const startHour = typeof rec.start_hour === "number" ? rec.start_hour : Number(rec.start_hour);
+        const endHour = typeof rec.end_hour === "number" ? rec.end_hour : Number(rec.end_hour);
+        if (!day || !Number.isFinite(startHour) || !Number.isFinite(endHour)) continue;
+        const row: (typeof schedules)[number] = {
+          day_of_week: day,
+          start_hour: startHour,
+          end_hour: endHour,
+        };
+        if (typeof rec.start_minute === "string") row.start_minute = rec.start_minute;
+        if (typeof rec.end_minute === "string") row.end_minute = rec.end_minute;
+        schedules.push(row);
+      }
+      if (schedules.length) out.schedules = schedules;
+      continue;
+    }
+    if (k === "negative" && typeof v === "boolean") {
+      out.negative = v;
+      continue;
+    }
+    if (
+      (k === "target_cpa_micros" ||
+        k === "target_cpm_micros" ||
+        k === "cpc_bid_ceiling_micros" ||
+        k === "location_fraction_micros" ||
+        k === "hotel_center_id") &&
+      (typeof v === "string" || typeof v === "number")
+    ) {
+      (out as Record<string, unknown>)[k] = v;
+      continue;
+    }
+    if ((k === "target_roas" || k === "default_value" || k === "traffic_split_percent") && typeof v === "number") {
+      (out as Record<string, unknown>)[k] = v;
       continue;
     }
     if (typeof v === "string") {

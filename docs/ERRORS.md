@@ -240,12 +240,12 @@ Requested budget exceeds the product sanity cap ($100,000/day equivalent). Googl
 
 ### `NOT_IMPLEMENTED`
 
-Reserved. Wave 1 PMax create is implemented (`gads_upload_asset` + `gads_create_performance_max_campaign`). Missing images now return `INVALID_ARGUMENT` with a hint to upload, not this code.
+Used when the Google Ads API cannot create the requested type. Wave 2: `gads_create_local_campaign` (Google sunset Local campaigns — use Performance Max). Smart create is not advertised. Missing images return `INVALID_ARGUMENT`, not this code.
 
 ### `MERCHANT_CENTER_REQUIRED`
 
-Shopping create stub called without Merchant Center product support.
+Shopping create or MC link called without `merchant_center_id`. Discover ids via `gads_list_merchant_center_links`. No Ads mutate was sent.
 
 **User-visible:**  
-"Shopping campaign create needs a linked Merchant Center account. That linkage is not in this product yet. No Ads mutate was sent."
+"Shopping campaign create needs a linked Merchant Center (shoppingSetting.merchantCenterId). Merchant Center is not in this product yet. No Ads mutate HTTP was sent."
 

@@ -17,7 +17,7 @@ import { requireAdsLicense, enrichGadsEnvelope } from "./gads.js";
 const HINT_FLAG =
   "Plugin Ads mutate defaults on; set DGTL_ADS_MUTATE_ENABLED=false (or ADS_MUTATE_ENABLED=false) to opt out. Live hop still needs Worker ADS_MUTATE_ENABLED=true after Google Ads API mutate-capable access + compliance. Never add mutate to Consent A.";
 
-const ALLOWED_STATUS = new Set(["ENABLED", "PAUSED"]);
+export const ALLOWED_STATUS = new Set(["ENABLED", "PAUSED"]);
 
 /**
  * Harness / eval rule: live mutate without a **user** message this turn containing
@@ -33,11 +33,11 @@ export function harnessUserMessageContainsCustomerId(opts: {
   return msg.includes(id);
 }
 
-function dryRunDefault(args: Record<string, unknown>): boolean {
+export function dryRunDefault(args: Record<string, unknown>): boolean {
   return args.dry_run !== false;
 }
 
-function normalizeCustomerId(raw: string): string {
+export function normalizeCustomerId(raw: string): string {
   return raw.replace(/-/g, "");
 }
 
@@ -45,7 +45,7 @@ function normalizeCampaignId(raw: string): string {
   return raw.replace(/-/g, "");
 }
 
-function assertConfirmContainsCustomerId(confirmPhrase: unknown, customerId: string): void {
+export function assertConfirmContainsCustomerId(confirmPhrase: unknown, customerId: string): void {
   const phrase = typeof confirmPhrase === "string" ? confirmPhrase : "";
   const id = normalizeCustomerId(customerId);
   if (!phrase.includes(id)) {
@@ -384,13 +384,13 @@ export async function gadsUpdateCampaignBudget(
 
 const ALLOWED_MATCH = new Set(["EXACT", "PHRASE", "BROAD"]);
 
-function optionalLoginCustomerId(args: Record<string, unknown>): string | undefined {
+export function optionalLoginCustomerId(args: Record<string, unknown>): string | undefined {
   return typeof args.login_customer_id === "string" && args.login_customer_id.trim()
     ? normalizeCustomerId(args.login_customer_id)
     : undefined;
 }
 
-async function liveMutateHop(
+export async function liveMutateHop(
   ctx: AppContext,
   tool: string,
   hopArgs: Record<string, unknown>,
@@ -424,7 +424,7 @@ async function liveMutateHop(
   return enrichGadsEnvelope(tool, hopArgs, env);
 }
 
-function gateMutateOrFail(ctx: AppContext, tool: string): Envelope | null {
+export function gateMutateOrFail(ctx: AppContext, tool: string): Envelope | null {
   if (!ctx.flags.adsMutateEnabled) {
     return failEnvelope(tool, "ADS_MUTATE_NOT_ENABLED", MSG.ADS_MUTATE_NOT_ENABLED, {
       hint: HINT_FLAG,
@@ -619,7 +619,7 @@ export async function gadsSetAdStatus(
   return liveMutateHop(ctx, tool, hopArgs);
 }
 
-function assertHttpsFinalUrl(raw: unknown): { ok: true; final_url: string } | { ok: false; reason: string } {
+export function assertHttpsFinalUrl(raw: unknown): { ok: true; final_url: string } | { ok: false; reason: string } {
   if (typeof raw !== "string" || !raw.trim()) return { ok: false, reason: "missing_final_url" };
   const s = raw.trim();
   try {
@@ -633,7 +633,7 @@ function assertHttpsFinalUrl(raw: unknown): { ok: true; final_url: string } | { 
   }
 }
 
-function assertHttpsMediaUrl(
+export function assertHttpsMediaUrl(
   raw: unknown,
   field: string,
 ): { ok: true; url: string } | { ok: false; reason: string } {
@@ -650,7 +650,7 @@ function assertHttpsMediaUrl(
   }
 }
 
-function assertBase64Image(raw: unknown): { ok: true; bytes: string } | { ok: false; reason: string } {
+export function assertBase64Image(raw: unknown): { ok: true; bytes: string } | { ok: false; reason: string } {
   if (typeof raw !== "string" || !raw.trim()) return { ok: false, reason: "missing_bytes" };
   const bytes = raw.trim().replace(/\s+/g, "");
   if (bytes.length < 32 || bytes.length > 4_000_000) return { ok: false, reason: "bytes_too_large_or_short" };
@@ -658,7 +658,7 @@ function assertBase64Image(raw: unknown): { ok: true; bytes: string } | { ok: fa
   return { ok: true, bytes };
 }
 
-function pmaxImageSlotReady(args: Record<string, unknown>, rnKey: string, urlKey: string, bytesKey: string): boolean {
+export function pmaxImageSlotReady(args: Record<string, unknown>, rnKey: string, urlKey: string, bytesKey: string): boolean {
   const rns = args[rnKey];
   if (Array.isArray(rns) && rns.length > 0) return true;
   if (typeof args[urlKey] === "string" && args[urlKey].trim()) return true;

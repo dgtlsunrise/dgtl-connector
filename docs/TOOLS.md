@@ -526,7 +526,7 @@ Free count stays **24**. These are Polar-gated; local describe tools need licens
 | `gads_get_customer` / `gads_search` / `gads_campaign_performance` | Closed recipes; cite `data.cited.customer_id`. |
 | `gads_add_keywords` | Standalone criterion add. Omitted `status` → **PAUSED**. ENABLED only with explicit `status` + confirm. Omitted `match_type` → **BROAD** (do not flip). |
 | `gads_create_search_campaign` | Closed Search create: budget + campaign + ad group + ≥1 keyword stub; optional RSA. Campaign defaults **PAUSED**. Child ad group + stub keywords stay **ENABLED** under that PAUSED campaign (intentional). |
-| `gads_create_display_campaign` | Minimal Display: budget + DISPLAY campaign + DISPLAY_STANDARD ad group (no RDA). Campaign defaults **PAUSED**; child ad group **ENABLED**. |
+| `gads_create_display_campaign` | Display foundation: budget + DISPLAY campaign + DISPLAY_STANDARD ad group. Campaign defaults **PAUSED**; child ad group **ENABLED**. Add RDA with `gads_create_responsive_display_ad`. |
 | `gads_create_responsive_search_ad` / `gads_set_*` / `gads_update_campaign_budget` | Creates default PAUSED; status/budget updates are confirm-gated. ENABLED only with explicit `status` + confirm. |
 | `meta_list_ad_accounts` | Use first for `ad_account_id`. |
 | `meta_describe_insights_schema` | Local levels / date_presets / breakdowns / fields — call before `meta_insights`. |
@@ -541,8 +541,24 @@ Free count stays **24**. These are Polar-gated; local describe tools need licens
 | `meta_create_ad_creative` | `image_hash` XOR `video_id` + `page_id` + https `link` → `creative_id`; server-built object_story_spec. |
 | `gads_upload_asset` | IMAGE asset via stamp AssetService (`bytes` XOR https `file_url`). dry_run default; live confirm with customer_id. Returns resource_name for PMax. |
 | `gads_create_performance_max_campaign` | PMax with uploaded images (`file_url`/`bytes`) **or** existing marketing/square/logo asset RNs from `gads_upload_asset`. Defaults **PAUSED**. |
-| `gads_create_shopping_campaign` | Shopping when `merchant_center_id` known; else `MERCHANT_CENTER_REQUIRED`. |
+| `gads_create_shopping_campaign` | Shopping when `merchant_center_id` known; else `MERCHANT_CENTER_REQUIRED`. Listing groups: `gads_add_shopping_listing_groups`. |
 | `gads_list_merchant_center_links` | Read MC product_link discovery for Shopping create. |
+| `gads_create_responsive_display_ad` | RDA on an existing Display ad group. Marketing + square images (`gads_upload_asset` RNs or `file_url`/`bytes`). Defaults **PAUSED**. |
+| `gads_add_shopping_listing_groups` | Shopping listing groups (`ALL_PRODUCTS` UNIT, or `BRAND`/`ITEM_ID` subdivision). New shopping ad group **ENABLED** under a PAUSED campaign. |
+| `gads_create_video_campaign` | VIDEO campaign + VIDEO_RESPONSIVE ad group. Optional `youtube_video_id` adds a PAUSED video ad. Campaign **PAUSED**. Live smoke blocked until Noel pastes Intended-use. |
+| `gads_create_demand_gen_campaign` | DEMAND_GEN campaign + ad group. Optional multi-asset ad when images supplied. Defaults **PAUSED**. |
+| `gads_create_app_campaign` | MULTI_CHANNEL `APP_CAMPAIGN` with `app_id` + `app_store`. Defaults **PAUSED**. |
+| `gads_create_hotel_campaign` | HOTEL campaign with `hotel_center_id` + HOTELS_ADS ad group. Defaults **PAUSED**. |
+| `gads_create_local_campaign` | Named tool. Google sunset Local campaigns → `NOT_IMPLEMENTED` (zero hop). Use PMax. Smart create is **not** advertised. |
+| `gads_add_negative_keywords` | Campaign or ad-group negatives. Standalone criterion add defaults **PAUSED**. |
+| `gads_attach_audience` | Attach audience/user-list RN to campaign or ad group. Defaults **PAUSED**. |
+| `gads_add_geo_targets` / `gads_add_languages` / `gads_add_demographics` / `gads_set_ad_schedule` | Closed criteria. Defaults **PAUSED**. Geo ids from `gads_search` recipe=geo. |
+| `gads_set_campaign_bid_strategy` | Closed-enum bidding (MANUAL_CPC, TARGET_CPA, TARGET_ROAS, …) or portfolio RN. |
+| `gads_create_shared_budget` / `gads_create_portfolio_bidding_strategy` | Shared budget (`explicitlyShared`) and portfolio BiddingStrategy (closed enum). |
+| `gads_create_conversion_action` | Conversion action create (tracking, not spend). |
+| `gads_apply_recommendation` | Apply a recommendation RN from `gads_search` recipe=recommendations. Confirm-gated. |
+| `gads_link_merchant_center` / `gads_unlink_merchant_center` | ProductLink create/remove (not MCC; not Content API). Confirm-gated. |
+| `gads_create_experiment` | Experiment in **SETUP** (not live) with control arm on an existing campaign. |
 
 `gads_search` closed recipes now include assets, asset_groups, audiences, shared_sets, bidding_strategies, geo, demographics, shopping_performance, recommendations, change_event, account_budget (billing **read**), negatives, experiments. Still **no raw GAQL**. Catalogs, lift, activity logs, and Meta hosted `ads_mcp_management` remain **deferred**. Meta live creates/uploads fail closed with `META_SCOPE_MISSING` until `ads_management` Advanced Access and a reauthorized token are present. See [ops/META-CREATE-SPEEDRUN-2026-09-11.md](ops/META-CREATE-SPEEDRUN-2026-09-11.md) and [ops/ADS-META-FOUNDATIONS-2026-09-11.md](ops/ADS-META-FOUNDATIONS-2026-09-11.md).
 

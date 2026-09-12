@@ -631,6 +631,405 @@ export const gadsListMerchantCenterLinks = z
   })
   .strict();
 
+const gadsMutateBase = {
+  customer_id: str,
+  login_customer_id: str,
+  dry_run: z.boolean().default(true),
+  confirm_phrase: z.string().optional(),
+};
+
+const amountFields = {
+  amount_micros: z.union([z.string(), z.number()]).optional(),
+  daily_budget_dollars: z.number().positive().optional(),
+};
+
+function requireAmountWhenCreate(
+  val: { amount_micros?: unknown; daily_budget_dollars?: number },
+  ctx: z.RefinementCtx,
+): void {
+  const hasMicros = val.amount_micros !== undefined && val.amount_micros !== null && val.amount_micros !== "";
+  if (!hasMicros && val.daily_budget_dollars === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "amount_micros or daily_budget_dollars is required",
+      path: ["amount_micros"],
+    });
+  }
+}
+
+const scheduleItem = z
+  .object({
+    day_of_week: z.enum(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]),
+    start_hour: z.number().int().min(0).max(23),
+    start_minute: z.enum(["ZERO", "FIFTEEN", "THIRTY", "FORTY_FIVE"]).optional(),
+    end_hour: z.number().int().min(0).max(24),
+    end_minute: z.enum(["ZERO", "FIFTEEN", "THIRTY", "FORTY_FIVE"]).optional(),
+  })
+  .strict();
+
+export const gadsCreateResponsiveDisplayAd = z
+  .object({
+    ...gadsMutateBase,
+    ad_group_id: str,
+    headlines: z.array(z.string().min(1).max(30)).min(1).max(5),
+    long_headline: z.string().min(1).max(90).optional(),
+    long_headlines: z.array(z.string().min(1).max(90)).max(1).optional(),
+    descriptions: z.array(z.string().min(1).max(90)).min(1).max(5),
+    business_name: z.string().min(1).max(25),
+    final_url: z.string().url().max(2048),
+    marketing_image_asset_resource_names: z.array(z.string().min(1)).max(20).optional(),
+    square_marketing_image_asset_resource_names: z.array(z.string().min(1)).max(20).optional(),
+    logo_asset_resource_names: z.array(z.string().min(1)).max(5).optional(),
+    marketing_image_file_url: z.string().url().max(2048).optional(),
+    square_marketing_image_file_url: z.string().url().max(2048).optional(),
+    logo_file_url: z.string().url().max(2048).optional(),
+    marketing_image_bytes: z.string().min(32).max(4_000_000).optional(),
+    square_marketing_image_bytes: z.string().min(32).max(4_000_000).optional(),
+    logo_bytes: z.string().min(32).max(4_000_000).optional(),
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsAddShoppingListingGroups = z
+  .object({
+    ...gadsMutateBase,
+    campaign_id: str,
+    ad_group_id: str,
+    ad_group_name: z.string().min(1).max(255).optional(),
+    listing_group_type: z.enum(["ALL_PRODUCTS", "BRAND", "ITEM_ID"]).optional(),
+    listing_group_values: z.array(z.string().min(1).max(80)).max(20).optional(),
+    brands: z.array(z.string().min(1).max(80)).max(20).optional(),
+    cpc_bid_micros: z.union([z.string(), z.number()]).optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsCreateVideoCampaign = z
+  .object({
+    ...gadsMutateBase,
+    campaign_name: z.string().min(1).max(255),
+    ad_group_name: z.string().min(1).max(255).optional(),
+    ...amountFields,
+    youtube_video_id: z.string().min(11).max(11).optional(),
+    headlines: z.array(z.string().min(1).max(30)).max(5).optional(),
+    long_headlines: z.array(z.string().min(1).max(90)).max(5).optional(),
+    descriptions: z.array(z.string().min(1).max(90)).max(5).optional(),
+    final_url: z.string().url().max(2048).optional(),
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    requireConfirmWhenLive(val, ctx);
+    requireAmountWhenCreate(val, ctx);
+  });
+
+export const gadsCreateDemandGenCampaign = z
+  .object({
+    ...gadsMutateBase,
+    campaign_name: z.string().min(1).max(255),
+    ad_group_name: z.string().min(1).max(255).optional(),
+    ...amountFields,
+    headlines: z.array(z.string().min(1).max(30)).max(5).optional(),
+    descriptions: z.array(z.string().min(1).max(90)).max(5).optional(),
+    business_name: z.string().min(1).max(25).optional(),
+    final_url: z.string().url().max(2048).optional(),
+    marketing_image_asset_resource_names: z.array(z.string().min(1)).max(20).optional(),
+    square_marketing_image_asset_resource_names: z.array(z.string().min(1)).max(20).optional(),
+    logo_asset_resource_names: z.array(z.string().min(1)).max(5).optional(),
+    marketing_image_file_url: z.string().url().max(2048).optional(),
+    square_marketing_image_file_url: z.string().url().max(2048).optional(),
+    logo_file_url: z.string().url().max(2048).optional(),
+    marketing_image_bytes: z.string().min(32).max(4_000_000).optional(),
+    square_marketing_image_bytes: z.string().min(32).max(4_000_000).optional(),
+    logo_bytes: z.string().min(32).max(4_000_000).optional(),
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    requireConfirmWhenLive(val, ctx);
+    requireAmountWhenCreate(val, ctx);
+  });
+
+export const gadsCreateAppCampaign = z
+  .object({
+    ...gadsMutateBase,
+    campaign_name: z.string().min(1).max(255),
+    ...amountFields,
+    app_id: z.string().min(1).max(255),
+    app_store: z.enum(["GOOGLE_APP_STORE", "APPLE_APP_STORE"]).optional(),
+    target_cpa_micros: z.union([z.string(), z.number()]).optional(),
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    requireConfirmWhenLive(val, ctx);
+    requireAmountWhenCreate(val, ctx);
+  });
+
+export const gadsCreateHotelCampaign = z
+  .object({
+    ...gadsMutateBase,
+    campaign_name: z.string().min(1).max(255),
+    ad_group_name: z.string().min(1).max(255).optional(),
+    ...amountFields,
+    hotel_center_id: z.union([z.string(), z.number()]).optional(),
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    requireConfirmWhenLive(val, ctx);
+    requireAmountWhenCreate(val, ctx);
+  });
+
+export const gadsCreateLocalCampaign = z
+  .object({
+    ...gadsMutateBase,
+    campaign_name: z.string().min(1).max(255),
+    ...amountFields,
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    requireConfirmWhenLive(val, ctx);
+    requireAmountWhenCreate(val, ctx);
+  });
+
+export const gadsAddNegativeKeywords = z
+  .object({
+    ...gadsMutateBase,
+    campaign_id: str,
+    ad_group_id: str,
+    keywords: z.array(keywordItem).min(1).max(20),
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsAttachAudience = z
+  .object({
+    ...gadsMutateBase,
+    campaign_id: str,
+    ad_group_id: str,
+    audience_resource_name: z.string().min(1).max(256),
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsAddGeoTargets = z
+  .object({
+    ...gadsMutateBase,
+    campaign_id: str,
+    geo_target_constant_ids: z.array(z.string().min(1).max(20)).min(1).max(50),
+    negative: z.boolean().optional(),
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsAddLanguages = z
+  .object({
+    ...gadsMutateBase,
+    campaign_id: str,
+    language_constant_ids: z.array(z.string().min(1).max(20)).min(1).max(50).optional(),
+    language_ids: z.array(z.string().min(1).max(20)).min(1).max(50).optional(),
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsAddDemographics = z
+  .object({
+    ...gadsMutateBase,
+    ad_group_id: str,
+    age_ranges: z
+      .array(
+        z.enum([
+          "AGE_RANGE_18_24",
+          "AGE_RANGE_25_34",
+          "AGE_RANGE_35_44",
+          "AGE_RANGE_45_54",
+          "AGE_RANGE_55_64",
+          "AGE_RANGE_65_UP",
+          "AGE_RANGE_UNDETERMINED",
+        ]),
+      )
+      .max(10)
+      .optional(),
+    genders: z.array(z.enum(["MALE", "FEMALE", "UNDETERMINED"])).max(3).optional(),
+    parental_statuses: z.array(z.enum(["PARENT", "NOT_A_PARENT", "UNDETERMINED"])).max(3).optional(),
+    income_ranges: z
+      .array(
+        z.enum([
+          "INCOME_RANGE_0_50",
+          "INCOME_RANGE_50_60",
+          "INCOME_RANGE_60_70",
+          "INCOME_RANGE_70_80",
+          "INCOME_RANGE_80_90",
+          "INCOME_RANGE_90_UP",
+          "INCOME_RANGE_UNDETERMINED",
+        ]),
+      )
+      .max(10)
+      .optional(),
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsSetAdSchedule = z
+  .object({
+    ...gadsMutateBase,
+    campaign_id: str,
+    schedules: z.array(scheduleItem).min(1).max(42),
+    status: z.enum(["ENABLED", "PAUSED"]).optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsSetCampaignBidStrategy = z
+  .object({
+    ...gadsMutateBase,
+    campaign_id: str,
+    bid_strategy_type: z
+      .enum([
+        "MANUAL_CPC",
+        "MANUAL_CPM",
+        "MAXIMIZE_CLICKS",
+        "MAXIMIZE_CONVERSIONS",
+        "MAXIMIZE_CONVERSION_VALUE",
+        "TARGET_CPA",
+        "TARGET_ROAS",
+        "TARGET_SPEND",
+        "TARGET_IMPRESSION_SHARE",
+        "TARGET_CPM",
+        "PERCENT_CPC",
+      ])
+      .optional(),
+    target_cpa_micros: z.union([z.string(), z.number()]).optional(),
+    target_roas: z.number().positive().optional(),
+    target_cpm_micros: z.union([z.string(), z.number()]).optional(),
+    cpc_bid_ceiling_micros: z.union([z.string(), z.number()]).optional(),
+    location: z.enum(["ANYWHERE_ON_PAGE", "TOP_OF_PAGE", "ABSOLUTE_TOP_OF_PAGE"]).optional(),
+    location_fraction_micros: z.union([z.string(), z.number()]).optional(),
+    bidding_strategy_resource_name: z.string().min(1).max(256).optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsCreateSharedBudget = z
+  .object({
+    ...gadsMutateBase,
+    name: z.string().min(1).max(255).optional(),
+    campaign_name: z.string().min(1).max(255).optional(),
+    ...amountFields,
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    requireConfirmWhenLive(val, ctx);
+    requireAmountWhenCreate(val, ctx);
+  });
+
+export const gadsCreatePortfolioBiddingStrategy = z
+  .object({
+    ...gadsMutateBase,
+    name: z.string().min(1).max(255).optional(),
+    bidding_strategy_name: z.string().min(1).max(255).optional(),
+    bid_strategy_type: z
+      .enum([
+        "MANUAL_CPC",
+        "MANUAL_CPM",
+        "MAXIMIZE_CLICKS",
+        "MAXIMIZE_CONVERSIONS",
+        "MAXIMIZE_CONVERSION_VALUE",
+        "TARGET_CPA",
+        "TARGET_ROAS",
+        "TARGET_SPEND",
+        "TARGET_IMPRESSION_SHARE",
+        "TARGET_CPM",
+        "PERCENT_CPC",
+      ])
+      .optional(),
+    target_cpa_micros: z.union([z.string(), z.number()]).optional(),
+    target_roas: z.number().positive().optional(),
+    target_cpm_micros: z.union([z.string(), z.number()]).optional(),
+    cpc_bid_ceiling_micros: z.union([z.string(), z.number()]).optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsCreateConversionAction = z
+  .object({
+    ...gadsMutateBase,
+    name: z.string().min(1).max(255).optional(),
+    conversion_action_name: z.string().min(1).max(255).optional(),
+    conversion_action_type: z
+      .enum(["WEBPAGE", "UPLOAD_CLICKS", "UPLOAD_CALLS", "CLICK_TO_CALL", "WEBSITE_CALL", "STORE_SALES"])
+      .optional(),
+    conversion_category: z
+      .enum([
+        "DEFAULT",
+        "PAGE_VIEW",
+        "PURCHASE",
+        "SIGNUP",
+        "LEAD",
+        "DOWNLOAD",
+        "ADD_TO_CART",
+        "BEGIN_CHECKOUT",
+        "SUBSCRIBE_PAID",
+        "CONTACT",
+        "SUBMIT_LEAD_FORM",
+        "BOOK_APPOINTMENT",
+        "REQUEST_QUOTE",
+        "PHONE_CALL_LEAD",
+      ])
+      .optional(),
+    default_value: z.number().min(0).optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsApplyRecommendation = z
+  .object({
+    ...gadsMutateBase,
+    recommendation_resource_name: z.string().min(1).max(256).optional(),
+    recommendation_id: str,
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsLinkMerchantCenter = z
+  .object({
+    ...gadsMutateBase,
+    merchant_center_id: z.union([z.string(), z.number()]).optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsUnlinkMerchantCenter = z
+  .object({
+    ...gadsMutateBase,
+    product_link_resource_name: z.string().min(1).max(256).optional(),
+    product_link_id: str,
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsCreateExperiment = z
+  .object({
+    ...gadsMutateBase,
+    campaign_id: str,
+    name: z.string().min(1).max(255).optional(),
+    experiment_name: z.string().min(1).max(255).optional(),
+    experiment_type: z
+      .enum(["SEARCH_CUSTOM", "DISPLAY_CUSTOM", "HOTEL_ADS", "SMART_MATCHING", "YOUTUBE_CUSTOM"])
+      .optional(),
+    traffic_split_percent: z.number().int().min(1).max(99).optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
 
 /** Meta mutate — dry_run default true; live needs confirm_phrase with act_{ad_account_id} + object id. */
 function requireMetaUpdateFieldsCampaign(
