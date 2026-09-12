@@ -276,4 +276,59 @@ describe("Wave 4 Merchant Center Content API (Merchant API)", () => {
     assert.equal(env.ok, true);
     assert.notEqual(env.error_code, "GATEWAY_UNAVAILABLE");
   });
+
+  it("mcProjectNotRegistered 401 maps to ACCESS_NOT_CONFIGURED not REAUTH_REQUIRED", async () => {
+    const ctx = makeCtx({ mcProjectNotRegistered: true }, adsLicenseEnv());
+    const env = await dispatch(ctx, "mc_list_accounts", {});
+    assert.equal(env.ok, false);
+    assert.equal(env.error_code, "ACCESS_NOT_CONFIGURED");
+    assert.equal(env.google_status, 401);
+    assert.notEqual(env.error_code, "REAUTH_REQUIRED");
+    assert.ok(String(env.hint ?? "").toLowerCase().includes("register") || String(env.message ?? "").toLowerCase().includes("not configured"));
+  });
+
+  it("PKCE MC store: 401 triggers one refresh then still maps registration error", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "dgtl-mc-reauth-"));
+    try {
+      writeStore(
+        dir,
+        {
+          access_token: "mc-stale-access",
+          refresh_token: "mc-refresh-fixture",
+          expiry: Date.now() + 3_600_000,
+          scopes: [SCOPE.content],
+          token_type: "Bearer",
+        },
+        STORE_FILE.mc,
+      );
+      const jwt = signLicense({
+        sub: "user_test",
+        features: ["ads", "meta"],
+        exp: Math.floor(Date.now() / 1000) + 3600,
+        jti: "jti-mc-401-refresh",
+      });
+      const envVars = testEnv({
+        DGTL_LICENSE_JWT: jwt,
+        GOOGLE_ACCESS_TOKEN: TEST_TOKEN,
+        GOOGLE_MC_ACCESS_TOKEN: "",
+        GOOGLE_MC_GRANTED_SCOPES: "",
+        GOOGLE_OAUTH_MC_CLIENT_ID: "mc-client.apps.googleusercontent.com",
+        GOOGLE_OAUTH_MC_CLIENT_SECRET: "mc-secret-fixture",
+        PLUGIN_DATA: dir,
+      });
+      const ctx = makeCtx({ mcProjectNotRegistered: true }, envVars);
+      const env = await dispatch(ctx, "mc_list_accounts", {});
+      assert.equal(env.ok, false);
+      assert.equal(env.error_code, "ACCESS_NOT_CONFIGURED");
+      // First hop 401 → invalidate → PKCE refresh (oauth2 /token via fetchImpl) → retry merchantapi
+      const merchantCalls = ctx.calls.filter((c) => c.host === "merchantapi.googleapis.com");
+      assert.ok(merchantCalls.length >= 2, `expected merchant retry, got ${merchantCalls.length}`);
+      const { readStore } = await import("../src/auth/store.js");
+      const after = readStore(dir, STORE_FILE.mc);
+      assert.equal(after?.access_token, "test-refreshed-access-token");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
 });

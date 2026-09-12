@@ -43,6 +43,21 @@ export function mapGoogleHttpError(opts: {
 
   const lower = `${reason} ${message}`.toLowerCase();
 
+  // Merchant API returns HTTP 401 UNAUTHENTICATED when the OAuth client's GCP
+  // project is not registered with Merchant Center (registerGcp). That is not
+  // an expired/revoked user token — do not mislabel as REAUTH_REQUIRED.
+  if (
+    /not registered with the merchant account|registergcp|register as a developer|register_as_a_developer/.test(
+      lower,
+    )
+  ) {
+    return new ToolError("ACCESS_NOT_CONFIGURED", MSG.ACCESS_NOT_CONFIGURED, {
+      ...extra,
+      hint:
+        "Consent MC OAuth is valid. Merchant API requires a one-time developerRegistration.registerGcp linking this OAuth client's GCP project to a Merchant Center account (ADMIN + real merchant id). See https://developers.google.com/merchant/api/guides/quickstart/direct-api-calls#step_1_register_as_a_developer — wait ~5 minutes after register. Browser re-consent / auth login-mc will not fix this.",
+    });
+  }
+
   if (opts.status === 401 || /invalid.?token|unauthenticated|invalid_grant/.test(lower)) {
     return new ToolError("REAUTH_REQUIRED", MSG.REAUTH_REQUIRED, extra);
   }

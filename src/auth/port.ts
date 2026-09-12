@@ -151,4 +151,10 @@ export class AuthPort implements AccessTokenSource {
     }
     return null;
   }
+
+  invalidateAccessToken(): void {
+    for (const src of this.sources) {
+      src.invalidateAccessToken?.();
+    }
+  }
 }
