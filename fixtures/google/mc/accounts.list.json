@@ -1,0 +1,11 @@
+{
+  "accounts": [
+    {
+      "name": "accounts/123456789",
+      "accountId": "123456789",
+      "accountName": "DGTL Test Merchant",
+      "timeZone": "America/Los_Angeles",
+      "languageCode": "en-US"
+    }
+  ]
+}

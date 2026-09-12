@@ -1,0 +1,57 @@
+{
+  "products": [
+    {
+      "name": "accounts/123456789/products/en~US~SKU12345",
+      "offerId": "SKU12345",
+      "contentLanguage": "en",
+      "feedLabel": "US",
+      "dataSource": "accounts/123456789/dataSources/111",
+      "productAttributes": {
+        "title": "Classic Cotton T-Shirt",
+        "price": { "amountMicros": "15990000", "currencyCode": "USD" }
+      },
+      "productStatus": {
+        "destinationStatuses": [
+          {
+            "reportingContext": "SHOPPING_ADS",
+            "approvedCountries": ["US"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "accounts/123456789/products/en~US~SKU67890",
+      "offerId": "SKU67890",
+      "contentLanguage": "en",
+      "feedLabel": "US",
+      "dataSource": "accounts/123456789/dataSources/111",
+      "productAttributes": {
+        "title": "Modern Linen Trousers",
+        "price": { "amountMicros": "49990000", "currencyCode": "USD" },
+        "gtins": ["123456789012"]
+      },
+      "productStatus": {
+        "destinationStatuses": [
+          {
+            "reportingContext": "SHOPPING_ADS",
+            "disapprovedCountries": ["US"]
+          }
+        ],
+        "itemLevelIssues": [
+          {
+            "code": "invalid_gtin",
+            "severity": "DISAPPROVED",
+            "resolution": "merchant_action",
+            "attribute": "gtins",
+            "reportingContext": "SHOPPING_ADS",
+            "description": "Invalid GTIN",
+            "detail": "The value provided for the gtin attribute is not a valid GTIN.",
+            "documentation": "https://support.google.com/merchants/answer/6324461",
+            "applicableCountries": ["US"]
+          }
+        ]
+      }
+    }
+  ],
+  "nextPageToken": "mc-products-page-2"
+}

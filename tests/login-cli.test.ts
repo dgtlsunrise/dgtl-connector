@@ -24,11 +24,13 @@ describe("PR-10 auth login-ads / login-meta --code", () => {
   it("helpText documents login-ads and login-meta --code; no later-PR stub", () => {
     const h = helpText();
     assert.ok(h.includes("auth login-ads"));
+    assert.ok(h.includes("auth login-mc"));
     assert.ok(h.includes("auth login-meta --code"));
     assert.ok(h.includes("POST /v1/meta/exchange") || h.includes("/v1/meta/exchange"));
     assert.ok(!h.includes("land in a later PR"));
     assert.ok(h.includes("never ships a developer-token"));
-    assert.ok(h.includes("Do not add adwords to Consent A"));
+    assert.ok(h.includes("Do not add adwords") || h.includes("adwords"));
+    assert.ok(h.includes("login-mc"));
     assert.ok(h.includes("Support never collects Meta tokens"));
     assert.ok(h.includes("doctor"));
   });

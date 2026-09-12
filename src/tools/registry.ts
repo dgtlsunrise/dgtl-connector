@@ -70,6 +70,14 @@ import {
 } from "../meta/meta-wave3.js";
 import { metaDisabled, metaDescribeInsightsSchema } from "../meta/meta.js";
 import {
+  mcGetProduct,
+  mcListAccountIssues,
+  mcListAccounts,
+  mcListDataSources,
+  mcListProductStatuses,
+  mcListProducts,
+} from "../google/mc.js";
+import {
   shopifyGetShop,
   shopifyListProducts,
   shopifyGetProduct,
@@ -80,7 +88,18 @@ import { supportPacket } from "../support/packet.js";
 import { feedbackPrepare, feedbackSend } from "../support/feedback.js";
 import * as S from "./schemas.js";
 
-export type ToolFamily = "identity" | "ga4" | "gsc" | "gtm" | "gtm_write" | "gbp" | "gads" | "meta" | "shopify" | "license";
+export type ToolFamily =
+  | "identity"
+  | "ga4"
+  | "gsc"
+  | "gtm"
+  | "gtm_write"
+  | "gbp"
+  | "gads"
+  | "meta"
+  | "mc"
+  | "shopify"
+  | "license";
 
 export type ToolAnnotations = {
   readOnlyHint: boolean;
@@ -1203,6 +1222,72 @@ export const TOOLS: ToolSpec[] = [
     handler: (ctx, args) => metaAttachAudience(ctx, args),
   },
   {
+    name: "mc_list_accounts",
+    group: "mc",
+    family: "mc",
+    title: "Merchant Center list accounts",
+    description:
+      "Paid. Pro (Polar ads). Direct Merchant API — not Ads product_link, not stamp. Consent MC (scope content) only; never Consent A. List merchant_id values. LICENSE_REQUIRED / MC_NOT_CONNECTED fail closed.",
+    inputSchema: S.mcListAccounts,
+    annotations: ANN_RO,
+    handler: (ctx, args) => mcListAccounts(ctx, args),
+  },
+  {
+    name: "mc_list_products",
+    group: "mc",
+    family: "mc",
+    title: "Merchant Center list products",
+    description:
+      "Paid. Direct Merchant API products.list. Requires merchant_id (from mc_list_accounts or gads_list_merchant_center_links). Never guess. GET-only.",
+    inputSchema: S.mcListProducts,
+    annotations: ANN_RO,
+    handler: (ctx, args) => mcListProducts(ctx, args),
+  },
+  {
+    name: "mc_get_product",
+    group: "mc",
+    family: "mc",
+    title: "Merchant Center get product",
+    description:
+      "Paid. Direct Merchant API products.get including nested productStatus. Requires merchant_id + product_id (contentLanguage~feedLabel~offerId).",
+    inputSchema: S.mcGetProduct,
+    annotations: ANN_RO,
+    handler: (ctx, args) => mcGetProduct(ctx, args),
+  },
+  {
+    name: "mc_list_product_statuses",
+    group: "mc",
+    family: "mc",
+    title: "Merchant Center list product statuses",
+    description:
+      "Paid. Product readiness for Shopping ads: destinationStatuses + itemLevelIssues. shopping_ads_ready when SHOPPING_ADS has approvedCountries. Same Merchant API products.list; not Ads GAQL.",
+    inputSchema: S.mcListProductStatuses,
+    annotations: ANN_RO,
+    handler: (ctx, args) => mcListProductStatuses(ctx, args),
+  },
+  {
+    name: "mc_list_account_issues",
+    group: "mc",
+    family: "mc",
+    title: "Merchant Center list account issues",
+    description:
+      "Paid. Account-level diagnostics (website, feeds, suspensions). Feed issues that block Shopping ads even when products look ready. GET-only.",
+    inputSchema: S.mcListAccountIssues,
+    annotations: ANN_RO,
+    handler: (ctx, args) => mcListAccountIssues(ctx, args),
+  },
+  {
+    name: "mc_list_data_sources",
+    group: "mc",
+    family: "mc",
+    title: "Merchant Center list data sources",
+    description:
+      "Paid. Merchant API data sources (feeds). Pair with mc_list_account_issues. GET-only; no fetch/insert.",
+    inputSchema: S.mcListDataSources,
+    annotations: ANN_RO,
+    handler: (ctx, args) => mcListDataSources(ctx, args),
+  },
+  {
     name: "shopify_get_shop",
     group: "shopify",
     family: "shopify",
@@ -1259,7 +1344,7 @@ export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 /**
  * Consent A readonly kernel (identity + GA4 + GSC + GTM list/get).
  * This is the 24-tool Google fixture loop in contract.test.ts.
- * Do not add Shopify, GBP, Consent W writes, Ads, Meta, or diagnostics.
+ * Do not add Shopify, GBP, Consent W writes, Ads, Meta, MC, or diagnostics.
  */
 export const CONSENT_A_TOOLS = TOOLS.filter(
   (t) => t.family === "identity" || t.family === "ga4" || t.family === "gsc" || t.family === "gtm",
@@ -1267,7 +1352,7 @@ export const CONSENT_A_TOOLS = TOOLS.filter(
 
 /**
  * Alias of CONSENT_A_TOOLS (W0.4). Not the commercial free set.
- * Shopify is LOCAL_FREE_TOOLS; Ads/Meta are LICENSE_GATED_TOOLS.
+ * Shopify is LOCAL_FREE_TOOLS; Ads/Meta/MC are LICENSE_GATED_TOOLS.
  */
 export const FREE_TOOL_NAMES = CONSENT_A_TOOLS;
 
@@ -1276,10 +1361,10 @@ export const LOCAL_FREE_TOOLS = TOOLS.filter((t) => t.family === "shopify" || t.
   (t) => t.name,
 );
 
-/** Polar Pro surface: Google Ads + Meta Ads (including plugin-local describe tools). */
-export const LICENSE_GATED_TOOLS = TOOLS.filter((t) => t.family === "gads" || t.family === "meta").map(
-  (t) => t.name,
-);
+/** Polar Pro surface: Google Ads + Meta Ads + Merchant Center (including plugin-local describe tools). */
+export const LICENSE_GATED_TOOLS = TOOLS.filter(
+  (t) => t.family === "gads" || t.family === "meta" || t.family === "mc",
+).map((t) => t.name);
 
 /**
  * Plugin-local describe/recipe tools: zero Ads/Graph HTTP.

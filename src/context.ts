@@ -18,11 +18,15 @@ export type AppContext = {
   authWrite: AccessTokenSource;
   /** Consent C Google Ads — GOOGLE_ADS_ACCESS_TOKEN / google-oauth-ads.json */
   authAds: AccessTokenSource;
+  /** Consent MC Merchant API — GOOGLE_MC_ACCESS_TOKEN / google-oauth-mc.json */
+  authMc: AccessTokenSource;
   /** Meta user — META_ACCESS_TOKEN / meta-oauth.json */
   authMeta: AccessTokenSource;
   http: GoogleHttp;
   /** Consent W mutate client — never wired to ctx.auth. */
   httpWrite: GoogleWriteHttp;
+  /** Consent MC Merchant API client — never wired to ctx.auth / Consent A. */
+  httpMc: GoogleHttp;
   fetchImpl: typeof fetch;
   flags: Flags;
   license: LicenseStatus;
@@ -54,6 +58,7 @@ export function createAppContext(opts: {
   auth?: AccessTokenSource;
   authWrite?: AccessTokenSource;
   authAds?: AccessTokenSource;
+  authMc?: AccessTokenSource;
   authMeta?: AccessTokenSource;
 }): AppContext {
   const env = opts.env ?? process.env;
@@ -63,9 +68,16 @@ export function createAppContext(opts: {
   const auth = opts.auth ?? AuthPort.fromEnv({ env, pluginDataDir, fetchImpl });
   const authWrite = opts.authWrite ?? AuthPort.writeFromEnv({ env, pluginDataDir, fetchImpl });
   const authAds = opts.authAds ?? AuthPort.adsFromEnv({ env, pluginDataDir, fetchImpl });
+  const authMc = opts.authMc ?? AuthPort.mcFromEnv({ env, pluginDataDir, fetchImpl });
   const authMeta = opts.authMeta ?? AuthPort.metaFromEnv({ env, pluginDataDir });
   const http = new GoogleHttp({ tokenSource: auth, fetchImpl, calls });
   const httpWrite = new GoogleWriteHttp({ tokenSource: authWrite, fetchImpl, calls });
+  const httpMc = new GoogleHttp({
+    tokenSource: authMc,
+    fetchImpl,
+    calls,
+    allowedHosts: new Set(["merchantapi.googleapis.com"]),
+  });
   const license = verifyLicenseJwt(loadLicenseToken(env, pluginDataDir));
   return {
     pluginRoot: opts.pluginRoot,
@@ -73,9 +85,11 @@ export function createAppContext(opts: {
     auth,
     authWrite,
     authAds,
+    authMc,
     authMeta,
     http,
     httpWrite,
+    httpMc,
     fetchImpl,
     flags: loadFlags(env),
     license,

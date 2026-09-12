@@ -80,7 +80,9 @@ export class PkceTokenSource implements AccessTokenSource {
         ? "pkce-write"
         : this.storeFile === STORE_FILE.ads
           ? "pkce-ads"
-          : "pkce";
+          : this.storeFile === STORE_FILE.mc
+            ? "pkce-mc"
+            : "pkce";
   }
 
   async getAccessToken(): Promise<AccessToken | null> {
@@ -112,7 +114,7 @@ export class PkceTokenSource implements AccessTokenSource {
         clientId: this.clientId,
         refreshToken: stored.refresh_token,
         clientSecret: this.clientSecret,
-        // Consent W/C must never reuse GOOGLE_OAUTH_CLIENT_SECRET (Consent A).
+        // Consent W/C/MC must never reuse GOOGLE_OAUTH_CLIENT_SECRET (Consent A).
         allowConsentASecretFallback: this.storeFile === STORE_FILE.a,
       },
       this.fetchImpl,

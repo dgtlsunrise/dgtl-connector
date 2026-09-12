@@ -11,12 +11,13 @@ export interface AccessTokenSource {
   getAccessToken(): Promise<AccessToken | null>;
 }
 
-/** PLUGIN_DATA filenames — one file per consent lane. Never share A with W/C. */
+/** PLUGIN_DATA filenames — one file per consent lane. Never share A with W/C/MC. */
 export const STORE_FILE = {
   a: "google-oauth.json",
   w: "google-oauth-write.json",
   ads: "google-oauth-ads.json",
   meta: "meta-oauth.json",
+  mc: "google-oauth-mc.json",
 } as const;
 
 export type StoreLane = keyof typeof STORE_FILE;

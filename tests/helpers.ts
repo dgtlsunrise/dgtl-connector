@@ -184,6 +184,26 @@ function route(method: string, url: URL, opts: FixtureOpts): unknown {
     if (p.includes(":publish") && method === "POST") return loadFixture("gtm/versions.publish.json");
   }
 
+  if (host === "merchantapi.googleapis.com") {
+    if (p === "/accounts/v1/accounts" && method === "GET") {
+      return opts.emptyList ? { accounts: [] } : loadFixture("mc/accounts.list.json");
+    }
+    if (/^\/products\/v1\/accounts\/\d+\/products$/.test(p) && method === "GET") {
+      return opts.emptyList ? { products: [] } : loadFixture("mc/products.list.json");
+    }
+    if (/^\/products\/v1\/accounts\/\d+\/products\/[^/]+$/.test(p) && method === "GET") {
+      const id = p.split("/products/").pop();
+      const base = loadFixture("mc/products.get.json") as Record<string, unknown>;
+      return { ...base, name: `accounts/${p.split("/")[4]}/products/${id}` };
+    }
+    if (/^\/accounts\/v1\/accounts\/\d+\/issues$/.test(p) && method === "GET") {
+      return opts.emptyList ? { accountIssues: [] } : loadFixture("mc/accountIssues.list.json");
+    }
+    if (/^\/datasources\/v1\/accounts\/\d+\/dataSources$/.test(p) && method === "GET") {
+      return opts.emptyList ? { dataSources: [] } : loadFixture("mc/dataSources.list.json");
+    }
+  }
+
   throw new Error(`UNMAPPED_FIXTURE ${method} ${host}${p}${url.search}`);
 }
 

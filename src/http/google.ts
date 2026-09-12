@@ -51,8 +51,14 @@ export class GoogleHttp {
       fetchImpl: typeof fetch;
       calls: HttpCall[];
       userAgent?: string;
+      /** Override host allowlist. Consent MC uses merchantapi only. */
+      allowedHosts?: ReadonlySet<string>;
     },
   ) {}
+
+  private allowedHosts(): ReadonlySet<string> {
+    return this.opts.allowedHosts ?? ALLOWED_HOSTS;
+  }
 
   get calls(): HttpCall[] {
     return this.opts.calls;
@@ -70,7 +76,7 @@ export class GoogleHttp {
     }
 
     const url = new URL(req.url);
-    if (!ALLOWED_HOSTS.has(url.hostname)) {
+    if (!this.allowedHosts().has(url.hostname)) {
       throw new ToolError("UNSUPPORTED_OPERATION", `Refusing to call non-allowlisted host ${url.hostname}`, {
         api: req.api,
       });

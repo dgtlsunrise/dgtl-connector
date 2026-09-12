@@ -6,6 +6,7 @@ import {
   parseRedeemArgs,
   runAuthLogin,
   runAuthLoginAds,
+  runAuthLoginMc,
   runAuthLoginWrite,
   runAuthLoginMeta,
   runAuthRedeem,
@@ -106,6 +107,23 @@ async function main(argv: string[]): Promise<void> {
       });
       return;
     }
+    if (sub === "login-mc") {
+      const clientId = ctx.env.GOOGLE_OAUTH_MC_CLIENT_ID?.trim();
+      if (!clientId) {
+        process.stderr.write(
+          "Set GOOGLE_OAUTH_MC_CLIENT_ID (separate Consent MC Desktop client). Do not add content scope to Consent A. Never commit GOOGLE_OAUTH_MC_CLIENT_SECRET.\n",
+        );
+        process.exitCode = 1;
+        return;
+      }
+      process.exitCode = await runAuthLoginMc({
+        clientId,
+        clientSecret: ctx.env.GOOGLE_OAUTH_MC_CLIENT_SECRET,
+        pluginDataDir: ctx.pluginDataDir,
+        fetchImpl: ctx.fetchImpl,
+      });
+      return;
+    }
     if (sub === "login-meta") {
       const code = parseLoginMetaCode(args.slice(2));
       if (!code) {
@@ -146,7 +164,7 @@ async function main(argv: string[]): Promise<void> {
     }
     if (sub === "logout") {
       clearStore(ctx.pluginDataDir, STORE_FILE.a);
-      process.stderr.write("Cleared PLUGIN_DATA/google-oauth.json (Consent A only; W/C stores untouched)\n");
+      process.stderr.write("Cleared PLUGIN_DATA/google-oauth.json (Consent A only; W/C/MC stores untouched)\n");
       return;
     }
     if (sub === "logout-write") {
@@ -159,6 +177,11 @@ async function main(argv: string[]): Promise<void> {
       process.stderr.write("Cleared PLUGIN_DATA/google-oauth-ads.json (Consent C Ads)\n");
       return;
     }
+    if (sub === "logout-mc") {
+      clearStore(ctx.pluginDataDir, STORE_FILE.mc);
+      process.stderr.write("Cleared PLUGIN_DATA/google-oauth-mc.json (Consent MC)\n");
+      return;
+    }
     if (sub === "logout-meta") {
       clearStore(ctx.pluginDataDir, STORE_FILE.meta);
       process.stderr.write("Cleared PLUGIN_DATA/meta-oauth.json (Meta user)\n");
@@ -169,6 +192,7 @@ async function main(argv: string[]): Promise<void> {
       const stored = readStore(ctx.pluginDataDir, STORE_FILE.a);
       const writeTok = await ctx.authWrite.getAccessToken();
       const adsTok = await ctx.authAds.getAccessToken();
+      const mcTok = await ctx.authMc.getAccessToken();
       const metaTok = await ctx.authMeta.getAccessToken();
       process.stdout.write(
         JSON.stringify(
@@ -188,6 +212,11 @@ async function main(argv: string[]): Promise<void> {
               host_injected: Boolean(ctx.env.GOOGLE_ADS_ACCESS_TOKEN?.trim()),
               store: Boolean(readStore(ctx.pluginDataDir, STORE_FILE.ads)?.access_token),
               present: Boolean(adsTok?.accessToken),
+            },
+            consent_mc: {
+              host_injected: Boolean(ctx.env.GOOGLE_MC_ACCESS_TOKEN?.trim()),
+              store: Boolean(readStore(ctx.pluginDataDir, STORE_FILE.mc)?.access_token),
+              present: Boolean(mcTok?.accessToken),
             },
             consent_c_meta: {
               host_injected: Boolean(ctx.env.META_ACCESS_TOKEN?.trim()),

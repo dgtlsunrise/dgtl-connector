@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { buildGoogleAuthUrl, exchangeAuthorizationCode, generatePkce } from "./pkce.js";
 import { writeStore, STORE_FILE } from "./store.js";
-import { CONSENT_A, CONSENT_C_GOOGLE, CONSENT_W_GTM } from "../google/scopes.js";
+import { CONSENT_A, CONSENT_C_GOOGLE, CONSENT_MC, CONSENT_W_GTM } from "../google/scopes.js";
 import { postMetaExchange } from "../gateway/meta-exchange.js";
 import { postLicenseRedeem } from "../gateway/license-redeem.js";
 import {
@@ -185,6 +185,29 @@ export async function runAuthLoginAds(opts: {
     scopes: CONSENT_C_GOOGLE,
     storeFile: STORE_FILE.ads,
     laneLabel: "Consent C (Ads)",
+  });
+}
+
+/**
+ * Consent MC Merchant API PKCE — separate client; never adds content to Consent A.
+ * Writes PLUGIN_DATA/google-oauth-mc.json only. Fail-closed without GOOGLE_OAUTH_MC_CLIENT_ID.
+ * Wave 4 tools are GET-only even though Google's content scope is read/write.
+ */
+export async function runAuthLoginMc(opts: {
+  clientId: string;
+  clientSecret?: string;
+  pluginDataDir: string;
+  fetchImpl: typeof fetch;
+}): Promise<number> {
+  return runGooglePkceLogin({
+    clientId: opts.clientId,
+    clientSecret: opts.clientSecret,
+    allowConsentASecretFallback: false,
+    pluginDataDir: opts.pluginDataDir,
+    fetchImpl: opts.fetchImpl,
+    scopes: CONSENT_MC,
+    storeFile: STORE_FILE.mc,
+    laneLabel: "Consent MC (Merchant Center)",
   });
 }
 
@@ -382,12 +405,14 @@ USAGE
   dgtl-connector-mcp doctor           Human checklist (no secrets); also: auth doctor
   dgtl-connector-mcp auth login       Installed-app PKCE (Consent A)
   dgtl-connector-mcp auth login-ads   Consent C Ads PKCE (separate client; adwords)
+  dgtl-connector-mcp auth login-mc    Consent MC Merchant Center PKCE (separate client; content)
   dgtl-connector-mcp auth login-write Consent W GTM write PKCE (separate client; never Consent A)
   dgtl-connector-mcp auth login-meta --code <grant>  Redeem hosted Meta Login code
   dgtl-connector-mcp auth redeem --code|--checkout-id  Redeem Polar license → license.jwt
   dgtl-connector-mcp auth status      Show whether token sources are configured
   dgtl-connector-mcp auth logout      Delete PLUGIN_DATA/google-oauth.json (A only)
   dgtl-connector-mcp auth logout-ads  Delete PLUGIN_DATA/google-oauth-ads.json
+  dgtl-connector-mcp auth logout-mc   Delete PLUGIN_DATA/google-oauth-mc.json
   dgtl-connector-mcp auth logout-write Delete PLUGIN_DATA/google-oauth-write.json
   dgtl-connector-mcp auth logout-meta Delete PLUGIN_DATA/meta-oauth.json
 
@@ -396,11 +421,12 @@ AUTH (stdio is Manual — there is no Gmail-style Connect card)
   2. PKCE fallback: set GOOGLE_OAUTH_CLIENT_ID (public Desktop client, no secret)
      then run auth login. Tokens stay in PLUGIN_DATA/google-oauth.json (Consent A).
 
-Consent W (writes) and Consent C (Ads/Meta) use separate stores and env tokens:
+Consent W (writes), Consent C (Ads/Meta), and Consent MC use separate stores:
   GOOGLE_WRITE_ACCESS_TOKEN / google-oauth-write.json  (or auth login-write)
   GOOGLE_ADS_ACCESS_TOKEN / google-oauth-ads.json  (or auth login-ads)
+  GOOGLE_MC_ACCESS_TOKEN / google-oauth-mc.json    (or auth login-mc)
   META_ACCESS_TOKEN / meta-oauth.json              (or auth login-meta --code)
-  They never reuse Consent A AuthPort. Do not add adwords to Consent A.
+  They never reuse Consent A AuthPort. Do not add adwords or content to Consent A.
 
 Consent W: set GOOGLE_OAUTH_WRITE_CLIENT_ID (separate Desktop client; or put
   GOOGLE_OAUTH_WRITE_CLIENT_ID/SECRET in gitignored .env.write.local) then
@@ -411,6 +437,12 @@ Consent W: set GOOGLE_OAUTH_WRITE_CLIENT_ID (separate Desktop client; or put
 Consent C Ads: set GOOGLE_OAUTH_ADS_CLIENT_ID (separate Desktop client) then
   auth login-ads. Fail-closed without that client id. Paid tools still need
   DGTL_GATEWAY_URL + license JWT — this binary never ships a developer-token.
+
+Consent MC (Merchant Center): set GOOGLE_OAUTH_MC_CLIENT_ID (separate Desktop
+  client) then auth login-mc → PLUGIN_DATA/google-oauth-mc.json with scope
+  content. Never reuse Consent A. Direct Merchant API hop (no stamp — Ads
+  developer-token is the wrong secret). Tools are GET-only. Needs Pro (ads)
+  license. Live API enablement on that GCP project is a Noel gate.
 
 Meta: prefer host-injected META_ACCESS_TOKEN. Otherwise redeem a hosted Login
   one-time grant code: auth login-meta --code <code> → POST /v1/meta/exchange.
@@ -436,7 +468,7 @@ DGTL license JWT is present. This binary never ships a developer-token.
 DIAGNOSTICS
   doctor / auth doctor prints node + package versions, whether dist/ exists,
   which known env names are SET (never values), PLUGIN_DATA file existence
-  (Consent A/C/W, Meta, Shopify, license.jwt), plugin vs Worker dual-gate
+  (Consent A/C/W/MC, Meta, Shopify, license.jwt), plugin vs Worker dual-gate
   mutate booleans, and a local license summary (valid/invalid/missing features).
   Never prints tokens, JWT, or gateway URLs. Exits 1 if there is no build or
   no way to auth. Same as \`npm run doctor\`.

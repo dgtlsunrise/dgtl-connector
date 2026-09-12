@@ -44,7 +44,7 @@ Google `403` with `reason=accessNotConfigured` (or equivalent “API has not bee
 “You cannot enable this yourself on DGTL's project. Email noel@dgtlsunrise.com with the plugin version, the `api` name, and the error_code — not tokens. This is a publisher defect.”
 
 **Hint, local/dev OAuth client:**  
-“In that Cloud project, enable: Analytics Admin API, Analytics Data API, Search Console API, Tag Manager API. GTM 403s are usually Tag Manager API left off.”
+“In that Cloud project, enable: Analytics Admin API, Analytics Data API, Search Console API, Tag Manager API. GTM 403s are usually Tag Manager API left off. Merchant API 403s are Products / Accounts / DataSources left off on the **Consent MC** project — not Consent A.”
 
 ### `PERMISSION_DENIED`
 
@@ -244,8 +244,22 @@ Used when the Google Ads API cannot create the requested type. Wave 2: `gads_cre
 
 ### `MERCHANT_CENTER_REQUIRED`
 
-Shopping create or MC link called without `merchant_center_id`. Discover ids via `gads_list_merchant_center_links`. No Ads mutate was sent.
+Shopping create or MC link called without `merchant_center_id`. Discover ids via `gads_list_merchant_center_links` or `mc_list_accounts`. No Ads mutate was sent.
 
 **User-visible:**  
-"Shopping campaign create needs a linked Merchant Center (shoppingSetting.merchantCenterId). Merchant Center is not in this product yet. No Ads mutate HTTP was sent."
+"Shopping campaign create needs a linked Merchant Center (shoppingSetting.merchantCenterId). Discover ids via gads_list_merchant_center_links or mc_list_accounts. No Ads mutate HTTP was sent."
+
+### `MC_NOT_CONNECTED`
+
+Merchant Center tools without Consent MC token. Separate from Consent A / Ads. Direct Merchant API hop — not stamp.
+
+**User-visible:**  
+"Merchant Center is a separate OAuth grant (scope content). It is not part of free Consent A. After a valid DGTL license, set GOOGLE_MC_ACCESS_TOKEN or run `dgtl-connector-mcp auth login-mc` (separate Consent MC client). Never reuse Consent A."
+
+### `MC_SCOPE_MISSING`
+
+Consent MC token present but missing `https://www.googleapis.com/auth/content`. Do not add that scope to Consent A.
+
+**User-visible:**  
+"This Merchant Center login did not grant https://www.googleapis.com/auth/content. Re-authorize Consent MC (`auth login-mc` or GOOGLE_MC_ACCESS_TOKEN). Do not add content scope to Consent A."
 

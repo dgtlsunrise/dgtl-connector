@@ -1,0 +1,30 @@
+{
+  "accountIssues": [
+    {
+      "name": "accounts/123456789/issues/home-page-issue",
+      "title": "Online store not confirmed",
+      "severity": "CRITICAL",
+      "impactedDestinations": [
+        {
+          "reportingContext": "SHOPPING_ADS",
+          "impacts": [{ "regionCode": "US", "severity": "CRITICAL" }]
+        }
+      ],
+      "detail": "The ownership of the online store must be verified through Merchant Center",
+      "documentationUri": "https://support.google.com/merchants/answer/176793"
+    },
+    {
+      "name": "accounts/123456789/issues/feed-fetch-error",
+      "title": "Primary feed fetch failed",
+      "severity": "ERROR",
+      "impactedDestinations": [
+        {
+          "reportingContext": "SHOPPING_ADS",
+          "impacts": [{ "regionCode": "US", "severity": "ERROR" }]
+        }
+      ],
+      "detail": "The scheduled fetch for the primary product data source returned HTTP 404.",
+      "documentationUri": "https://support.google.com/merchants/answer/188489"
+    }
+  ]
+}

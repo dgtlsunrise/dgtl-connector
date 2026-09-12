@@ -242,6 +242,7 @@ describe("doctor CLI (no secrets)", () => {
       writeFileSync(join(dir, "google-oauth-ads.json"), JSON.stringify({ access_token: "ads-secret-must-not-print" }));
       writeFileSync(join(dir, "google-oauth-write.json"), JSON.stringify({ access_token: "write-secret-must-not-print" }));
       writeFileSync(join(dir, "meta-oauth.json"), JSON.stringify({ access_token: "meta-secret-must-not-print" }));
+      writeFileSync(join(dir, "google-oauth-mc.json"), JSON.stringify({ access_token: "mc-secret-must-not-print" }));
       writeFileSync(join(dir, "shopify-oauth.json"), JSON.stringify({ access_token: "shpat_secret-must-not-print" }));
       const report = await collectDoctor({
         pluginRoot: ROOT,
@@ -252,11 +253,13 @@ describe("doctor CLI (no secrets)", () => {
       assert.equal(report.plugin_data.google_oauth_ads_json, true);
       assert.equal(report.plugin_data.google_oauth_write_json, true);
       assert.equal(report.plugin_data.meta_oauth_json, true);
+      assert.equal(report.plugin_data.google_oauth_mc_json, true);
       assert.equal(report.plugin_data.shopify_oauth_json, true);
       assert.deepEqual(report.stores, {
         consent_a: true,
         consent_c: true,
         consent_w: true,
+        consent_mc: true,
         meta: true,
         shopify: true,
       });
@@ -271,6 +274,8 @@ describe("doctor CLI (no secrets)", () => {
       assert.ok(!text.includes("write-secret-must-not-print"));
       assert.ok(!text.includes("meta-secret-must-not-print"));
       assert.ok(!text.includes("shpat_secret-must-not-print"));
+      assert.ok(!text.includes("mc-secret-must-not-print"));
+      assert.ok(text.includes("Consent MC"));
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

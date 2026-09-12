@@ -54,6 +54,7 @@ describe("packaging and secrets", () => {
     assert.ok(!url.includes("client_secret"));
     assert.ok(url.includes("analytics.readonly"));
     assert.ok(!url.includes("adwords"));
+    assert.ok(!url.includes("auth/content"));
     assert.ok(!url.includes("business.manage"));
     assert.ok(!url.includes("tagmanager.edit.containers"));
     assert.ok(!url.includes("tagmanager.publish"));
@@ -113,7 +114,14 @@ describe("packaging and secrets", () => {
       assert.equal(g.fail, "SHOPIFY_NOT_CONNECTED", name);
       assert.ok(!catalog.tools.some((t: { name: string }) => t.name === name), name);
     }
-    for (const name of ["gads_search", "meta_insights", "gads_describe_recipes", "meta_describe_insights_schema"]) {
+    for (const name of [
+      "gads_search",
+      "meta_insights",
+      "gads_describe_recipes",
+      "meta_describe_insights_schema",
+      "mc_list_products",
+      "mc_list_product_statuses",
+    ]) {
       assert.ok(LICENSE_GATED_TOOLS.includes(name), name);
       const g = catalog.gated_tools.find((x: { name: string }) => x.name === name);
       assert.ok(g, name);

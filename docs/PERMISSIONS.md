@@ -31,7 +31,8 @@ Do **not** request `https://www.googleapis.com/auth/userinfo.profile` unless a l
 
 | Scope | Reason |
 | --- | --- |
-| `https://www.googleapis.com/auth/adwords` | Google Ads — v2 hosted |
+| `https://www.googleapis.com/auth/adwords` | Google Ads — Consent C (separate client) |
+| `https://www.googleapis.com/auth/content` | Merchant Center / Merchant API — Consent MC (separate client; Wave 4 GET-only). Never on Consent A. |
 | `https://www.googleapis.com/auth/analytics` | Read/write Analytics |
 | `https://www.googleapis.com/auth/analytics.edit` | Would be needed to create some GA4 links; still not v1 |
 | `https://www.googleapis.com/auth/webmasters` | Read/write Search Console |
@@ -100,7 +101,28 @@ Paid Ads/Meta **user** grants use a **separate** Google OAuth client (`adwords`)
 | Meta | `META_ACCESS_TOKEN` or `dgtl-connector-mcp auth login-meta --code <grant>` → `POST /v1/meta/exchange` → `PLUGIN_DATA/meta-oauth.json` |
 | Secrets | Ads developer-token and Meta app secret stay on the Worker. This plugin never ships them. Support never collects Meta tokens. |
 
-Live hops still need `DGTL_LICENSE_JWT` + `DGTL_GATEWAY_URL`. Fail closed until those exist (`LICENSE_REQUIRED` / `GATEWAY_UNAVAILABLE` / `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`).
+Live Ads/Meta hops still need `DGTL_LICENSE_JWT` + `DGTL_GATEWAY_URL`. Fail closed until those exist (`LICENSE_REQUIRED` / `GATEWAY_UNAVAILABLE` / `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`).
+
+## Consent MC (Merchant Center) — separate from Consent A and Consent C
+
+Merchant API reads use a **third Google Desktop client**. Not Consent A (no `content` on the free screen). Not Consent C (`adwords` is Ads, not Merchant Center). Not stamp (no DGTL secret).
+
+| Path | How |
+| --- | --- |
+| Merchant Center | `GOOGLE_MC_ACCESS_TOKEN` or `dgtl-connector-mcp auth login-mc` → `PLUGIN_DATA/google-oauth-mc.json` (`GOOGLE_OAUTH_MC_CLIENT_ID`) |
+| Scope | `https://www.googleapis.com/auth/content` only. Google has no readonly MC scope; Wave 4 tools are GET-only. |
+| License | Polar Pro `ads` feature (no separate `mc` bit). Direct hop — **no** `DGTL_GATEWAY_URL`. |
+| Fail closed | `LICENSE_REQUIRED` → `MC_NOT_CONNECTED` → `MC_SCOPE_MISSING` |
+
+Do **not** add `content` to Consent A verification. Merchant API Products / Accounts / DataSources must be Enabled on the **MC OAuth client's** GCP project (Noel gate). `ACCESS_NOT_CONFIGURED` is that enablement, not an empty catalog.
+
+### Google Cloud APIs to Enable (Consent MC project)
+
+| API | Host / path | If missing |
+| --- | --- | --- |
+| Merchant API (products) | `merchantapi.googleapis.com/products/v1` | 403 `accessNotConfigured` on `mc_list_products` / get / statuses |
+| Merchant API (accounts) | `merchantapi.googleapis.com/accounts/v1` | 403 on `mc_list_accounts` / `mc_list_account_issues` |
+| Merchant API (data sources) | `merchantapi.googleapis.com/datasources/v1` | 403 on `mc_list_data_sources` |
 
 ## Least privilege in the tools
 

@@ -58,6 +58,44 @@ export function normalizeGa4Account(raw: string): { id: string; name: string } {
   return { id, name: `accounts/${id}` };
 }
 
+/** Merchant Center account id — digits or accounts/{id}. Never guess. */
+export function normalizeMerchantId(raw: string): { id: string; name: string } {
+  const trimmed = raw.trim();
+  const id = trimmed.startsWith("accounts/") ? trimmed.slice("accounts/".length) : trimmed;
+  if (!/^[0-9]+$/.test(id)) {
+    throw new ToolError(
+      "INVALID_ARGUMENT",
+      `merchant_id must be numeric or accounts/{id}, got ${trimmed}`,
+      { resource_id: trimmed },
+    );
+  }
+  return { id, name: `accounts/${id}` };
+}
+
+/**
+ * Merchant API product id: `{contentLanguage}~{feedLabel}~{offerId}`
+ * or full `accounts/{merchant}/products/{productId}`.
+ */
+export function normalizeMcProductId(raw: string): string {
+  const trimmed = raw.trim();
+  const full = trimmed.match(/^accounts\/[0-9]+\/products\/(.+)$/);
+  const id = full?.[1] ?? trimmed;
+  if (!id || FORBIDDEN.has(id.toLowerCase())) {
+    throw new ToolError("RESOURCE_REQUIRED", MSG.RESOURCE_REQUIRED, {
+      resource_id: "product_id",
+      hint: "Pass product_id as contentLanguage~feedLabel~offerId (e.g. en~US~SKU123) from mc_list_products.",
+    });
+  }
+  if (!id.includes("~") || id.includes("/") || id.includes("..")) {
+    throw new ToolError(
+      "INVALID_ARGUMENT",
+      "product_id must be contentLanguage~feedLabel~offerId (or accounts/{merchant}/products/…). Do not pass a bare SKU.",
+      { resource_id: trimmed },
+    );
+  }
+  return id;
+}
+
 export function normalizeGa4Property(raw: string): { id: string; name: string } {
   const trimmed = raw.trim();
   const id = trimmed.startsWith("properties/")

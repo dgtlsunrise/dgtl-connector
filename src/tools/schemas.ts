@@ -1455,6 +1455,37 @@ export const metaCreateAdCreative = z
     }
   });
 
+/** Merchant Center — Merchant API reads. merchant_id never guessed. */
+export const mcListAccounts = pageInput;
+
+export const mcMerchantPage = z
+  .object({
+    merchant_id: str,
+    page_size: pageSize,
+    page_token: pageToken,
+  })
+  .strict();
+
+export const mcGetProduct = z
+  .object({
+    merchant_id: str,
+    product_id: str,
+  })
+  .strict();
+
+export const mcListAccountIssues = z
+  .object({
+    merchant_id: str,
+    page_size: pageSize,
+    page_token: pageToken,
+    language_code: z.string().min(2).max(16).optional(),
+  })
+  .strict();
+
+export const mcListProducts = mcMerchantPage;
+export const mcListProductStatuses = mcMerchantPage;
+export const mcListDataSources = mcMerchantPage;
+
 /** Shopify local read — merchant credentials; no Polar. */
 export const shopifyGetShop = emptyInput;
 

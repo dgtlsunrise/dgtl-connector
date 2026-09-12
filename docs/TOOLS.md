@@ -2,7 +2,7 @@
 
 **Closed free tool count: 24.** (the original 22 plus `ga4_list_account_summaries` plus `gsc_describe_schema`)
 
-That 24 is the **Consent A kernel** (`CONSENT_A_TOOLS` / `FREE_TOOL_NAMES` alias). Shopify is **local-free** (`LOCAL_FREE_TOOLS`, merchant token, no Polar — fail `SHOPIFY_NOT_CONNECTED`). Ads/Meta are **license-gated** (`LICENSE_GATED_TOOLS`, Polar Pro — fail `LICENSE_REQUIRED`). GBP is local-free when the flag is on — **flag-on still returns `GBP_NOT_ENABLED`** (live HTTP is Wave 5, not this binary). Do not stuff Shopify into the 24-tool kernel.
+That 24 is the **Consent A kernel** (`CONSENT_A_TOOLS` / `FREE_TOOL_NAMES` alias). Shopify is **local-free** (`LOCAL_FREE_TOOLS`, merchant token, no Polar — fail `SHOPIFY_NOT_CONNECTED`). Ads/Meta/Merchant Center are **license-gated** (`LICENSE_GATED_TOOLS`, Polar Pro — fail `LICENSE_REQUIRED`). GBP is local-free when the flag is on — **flag-on still returns `GBP_NOT_ENABLED`** (live HTTP is Wave 5, not this binary). Do not stuff Shopify into the 24-tool kernel.
 
 If you need a 25th **Consent A** tool, bump a version and update `schemas/v1/catalog.json` in the same change. Do not “just add it.” Quality over dump. Small typed tools, not a mega-query kitchen sink.
 
@@ -548,8 +548,8 @@ Free count stays **24**. These are Polar-gated; local describe tools need licens
 | `meta_create_ad_creative` | `image_hash` XOR `video_id` + `page_id` + https `link` → `creative_id`; server-built object_story_spec. |
 | `gads_upload_asset` | IMAGE asset via stamp AssetService (`bytes` XOR https `file_url`). dry_run default; live confirm with customer_id. Returns resource_name for PMax. |
 | `gads_create_performance_max_campaign` | PMax with uploaded images (`file_url`/`bytes`) **or** existing marketing/square/logo asset RNs from `gads_upload_asset`. Defaults **PAUSED**. |
-| `gads_create_shopping_campaign` | Shopping when `merchant_center_id` known; else `MERCHANT_CENTER_REQUIRED`. Listing groups: `gads_add_shopping_listing_groups`. |
-| `gads_list_merchant_center_links` | Read MC product_link discovery for Shopping create. |
+| `gads_create_shopping_campaign` | Shopping when `merchant_center_id` known; else `MERCHANT_CENTER_REQUIRED`. Discover ids via `gads_list_merchant_center_links` or `mc_list_accounts`. Listing groups: `gads_add_shopping_listing_groups`. Product readiness: `mc_list_product_statuses`. |
+| `gads_list_merchant_center_links` | Read MC **product_link** discovery for Shopping create. Not product data — use `mc_list_products`. |
 | `gads_create_responsive_display_ad` | RDA on an existing Display ad group. Marketing + square images (`gads_upload_asset` RNs or `file_url`/`bytes`). Defaults **PAUSED**. |
 | `gads_add_shopping_listing_groups` | Shopping listing groups (`ALL_PRODUCTS` UNIT, or `BRAND`/`ITEM_ID` subdivision). New shopping ad group **ENABLED** under a PAUSED campaign. |
 | `gads_create_video_campaign` | VIDEO campaign + VIDEO_RESPONSIVE ad group. Optional `youtube_video_id` adds a PAUSED video ad. Campaign **PAUSED**. Live smoke blocked until Noel pastes Intended-use. |
@@ -564,10 +564,31 @@ Free count stays **24**. These are Polar-gated; local describe tools need licens
 | `gads_create_shared_budget` / `gads_create_portfolio_bidding_strategy` | Shared budget (`explicitlyShared`) and portfolio BiddingStrategy (closed enum). |
 | `gads_create_conversion_action` | Conversion action create (tracking, not spend). |
 | `gads_apply_recommendation` | Apply a recommendation RN from `gads_search` recipe=recommendations. Confirm-gated. |
-| `gads_link_merchant_center` / `gads_unlink_merchant_center` | ProductLink create/remove (not MCC; not Content API). Confirm-gated. |
+| `gads_link_merchant_center` / `gads_unlink_merchant_center` | ProductLink create/remove (not MCC; not Merchant API). Confirm-gated. |
 | `gads_create_experiment` | Experiment in **SETUP** (not live) with control arm on an existing campaign. |
 
 `gads_search` closed recipes now include assets, asset_groups, audiences, shared_sets, bidding_strategies, geo, demographics, shopping_performance, recommendations, change_event, account_budget (billing **read**), negatives, experiments. Still **no raw GAQL**. Meta pixel/catalog/audience **reads** and named targeting/audience mutates are Wave 3. Lift, activity logs, Advantage+ shopping create, Customer Match hashed PII, and Meta hosted `ads_mcp_management` remain **deferred**. Meta live mutates fail closed with `META_SCOPE_MISSING` until `ads_management` Advanced Access and a reauthorized token are present. See [ops/META-CREATE-SPEEDRUN-2026-09-11.md](ops/META-CREATE-SPEEDRUN-2026-09-11.md) and [ops/ADS-META-FOUNDATIONS-2026-09-11.md](ops/ADS-META-FOUNDATIONS-2026-09-11.md). No agent-facing `meta_mutate`.
+
+---
+
+## Merchant Center — Merchant API reads (Wave 4; direct Google; not stamp)
+
+**Hop decision:** plugin-direct `merchantapi.googleapis.com` with Consent MC. **Not** stamp. Content API for Shopping sunset **2026-08-18**; Wave 4 uses Merchant API v1 (`products`, `accounts`, `datasources`). Ads developer-token is the wrong secret (stamp exists to hold that token + Meta app secret). Same hop class as GA4/GSC (`direct_google`). Polar has no `mc` bit — tools require Pro (`ads`) **and** Consent MC. Never Consent A.
+
+Auth: `GOOGLE_MC_ACCESS_TOKEN` or `dgtl-connector-mcp auth login-mc` (`GOOGLE_OAUTH_MC_CLIENT_ID` → `PLUGIN_DATA/google-oauth-mc.json`). Scope `https://www.googleapis.com/auth/content` (Google has no readonly content scope; **tools are GET-only**). Fail `LICENSE_REQUIRED` → `MC_NOT_CONNECTED` → `MC_SCOPE_MISSING`. **No** `GATEWAY_UNAVAILABLE` (no Worker hop). Live API enablement on the MC OAuth client's GCP project is a **Noel gate** (`ACCESS_NOT_CONFIGURED`).
+
+`merchant_id` is required on product/issue/feed tools. Never guess. Discover via `mc_list_accounts` or Ads `gads_list_merchant_center_links`. `product_id` is `contentLanguage~feedLabel~offerId`.
+
+| Tool | Notes |
+| --- | --- |
+| `mc_list_accounts` | List Merchant Center accounts (`merchant_id`). |
+| `mc_list_products` | Processed products (Merchant API `products.list`). |
+| `mc_get_product` | One product including nested `productStatus`. |
+| `mc_list_product_statuses` | Readiness view: `shopping_ads_ready` when `SHOPPING_ADS` has `approvedCountries`; `item_level_issues` block ads. |
+| `mc_list_account_issues` | Account/feed/website diagnostics. |
+| `mc_list_data_sources` | Feeds (primary/supplemental). Pair with account issues. |
+
+Skill: [`skills/shopping-mc-readiness/`](../skills/shopping-mc-readiness/SKILL.md). Shopping **campaign** create still uses stamp `gads_create_shopping_campaign` + product_link id. Product data is `mc_*`. No MC insert/update/delete in this wave. No GBP/TikTok/Consent W E2E.
 
 ---
 

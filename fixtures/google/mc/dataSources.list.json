@@ -1,0 +1,29 @@
+{
+  "dataSources": [
+    {
+      "name": "accounts/123456789/dataSources/111",
+      "dataSourceId": "111",
+      "displayName": "Primary product feed",
+      "input": "API",
+      "primaryProductDataSource": {
+        "channel": "ONLINE_PRODUCTS",
+        "feedLabel": "US",
+        "contentLanguage": "en"
+      }
+    },
+    {
+      "name": "accounts/123456789/dataSources/222",
+      "dataSourceId": "222",
+      "displayName": "Supplemental inventory",
+      "input": "FILE",
+      "fileInput": {
+        "fetchSettings": {
+          "enabled": true,
+          "frequency": "FREQUENCY_DAILY"
+        },
+        "fileName": "inventory.txt"
+      },
+      "supplementalProductDataSource": {}
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "accounts/123456789/products/en~US~SKU12345",
+  "offerId": "SKU12345",
+  "contentLanguage": "en",
+  "feedLabel": "US",
+  "dataSource": "accounts/123456789/dataSources/111",
+  "productAttributes": {
+    "title": "Classic Cotton T-Shirt",
+    "description": "Soft cotton tee",
+    "link": "https://example.com/sku12345",
+    "imageLink": "https://example.com/sku12345.jpg",
+    "availability": "IN_STOCK",
+    "price": { "amountMicros": "15990000", "currencyCode": "USD" }
+  },
+  "productStatus": {
+    "destinationStatuses": [
+      {
+        "reportingContext": "SHOPPING_ADS",
+        "approvedCountries": ["US"]
+      }
+    ]
+  }
+}

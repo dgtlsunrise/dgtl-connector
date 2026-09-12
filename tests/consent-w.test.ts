@@ -29,6 +29,7 @@ describe("Consent W scaffold — Consent A stays readonly", () => {
     assert.ok(!CONSENT_A.includes(SCOPE.webmastersWrite as (typeof CONSENT_A)[number]));
     assert.ok(!CONSENT_A.includes(SCOPE.analyticsEdit as (typeof CONSENT_A)[number]));
     assert.ok(!CONSENT_A.includes(SCOPE.adwords as (typeof CONSENT_A)[number]));
+    assert.ok(!CONSENT_A.includes(SCOPE.content as (typeof CONSENT_A)[number]));
 
     const pkce = generatePkce();
     const url = buildGoogleAuthUrl({
@@ -70,6 +71,7 @@ describe("Consent W scaffold — Consent A stays readonly", () => {
     assert.ok(!a.has(SCOPE.webmastersWrite));
     assert.ok(!a.has(SCOPE.analyticsEdit));
     assert.ok(!a.has(SCOPE.adwords));
+    assert.ok(!a.has(SCOPE.content));
   });
 
   it("DGTL_WRITES_ENABLED defaults false", () => {

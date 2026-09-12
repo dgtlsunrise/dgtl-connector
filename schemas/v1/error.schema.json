@@ -47,7 +47,9 @@
         "NOT_IMPLEMENTED",
         "MERCHANT_CENTER_REQUIRED",
         "SHOPIFY_NOT_CONNECTED",
-        "SHOPIFY_SCOPE_MISSING"
+        "SHOPIFY_SCOPE_MISSING",
+        "MC_NOT_CONNECTED",
+        "MC_SCOPE_MISSING"
       ]
     },
     "message": {

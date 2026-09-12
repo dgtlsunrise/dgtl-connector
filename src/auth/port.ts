@@ -2,6 +2,7 @@ import type { AccessToken, AccessTokenSource } from "./types.js";
 import { STORE_FILE } from "./types.js";
 import {
   HostInjectedAdsTokenSource,
+  HostInjectedMcTokenSource,
   HostInjectedMetaTokenSource,
   HostInjectedTokenSource,
   HostInjectedWriteTokenSource,
@@ -76,6 +77,25 @@ export class AuthPort implements AccessTokenSource {
         }),
       ],
       "authport-ads",
+    );
+  }
+
+  /** Consent MC Merchant API — GOOGLE_MC_ACCESS_TOKEN / google-oauth-mc.json */
+  static mcFromEnv(opts: {
+    env?: NodeJS.ProcessEnv;
+    pluginDataDir: string;
+    fetchImpl: typeof fetch;
+  }): AuthPort {
+    const env = opts.env ?? process.env;
+    return new AuthPort(
+      [
+        new HostInjectedMcTokenSource(env),
+        new PkceTokenSource(opts.pluginDataDir, env.GOOGLE_OAUTH_MC_CLIENT_ID, opts.fetchImpl, {
+          storeFile: STORE_FILE.mc,
+          clientSecret: env.GOOGLE_OAUTH_MC_CLIENT_SECRET,
+        }),
+      ],
+      "authport-mc",
     );
   }
 

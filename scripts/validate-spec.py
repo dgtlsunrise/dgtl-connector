@@ -54,6 +54,7 @@ SKILLS = [
     "gsc-vs-ads-keywords",
     "ga4-vs-ads-conversions",
     "shopify-readonly",
+    "shopping-mc-readiness",
 ]
 
 SCOPES = [
@@ -205,7 +206,7 @@ def check_catalog_and_tools() -> None:
                 err(f"catalog.json {sname} fail must be SHOPIFY_NOT_CONNECTED, got {g.get('fail')!r}")
             elif sname in names:
                 err(f"catalog.json: Shopify tool {sname} must not be in Consent A tools[]")
-        for paid in ("gads_search", "meta_insights"):
+        for paid in ("gads_search", "meta_insights", "mc_list_products"):
             g = by_name.get(paid)
             if not g:
                 err(f"catalog.json gated_tools missing {paid}")

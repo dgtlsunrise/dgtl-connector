@@ -1,5 +1,5 @@
 {
-  "$comment": "Closed Consent A kernel is 24 (vendored 22 + ga4_list_account_summaries + gsc_describe_schema). Shopify is local-free (not Polar, not this kernel). Ads/Meta are LICENSE_REQUIRED. Other gated families are registered but fail closed.",
+  "$comment": "Closed Consent A kernel is 24 (vendored 22 + ga4_list_account_summaries + gsc_describe_schema). Shopify is local-free (not Polar, not this kernel). Ads/Meta/MC are LICENSE_REQUIRED. MC is direct Merchant API (not stamp, not Consent A). Other gated families are registered but fail closed.",
   "version": "0.1.0",
   "closed": true,
   "count": 24,
@@ -581,6 +581,37 @@
       "group": "meta-write",
       "flag": "meta.mutate.enabled",
       "fail": "META_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "mc_list_accounts",
+      "group": "mc",
+      "fail": "LICENSE_REQUIRED",
+      "note": "Direct Merchant API; Consent MC; never Consent A; no stamp hop"
+    },
+    {
+      "name": "mc_list_products",
+      "group": "mc",
+      "fail": "LICENSE_REQUIRED"
+    },
+    {
+      "name": "mc_get_product",
+      "group": "mc",
+      "fail": "LICENSE_REQUIRED"
+    },
+    {
+      "name": "mc_list_product_statuses",
+      "group": "mc",
+      "fail": "LICENSE_REQUIRED"
+    },
+    {
+      "name": "mc_list_account_issues",
+      "group": "mc",
+      "fail": "LICENSE_REQUIRED"
+    },
+    {
+      "name": "mc_list_data_sources",
+      "group": "mc",
+      "fail": "LICENSE_REQUIRED"
     },
     {
       "name": "shopify_get_shop",

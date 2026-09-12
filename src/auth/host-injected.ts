@@ -89,6 +89,27 @@ export class HostInjectedAdsTokenSource implements AccessTokenSource {
   }
 }
 
+/** Consent MC host-injected — GOOGLE_MC_ACCESS_TOKEN only. Never Consent A. */
+export class HostInjectedMcTokenSource implements AccessTokenSource {
+  readonly name = "host-injected-mc";
+
+  constructor(private readonly env: NodeJS.ProcessEnv = process.env) {}
+
+  async getAccessToken(): Promise<AccessToken | null> {
+    const accessToken = this.env.GOOGLE_MC_ACCESS_TOKEN?.trim();
+    if (!accessToken) return null;
+    const expiresRaw = this.env.GOOGLE_MC_ACCESS_TOKEN_EXPIRES_IN;
+    const expiresIn = expiresRaw ? Number(expiresRaw) : undefined;
+    return {
+      accessToken,
+      expiresIn: Number.isFinite(expiresIn) ? expiresIn : undefined,
+      scopes: parseScopeList(this.env.GOOGLE_MC_GRANTED_SCOPES),
+      email: this.env.GOOGLE_MC_ACCOUNT_EMAIL?.trim() || undefined,
+      source: "host-injected",
+    };
+  }
+}
+
 /** Meta user host-injected — META_ACCESS_TOKEN only. Never Google A. */
 export class HostInjectedMetaTokenSource implements AccessTokenSource {
   readonly name = "host-injected-meta";

@@ -131,6 +131,7 @@ describe("support_packet", () => {
       assert.equal(data.stores?.consent_a, true);
       assert.equal(data.stores?.consent_c, true);
       assert.equal(data.stores?.consent_w, false);
+      assert.equal(data.stores?.consent_mc, false);
       assert.equal(data.stores?.meta, true);
       assert.equal(data.stores?.shopify, false);
       for (const k of W03.store_keys) assert.equal(typeof data.stores?.[k], "boolean", k);

@@ -29,6 +29,8 @@ export const ERROR_CODES = [
   "MERCHANT_CENTER_REQUIRED",
   "SHOPIFY_NOT_CONNECTED",
   "SHOPIFY_SCOPE_MISSING",
+  "MC_NOT_CONNECTED",
+  "MC_SCOPE_MISSING",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -92,7 +94,11 @@ export const MSG = {
   NOT_IMPLEMENTED:
     "This create path is not implemented yet. No Ads mutate HTTP was sent.",
   MERCHANT_CENTER_REQUIRED:
-    "Shopping campaign create needs a linked Merchant Center (shoppingSetting.merchantCenterId). Merchant Center is not in this product yet. No Ads mutate HTTP was sent.",
+    "Shopping campaign create needs a linked Merchant Center (shoppingSetting.merchantCenterId). Discover ids via gads_list_merchant_center_links or mc_list_accounts. No Ads mutate HTTP was sent.",
+  MC_NOT_CONNECTED:
+    "Merchant Center is a separate OAuth grant (scope content). It is not part of free Consent A. After a valid DGTL license, set GOOGLE_MC_ACCESS_TOKEN or run `dgtl-connector-mcp auth login-mc` (separate Consent MC client). Never reuse Consent A.",
+  MC_SCOPE_MISSING:
+    "This Merchant Center login did not grant https://www.googleapis.com/auth/content. Re-authorize Consent MC (`auth login-mc` or GOOGLE_MC_ACCESS_TOKEN). Do not add content scope to Consent A.",
   ADS_SCOPE_MISSING:
     "Google Ads is a second OAuth grant (scope adwords). It is not part of the free GA4/GSC/GTM consent. After a valid DGTL license, set GOOGLE_ADS_ACCESS_TOKEN or run `dgtl-connector-mcp auth login-ads` (separate Consent C client). Never reuse Consent A.",
   SHOPIFY_NOT_CONNECTED:
