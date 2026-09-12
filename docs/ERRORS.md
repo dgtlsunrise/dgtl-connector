@@ -4,6 +4,8 @@ User-visible copy. Tools return `error_code` from this file. Skills do not inven
 
 Tokens, cookie headers, and HAR files do **not** belong in messages, logs, or support threads.
 
+Ops next-step copy lives in [ops/RUNBOOKS.md](ops/RUNBOOKS.md). `support_packet` returns `runbook` + `next_human_step` for mapped codes. Codes in this file stay stable — do not rename `ADS_MUTATE_NOT_ENABLED`, `MERCHANT_CENTER_REQUIRED`, `META_SCOPE_MISSING`, `GBP_NOT_ENABLED`, `SHOPIFY_NOT_CONNECTED`, `LICENSE_REQUIRED`, `WRITE_NOT_ENABLED`, `MC_*`, `TIKTOK_*`.
+
 ## Envelope
 
 See [TOOLS.md](TOOLS.md). Always include `error_code` and `message`. Include `google_status`, `google_reason`, `api`, and `hint` when known.

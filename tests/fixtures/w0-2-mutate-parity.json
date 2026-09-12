@@ -1,5 +1,5 @@
 {
-  "comment": "W0.2 mutate allowlist contract. Keep byte-identical to dgtl-connector tests/fixtures/w0-2-mutate-parity.json. Mutate names must match stamp GADS_MUTATE_TOOLS/META_MUTATE_TOOLS and plugin gads-write/meta-write groups. Describe tools are plugin-local (zero Ads/Graph HTTP) and MUST NOT appear in stamp GADS_TOOLS/META_TOOLS. Adding a named wizard is allowed — update this fixture in BOTH repos; this is governance, not a freeze.",
+  "comment": "GENERATED from src/gateway/hop-catalog.json (Wave 9). Keep byte-identical across dgtl-stamp and dgtl-connector. Do not edit by hand — run node scripts/generate-hop-maps.mjs. Mutate names must match stamp builders and plugin write groups. Describe tools are plugin-local (zero Ads/Graph HTTP) and MUST NOT appear in stamp GADS_TOOLS/META_TOOLS/TIKTOK_TOOLS.",
   "gads_mutate": [
     "gads_set_campaign_status",
     "gads_update_campaign_budget",
@@ -82,6 +82,16 @@
     "tiktok_list_campaigns",
     "tiktok_insights"
   ],
-  "closed_https_fields": ["final_url", "file_url", "link", "marketing_image_file_url", "square_marketing_image_file_url", "logo_file_url"],
-  "path_only_url_adjacent": ["path1", "path2"]
+  "closed_https_fields": [
+    "final_url",
+    "file_url",
+    "link",
+    "marketing_image_file_url",
+    "square_marketing_image_file_url",
+    "logo_file_url"
+  ],
+  "path_only_url_adjacent": [
+    "path1",
+    "path2"
+  ]
 }

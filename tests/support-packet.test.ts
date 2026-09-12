@@ -217,4 +217,27 @@ describe("support_packet", () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  it("links ops runbooks from error_code without tokens", async () => {
+    const ctx = makeCtx();
+    const env = await dispatch(ctx, "support_packet", {
+      last_tool: "gads_create_shopping_campaign",
+      error_code: "MERCHANT_CENTER_REQUIRED",
+    });
+    assert.equal(env.ok, true);
+    const data = env.data as {
+      error_code?: string;
+      runbook?: string | null;
+      next_human_step?: string | null;
+    };
+    assert.equal(data.error_code, "MERCHANT_CENTER_REQUIRED");
+    assert.equal(data.runbook, "docs/ops/RUNBOOKS.md#merchant_center_required");
+    assert.match(String(data.next_human_step), /merchant_center_id/);
+    const none = await dispatch(ctx, "support_packet", { error_code: "NOT_FOUND" });
+    const noneData = none.data as { runbook?: string | null };
+    assert.equal(noneData.runbook, null);
+    const blob = JSON.stringify(env);
+    assert.ok(!blob.toLowerCase().includes("developer-token"));
+    assert.ok(!blob.includes("https://stamp."));
+  });
 });

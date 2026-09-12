@@ -14,6 +14,7 @@ import {
   type PluginFlagBooleans,
   type WorkerFlagBooleans,
 } from "./matrix.js";
+import { runbookForError } from "./runbooks.js";
 
 /** Token-shaped / credential-shaped substrings. Never echo these. */
 export const TOKENISH = /ya29\.|1\/\/|GOCSPX-|eyJ[A-Za-z0-9_-]+\.|Bearer\s|developer-token|AIza[0-9A-Za-z_-]{10,}/i;
@@ -46,6 +47,9 @@ export type SupportPacketData = SupportFields & {
     tiktok: boolean;
   };
   stores: ConsentStorePresence;
+  /** Wave 9: docs-relative runbook for error_code. Null when no mapping. Never a hop URL. */
+  runbook: string | null;
+  next_human_step: string | null;
 };
 
 export function safeField(value: unknown, max = 200): string | null {
@@ -95,8 +99,11 @@ export async function collectSupportPacket(
     tiktokMutateEnabled: probe.reachable ? (probe.tiktok_mutate_enabled ?? null) : null,
   };
   const features = safeLicenseFeatures(ctx.license.features);
+  const book = runbookForError(intake.error_code);
   return {
     ...intake,
+    runbook: book.runbook,
+    next_human_step: book.next_human_step,
     flags: { plugin, worker },
     gateway: {
       configured: Boolean(ctx.flags.gatewayUrl),

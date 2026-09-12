@@ -1,0 +1,635 @@
+/* eslint-disable */
+/**
+ * GENERATED from src/gateway/hop-catalog.json — do not edit.
+ * Run: node scripts/generate-hop-maps.mjs
+ * Wave 9: stamp GADS/META/TIKTOK maps + plugin hop allow are this file, not a second handwritten list.
+ */
+export const HOP_CATALOG_SCHEMA = "dgtl.hop-catalog.v1" as const;
+
+export const PLUGIN_LOCAL_DESCRIBE_TOOLS = [
+  "gads_describe_recipes",
+  "meta_describe_insights_schema"
+] as const;
+
+export const CLOSED_HTTPS_FIELD_KEYS = [
+  "final_url",
+  "file_url",
+  "link",
+  "marketing_image_file_url",
+  "square_marketing_image_file_url",
+  "logo_file_url"
+] as const;
+
+export const PATH_ONLY_URL_ADJACENT = [
+  "path1",
+  "path2"
+] as const;
+
+export const GATEWAY_PARAM_ALLOW_KEYS = [
+  "customer_id",
+  "login_customer_id",
+  "date_range",
+  "where",
+  "limit",
+  "campaign_id",
+  "status",
+  "campaign_budget_id",
+  "campaign_budget_resource_name",
+  "amount_micros",
+  "daily_budget_dollars",
+  "ad_account_id",
+  "advertiser_id",
+  "object_id",
+  "level",
+  "date_start",
+  "date_stop",
+  "date_preset",
+  "breakdowns",
+  "fields",
+  "time_increment",
+  "creative_id",
+  "adset_id",
+  "ad_id",
+  "name",
+  "daily_budget",
+  "lifetime_budget",
+  "ad_group_id",
+  "criterion_id",
+  "keywords",
+  "headlines",
+  "descriptions",
+  "final_url",
+  "path1",
+  "path2",
+  "campaign_name",
+  "ad_group_name",
+  "cpc_bid_micros",
+  "objective",
+  "special_ad_categories",
+  "billing_event",
+  "optimization_goal",
+  "bid_strategy",
+  "countries",
+  "end_time",
+  "bytes",
+  "file_url",
+  "page_id",
+  "image_hash",
+  "video_id",
+  "link",
+  "message",
+  "title",
+  "description",
+  "call_to_action_type",
+  "asset_group_name",
+  "marketing_image_asset_resource_names",
+  "square_marketing_image_asset_resource_names",
+  "logo_asset_resource_names",
+  "long_headlines",
+  "business_name",
+  "merchant_center_id",
+  "sales_country",
+  "asset_type",
+  "marketing_image_file_url",
+  "square_marketing_image_file_url",
+  "logo_file_url",
+  "marketing_image_bytes",
+  "square_marketing_image_bytes",
+  "logo_bytes",
+  "long_headline",
+  "youtube_video_id",
+  "app_id",
+  "app_store",
+  "hotel_center_id",
+  "listing_group_type",
+  "listing_group_values",
+  "brands",
+  "audience_resource_name",
+  "geo_target_constant_ids",
+  "language_constant_ids",
+  "language_ids",
+  "age_ranges",
+  "genders",
+  "parental_statuses",
+  "income_ranges",
+  "schedules",
+  "negative",
+  "bid_strategy_type",
+  "target_cpa_micros",
+  "target_roas",
+  "target_cpm_micros",
+  "cpc_bid_ceiling_micros",
+  "location",
+  "location_fraction_micros",
+  "bidding_strategy_resource_name",
+  "bidding_strategy_name",
+  "conversion_action_name",
+  "conversion_action_type",
+  "conversion_category",
+  "default_value",
+  "recommendation_resource_name",
+  "recommendation_id",
+  "product_link_resource_name",
+  "product_link_id",
+  "experiment_name",
+  "experiment_type",
+  "traffic_split_percent",
+  "age_min",
+  "age_max",
+  "locales",
+  "interest_ids",
+  "behavior_ids",
+  "custom_audience_ids",
+  "excluded_custom_audience_ids",
+  "publisher_platforms",
+  "facebook_positions",
+  "instagram_positions",
+  "audience_network_positions",
+  "messenger_positions",
+  "device_platforms",
+  "pixel_id",
+  "custom_event_type",
+  "catalog_id",
+  "product_set_id",
+  "retention_days",
+  "origin_audience_id",
+  "country",
+  "lookalike_ratio",
+  "lookalike_type",
+  "url_contains",
+  "prefill",
+  "subtype"
+] as const;
+
+export const HOP_TOOLS = [
+  {
+    "name": "gads_search",
+    "family": "gads",
+    "kind": "read_hop",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:search"
+  },
+  {
+    "name": "gads_campaign_performance",
+    "family": "gads",
+    "kind": "read_hop",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:search"
+  },
+  {
+    "name": "gads_list_accessible_customers",
+    "family": "gads",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/{ADS_API_VERSION}/customers:listAccessibleCustomers"
+  },
+  {
+    "name": "gads_get_customer",
+    "family": "gads",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}"
+  },
+  {
+    "name": "gads_set_campaign_status",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_update_campaign_budget",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_set_keyword_status",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_add_keywords",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_set_ad_status",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_create_responsive_search_ad",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_create_search_campaign",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_set_ad_group_status",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_create_display_campaign",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_create_performance_max_campaign",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_create_shopping_campaign",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_list_merchant_center_links",
+    "family": "gads",
+    "kind": "read_hop",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:search"
+  },
+  {
+    "name": "gads_upload_asset",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/assets:mutate"
+  },
+  {
+    "name": "gads_create_responsive_display_ad",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_add_shopping_listing_groups",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_create_video_campaign",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_create_demand_gen_campaign",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_create_app_campaign",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_create_hotel_campaign",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_create_local_campaign",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_add_negative_keywords",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_attach_audience",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_add_geo_targets",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_add_languages",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_add_demographics",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_set_ad_schedule",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_set_campaign_bid_strategy",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_create_shared_budget",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_create_portfolio_bidding_strategy",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_create_conversion_action",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "gads_apply_recommendation",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/recommendations:apply"
+  },
+  {
+    "name": "gads_link_merchant_center",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/productLinks:mutate"
+  },
+  {
+    "name": "gads_unlink_merchant_center",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/productLinks:mutate"
+  },
+  {
+    "name": "gads_create_experiment",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/googleAds:mutate"
+  },
+  {
+    "name": "meta_list_ad_accounts",
+    "family": "meta",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/{GRAPH_API_VERSION}/me/adaccounts"
+  },
+  {
+    "name": "meta_list_campaigns",
+    "family": "meta",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/{GRAPH_API_VERSION}/act_{ad_account_id}/campaigns"
+  },
+  {
+    "name": "meta_list_adsets",
+    "family": "meta",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/{GRAPH_API_VERSION}/act_{ad_account_id}/adsets"
+  },
+  {
+    "name": "meta_list_ads",
+    "family": "meta",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/{GRAPH_API_VERSION}/act_{ad_account_id}/ads"
+  },
+  {
+    "name": "meta_insights",
+    "family": "meta",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/{GRAPH_API_VERSION}/{object_id}/insights"
+  },
+  {
+    "name": "meta_get_creative",
+    "family": "meta",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/{GRAPH_API_VERSION}/{creative_id}"
+  },
+  {
+    "name": "meta_update_campaign",
+    "family": "meta",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{GRAPH_API_VERSION}/{campaign_id}"
+  },
+  {
+    "name": "meta_update_adset",
+    "family": "meta",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{GRAPH_API_VERSION}/{adset_id}"
+  },
+  {
+    "name": "meta_update_ad",
+    "family": "meta",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{GRAPH_API_VERSION}/{ad_id}"
+  },
+  {
+    "name": "meta_create_campaign",
+    "family": "meta",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{GRAPH_API_VERSION}/act_{ad_account_id}/campaigns"
+  },
+  {
+    "name": "meta_create_adset",
+    "family": "meta",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{GRAPH_API_VERSION}/act_{ad_account_id}/adsets"
+  },
+  {
+    "name": "meta_create_ad",
+    "family": "meta",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{GRAPH_API_VERSION}/act_{ad_account_id}/ads"
+  },
+  {
+    "name": "meta_upload_ad_image",
+    "family": "meta",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{GRAPH_API_VERSION}/act_{ad_account_id}/adimages"
+  },
+  {
+    "name": "meta_upload_ad_video",
+    "family": "meta",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{GRAPH_API_VERSION}/act_{ad_account_id}/advideos"
+  },
+  {
+    "name": "meta_create_ad_creative",
+    "family": "meta",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{GRAPH_API_VERSION}/act_{ad_account_id}/adcreatives"
+  },
+  {
+    "name": "meta_list_pixels",
+    "family": "meta",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/{GRAPH_API_VERSION}/act_{ad_account_id}/adspixels"
+  },
+  {
+    "name": "meta_get_pixel",
+    "family": "meta",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/{GRAPH_API_VERSION}/{pixel_id}"
+  },
+  {
+    "name": "meta_list_catalogs",
+    "family": "meta",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/{GRAPH_API_VERSION}/act_{ad_account_id}/owned_product_catalogs"
+  },
+  {
+    "name": "meta_list_catalog_products",
+    "family": "meta",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/{GRAPH_API_VERSION}/{catalog_id}/products"
+  },
+  {
+    "name": "meta_list_custom_audiences",
+    "family": "meta",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/{GRAPH_API_VERSION}/act_{ad_account_id}/customaudiences"
+  },
+  {
+    "name": "meta_update_adset_targeting",
+    "family": "meta",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{GRAPH_API_VERSION}/{adset_id}"
+  },
+  {
+    "name": "meta_create_custom_audience",
+    "family": "meta",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{GRAPH_API_VERSION}/act_{ad_account_id}/customaudiences"
+  },
+  {
+    "name": "meta_create_lookalike_audience",
+    "family": "meta",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{GRAPH_API_VERSION}/act_{ad_account_id}/customaudiences"
+  },
+  {
+    "name": "meta_attach_audience",
+    "family": "meta",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{GRAPH_API_VERSION}/{adset_id}"
+  },
+  {
+    "name": "tiktok_list_advertisers",
+    "family": "tiktok",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/open_api/{TIKTOK_API_VERSION}/oauth2/advertiser/get/"
+  },
+  {
+    "name": "tiktok_list_campaigns",
+    "family": "tiktok",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/open_api/{TIKTOK_API_VERSION}/campaign/get/"
+  },
+  {
+    "name": "tiktok_insights",
+    "family": "tiktok",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/open_api/{TIKTOK_API_VERSION}/report/integrated/get/"
+  },
+  {
+    "name": "tiktok_update_campaign",
+    "family": "tiktok",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/open_api/{TIKTOK_API_VERSION}/campaign/status/update/"
+  }
+] as const;
+
+export type HopTool = (typeof HOP_TOOLS)[number];
+export type HopFamily = HopTool["family"];
+export type HopKind = HopTool["kind"];
+export type GadsTool = Extract<HopTool, { family: "gads" }>["name"];
+export type MetaTool = Extract<HopTool, { family: "meta" }>["name"];
+export type TikTokTool = Extract<HopTool, { family: "tiktok" }>["name"];
+export type GatewayTool = HopTool["name"];

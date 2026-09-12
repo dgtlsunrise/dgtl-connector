@@ -25,6 +25,8 @@ REQUIRED_FILES = [
     "docs/MARKETPLACE.md",
     "docs/SUPPORT_AND_CLIENTS.md",
     "docs/ops/POST-POLAR-BACKLOG.md",
+    "docs/ops/RUNBOOKS.md",
+    "src/gateway/hop-catalog.json",
     "docs/V2_HOSTED.md",
     "docs/TEST_PLAN.md",
     "plugin.json",

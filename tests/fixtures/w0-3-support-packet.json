@@ -9,7 +9,9 @@
     "gateway",
     "dual_gate",
     "license",
-    "stores"
+    "stores",
+    "runbook",
+    "next_human_step"
   ],
   "plugin_flag_keys": ["adsMutateEnabled", "metaMutateEnabled", "tiktokMutateEnabled", "writesEnabled", "gbpEnabled"],
   "worker_flag_keys": ["adsMutateEnabled", "metaMutateEnabled", "tiktokMutateEnabled"],

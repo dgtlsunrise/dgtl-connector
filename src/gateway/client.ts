@@ -9,6 +9,7 @@ import { failEnvelope, type Envelope } from "../envelope.js";
 import { MSG, type ErrorCode } from "../errors.js";
 import { loadLicenseToken } from "../license/verify.js";
 import { newRequestId } from "../log.js";
+import { CLOSED_HTTPS_FIELD_KEYS, GATEWAY_PARAM_ALLOW_KEYS } from "./hop-maps.generated.js";
 
 const HEALTH_TIMEOUT_MS = 3_000;
 const HOP_TIMEOUT_MS = 25_000;
@@ -285,167 +286,24 @@ export async function probeGatewayReachable(
 }
 
 /**
- * Hop param keys the plugin may POST to stamp. Fifth handwritten map (W0.2);
- * keep in lockstep with `GatewayParams` and stamp builders.
+ * Hop param keys the plugin may POST to stamp.
+ * Wave 9: generated from hop-catalog.json `gateway_param_allow` (not a fifth handwritten map).
  */
-export const GATEWAY_PARAM_ALLOW = new Set([
-  "customer_id",
-  "login_customer_id",
-  "date_range",
-  "where",
-  "limit",
-  "campaign_id",
-  "status",
-  "campaign_budget_id",
-  "campaign_budget_resource_name",
-  "amount_micros",
-  "daily_budget_dollars",
-  "ad_account_id",
-  "advertiser_id",
-  "object_id",
-  "level",
-  "date_start",
-  "date_stop",
-  "date_preset",
-  "breakdowns",
-  "fields",
-  "time_increment",
-  "creative_id",
-  "adset_id",
-  "ad_id",
-  "name",
-  "daily_budget",
-  "lifetime_budget",
-  "ad_group_id",
-  "criterion_id",
-  "keywords",
-  "headlines",
-  "descriptions",
-  "final_url",
-  "path1",
-  "path2",
-  "campaign_name",
-  "ad_group_name",
-  "cpc_bid_micros",
-  "objective",
-  "special_ad_categories",
-  "billing_event",
-  "optimization_goal",
-  "bid_strategy",
-  "countries",
-  "end_time",
-  "bytes",
-  "file_url",
-  "page_id",
-  "image_hash",
-  "video_id",
-  "link",
-  "message",
-  "title",
-  "description",
-  "call_to_action_type",
-  "asset_group_name",
-  "marketing_image_asset_resource_names",
-  "square_marketing_image_asset_resource_names",
-  "logo_asset_resource_names",
-  "long_headlines",
-  "business_name",
-  "merchant_center_id",
-  "sales_country",
-  "asset_type",
-  "marketing_image_file_url",
-  "square_marketing_image_file_url",
-  "logo_file_url",
-  "marketing_image_bytes",
-  "square_marketing_image_bytes",
-  "logo_bytes",
-  "long_headline",
-  "youtube_video_id",
-  "app_id",
-  "app_store",
-  "hotel_center_id",
-  "listing_group_type",
-  "listing_group_values",
-  "brands",
-  "audience_resource_name",
-  "geo_target_constant_ids",
-  "language_constant_ids",
-  "language_ids",
-  "age_ranges",
-  "genders",
-  "parental_statuses",
-  "income_ranges",
-  "schedules",
-  "negative",
-  "bid_strategy_type",
-  "target_cpa_micros",
-  "target_roas",
-  "target_cpm_micros",
-  "cpc_bid_ceiling_micros",
-  "location",
-  "location_fraction_micros",
-  "bidding_strategy_resource_name",
-  "bidding_strategy_name",
-  "conversion_action_name",
-  "conversion_action_type",
-  "conversion_category",
-  "default_value",
-  "recommendation_resource_name",
-  "recommendation_id",
-  "product_link_resource_name",
-  "product_link_id",
-  "experiment_name",
-  "experiment_type",
-  "traffic_split_percent",
-  "age_min",
-  "age_max",
-  "locales",
-  "interest_ids",
-  "behavior_ids",
-  "custom_audience_ids",
-  "excluded_custom_audience_ids",
-  "publisher_platforms",
-  "facebook_positions",
-  "instagram_positions",
-  "audience_network_positions",
-  "messenger_positions",
-  "device_platforms",
-  "pixel_id",
-  "custom_event_type",
-  "catalog_id",
-  "product_set_id",
-  "retention_days",
-  "origin_audience_id",
-  "country",
-  "lookalike_ratio",
-  "lookalike_type",
-  "url_contains",
-  "prefill",
-  "subtype",
-]);
+export const GATEWAY_PARAM_ALLOW = new Set<string>(GATEWAY_PARAM_ALLOW_KEYS);
 
 /**
  * Closed https fields that are landing/media values — never hop targets.
  *
  * Checklist when adding a new media/URL field (do not skip; `final_url` already
  * broke live RSA create when it was missing):
- * 1. Add the key here (`CLOSED_HTTPS_FIELDS`).
- * 2. Add it to `GATEWAY_PARAM_ALLOW` and stamp `LANDING_URL_PARAM_KEYS`.
+ * 1. Add the key to hop-catalog.json `closed_https_fields` AND `gateway_param_allow`.
+ * 2. Run `node scripts/generate-hop-maps.mjs` in BOTH repos.
  * 3. Stamp mutate builder must validate https-only (no credentials).
  * 4. Add a hop test that the field survives `stripUrlishParams`.
- * 5. Update `tests/fixtures/w0-2-mutate-parity.json` `closed_https_fields` in BOTH
- *    dgtl-connector and dgtl-stamp.
  *
  * `path1` / `path2` are path-only sitelink fields (not https) — keep them off this set.
  */
-export const CLOSED_HTTPS_FIELDS = new Set([
-  "final_url",
-  "file_url",
-  "link",
-  "marketing_image_file_url",
-  "square_marketing_image_file_url",
-  "logo_file_url",
-]);
+export const CLOSED_HTTPS_FIELDS = new Set<string>(CLOSED_HTTPS_FIELD_KEYS);
 
 function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
   const out: GatewayParams = {};

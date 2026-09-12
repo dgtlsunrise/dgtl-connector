@@ -121,6 +121,11 @@ export type ToolAnnotations = {
   openWorldHint: boolean;
 };
 
+export type StampHopAnnotation = {
+  family: "gads" | "meta" | "tiktok";
+  kind: "read_hop" | "mutate" | "plugin_local";
+};
+
 export type ToolSpec = {
   name: string;
   group: string;
@@ -130,6 +135,8 @@ export type ToolSpec = {
   inputSchema: z.ZodTypeAny;
   annotations: ToolAnnotations;
   handler: (ctx: AppContext, args: Record<string, unknown>) => Promise<Envelope>;
+  /** Wave 9: stamp hop classification derived from family+group. Not an MCP tools/list field. */
+  stampHop?: StampHopAnnotation;
 };
 
 const RO = "Read-only. Never picks a default resource.";
@@ -1509,6 +1516,30 @@ export const PLUGIN_LOCAL_DESCRIBE_TOOLS = [
   "gads_describe_recipes",
   "meta_describe_insights_schema",
 ] as const;
+
+/**
+ * Registry hop annotation (Wave 9). family+group are the source.
+ * plugin_local describe tools are not stamp hops.
+ */
+export function stampHopAnnotation(t: Pick<ToolSpec, "name" | "family" | "group">): StampHopAnnotation | null {
+  if ((PLUGIN_LOCAL_DESCRIBE_TOOLS as readonly string[]).includes(t.name)) {
+    return {
+      family: t.name.startsWith("gads_") ? "gads" : "meta",
+      kind: "plugin_local",
+    };
+  }
+  if (t.family === "gads") return { family: "gads", kind: t.group === "gads-write" ? "mutate" : "read_hop" };
+  if (t.family === "meta") return { family: "meta", kind: t.group === "meta-write" ? "mutate" : "read_hop" };
+  if (t.family === "tiktok") {
+    return { family: "tiktok", kind: t.group === "tiktok-write" ? "mutate" : "read_hop" };
+  }
+  return null;
+}
+
+for (const t of TOOLS) {
+  const hop = stampHopAnnotation(t);
+  if (hop) t.stampHop = hop;
+}
 
 /** Registry mutate surface (stamp hop). Keep ⊆ stamp GADS_MUTATE_TOOLS. */
 export const GADS_MUTATE_TOOL_NAMES = TOOLS.filter((t) => t.group === "gads-write").map((t) => t.name);

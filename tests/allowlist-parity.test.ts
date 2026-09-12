@@ -38,23 +38,6 @@ function sorted(xs: readonly string[]): string[] {
   return [...xs].sort();
 }
 
-function extractExportedStringArray(src: string, exportName: string): string[] {
-  const header = `export const ${exportName}`;
-  const start = src.indexOf(header);
-  assert.ok(start >= 0, `missing export ${exportName}`);
-  const bracket = src.indexOf("[", start);
-  const end = src.indexOf("] as const", bracket);
-  assert.ok(bracket >= 0 && end > bracket, `unparsed array ${exportName}`);
-  return [...src.slice(bracket, end).matchAll(/"([a-z0-9_]+)"/g)].map((m) => m[1]!);
-}
-
-function extractSetKeys(src: string, exportName: string): string[] {
-  const re = new RegExp(`export const ${exportName}[\\s\\S]*?new Set\\(\\[([\\s\\S]*?)\\]\\)`);
-  const m = src.match(re);
-  assert.ok(m, `missing Set export ${exportName}`);
-  return [...m[1]!.matchAll(/"([a-z0-9_]+)"/g)].map((x) => x[1]!);
-}
-
 function findStampRoot(): string | undefined {
   const env = process.env.DGTL_STAMP_ROOT?.trim();
   const candidates = [
@@ -153,13 +136,16 @@ describe("W0.2 registry ↔ stamp mutate allowlist parity", () => {
       // GitHub plugin CI has no stamp checkout. Fixture above is the contract.
       return;
     }
-    const allowlist = readFileSync(join(stamp, "src/gateway/allowlist.ts"), "utf8");
-    const stampGadsMutate = extractExportedStringArray(allowlist, "GADS_MUTATE_TOOLS");
-    const stampMetaMutate = extractExportedStringArray(allowlist, "META_MUTATE_TOOLS");
-    const stampTikTokMutate = extractExportedStringArray(allowlist, "TIKTOK_MUTATE_TOOLS");
-    const stampGads = extractExportedStringArray(allowlist, "GADS_TOOLS");
-    const stampMeta = extractExportedStringArray(allowlist, "META_TOOLS");
-    const stampTikTok = extractExportedStringArray(allowlist, "TIKTOK_TOOLS");
+    const catalog = JSON.parse(readFileSync(join(stamp, "src/gateway/hop-catalog.json"), "utf8")) as {
+      tools: Array<{ name: string; family: string; kind: string }>;
+      closed_https_fields: string[];
+    };
+    const stampGadsMutate = catalog.tools.filter((t) => t.family === "gads" && t.kind === "mutate").map((t) => t.name);
+    const stampMetaMutate = catalog.tools.filter((t) => t.family === "meta" && t.kind === "mutate").map((t) => t.name);
+    const stampTikTokMutate = catalog.tools.filter((t) => t.family === "tiktok" && t.kind === "mutate").map((t) => t.name);
+    const stampGads = catalog.tools.filter((t) => t.family === "gads").map((t) => t.name);
+    const stampMeta = catalog.tools.filter((t) => t.family === "meta").map((t) => t.name);
+    const stampTikTok = catalog.tools.filter((t) => t.family === "tiktok").map((t) => t.name);
     assert.deepEqual(sorted(stampGadsMutate), sorted(GADS_MUTATE_TOOL_NAMES), "stamp GADS_MUTATE_TOOLS ≠ plugin gads-write");
     assert.deepEqual(sorted(stampMetaMutate), sorted(META_MUTATE_TOOL_NAMES), "stamp META_MUTATE_TOOLS ≠ plugin meta-write");
     assert.deepEqual(sorted(stampTikTokMutate), sorted(TIKTOK_MUTATE_TOOL_NAMES), "stamp TIKTOK_MUTATE_TOOLS ≠ plugin tiktok-write");
@@ -173,9 +159,9 @@ describe("W0.2 registry ↔ stamp mutate allowlist parity", () => {
     const stampFixture = readFileSync(join(stamp, "tests/fixtures/w0-2-mutate-parity.json"), "utf8");
     const pluginFixture = readFileSync(join(ROOT, "tests/fixtures/w0-2-mutate-parity.json"), "utf8");
     assert.equal(pluginFixture, stampFixture, "w0-2-mutate-parity.json must be identical across repos");
-    assert.deepEqual(
-      sorted(extractSetKeys(allowlist, "LANDING_URL_PARAM_KEYS")),
-      sorted([...CLOSED_HTTPS_FIELDS]),
-    );
+    const pluginCatalog = readFileSync(join(ROOT, "src/gateway/hop-catalog.json"), "utf8");
+    const stampCatalog = readFileSync(join(stamp, "src/gateway/hop-catalog.json"), "utf8");
+    assert.equal(pluginCatalog, stampCatalog, "hop-catalog.json must be identical across repos");
+    assert.deepEqual(sorted(catalog.closed_https_fields), sorted([...CLOSED_HTTPS_FIELDS]));
   });
 });

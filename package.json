@@ -17,7 +17,9 @@
   },
   "scripts": {
     "generate:mcp": "node scripts/generate-mcp-json.mjs",
-    "build": "npm run generate:mcp && tsc -p tsconfig.json",
+    "generate:hop": "node scripts/generate-hop-maps.mjs",
+    "generate:hop:check": "node scripts/generate-hop-maps.mjs --check",
+    "build": "npm run generate:mcp && npm run generate:hop && tsc -p tsconfig.json",
     "pretest": "npm run build",
     "test": "node --import tsx --test --test-timeout=60000 tests/*.test.ts",
     "validate:spec": "python3 scripts/validate-spec.py",
