@@ -177,6 +177,19 @@ export const gadsSearch = z
         "change_status",
         "policy_topics",
         "performance",
+        "assets",
+        "asset_groups",
+        "audiences",
+        "shared_sets",
+        "bidding_strategies",
+        "geo",
+        "demographics",
+        "shopping_performance",
+        "recommendations",
+        "change_event",
+        "account_budget",
+        "negatives",
+        "experiments",
       ])
       .optional(),
     date_range: dateRange.optional(),
@@ -506,8 +519,36 @@ export const gadsCreateDisplayCampaign = z
   });
 
 /**
- * Performance Max create — requires existing image/logo asset resource names.
- * Without assets → NOT_IMPLEMENTED (image upload still out of product).
+ * Named image asset upload via stamp AssetService. bytes XOR https file_url.
+ */
+export const gadsUploadAsset = z
+  .object({
+    customer_id: str,
+    asset_type: z.enum(["IMAGE"]).optional(),
+    name: z.string().min(1).max(255).optional(),
+    bytes: z.string().min(32).max(4_000_000).optional(),
+    file_url: z.string().url().max(2048).optional(),
+    login_customer_id: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    const hasBytes = Boolean(val.bytes && val.bytes.trim());
+    const hasUrl = Boolean(val.file_url && val.file_url.trim());
+    if (hasBytes === hasUrl) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Provide exactly one of bytes (base64) or file_url (https image)",
+        path: hasBytes ? ["file_url"] : ["bytes"],
+      });
+    }
+    requireConfirmWhenLive(val, ctx);
+  });
+
+/**
+ * Performance Max create — existing image/logo asset RNs and/or upload sources
+ * (file_url / bytes) for marketing + square + logo. Defaults PAUSED.
  */
 export const gadsCreatePerformanceMaxCampaign = z
   .object({
@@ -521,9 +562,15 @@ export const gadsCreatePerformanceMaxCampaign = z
     long_headlines: z.array(z.string().min(1).max(90)).min(1).max(5),
     descriptions: z.array(z.string().min(1).max(90)).min(2).max(5),
     business_name: z.string().min(1).max(25),
-    marketing_image_asset_resource_names: z.array(z.string().min(1)).min(1).max(20).optional(),
-    square_marketing_image_asset_resource_names: z.array(z.string().min(1)).min(1).max(20).optional(),
-    logo_asset_resource_names: z.array(z.string().min(1)).min(1).max(5).optional(),
+    marketing_image_asset_resource_names: z.array(z.string().min(1)).max(20).optional(),
+    square_marketing_image_asset_resource_names: z.array(z.string().min(1)).max(20).optional(),
+    logo_asset_resource_names: z.array(z.string().min(1)).max(5).optional(),
+    marketing_image_file_url: z.string().url().max(2048).optional(),
+    square_marketing_image_file_url: z.string().url().max(2048).optional(),
+    logo_file_url: z.string().url().max(2048).optional(),
+    marketing_image_bytes: z.string().min(32).max(4_000_000).optional(),
+    square_marketing_image_bytes: z.string().min(32).max(4_000_000).optional(),
+    logo_bytes: z.string().min(32).max(4_000_000).optional(),
     status: z.enum(["ENABLED", "PAUSED"]).optional(),
     login_customer_id: str,
     dry_run: z.boolean().default(true),

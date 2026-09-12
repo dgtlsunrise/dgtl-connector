@@ -777,6 +777,7 @@ describe("Display / PMax / Shopping foundations + ad group status", () => {
     "gads_create_display_campaign",
     "gads_create_performance_max_campaign",
     "gads_create_shopping_campaign",
+    "gads_upload_asset",
   ] as const;
 
   it("tools registered destructive; Display schema dry_run default true", () => {
@@ -822,7 +823,9 @@ describe("Display / PMax / Shopping foundations + ad group status", () => {
                 ad_group_name: "A",
                 daily_budget_dollars: 5,
               }
-            : { customer_id: "1234567890", campaign_name: "X" };
+            : name === "gads_upload_asset"
+              ? { customer_id: "1234567890", bytes: "A".repeat(40) + "====" }
+              : { customer_id: "1234567890", campaign_name: "X" };
       const env = await dispatch(ctx, name, args);
       assert.equal(env.ok, false, name);
       assert.equal(env.error_code, "ADS_MUTATE_NOT_ENABLED", name);
@@ -871,7 +874,7 @@ describe("Display / PMax / Shopping foundations + ad group status", () => {
     assert.equal(calls, 0);
   });
 
-  it("PMax without image assets → NOT_IMPLEMENTED with zero hop", async () => {
+  it("PMax without image assets → INVALID_ARGUMENT pointing at gads_upload_asset, zero hop", async () => {
     let calls = 0;
     const ctx = makeCtx({}, adsLicenseEnv());
     ctx.fetchImpl = (async () => {
@@ -890,7 +893,8 @@ describe("Display / PMax / Shopping foundations + ad group status", () => {
       business_name: "Biz",
     });
     assert.equal(env.ok, false);
-    assert.equal(env.error_code, "NOT_IMPLEMENTED");
+    assert.equal(env.error_code, "INVALID_ARGUMENT");
+    assert.ok(String(env.hint || env.message || "").includes("gads_upload_asset"));
     assert.equal(calls, 0);
   });
 
@@ -920,6 +924,85 @@ describe("Display / PMax / Shopping foundations + ad group status", () => {
     assert.equal(data.dry_run, true);
     assert.equal(data.proposed?.final_url, "https://example.com/");
     assert.equal(calls, 0);
+  });
+
+  it("PMax dry_run with file_url upload path proposes without hop", async () => {
+    let calls = 0;
+    const ctx = makeCtx({}, adsLicenseEnv());
+    ctx.fetchImpl = (async () => {
+      calls += 1;
+      throw new Error("NETWORK_FORBIDDEN");
+    }) as typeof fetch;
+    const env = await dispatch(ctx, "gads_create_performance_max_campaign", {
+      customer_id: "1234567890",
+      campaign_name: "PMax",
+      asset_group_name: "AG",
+      daily_budget_dollars: 10,
+      final_url: "https://example.com/",
+      headlines: ["H1", "H2", "H3"],
+      long_headlines: ["Long headline one"],
+      descriptions: ["D1", "D2"],
+      business_name: "Biz",
+      marketing_image_file_url: "https://cdn.example.com/m.png",
+      square_marketing_image_file_url: "https://cdn.example.com/s.png",
+      logo_file_url: "https://cdn.example.com/logo.png",
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    const data = env.data as {
+      dry_run?: boolean;
+      proposed?: { marketing_image_file_url?: string; status?: string };
+    };
+    assert.equal(data.dry_run, true);
+    assert.equal(data.proposed?.marketing_image_file_url, "https://cdn.example.com/m.png");
+    assert.equal(data.proposed?.status, "PAUSED");
+    assert.equal(calls, 0);
+  });
+
+  it("gads_upload_asset dry_run with bytes proposes without hop", async () => {
+    let calls = 0;
+    const ctx = makeCtx({}, adsLicenseEnv());
+    ctx.fetchImpl = (async () => {
+      calls += 1;
+      throw new Error("NETWORK_FORBIDDEN");
+    }) as typeof fetch;
+    const png =
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+    const env = await dispatch(ctx, "gads_upload_asset", {
+      customer_id: "1234567890",
+      bytes: png,
+      name: "hero",
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    const data = env.data as { dry_run?: boolean; proposed?: { asset_type?: string } };
+    assert.equal(data.dry_run, true);
+    assert.equal(data.proposed?.asset_type, "IMAGE");
+    assert.equal(calls, 0);
+  });
+
+  it("gads_upload_asset dry_run with file_url proposes without hop", async () => {
+    let calls = 0;
+    const ctx = makeCtx({}, adsLicenseEnv());
+    ctx.fetchImpl = (async () => {
+      calls += 1;
+      throw new Error("NETWORK_FORBIDDEN");
+    }) as typeof fetch;
+    const env = await dispatch(ctx, "gads_upload_asset", {
+      customer_id: "1234567890",
+      file_url: "https://cdn.example.com/hero.png",
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    const data = env.data as { dry_run?: boolean; proposed?: { file_url?: string } };
+    assert.equal(data.dry_run, true);
+    assert.equal(data.proposed?.file_url, "https://cdn.example.com/hero.png");
+    assert.equal(calls, 0);
+  });
+
+  it("gads_upload_asset schema dry_run default true", () => {
+    const parsed = S.gadsUploadAsset.parse({
+      customer_id: "1234567890",
+      bytes: "A".repeat(40) + "====",
+    });
+    assert.equal(parsed.dry_run, true);
   });
 
   it("Shopping without merchant_center_id → MERCHANT_CENTER_REQUIRED with zero hop", async () => {

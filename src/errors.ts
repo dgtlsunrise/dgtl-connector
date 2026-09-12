@@ -90,7 +90,7 @@ export const MSG = {
   SPEND_CAP_EXCEEDED:
     "Requested budget exceeds the product sanity cap ($100,000/day equivalent). Google Ads: lower amount_micros / daily_budget_dollars (micros). Meta: lower daily_budget / lifetime_budget (cents, not micros). No mutate HTTP was sent.",
   NOT_IMPLEMENTED:
-    "This create path is not implemented yet. Performance Max needs asset-group + image/logo upload which is out of scope. Use Search or Display create stubs instead. No Ads mutate HTTP was sent.",
+    "This create path is not implemented yet. No Ads mutate HTTP was sent.",
   MERCHANT_CENTER_REQUIRED:
     "Shopping campaign create needs a linked Merchant Center (shoppingSetting.merchantCenterId). Merchant Center is not in this product yet. No Ads mutate HTTP was sent.",
   ADS_SCOPE_MISSING:

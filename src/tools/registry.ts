@@ -21,6 +21,7 @@ import {
   gadsSetCampaignStatus,
   gadsSetKeywordStatus,
   gadsUpdateCampaignBudget,
+  gadsUploadAsset,
 } from "../ads/gads-write.js";
 import {
   metaUpdateCampaign,
@@ -458,7 +459,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gads",
     title: "Google Ads search (recipes)",
     description:
-      "Paid. Pro $19/mo. Closed recipe enum only (campaigns, ad_groups, keywords, search_terms, conversion_actions, change_status, policy_topics, performance). Call gads_describe_recipes first — do not invent GAQL. customer_id digits without hyphens; cite data.cited. LICENSE_REQUIRED without a license. No developer-token on this client.",
+      "Paid. Pro $19/mo. Closed recipe enum only (campaigns, ad_groups, keywords, search_terms, conversion_actions, change_status, policy_topics, performance, assets, asset_groups, audiences, shared_sets, bidding_strategies, geo, demographics, shopping_performance, recommendations, change_event, account_budget, negatives, experiments). Call gads_describe_recipes first — do not invent GAQL. customer_id digits without hyphens; cite data.cited. LICENSE_REQUIRED without a license. No developer-token on this client.",
     inputSchema: S.gadsSearch,
     annotations: ANN_RO,
     handler: async (ctx, args) => gadsDisabled(ctx, "gads_search", args),
@@ -579,10 +580,21 @@ export const TOOLS: ToolSpec[] = [
     family: "gads",
     title: "Google Ads Performance Max create (Consent C)",
     description:
-      "Paid mutate. PMax foundation: budget + PERFORMANCE_MAX + asset group + text assets linked to **existing** marketing/square/logo asset resource names (image upload still out of scope). Without those assets → NOT_IMPLEMENTED (zero hop). Defaults PAUSED. Prefer dry_run; live confirm_phrase with customer_id. Consent C + Pro + gateway.",
+      "Paid mutate. PMax: budget + PERFORMANCE_MAX + asset group + text assets + marketing/square/logo images. Pass existing asset resource names from gads_upload_asset, or https file_url / base64 bytes (Worker uploads inline). Defaults PAUSED. Prefer dry_run; live confirm_phrase with customer_id. Consent C + Pro + gateway.",
     inputSchema: S.gadsCreatePerformanceMaxCampaign,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => gadsCreatePerformanceMaxCampaign(ctx, args),
+  },
+  {
+    name: "gads_upload_asset",
+    group: "gads-write",
+    family: "gads",
+    title: "Google Ads upload image asset (Consent C)",
+    description:
+      "Paid mutate. Upload an IMAGE asset via stamp AssetService (base64 bytes XOR https file_url). Returns asset resource_name for PMax. dry_run default; live confirm_phrase with customer_id. Consent C + Pro + gateway.",
+    inputSchema: S.gadsUploadAsset,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => gadsUploadAsset(ctx, args),
   },
   {
     name: "gads_create_shopping_campaign",

@@ -240,10 +240,7 @@ Requested budget exceeds the product sanity cap ($100,000/day equivalent). Googl
 
 ### `NOT_IMPLEMENTED`
 
-Performance Max create stub called. Asset-group + image/logo upload is out of scope.
-
-**User-visible:**  
-"Performance Max create is not implemented yet (needs asset groups and image upload). Use Search or Display create instead. No Ads mutate was sent."
+Reserved. Wave 1 PMax create is implemented (`gads_upload_asset` + `gads_create_performance_max_campaign`). Missing images now return `INVALID_ARGUMENT` with a hint to upload, not this code.
 
 ### `MERCHANT_CENTER_REQUIRED`
 

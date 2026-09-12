@@ -2,7 +2,7 @@
  * Google Ads mutate tools — Consent C + gateway only.
  * Flag DGTL_ADS_MUTATE_ENABLED defaults on (opt out with =false). Worker ADS_MUTATE_ENABLED still required for live hop.
  * Tools: campaign/ad-group/keyword/ad status + keyword add + RSA + Search/Display create;
- * PMax (existing image assets) + Shopping (merchant_center_id) + MC link discovery.
+ * gads_upload_asset (image) + PMax (uploaded or existing image assets) + Shopping + MC discovery.
  * Never touches Consent A / GOOGLE_ACCESS_TOKEN.
  */
 
@@ -633,6 +633,39 @@ function assertHttpsFinalUrl(raw: unknown): { ok: true; final_url: string } | { 
   }
 }
 
+function assertHttpsMediaUrl(
+  raw: unknown,
+  field: string,
+): { ok: true; url: string } | { ok: false; reason: string } {
+  if (typeof raw !== "string" || !raw.trim()) return { ok: false, reason: `missing_${field}` };
+  const s = raw.trim();
+  try {
+    const u = new URL(s);
+    if (u.protocol !== "https:") return { ok: false, reason: `${field}_must_be_https` };
+    if (u.username || u.password) return { ok: false, reason: `${field}_credentials_forbidden` };
+    if (s.length > 2048) return { ok: false, reason: `${field}_too_long` };
+    return { ok: true, url: s };
+  } catch {
+    return { ok: false, reason: `invalid_${field}` };
+  }
+}
+
+function assertBase64Image(raw: unknown): { ok: true; bytes: string } | { ok: false; reason: string } {
+  if (typeof raw !== "string" || !raw.trim()) return { ok: false, reason: "missing_bytes" };
+  const bytes = raw.trim().replace(/\s+/g, "");
+  if (bytes.length < 32 || bytes.length > 4_000_000) return { ok: false, reason: "bytes_too_large_or_short" };
+  if (!/^[A-Za-z0-9+/_-]+={0,2}$/.test(bytes)) return { ok: false, reason: "invalid_bytes" };
+  return { ok: true, bytes };
+}
+
+function pmaxImageSlotReady(args: Record<string, unknown>, rnKey: string, urlKey: string, bytesKey: string): boolean {
+  const rns = args[rnKey];
+  if (Array.isArray(rns) && rns.length > 0) return true;
+  if (typeof args[urlKey] === "string" && args[urlKey].trim()) return true;
+  if (typeof args[bytesKey] === "string" && args[bytesKey].trim()) return true;
+  return false;
+}
+
 export async function gadsCreateResponsiveSearchAd(
   ctx: AppContext,
   args: Record<string, unknown>,
@@ -974,8 +1007,111 @@ export async function gadsCreateDisplayCampaign(
 }
 
 /**
- * PMax create — hops when existing marketing/square/logo asset RNs are provided.
- * Without image assets → NOT_IMPLEMENTED (image upload still out of product).
+ * Named image asset upload via stamp AssetService. bytes XOR https file_url.
+ * dry_run default; live confirm_phrase must include digits-only customer_id.
+ */
+export async function gadsUploadAsset(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "gads_upload_asset";
+  const miss = gateMutateOrFail(ctx, tool);
+  if (miss) return miss;
+
+  const allowed = new Set([
+    "customer_id",
+    "login_customer_id",
+    "asset_type",
+    "name",
+    "bytes",
+    "file_url",
+    "dry_run",
+    "confirm_phrase",
+  ]);
+  for (const key of Object.keys(args)) {
+    if (!allowed.has(key)) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", `Field ${key} is not allowed for ${tool}`, {
+        api: "google_ads",
+        hint: "Closed upload fields only — bytes (base64) XOR file_url (https image). Not an open Ads proxy.",
+      });
+    }
+  }
+
+  const customer_id = normalizeCustomerId(requireId(args.customer_id, "customer_id"));
+  const asset_type =
+    typeof args.asset_type === "string" && args.asset_type.trim()
+      ? args.asset_type.trim().toUpperCase()
+      : "IMAGE";
+  if (asset_type !== "IMAGE") {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "asset_type must be IMAGE", { api: "google_ads" });
+  }
+
+  const hasBytes = typeof args.bytes === "string" && args.bytes.trim().length > 0;
+  const hasUrl = typeof args.file_url === "string" && args.file_url.trim().length > 0;
+  if (hasBytes === hasUrl) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "Provide exactly one of bytes or file_url", {
+      api: "google_ads",
+      hint: "bytes = base64 image; file_url = https image the Worker fetches. Not a hop proxy.",
+    });
+  }
+
+  const proposed: Record<string, unknown> = { customer_id, asset_type };
+  if (typeof args.name === "string" && args.name.trim()) {
+    const n = args.name.trim();
+    if (n.length > 255) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "name must be ≤255 chars", { api: "google_ads" });
+    }
+    proposed.name = n;
+  }
+  if (hasBytes) {
+    const bytes = assertBase64Image(args.bytes);
+    if (!bytes.ok) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "bytes must be base64 image (32…4e6 chars)", {
+        api: "google_ads",
+        hint: bytes.reason,
+      });
+    }
+    proposed.bytes = bytes.bytes;
+  } else {
+    const file = assertHttpsMediaUrl(args.file_url, "file_url");
+    if (!file.ok) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", "file_url must be https://…", {
+        api: "google_ads",
+        hint: file.reason,
+      });
+    }
+    proposed.file_url = file.url;
+  }
+  const login_customer_id = optionalLoginCustomerId(args);
+  if (login_customer_id) proposed.login_customer_id = login_customer_id;
+
+  if (dryRunDefault(args)) {
+    return okEnvelope(tool, {
+      resource: { type: "gads_customer", id: customer_id, display_name: "assets" },
+      data: {
+        dry_run: true,
+        proposed: {
+          ...proposed,
+          ...(proposed.bytes ? { bytes_len: String(proposed.bytes).length, bytes: undefined } : {}),
+        },
+        note: "No Ads AssetService HTTP. Pass dry_run=false with confirm_phrase containing customer_id. Returns asset resource_name for PMax / Display.",
+      },
+    });
+  }
+  try {
+    assertConfirmContainsCustomerId(args.confirm_phrase, customer_id);
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope(tool, err.error_code, err.message, { ...err.extra, api: "google_ads" });
+    }
+    throw err;
+  }
+  return liveMutateHop(ctx, tool, proposed);
+}
+
+/**
+ * PMax create — hops when marketing/square/logo images are provided as existing
+ * asset RNs (from gads_upload_asset) and/or file_url/bytes (Worker uploads inline).
  */
 export async function gadsCreatePerformanceMaxCampaign(
   ctx: AppContext,
@@ -985,16 +1121,23 @@ export async function gadsCreatePerformanceMaxCampaign(
   const miss = gateMutateOrFail(ctx, tool);
   if (miss) return miss;
 
-  const hasMarketing = Array.isArray(args.marketing_image_asset_resource_names) &&
-    args.marketing_image_asset_resource_names.length > 0;
-  const hasSquare = Array.isArray(args.square_marketing_image_asset_resource_names) &&
-    args.square_marketing_image_asset_resource_names.length > 0;
-  const hasLogo = Array.isArray(args.logo_asset_resource_names) &&
-    args.logo_asset_resource_names.length > 0;
+  const hasMarketing = pmaxImageSlotReady(
+    args,
+    "marketing_image_asset_resource_names",
+    "marketing_image_file_url",
+    "marketing_image_bytes",
+  );
+  const hasSquare = pmaxImageSlotReady(
+    args,
+    "square_marketing_image_asset_resource_names",
+    "square_marketing_image_file_url",
+    "square_marketing_image_bytes",
+  );
+  const hasLogo = pmaxImageSlotReady(args, "logo_asset_resource_names", "logo_file_url", "logo_bytes");
   if (!hasMarketing || !hasSquare || !hasLogo) {
-    return failEnvelope(tool, "NOT_IMPLEMENTED", MSG.NOT_IMPLEMENTED, {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "PMax needs marketing + square + logo images", {
       api: "google_ads",
-      hint: "PMax foundation needs existing marketing_image_asset_resource_names, square_marketing_image_asset_resource_names, and logo_asset_resource_names. Image upload is out of scope. Zero hop.",
+      hint: "Call gads_upload_asset then pass the returned resource names, or pass marketing_image_file_url / square_marketing_image_file_url / logo_file_url (or matching *_bytes). Zero hop.",
     });
   }
 
@@ -1035,6 +1178,36 @@ export async function gadsCreatePerformanceMaxCampaign(
     });
   }
   const login_customer_id = optionalLoginCustomerId(args);
+  const urlFields = [
+    "marketing_image_file_url",
+    "square_marketing_image_file_url",
+    "logo_file_url",
+  ] as const;
+  const urlVals: Record<string, string> = {};
+  for (const k of urlFields) {
+    if (args[k] === undefined || args[k] === null || args[k] === "") continue;
+    const u = assertHttpsMediaUrl(args[k], k);
+    if (!u.ok) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", `${k} must be https://…`, {
+        api: "google_ads",
+        hint: u.reason,
+      });
+    }
+    urlVals[k] = u.url;
+  }
+  const bytesFields = ["marketing_image_bytes", "square_marketing_image_bytes", "logo_bytes"] as const;
+  const bytesVals: Record<string, string> = {};
+  for (const k of bytesFields) {
+    if (args[k] === undefined || args[k] === null || args[k] === "") continue;
+    const b = assertBase64Image(args[k]);
+    if (!b.ok) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", `${k} must be base64 image`, {
+        api: "google_ads",
+        hint: b.reason,
+      });
+    }
+    bytesVals[k] = b.bytes;
+  }
   const proposed: Record<string, unknown> = {
     customer_id,
     campaign_name,
@@ -1049,6 +1222,8 @@ export async function gadsCreatePerformanceMaxCampaign(
     marketing_image_asset_resource_names: args.marketing_image_asset_resource_names,
     square_marketing_image_asset_resource_names: args.square_marketing_image_asset_resource_names,
     logo_asset_resource_names: args.logo_asset_resource_names,
+    ...urlVals,
+    ...bytesVals,
     status: statusRaw,
     advertising_channel_type: "PERFORMANCE_MAX",
     ...(login_customer_id ? { login_customer_id } : {}),
@@ -1059,7 +1234,7 @@ export async function gadsCreatePerformanceMaxCampaign(
       data: {
         dry_run: true,
         proposed,
-        note: "No Ads mutate HTTP. PMax create uses existing image/logo assets + server-built text assets/asset group. Defaults PAUSED. Live needs confirm_phrase with customer_id.",
+        note: "No Ads mutate HTTP. PMax create uses uploaded images (file_url/bytes) or existing asset RNs from gads_upload_asset + server-built text assets/asset group. Defaults PAUSED. Live needs confirm_phrase with customer_id.",
         spend_cap_micros: DEFAULT_MAX_DAILY_BUDGET_MICROS,
       },
     });

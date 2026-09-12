@@ -68,6 +68,84 @@ export const GADS_RECIPES: GadsRecipe[] = [
       "Do not invent metrics.* / segments.* — recipes only (no raw GAQL).",
     ],
   },
+  {
+    recipe: "assets",
+    description: "Asset library (id, name, type, resource_name) including images.",
+    typical_resources: ["asset"],
+    notes: ["Use after gads_upload_asset; cite resource_name for PMax."],
+  },
+  {
+    recipe: "asset_groups",
+    description: "PMax asset groups (id, name, status) with parent campaign.",
+    typical_resources: ["asset_group"],
+    notes: ["PMax only; Search uses ad_groups."],
+  },
+  {
+    recipe: "audiences",
+    description: "Audience id, name, status.",
+    typical_resources: ["audience"],
+    notes: ["Read only in Wave 1; attach is a later named tool."],
+  },
+  {
+    recipe: "shared_sets",
+    description: "Shared sets (negative keyword lists, placements).",
+    typical_resources: ["shared_set"],
+    notes: ["Read only; membership mutate is later."],
+  },
+  {
+    recipe: "bidding_strategies",
+    description: "Portfolio bidding strategies (id, name, type, status).",
+    typical_resources: ["bidding_strategy"],
+    notes: ["Read only; apply/create is Wave 2."],
+  },
+  {
+    recipe: "geo",
+    description: "Campaign location criteria (geo target constants).",
+    typical_resources: ["campaign_criterion"],
+    notes: ["LOCATION type only. Empty ≠ auth failure."],
+  },
+  {
+    recipe: "demographics",
+    description: "Age, gender, parental-status, income-range campaign criteria.",
+    typical_resources: ["campaign_criterion"],
+    notes: ["Read only in Wave 1."],
+  },
+  {
+    recipe: "shopping_performance",
+    description: "Shopping performance view (impressions, clicks, cost).",
+    typical_resources: ["shopping_performance_view"],
+    notes: ["Needs a Shopping/PMax+feed account; empty ≠ auth failure."],
+  },
+  {
+    recipe: "recommendations",
+    description: "Google Ads recommendations (type + campaign).",
+    typical_resources: ["recommendation"],
+    notes: ["Read only. Apply is Wave 2 confirm-gated."],
+  },
+  {
+    recipe: "change_event",
+    description: "Detailed change_event rows (last 14 days).",
+    typical_resources: ["change_event"],
+    notes: ["Richer than change_status. Google limits lookback to ~30 days."],
+  },
+  {
+    recipe: "account_budget",
+    description: "Account-level budget / billing read (status + approved limit).",
+    typical_resources: ["account_budget"],
+    notes: ["Read only. No billing write in product."],
+  },
+  {
+    recipe: "negatives",
+    description: "Negative campaign criteria (keyword text + match type).",
+    typical_resources: ["campaign_criterion"],
+    notes: ["Read only. Add-negative is Wave 2."],
+  },
+  {
+    recipe: "experiments",
+    description: "Campaign experiments (id, name, status, type).",
+    typical_resources: ["experiment"],
+    notes: ["Read only. Create/apply is Wave 2."],
+  },
 ];
 
 export const GADS_RECIPE_NAMES = new Set(GADS_RECIPES.map((r) => r.recipe));

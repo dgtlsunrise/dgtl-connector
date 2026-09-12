@@ -22,6 +22,19 @@ export type GatewayRecipe =
   | "change_status"
   | "policy_topics"
   | "performance"
+  | "assets"
+  | "asset_groups"
+  | "audiences"
+  | "shared_sets"
+  | "bidding_strategies"
+  | "geo"
+  | "demographics"
+  | "shopping_performance"
+  | "recommendations"
+  | "change_event"
+  | "account_budget"
+  | "negatives"
+  | "experiments"
   | null;
 
 export type GatewayParams = {
@@ -74,10 +87,11 @@ export type GatewayParams = {
   bid_strategy?: string;
   countries?: string | string[];
   end_time?: string;
-  /** Meta image upload — base64 bytes (not a URL). */
+  /** Meta / Ads image upload — base64 bytes (not a URL). */
   bytes?: string;
-  /** Meta video upload — https file_url (media source, not hop). */
+  /** Meta video / Ads image — https file_url (media source, not hop). */
   file_url?: string;
+  asset_type?: string;
   /** Meta AdCreative page id. */
   page_id?: string;
   /** Meta image hash from adimages upload. */
@@ -96,6 +110,12 @@ export type GatewayParams = {
   marketing_image_asset_resource_names?: string[];
   square_marketing_image_asset_resource_names?: string[];
   logo_asset_resource_names?: string[];
+  marketing_image_file_url?: string;
+  square_marketing_image_file_url?: string;
+  logo_file_url?: string;
+  marketing_image_bytes?: string;
+  square_marketing_image_bytes?: string;
+  logo_bytes?: string;
   long_headlines?: string[];
   business_name?: string;
   /** Shopping / MC linkage. */
@@ -256,6 +276,13 @@ export const GATEWAY_PARAM_ALLOW = new Set([
   "business_name",
   "merchant_center_id",
   "sales_country",
+  "asset_type",
+  "marketing_image_file_url",
+  "square_marketing_image_file_url",
+  "logo_file_url",
+  "marketing_image_bytes",
+  "square_marketing_image_bytes",
+  "logo_bytes",
 ]);
 
 /**
@@ -272,7 +299,14 @@ export const GATEWAY_PARAM_ALLOW = new Set([
  *
  * `path1` / `path2` are path-only sitelink fields (not https) — keep them off this set.
  */
-export const CLOSED_HTTPS_FIELDS = new Set(["final_url", "file_url", "link"]);
+export const CLOSED_HTTPS_FIELDS = new Set([
+  "final_url",
+  "file_url",
+  "link",
+  "marketing_image_file_url",
+  "square_marketing_image_file_url",
+  "logo_file_url",
+]);
 
 function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
   const out: GatewayParams = {};
@@ -383,20 +417,35 @@ function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
   return out;
 }
 
+const GADS_RECIPE_SET = new Set<Exclude<GatewayRecipe, null>>([
+  "campaigns",
+  "ad_groups",
+  "keywords",
+  "search_terms",
+  "conversion_actions",
+  "change_status",
+  "policy_topics",
+  "performance",
+  "assets",
+  "asset_groups",
+  "audiences",
+  "shared_sets",
+  "bidding_strategies",
+  "geo",
+  "demographics",
+  "shopping_performance",
+  "recommendations",
+  "change_event",
+  "account_budget",
+  "negatives",
+  "experiments",
+]);
+
 function recipeFromArgs(tool: string, args: Record<string, unknown>): GatewayRecipe {
   if (tool === "gads_campaign_performance") return "performance";
   const r = args.recipe;
-  if (
-    r === "campaigns" ||
-    r === "ad_groups" ||
-    r === "keywords" ||
-    r === "search_terms" ||
-    r === "conversion_actions" ||
-    r === "change_status" ||
-    r === "policy_topics" ||
-    r === "performance"
-  ) {
-    return r;
+  if (typeof r === "string" && GADS_RECIPE_SET.has(r as Exclude<GatewayRecipe, null>)) {
+    return r as Exclude<GatewayRecipe, null>;
   }
   return null;
 }

@@ -194,6 +194,9 @@ describe("Meta + Google MCP DX pass 2 (no live Ads/Meta)", () => {
     assert.equal(env.ok, true);
     const data = env.data as { recipes: Array<{ recipe: string }>; rejected_from_official: string[] };
     assert.ok(data.recipes.some((r) => r.recipe === "performance"));
+    assert.ok(data.recipes.some((r) => r.recipe === "assets"));
+    assert.ok(data.recipes.some((r) => r.recipe === "change_event"));
+    assert.ok(data.recipes.some((r) => r.recipe === "account_budget"));
     for (const r of data.recipes) assert.ok(GADS_RECIPE_NAMES.has(r.recipe));
     assert.ok(data.rejected_from_official.some((x) => x.toLowerCase().includes("gaql")));
   });

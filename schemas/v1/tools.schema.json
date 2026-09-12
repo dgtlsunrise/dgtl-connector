@@ -789,7 +789,20 @@
             "conversion_actions",
             "change_status",
             "policy_topics",
-            "performance"
+            "performance",
+            "assets",
+            "asset_groups",
+            "audiences",
+            "shared_sets",
+            "bidding_strategies",
+            "geo",
+            "demographics",
+            "shopping_performance",
+            "recommendations",
+            "change_event",
+            "account_budget",
+            "negatives",
+            "experiments"
           ]
         },
         "date_range": {

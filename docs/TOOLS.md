@@ -539,11 +539,12 @@ Free count stays **24**. These are Polar-gated; local describe tools need licens
 | `meta_upload_ad_image` | Base64 image upload → `image_hash`; confirm-gated; dry_run default. |
 | `meta_upload_ad_video` | https `file_url` video upload → `video_id` (media source, not hop proxy); confirm-gated. |
 | `meta_create_ad_creative` | `image_hash` XOR `video_id` + `page_id` + https `link` → `creative_id`; server-built object_story_spec. |
-| `gads_create_performance_max_campaign` | PMax foundation with **existing** marketing/square/logo asset RNs; else `NOT_IMPLEMENTED`. |
+| `gads_upload_asset` | IMAGE asset via stamp AssetService (`bytes` XOR https `file_url`). dry_run default; live confirm with customer_id. Returns resource_name for PMax. |
+| `gads_create_performance_max_campaign` | PMax with uploaded images (`file_url`/`bytes`) **or** existing marketing/square/logo asset RNs from `gads_upload_asset`. Defaults **PAUSED**. |
 | `gads_create_shopping_campaign` | Shopping when `merchant_center_id` known; else `MERCHANT_CENTER_REQUIRED`. |
 | `gads_list_merchant_center_links` | Read MC product_link discovery for Shopping create. |
 
-Catalogs, audiences, lift, activity logs, and Meta hosted `ads_mcp_management` remain **deferred**. Google Ads **image asset upload** is still out of scope (PMax needs existing asset resource names). Meta live creates/uploads fail closed with `META_SCOPE_MISSING` until `ads_management` Advanced Access and a reauthorized token are present. See [ops/META-CREATE-SPEEDRUN-2026-09-11.md](ops/META-CREATE-SPEEDRUN-2026-09-11.md) and [ops/ADS-META-FOUNDATIONS-2026-09-11.md](ops/ADS-META-FOUNDATIONS-2026-09-11.md).
+`gads_search` closed recipes now include assets, asset_groups, audiences, shared_sets, bidding_strategies, geo, demographics, shopping_performance, recommendations, change_event, account_budget (billing **read**), negatives, experiments. Still **no raw GAQL**. Catalogs, lift, activity logs, and Meta hosted `ads_mcp_management` remain **deferred**. Meta live creates/uploads fail closed with `META_SCOPE_MISSING` until `ads_management` Advanced Access and a reauthorized token are present. See [ops/META-CREATE-SPEEDRUN-2026-09-11.md](ops/META-CREATE-SPEEDRUN-2026-09-11.md) and [ops/ADS-META-FOUNDATIONS-2026-09-11.md](ops/ADS-META-FOUNDATIONS-2026-09-11.md).
 
 ---
 

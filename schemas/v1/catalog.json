@@ -385,6 +385,12 @@
       "fail": "ADS_MUTATE_NOT_ENABLED"
     },
     {
+      "name": "gads_upload_asset",
+      "group": "gads-write",
+      "flag": "ads.mutate.enabled",
+      "fail": "ADS_MUTATE_NOT_ENABLED"
+    },
+    {
       "name": "gads_create_shopping_campaign",
       "group": "gads-write",
       "flag": "ads.mutate.enabled",

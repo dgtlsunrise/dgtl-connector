@@ -11,7 +11,8 @@
     "gads_set_ad_group_status",
     "gads_create_display_campaign",
     "gads_create_performance_max_campaign",
-    "gads_create_shopping_campaign"
+    "gads_create_shopping_campaign",
+    "gads_upload_asset"
   ],
   "meta_mutate": [
     "meta_update_campaign",
@@ -43,6 +44,6 @@
     "meta_insights",
     "meta_get_creative"
   ],
-  "closed_https_fields": ["final_url", "file_url", "link"],
+  "closed_https_fields": ["final_url", "file_url", "link", "marketing_image_file_url", "square_marketing_image_file_url", "logo_file_url"],
   "path_only_url_adjacent": ["path1", "path2"]
 }

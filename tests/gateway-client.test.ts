@@ -400,9 +400,13 @@ describe("PR-5 license-gated gateway client", () => {
     assert.ok(CLOSED_HTTPS_FIELDS.has("final_url"));
     assert.ok(CLOSED_HTTPS_FIELDS.has("file_url"));
     assert.ok(CLOSED_HTTPS_FIELDS.has("link"));
+    assert.ok(CLOSED_HTTPS_FIELDS.has("marketing_image_file_url"));
+    assert.ok(CLOSED_HTTPS_FIELDS.has("logo_file_url"));
     assert.ok(GATEWAY_PARAM_ALLOW.has("final_url"));
     assert.ok(GATEWAY_PARAM_ALLOW.has("file_url"));
     assert.ok(GATEWAY_PARAM_ALLOW.has("link"));
+    assert.ok(GATEWAY_PARAM_ALLOW.has("asset_type"));
+    assert.ok(GATEWAY_PARAM_ALLOW.has("marketing_image_bytes"));
     assert.ok(GATEWAY_PARAM_ALLOW.has("path1"));
     assert.equal(CLOSED_HTTPS_FIELDS.has("path1"), false);
 
