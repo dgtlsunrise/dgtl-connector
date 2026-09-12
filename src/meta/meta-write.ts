@@ -13,7 +13,7 @@ import { requireId } from "../ids.js";
 import { probeGatewayReachable, postGateway } from "../gateway/client.js";
 import { hasFeature } from "../license/verify.js";
 
-const HINT_FLAG =
+export const HINT_FLAG =
   "Plugin Meta mutate defaults on; set DGTL_META_MUTATE_ENABLED=false (or META_MUTATE_ENABLED=false) to opt out. Live hop still needs Worker META_MUTATE_ENABLED=true after Meta ads_management Advanced Access. Reads stay ads_read-only.";
 
 const ALLOWED_STATUS = new Set(["ACTIVE", "PAUSED"]);
@@ -32,7 +32,7 @@ export type MetaStatusUpdateTool =
   | "meta_update_adset"
   | "meta_update_ad";
 
-function dryRunDefault(args: Record<string, unknown>): boolean {
+export function dryRunDefault(args: Record<string, unknown>): boolean {
   return args.dry_run !== false;
 }
 
@@ -59,7 +59,7 @@ export function harnessUserMessageContainsMetaConfirm(opts: {
   return msg.includes(act) && msg.includes(opts.objectId);
 }
 
-function assertConfirmContainsActAndIds(
+export function assertConfirmContainsActAndIds(
   confirmPhrase: unknown,
   adAccountId: string,
   extraIds: string[],
@@ -87,7 +87,7 @@ function assertConfirmContainsActAndObject(
   assertConfirmContainsActAndIds(confirmPhrase, adAccountId, [objectId]);
 }
 
-function requireMetaLicense(ctx: AppContext, tool: string): Envelope | null {
+export function requireMetaLicense(ctx: AppContext, tool: string): Envelope | null {
   if (!hasFeature(ctx.license, "meta")) {
     return failEnvelope(tool, "LICENSE_REQUIRED", MSG.LICENSE_REQUIRED, {
       hint: "Meta Ads is paid. The app secret never ships in this plugin; appsecret_proof is computed on the DGTL gateway.",
@@ -577,6 +577,24 @@ async function metaCreateObject(
             "bid_strategy",
             "countries",
             "end_time",
+            "age_min",
+            "age_max",
+            "genders",
+            "locales",
+            "interest_ids",
+            "behavior_ids",
+            "custom_audience_ids",
+            "excluded_custom_audience_ids",
+            "publisher_platforms",
+            "facebook_positions",
+            "instagram_positions",
+            "audience_network_positions",
+            "messenger_positions",
+            "device_platforms",
+            "pixel_id",
+            "custom_event_type",
+            "catalog_id",
+            "product_set_id",
           ]
         : [...common, "adset_id", "creative_id"],
   );
@@ -701,6 +719,31 @@ async function metaCreateObject(
       );
     }
     hopArgs.countries = countries.countries;
+    const packKeys = [
+      "age_min",
+      "age_max",
+      "genders",
+      "locales",
+      "interest_ids",
+      "behavior_ids",
+      "custom_audience_ids",
+      "excluded_custom_audience_ids",
+      "publisher_platforms",
+      "facebook_positions",
+      "instagram_positions",
+      "audience_network_positions",
+      "messenger_positions",
+      "device_platforms",
+      "pixel_id",
+      "custom_event_type",
+      "catalog_id",
+      "product_set_id",
+    ] as const;
+    for (const k of packKeys) {
+      if (args[k] !== undefined && args[k] !== null && args[k] !== "") {
+        hopArgs[k] = args[k];
+      }
+    }
     if (args.billing_event !== undefined && args.billing_event !== "") {
       const be = String(args.billing_event).trim().toUpperCase();
       if (!META_BILLING.has(be)) {
@@ -718,6 +761,20 @@ async function metaCreateObject(
         });
       }
       hopArgs.optimization_goal = og;
+    }
+    const ogHop =
+      typeof hopArgs.optimization_goal === "string" ? hopArgs.optimization_goal : "LINK_CLICKS";
+    if (
+      (ogHop === "OFFSITE_CONVERSIONS" || ogHop === "VALUE" || ogHop === "LEAD_GENERATION") &&
+      !(typeof hopArgs.pixel_id === "string" && hopArgs.pixel_id.trim()) &&
+      !(typeof hopArgs.catalog_id === "string" && hopArgs.catalog_id.trim())
+    ) {
+      return failEnvelope(
+        tool,
+        "INVALID_ARGUMENT",
+        "pixel_id (or catalog_id) is required when optimization_goal is OFFSITE_CONVERSIONS, VALUE, or LEAD_GENERATION",
+        { api: "meta", hint: "Named promoted_object — do not send a promoted_object bag." },
+      );
     }
     if (args.bid_strategy !== undefined && args.bid_strategy !== "") {
       const bs = String(args.bid_strategy).trim().toUpperCase();

@@ -37,7 +37,7 @@ export async function metaDescribeInsightsSchema(ctx: AppContext): Promise<Envel
   return okEnvelope("meta_describe_insights_schema", {
     data,
     page: { truncated: false, row_count: data.fields.length },
-    hint: "Local catalog only. Do not invent breakdowns/fields. Writes/catalogs/lift stay deferred.",
+    hint: "Local insights catalog only. Do not invent breakdowns/fields. Pixel/catalog/audience reads are named tools; lift stays deferred.",
   });
 }
 

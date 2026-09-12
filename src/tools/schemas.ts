@@ -240,6 +240,19 @@ export const metaInsights = z
   })
   .strict();
 export const metaCreative = z.object({ creative_id: str }).strict();
+export const metaPixel = z.object({ pixel_id: str }).strict();
+export const metaCatalog = z
+  .object({
+    catalog_id: str,
+    limit: z.number().int().min(1).max(500).optional(),
+  })
+  .strict();
+export const metaAccountOptionalLimit = z
+  .object({
+    ad_account_id: str,
+    limit: z.number().int().min(1).max(500).optional(),
+  })
+  .strict();
 export const gadsDescribeRecipes = emptyInput;
 
 /** Require confirm_phrase when dry_run is explicitly false. */
@@ -1202,7 +1215,84 @@ export const metaCreateCampaign = z
   .strict()
   .superRefine(requireConfirmWhenLive);
 
-/** Create ad set — geo from countries only; spend-cap on budget cents. */
+const META_GENDERS = ["MALE", "FEMALE"] as const;
+const META_PUBLISHERS = ["facebook", "instagram", "audience_network", "messenger"] as const;
+const META_FB_POSITIONS = [
+  "feed",
+  "right_hand_column",
+  "marketplace",
+  "video_feeds",
+  "story",
+  "search",
+  "instream_video",
+  "facebook_reels",
+  "facebook_reels_overlay",
+  "profile_feed",
+] as const;
+const META_IG_POSITIONS = [
+  "stream",
+  "story",
+  "explore",
+  "explore_home",
+  "reels",
+  "profile_feed",
+  "ig_search",
+  "profile_reels",
+] as const;
+const META_AN_POSITIONS = ["classic", "rewarded_video", "instream_video"] as const;
+const META_MSG_POSITIONS = ["messenger_home", "sponsored_messages", "story"] as const;
+const META_DEVICES = ["mobile", "desktop"] as const;
+const META_CUSTOM_EVENTS = [
+  "PURCHASE",
+  "LEAD",
+  "COMPLETE_REGISTRATION",
+  "ADD_TO_CART",
+  "VIEW_CONTENT",
+  "INITIATED_CHECKOUT",
+  "SEARCH",
+  "ADD_PAYMENT_INFO",
+  "ADD_TO_WISHLIST",
+  "CONTACT",
+  "CUSTOMIZE_PRODUCT",
+  "DONATE",
+  "FIND_LOCATION",
+  "SCHEDULE",
+  "START_TRIAL",
+  "SUBMIT_APPLICATION",
+  "SUBSCRIBE",
+  "OTHER",
+] as const;
+
+const idList = z.union([z.array(z.string().min(1).max(30)).max(50), z.string().min(1)]);
+const strList = z.union([z.array(z.string().min(1)).max(50), z.string().min(1)]);
+
+/** Named targeting packs shared by create ad set + targeting update. Never a targeting JSON bag. */
+const metaTargetingPackFields = {
+  countries: z.union([z.array(z.string().min(2).max(2)), z.string().min(2)]),
+  age_min: z.union([z.number().int().min(13).max(65), z.string()]).optional(),
+  age_max: z.union([z.number().int().min(13).max(65), z.string()]).optional(),
+  genders: z.union([z.array(z.enum(META_GENDERS)), z.enum(META_GENDERS), z.string()]).optional(),
+  locales: idList.optional(),
+  interest_ids: idList.optional(),
+  behavior_ids: idList.optional(),
+  custom_audience_ids: idList.optional(),
+  excluded_custom_audience_ids: idList.optional(),
+  publisher_platforms: z.union([z.array(z.enum(META_PUBLISHERS)), z.string()]).optional(),
+  facebook_positions: z.union([z.array(z.enum(META_FB_POSITIONS)), strList]).optional(),
+  instagram_positions: z.union([z.array(z.enum(META_IG_POSITIONS)), strList]).optional(),
+  audience_network_positions: z.union([z.array(z.enum(META_AN_POSITIONS)), strList]).optional(),
+  messenger_positions: z.union([z.array(z.enum(META_MSG_POSITIONS)), strList]).optional(),
+  device_platforms: z.union([z.array(z.enum(META_DEVICES)), z.string()]).optional(),
+};
+
+const metaPromotedObjectFields = {
+  pixel_id: z.string().min(1).max(30).optional(),
+  custom_event_type: z.enum(META_CUSTOM_EVENTS).optional(),
+  catalog_id: z.string().min(1).max(30).optional(),
+  product_set_id: z.string().min(1).max(30).optional(),
+};
+
+/** Create ad set — named targeting packs + placements; spend-cap on budget cents. */
 export const metaCreateAdset = z
   .object({
     ad_account_id: z.string().min(1),
@@ -1214,13 +1304,71 @@ export const metaCreateAdset = z
     billing_event: z.enum(META_BILLING).optional(),
     optimization_goal: z.enum(META_OPT_GOALS).optional(),
     bid_strategy: z.enum(META_BID).optional(),
-    countries: z.union([z.array(z.string().min(2).max(2)), z.string().min(2)]),
+    ...metaTargetingPackFields,
+    ...metaPromotedObjectFields,
     end_time: z.string().min(10).optional(),
     dry_run: z.boolean().default(true),
     confirm_phrase: z.string().optional(),
   })
   .strict()
   .superRefine(requireMetaCreateAdsetBudget);
+
+/** Replace ad set targeting from named packs (countries required). */
+export const metaUpdateAdsetTargeting = z
+  .object({
+    ad_account_id: z.string().min(1),
+    adset_id: z.string().min(1),
+    ...metaTargetingPackFields,
+    ...metaPromotedObjectFields,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+/** Attach custom audience ids to an ad set (replaces targeting; countries required). */
+export const metaAttachAudience = z
+  .object({
+    ad_account_id: z.string().min(1),
+    adset_id: z.string().min(1),
+    ...metaTargetingPackFields,
+    custom_audience_ids: idList,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+/** Website custom audience from a pixel — no hashed PII / Customer Match. */
+export const metaCreateCustomAudience = z
+  .object({
+    ad_account_id: z.string().min(1),
+    name: z.string().min(1).max(400),
+    pixel_id: z.string().min(1),
+    retention_days: z.union([z.number().int().min(1).max(180), z.string()]).optional(),
+    url_contains: z.string().min(1).max(200).optional(),
+    prefill: z.union([z.boolean(), z.string(), z.number()]).optional(),
+    subtype: z.literal("WEBSITE").optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+/** Lookalike from an existing custom audience id. */
+export const metaCreateLookalikeAudience = z
+  .object({
+    ad_account_id: z.string().min(1),
+    name: z.string().min(1).max(400),
+    origin_audience_id: z.string().min(1),
+    country: z.string().length(2),
+    lookalike_ratio: z.union([z.number().min(0.01).max(0.2), z.string()]).optional(),
+    lookalike_type: z.enum(["similarity", "reach"]).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
 
 /** Create ad — existing creative_id only (use meta_create_ad_creative / upload first). */
 export const metaCreateAd = z

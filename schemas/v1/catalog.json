@@ -559,6 +559,30 @@
       "fail": "META_MUTATE_NOT_ENABLED"
     },
     {
+      "name": "meta_update_adset_targeting",
+      "group": "meta-write",
+      "flag": "meta.mutate.enabled",
+      "fail": "META_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "meta_create_custom_audience",
+      "group": "meta-write",
+      "flag": "meta.mutate.enabled",
+      "fail": "META_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "meta_create_lookalike_audience",
+      "group": "meta-write",
+      "flag": "meta.mutate.enabled",
+      "fail": "META_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "meta_attach_audience",
+      "group": "meta-write",
+      "flag": "meta.mutate.enabled",
+      "fail": "META_MUTATE_NOT_ENABLED"
+    },
+    {
       "name": "shopify_get_shop",
       "group": "shopify",
       "fail": "SHOPIFY_NOT_CONNECTED",

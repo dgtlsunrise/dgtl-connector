@@ -44,7 +44,11 @@
     "meta_create_ad",
     "meta_upload_ad_image",
     "meta_upload_ad_video",
-    "meta_create_ad_creative"
+    "meta_create_ad_creative",
+    "meta_update_adset_targeting",
+    "meta_create_custom_audience",
+    "meta_create_lookalike_audience",
+    "meta_attach_audience"
   ],
   "plugin_local_describe": [
     "gads_describe_recipes",
@@ -63,7 +67,12 @@
     "meta_list_adsets",
     "meta_list_ads",
     "meta_insights",
-    "meta_get_creative"
+    "meta_get_creative",
+    "meta_list_pixels",
+    "meta_get_pixel",
+    "meta_list_catalogs",
+    "meta_list_catalog_products",
+    "meta_list_custom_audiences"
   ],
   "closed_https_fields": ["final_url", "file_url", "link", "marketing_image_file_url", "square_marketing_image_file_url", "logo_file_url"],
   "path_only_url_adjacent": ["path1", "path2"]

@@ -57,6 +57,17 @@ import {
   metaUploadAdVideo,
   metaCreateAdCreative,
 } from "../meta/meta-write.js";
+import {
+  metaAttachAudience,
+  metaCreateCustomAudience,
+  metaCreateLookalikeAudience,
+  metaGetPixel,
+  metaListCatalogProducts,
+  metaListCatalogs,
+  metaListCustomAudiences,
+  metaListPixels,
+  metaUpdateAdsetTargeting,
+} from "../meta/meta-wave3.js";
 import { metaDisabled, metaDescribeInsightsSchema } from "../meta/meta.js";
 import {
   shopifyGetShop,
@@ -933,7 +944,7 @@ export const TOOLS: ToolSpec[] = [
     family: "meta",
     title: "Meta describe insights schema",
     description:
-      "Paid. Pro $19/mo. Local insights catalog (levels, date_presets, breakdowns, fields). Call before meta_insights — do not invent Graph fields. Zero Graph/gateway HTTP. Writes/catalogs/audiences/lift stay out of v1. LICENSE_REQUIRED without a license.",
+      "Paid. Pro $19/mo. Local insights catalog (levels, date_presets, breakdowns, fields). Call before meta_insights — do not invent Graph fields. Zero Graph/gateway HTTP. LICENSE_REQUIRED without a license.",
     inputSchema: S.metaDescribeInsightsSchema,
     annotations: ANN_RO,
     handler: async (ctx) => metaDescribeInsightsSchema(ctx),
@@ -1043,7 +1054,7 @@ export const TOOLS: ToolSpec[] = [
     family: "meta",
     title: "Meta create ad set",
     description:
-      "Paid mutate. Create a Meta ad set on an existing campaign. daily_budget XOR lifetime_budget in integer cents (not micros); countries → server-built geo targeting only. Spend-cap $100k. Defaults PAUSED. dry_run default; live needs confirm_phrase containing act_{ad_account_id} AND campaign_id. No targeting JSON / audiences. ads_management required when detectable.",
+      "Paid mutate. Create a Meta ad set on an existing campaign. daily_budget XOR lifetime_budget in integer cents (not micros). Named targeting packs (countries required; age/genders/locales/interests/behaviors/custom audiences/placements) — server builds targeting JSON; never send a targeting bag. Optional pixel_id/catalog_id → promoted_object. Spend-cap $100k. Defaults PAUSED. dry_run default; live needs confirm_phrase containing act_{ad_account_id} AND campaign_id. ads_management required when detectable.",
     inputSchema: S.metaCreateAdset,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => metaCreateAdset(ctx, args),
@@ -1091,6 +1102,105 @@ export const TOOLS: ToolSpec[] = [
     inputSchema: S.metaCreateAdCreative,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => metaCreateAdCreative(ctx, args),
+  },
+  {
+    name: "meta_list_pixels",
+    group: "meta",
+    family: "meta",
+    title: "Meta list pixels",
+    description:
+      "Paid. Pro $19/mo. List Ads pixels for an ad_account_id (id, name, last_fired_time). Cite returned pixel_id; do not invent. ads_read. LICENSE_REQUIRED without a license.",
+    inputSchema: S.metaAccountOptionalLimit,
+    annotations: ANN_RO,
+    handler: (ctx, args) => metaListPixels(ctx, args),
+  },
+  {
+    name: "meta_get_pixel",
+    group: "meta",
+    family: "meta",
+    title: "Meta get pixel",
+    description:
+      "Paid. Pro $19/mo. Pixel metadata (not CAPI event upload — sGTM is out of v1). Cite pixel_id from meta_list_pixels.",
+    inputSchema: S.metaPixel,
+    annotations: ANN_RO,
+    handler: (ctx, args) => metaGetPixel(ctx, args),
+  },
+  {
+    name: "meta_list_catalogs",
+    group: "meta",
+    family: "meta",
+    title: "Meta list catalogs",
+    description:
+      "Paid. Pro $19/mo. List owned product catalogs for an ad_account_id. Read only — Commerce catalog writes / Advantage+ shopping create stay out of this wave. LICENSE_REQUIRED without a license.",
+    inputSchema: S.metaAccountOptionalLimit,
+    annotations: ANN_RO,
+    handler: (ctx, args) => metaListCatalogs(ctx, args),
+  },
+  {
+    name: "meta_list_catalog_products",
+    group: "meta",
+    family: "meta",
+    title: "Meta list catalog products",
+    description:
+      "Paid. Pro $19/mo. List products in a catalog_id from meta_list_catalogs. Read only. LICENSE_REQUIRED without a license.",
+    inputSchema: S.metaCatalog,
+    annotations: ANN_RO,
+    handler: (ctx, args) => metaListCatalogProducts(ctx, args),
+  },
+  {
+    name: "meta_list_custom_audiences",
+    group: "meta",
+    family: "meta",
+    title: "Meta list custom audiences",
+    description:
+      "Paid. Pro $19/mo. List custom audiences for an ad_account_id. Use returned ids with meta_attach_audience / lookalike origin. LICENSE_REQUIRED without a license.",
+    inputSchema: S.metaAccountOptionalLimit,
+    annotations: ANN_RO,
+    handler: (ctx, args) => metaListCustomAudiences(ctx, args),
+  },
+  {
+    name: "meta_update_adset_targeting",
+    group: "meta-write",
+    family: "meta",
+    title: "Meta update ad set targeting",
+    description:
+      "Paid mutate. Replace ad set targeting from named packs (countries required; age/genders/locales/interests/behaviors/custom audiences/placements). Server builds targeting JSON — do not send a targeting bag. Optional pixel_id/catalog_id promoted_object. dry_run default; live needs confirm_phrase containing act_{ad_account_id} AND adset_id. ads_management when detectable.",
+    inputSchema: S.metaUpdateAdsetTargeting,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => metaUpdateAdsetTargeting(ctx, args),
+  },
+  {
+    name: "meta_create_custom_audience",
+    group: "meta-write",
+    family: "meta",
+    title: "Meta create custom audience",
+    description:
+      "Paid mutate. Website custom audience from pixel_id (retention_days, optional url_contains). No hashed PII / Customer Match. dry_run default; live needs confirm_phrase containing act_{ad_account_id} AND pixel_id. ads_management when detectable.",
+    inputSchema: S.metaCreateCustomAudience,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => metaCreateCustomAudience(ctx, args),
+  },
+  {
+    name: "meta_create_lookalike_audience",
+    group: "meta-write",
+    family: "meta",
+    title: "Meta create lookalike audience",
+    description:
+      "Paid mutate. Lookalike from origin_audience_id + country (ISO-2) + optional lookalike_ratio 0.01–0.20. Server-built lookalike_spec. dry_run default; live needs confirm_phrase containing act_{ad_account_id} AND origin_audience_id. ads_management when detectable.",
+    inputSchema: S.metaCreateLookalikeAudience,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => metaCreateLookalikeAudience(ctx, args),
+  },
+  {
+    name: "meta_attach_audience",
+    group: "meta-write",
+    family: "meta",
+    title: "Meta attach audience",
+    description:
+      "Paid mutate. Attach custom_audience_ids to an ad set. Replaces targeting — countries required plus named packs. dry_run default; live needs confirm_phrase containing act_{ad_account_id} AND adset_id. ads_management when detectable.",
+    inputSchema: S.metaAttachAudience,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => metaAttachAudience(ctx, args),
   },
   {
     name: "shopify_get_shop",

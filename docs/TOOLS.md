@@ -532,9 +532,16 @@ Free count stays **24**. These are Polar-gated; local describe tools need licens
 | `meta_describe_insights_schema` | Local levels / date_presets / breakdowns / fields — call before `meta_insights`. |
 | `meta_insights` | `date_preset` or dates; optional `breakdowns` / `fields` / `time_increment`; cite `data.cited`. ads_read only. |
 | `meta_list_*` / `meta_get_creative` | Read lists + creative metadata (URLs, not bytes). |
+| `meta_list_pixels` / `meta_get_pixel` | Pixel read (id, name, last_fired_time). Not CAPI event upload. |
+| `meta_list_catalogs` / `meta_list_catalog_products` | Catalog read. Advantage+ shopping create is not in this wave. |
+| `meta_list_custom_audiences` | List custom audiences for attach / lookalike origin. |
 | `meta_update_campaign` / `meta_update_adset` / `meta_update_ad` | Confirm-gated status/name/ad-set budget updates; dry-run default; `ads_management` required. |
 | `meta_create_campaign` | Closed Outcome-objective campaign create; defaults **PAUSED**; **ACTIVE** only with explicit `status` + confirm with `act_{ad_account_id}`. |
-| `meta_create_adset` | Existing campaign + country-code geo + capped budget cents; defaults PAUSED; ACTIVE only with explicit status + confirm with act + campaign id. |
+| `meta_create_adset` | Existing campaign + named targeting packs (countries required; age/genders/locales/interests/behaviors/custom audiences/placements) + capped budget cents; optional `pixel_id`/`catalog_id` promoted_object. Defaults PAUSED. Never send a `targeting` JSON bag. |
+| `meta_update_adset_targeting` | Replace ad set targeting from the same named packs. Countries required (replace, not merge). |
+| `meta_create_custom_audience` | Website custom audience from `pixel_id`. No hashed PII / Customer Match. |
+| `meta_create_lookalike_audience` | Lookalike from `origin_audience_id` + country. Server-built `lookalike_spec`. |
+| `meta_attach_audience` | Attach `custom_audience_ids` to an ad set (replaces targeting; countries required). |
 | `meta_create_ad` | Existing ad set + existing `creative_id` (from `meta_create_ad_creative`); defaults PAUSED; ACTIVE only with explicit status + confirm with act + ad set + creative ids. |
 | `meta_upload_ad_image` | Base64 image upload → `image_hash`; confirm-gated; dry_run default. |
 | `meta_upload_ad_video` | https `file_url` video upload → `video_id` (media source, not hop proxy); confirm-gated. |
@@ -560,7 +567,7 @@ Free count stays **24**. These are Polar-gated; local describe tools need licens
 | `gads_link_merchant_center` / `gads_unlink_merchant_center` | ProductLink create/remove (not MCC; not Content API). Confirm-gated. |
 | `gads_create_experiment` | Experiment in **SETUP** (not live) with control arm on an existing campaign. |
 
-`gads_search` closed recipes now include assets, asset_groups, audiences, shared_sets, bidding_strategies, geo, demographics, shopping_performance, recommendations, change_event, account_budget (billing **read**), negatives, experiments. Still **no raw GAQL**. Catalogs, lift, activity logs, and Meta hosted `ads_mcp_management` remain **deferred**. Meta live creates/uploads fail closed with `META_SCOPE_MISSING` until `ads_management` Advanced Access and a reauthorized token are present. See [ops/META-CREATE-SPEEDRUN-2026-09-11.md](ops/META-CREATE-SPEEDRUN-2026-09-11.md) and [ops/ADS-META-FOUNDATIONS-2026-09-11.md](ops/ADS-META-FOUNDATIONS-2026-09-11.md).
+`gads_search` closed recipes now include assets, asset_groups, audiences, shared_sets, bidding_strategies, geo, demographics, shopping_performance, recommendations, change_event, account_budget (billing **read**), negatives, experiments. Still **no raw GAQL**. Meta pixel/catalog/audience **reads** and named targeting/audience mutates are Wave 3. Lift, activity logs, Advantage+ shopping create, Customer Match hashed PII, and Meta hosted `ads_mcp_management` remain **deferred**. Meta live mutates fail closed with `META_SCOPE_MISSING` until `ads_management` Advanced Access and a reauthorized token are present. See [ops/META-CREATE-SPEEDRUN-2026-09-11.md](ops/META-CREATE-SPEEDRUN-2026-09-11.md) and [ops/ADS-META-FOUNDATIONS-2026-09-11.md](ops/ADS-META-FOUNDATIONS-2026-09-11.md). No agent-facing `meta_mutate`.
 
 ---
 

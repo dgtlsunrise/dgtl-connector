@@ -165,6 +165,32 @@ export type GatewayParams = {
   experiment_name?: string;
   experiment_type?: string;
   traffic_split_percent?: number;
+  /** Wave 3 Meta targeting packs / pixel / catalog / audiences. */
+  age_min?: number | string;
+  age_max?: number | string;
+  locales?: string[] | string;
+  interest_ids?: string[] | string;
+  behavior_ids?: string[] | string;
+  custom_audience_ids?: string[] | string;
+  excluded_custom_audience_ids?: string[] | string;
+  publisher_platforms?: string[] | string;
+  facebook_positions?: string[] | string;
+  instagram_positions?: string[] | string;
+  audience_network_positions?: string[] | string;
+  messenger_positions?: string[] | string;
+  device_platforms?: string[] | string;
+  pixel_id?: string;
+  custom_event_type?: string;
+  catalog_id?: string;
+  product_set_id?: string;
+  retention_days?: number | string;
+  origin_audience_id?: string;
+  country?: string;
+  lookalike_ratio?: number | string;
+  lookalike_type?: string;
+  url_contains?: string;
+  prefill?: boolean | string | number;
+  subtype?: string;
 };
 
 export type GatewayRequest = {
@@ -365,6 +391,31 @@ export const GATEWAY_PARAM_ALLOW = new Set([
   "experiment_name",
   "experiment_type",
   "traffic_split_percent",
+  "age_min",
+  "age_max",
+  "locales",
+  "interest_ids",
+  "behavior_ids",
+  "custom_audience_ids",
+  "excluded_custom_audience_ids",
+  "publisher_platforms",
+  "facebook_positions",
+  "instagram_positions",
+  "audience_network_positions",
+  "messenger_positions",
+  "device_platforms",
+  "pixel_id",
+  "custom_event_type",
+  "catalog_id",
+  "product_set_id",
+  "retention_days",
+  "origin_audience_id",
+  "country",
+  "lookalike_ratio",
+  "lookalike_type",
+  "url_contains",
+  "prefill",
+  "subtype",
 ]);
 
 /**
