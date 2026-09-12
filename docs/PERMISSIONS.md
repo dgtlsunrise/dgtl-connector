@@ -220,3 +220,15 @@ Local merchant custom app / Dev Dashboard credentials:
 
 Fail closed: `SHOPIFY_NOT_CONNECTED`. Free local lane (do not require Polar Pro). Support never collects Shopify tokens. Not part of Consent A verification / marketplace Google consent screen.
 
+## TikTok Ads (not Consent A; stamp hop)
+
+TikTok Marketing API app **id + secret** live on the stamp Worker only (like Meta). The plugin holds the **advertiser user token**:
+
+- `TIKTOK_ACCESS_TOKEN` (host-injected) and/or `PLUGIN_DATA/tiktok-oauth.json`
+- License JWT must include feature **`tiktok`** (Polar Pro does **not** mint this until Noel sets `POLAR_MINT_TIKTOK` — do not overload `ads`/`meta`)
+- `DGTL_GATEWAY_URL` required
+
+Fail closed: `LICENSE_REQUIRED` without `tiktok`; `TIKTOK_NOT_CONNECTED` without a user token; `GATEWAY_UNAVAILABLE` without Worker secrets / health. Support never collects TikTok tokens. App secret is never in this plugin.
+
+Live developer app + Marketing API access are **Noel gates**.
+

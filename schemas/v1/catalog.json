@@ -681,6 +681,28 @@
       "flag": "writes.enabled",
       "fail": "WRITE_NOT_ENABLED",
       "note": "Local write; dry_run default; confirm shop domain; write_inventory; not stamp vault"
+    },
+    {
+      "name": "tiktok_list_advertisers",
+      "group": "tiktok",
+      "fail": "LICENSE_REQUIRED",
+      "note": "Polar feature tiktok (not ads/meta); stamp hop; app secret on Worker; Noel gates live app"
+    },
+    {
+      "name": "tiktok_list_campaigns",
+      "group": "tiktok",
+      "fail": "LICENSE_REQUIRED"
+    },
+    {
+      "name": "tiktok_insights",
+      "group": "tiktok",
+      "fail": "LICENSE_REQUIRED"
+    },
+    {
+      "name": "tiktok_update_campaign",
+      "group": "tiktok-write",
+      "fail": "LICENSE_REQUIRED",
+      "note": "dry_run default; confirm advertiser_id + campaign_id; Worker TIKTOK_MUTATE_ENABLED fail-closed"
     }
   ]
 }

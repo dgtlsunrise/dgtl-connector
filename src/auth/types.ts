@@ -17,6 +17,7 @@ export const STORE_FILE = {
   w: "google-oauth-write.json",
   ads: "google-oauth-ads.json",
   meta: "meta-oauth.json",
+  tiktok: "tiktok-oauth.json",
   mc: "google-oauth-mc.json",
   gbp: "google-oauth-gbp.json",
 } as const;

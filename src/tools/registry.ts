@@ -93,6 +93,8 @@ import {
   shopifyListInventoryLevels,
 } from "../shopify/shopify.js";
 import { shopifyAdjustInventory } from "../shopify/shopify-write.js";
+import { tiktokDisabled } from "../tiktok/tiktok.js";
+import { tiktokUpdateCampaign } from "../tiktok/tiktok-write.js";
 import { supportPacket } from "../support/packet.js";
 import { feedbackPrepare, feedbackSend } from "../support/feedback.js";
 import * as S from "./schemas.js";
@@ -109,6 +111,7 @@ export type ToolFamily =
   | "mc"
   | "shopify"
   | "shopify_write"
+  | "tiktok"
   | "license";
 
 export type ToolAnnotations = {
@@ -1425,6 +1428,50 @@ export const TOOLS: ToolSpec[] = [
     annotations: ANN_WRITE,
     handler: (ctx, args) => shopifyAdjustInventory(ctx, args),
   },
+  {
+    name: "tiktok_list_advertisers",
+    group: "tiktok",
+    family: "tiktok",
+    title: "TikTok list advertisers",
+    description:
+      "Paid. Polar feature `tiktok` (not ads/meta). Use FIRST to discover advertiser_id values. Cite returned ids; do not invent. TikTok app secret is never in this plugin. LICENSE_REQUIRED without a tiktok license. Live app is a Noel gate — fixtures until then.",
+    inputSchema: S.tiktokListAdvertisers,
+    annotations: ANN_RO,
+    handler: async (ctx, args) => tiktokDisabled(ctx, "tiktok_list_advertisers", args),
+  },
+  {
+    name: "tiktok_list_campaigns",
+    group: "tiktok",
+    family: "tiktok",
+    title: "TikTok list campaigns",
+    description:
+      "Paid. Polar `tiktok`. List campaigns for an advertiser_id from tiktok_list_advertisers. Empty ≠ auth failure. LICENSE_REQUIRED without a tiktok license.",
+    inputSchema: S.tiktokListCampaigns,
+    annotations: ANN_RO,
+    handler: async (ctx, args) => tiktokDisabled(ctx, "tiktok_list_campaigns", args),
+  },
+  {
+    name: "tiktok_insights",
+    group: "tiktok",
+    family: "tiktok",
+    title: "TikTok insights",
+    description:
+      "Paid. Polar `tiktok`. BASIC integrated report: advertiser_id, date_start/date_stop (YYYY-MM-DD), optional level advertiser/campaign/adgroup/ad. Closed metrics (spend/impressions/clicks/ctr/cpc/conversion). Cite data.cited. LICENSE_REQUIRED without a tiktok license.",
+    inputSchema: S.tiktokInsights,
+    annotations: ANN_RO,
+    handler: async (ctx, args) => tiktokDisabled(ctx, "tiktok_insights", args),
+  },
+  {
+    name: "tiktok_update_campaign",
+    group: "tiktok-write",
+    family: "tiktok",
+    title: "TikTok update campaign",
+    description:
+      "Paid mutate. Update TikTok campaign status (ENABLE/DISABLE; ACTIVE→ENABLE, PAUSED→DISABLE). Defaults on; opt out with DGTL_TIKTOK_MUTATE_ENABLED=false. Worker TIKTOK_MUTATE_ENABLED still required for live hop. Prefer dry_run; live needs confirm_phrase containing advertiser_id AND campaign_id after a user message this turn. Closed fields only — no budget/create/DELETE. App secret stays on the Worker.",
+    inputSchema: S.tiktokUpdateCampaign,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => tiktokUpdateCampaign(ctx, args),
+  },
 ];
 
 export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
@@ -1440,7 +1487,7 @@ export const CONSENT_A_TOOLS = TOOLS.filter(
 
 /**
  * Alias of CONSENT_A_TOOLS (W0.4). Not the commercial free set.
- * Shopify is LOCAL_FREE_TOOLS; Ads/Meta/MC are LICENSE_GATED_TOOLS.
+ * Shopify is LOCAL_FREE_TOOLS; Ads/Meta/MC/TikTok are LICENSE_GATED_TOOLS.
  */
 export const FREE_TOOL_NAMES = CONSENT_A_TOOLS;
 
@@ -1449,9 +1496,9 @@ export const LOCAL_FREE_TOOLS = TOOLS.filter(
   (t) => t.family === "shopify" || t.family === "shopify_write" || t.family === "gbp",
 ).map((t) => t.name);
 
-/** Polar Pro surface: Google Ads + Meta Ads + Merchant Center (including plugin-local describe tools). */
+/** Polar Pro surface: Google Ads + Meta Ads + Merchant Center + TikTok (including plugin-local describe tools). */
 export const LICENSE_GATED_TOOLS = TOOLS.filter(
-  (t) => t.family === "gads" || t.family === "meta" || t.family === "mc",
+  (t) => t.family === "gads" || t.family === "meta" || t.family === "mc" || t.family === "tiktok",
 ).map((t) => t.name);
 
 /**
@@ -1468,3 +1515,6 @@ export const GADS_MUTATE_TOOL_NAMES = TOOLS.filter((t) => t.group === "gads-writ
 
 /** Registry mutate surface (stamp hop). Keep ⊆ stamp META_MUTATE_TOOLS. */
 export const META_MUTATE_TOOL_NAMES = TOOLS.filter((t) => t.group === "meta-write").map((t) => t.name);
+
+/** Registry mutate surface (stamp hop). Keep ⊆ stamp TIKTOK_MUTATE_TOOLS. */
+export const TIKTOK_MUTATE_TOOL_NAMES = TOOLS.filter((t) => t.group === "tiktok-write").map((t) => t.name);

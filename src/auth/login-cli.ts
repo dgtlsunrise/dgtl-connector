@@ -454,6 +454,7 @@ Consent W (writes), Consent C (Ads/Meta), Consent MC, and Consent B (GBP) use
   GOOGLE_MC_ACCESS_TOKEN / google-oauth-mc.json    (or auth login-mc)
   GOOGLE_GBP_ACCESS_TOKEN / google-oauth-gbp.json  (or auth login-gbp)
   META_ACCESS_TOKEN / meta-oauth.json              (or auth login-meta --code)
+  TIKTOK_ACCESS_TOKEN / tiktok-oauth.json          (host-injected; app secret on Worker)
   They never reuse Consent A AuthPort. Do not add adwords, content, or
   business.manage to Consent A.
 
@@ -484,6 +485,11 @@ Meta: prefer host-injected META_ACCESS_TOKEN. Otherwise redeem a hosted Login
   Exchange returns the long-lived token to the plugin; Worker stores nothing.
   Requires DGTL_GATEWAY_URL + license with meta. Support never collects Meta tokens.
   Hosted Login UI (PR-3b) is Noel-gated — do not deploy a Meta demo hostname here.
+
+TikTok: host-injected TIKTOK_ACCESS_TOKEN or PLUGIN_DATA/tiktok-oauth.json.
+  App id/secret stay on stamp. Requires DGTL_GATEWAY_URL + license feature tiktok
+  (Polar Pro does not mint tiktok until Noel sets POLAR_MINT_TIKTOK).
+  Support never collects TikTok tokens. Live Marketing API is a Noel gate.
 
 License: after Polar checkout, run auth redeem --code <code> or
   --checkout-id <uuid|polar_c_*> (stamp accepts both; needs DGTL_GATEWAY_URL

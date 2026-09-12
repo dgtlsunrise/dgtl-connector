@@ -2,7 +2,7 @@
 
 **Closed free tool count: 24.** (the original 22 plus `ga4_list_account_summaries` plus `gsc_describe_schema`)
 
-That 24 is the **Consent A kernel** (`CONSENT_A_TOOLS` / `FREE_TOOL_NAMES` alias). Shopify is **local-free** (`LOCAL_FREE_TOOLS`, merchant token, no Polar — fail `SHOPIFY_NOT_CONNECTED`). Ads/Meta/Merchant Center are **license-gated** (`LICENSE_GATED_TOOLS`, Polar Pro — fail `LICENSE_REQUIRED`). GBP is local-free when the flag is on (Consent B, not Consent A). Flag off → `GBP_NOT_ENABLED`. Flag on without Consent B → `GBP_NOT_CONNECTED`. Do not stuff Shopify into the 24-tool kernel.
+That 24 is the **Consent A kernel** (`CONSENT_A_TOOLS` / `FREE_TOOL_NAMES` alias). Shopify is **local-free** (`LOCAL_FREE_TOOLS`, merchant token, no Polar — fail `SHOPIFY_NOT_CONNECTED`). Ads/Meta/Merchant Center/TikTok are **license-gated** (`LICENSE_GATED_TOOLS`, Polar Pro — fail `LICENSE_REQUIRED`). TikTok requires JWT feature `tiktok` (not ads/meta). GBP is local-free when the flag is on (Consent B, not Consent A). Flag off → `GBP_NOT_ENABLED`. Flag on without Consent B → `GBP_NOT_CONNECTED`. Do not stuff Shopify into the 24-tool kernel.
 
 If you need a 25th **Consent A** tool, bump a version and update `schemas/v1/catalog.json` in the same change. Do not “just add it.” Quality over dump. Small typed tools, not a mega-query kitchen sink.
 
@@ -15,7 +15,7 @@ Machine-readable list: [`schemas/v1/catalog.json`](../schemas/v1/catalog.json). 
 ### ACTIVE / ENABLED only on confirm
 
 - `dry_run` **defaults true**. Omitted or `true` → proposed payload, **zero** mutate HTTP.
-- Live (`dry_run=false`) requires `confirm_phrase` containing the resource IDs for that tool (Ads: digits-only `customer_id`; Meta: `act_{ad_account_id}` plus child ids; Consent W: container `publicId`; Shopify writes: shop domain `*.myshopify.com`).
+- Live (`dry_run=false`) requires `confirm_phrase` containing the resource IDs for that tool (Ads: digits-only `customer_id`; Meta: `act_{ad_account_id}` plus child ids; TikTok: `advertiser_id` plus `campaign_id`; Consent W: container `publicId`; Shopify writes: shop domain `*.myshopify.com`).
 - **Harness:** a **user** message this turn must contain those IDs. List-tool output is not the user message (`harnessUserMessageContainsCustomerId` in `src/ads/gads-write.ts`).
 - Campaign / RSA / Meta **creates** default **PAUSED**.
 - **ACTIVE** (Meta) / **ENABLED** (Google Ads) only when the caller passes **explicit** `status` **and** live confirm. Do not infer ENABLED/ACTIVE from a dry-run or from a PAUSED parent.
@@ -34,12 +34,13 @@ Omitted `match_type` → **BROAD** (`gads_add_keywords` and Search-create stub k
 
 ### Dual-gate flag matrix
 
-Live Ads / Meta mutate requires **plugin AND Worker**. Plugin Ads / Meta mutate flags **stay default on** so Pro tools remain listed. Worker flags are **fail-closed** (unset / unknown → no live hop). Do **not** flip plugin defaults as safety theater.
+Live Ads / Meta / TikTok mutate requires **plugin AND Worker**. Plugin Ads / Meta / TikTok mutate flags **stay default on** so Pro tools remain listed. Worker flags are **fail-closed** (unset / unknown → no live hop). Do **not** flip plugin defaults as safety theater.
 
 | Surface | Plugin default | Worker default | Live mutate |
 | --- | --- | --- | --- |
 | Ads mutate (`DGTL_ADS_MUTATE_ENABLED` / `ADS_MUTATE_ENABLED`) | **on** | fail-closed (`false` until health `ads_mutate_enabled=true`) | both true |
 | Meta mutate (`DGTL_META_MUTATE_ENABLED` / `META_MUTATE_ENABLED`) | **on** | fail-closed | both true |
+| TikTok mutate (`DGTL_TIKTOK_MUTATE_ENABLED` / `TIKTOK_MUTATE_ENABLED`) | **on** | fail-closed (`tiktok_mutate_enabled`) | both true |
 | Consent W writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `GoogleWriteHttp`) | flag on + Consent W token |
 | Shopify writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `ShopifyHttp` mutation) | flag on + merchant `write_inventory` + shop-domain confirm |
 | GBP (`DGTL_GBP_ENABLED`) | **off** | n/a | flag on + Consent B token → GET hop (no stamp) |
@@ -677,4 +678,21 @@ Fail order for writes: `WRITE_NOT_ENABLED` → `SHOPIFY_NOT_CONNECTED` → `SHOP
 **Out of this wave:** customers dump, ShopifyQL, raw GraphQL, themes, Multipass, stamp multi-store vault, draft orders, price writes.
 
 Skill: `shopify-ads-mc-join` joins Shopify SKU → MC `offerId` → Ads listing groups. `shopify-readonly` covers list/get.
+
+## TikTok Ads (Polar `tiktok` + stamp hop)
+
+**Stamp hop** (`POST /v1/tiktok/{tool}`). App id + secret stay on the Worker (same class as Meta). Plugin holds only the advertiser user token (`TIKTOK_ACCESS_TOKEN` / `PLUGIN_DATA/tiktok-oauth.json`). JWT must include feature **`tiktok`** — Polar Pro mint today is `ads`+`meta` only until Noel sets `POLAR_MINT_TIKTOK`. Do not overload ads/meta bits.
+
+Fail order (reads): `LICENSE_REQUIRED` → `GATEWAY_UNAVAILABLE` → `TIKTOK_NOT_CONNECTED` → hop.
+
+| Tool | Notes |
+| --- | --- |
+| `tiktok_list_advertisers` | Discover `advertiser_id`. Worker injects app_id+secret on `oauth2/advertiser/get`. |
+| `tiktok_list_campaigns` | Requires `advertiser_id`. |
+| `tiktok_insights` | Requires `advertiser_id` + `date_start`/`date_stop` (YYYY-MM-DD). Optional `level`: advertiser/campaign/adgroup/ad. Closed BASIC metrics. |
+| `tiktok_update_campaign` | Mutate. Status `ENABLE`/`DISABLE` (`ACTIVE`→ENABLE, `PAUSED`→DISABLE). `dry_run` default true. Live: `confirm_phrase` must contain `advertiser_id` AND `campaign_id`. Plugin flag default **on**; Worker `TIKTOK_MUTATE_ENABLED` default **off**. No DELETE / budget / create. |
+
+Live TikTok app + Marketing API + secrets + Polar `tiktok` mint are **Noel gates**. Code lands with fixtures. Never Axos.
+
+Skill: `tiktok-ads`.
 

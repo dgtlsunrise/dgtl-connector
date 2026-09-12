@@ -5,6 +5,7 @@ import {
   HostInjectedGbpTokenSource,
   HostInjectedMcTokenSource,
   HostInjectedMetaTokenSource,
+  HostInjectedTikTokTokenSource,
   HostInjectedTokenSource,
   HostInjectedWriteTokenSource,
 } from "./host-injected.js";
@@ -128,6 +129,18 @@ export class AuthPort implements AccessTokenSource {
     return new AuthPort(
       [new HostInjectedMetaTokenSource(env), new FileTokenSource(opts.pluginDataDir, STORE_FILE.meta)],
       "authport-meta",
+    );
+  }
+
+  /** TikTok user — TIKTOK_ACCESS_TOKEN / tiktok-oauth.json (no Google refresh). */
+  static tiktokFromEnv(opts: {
+    env?: NodeJS.ProcessEnv;
+    pluginDataDir: string;
+  }): AuthPort {
+    const env = opts.env ?? process.env;
+    return new AuthPort(
+      [new HostInjectedTikTokTokenSource(env), new FileTokenSource(opts.pluginDataDir, STORE_FILE.tiktok)],
+      "authport-tiktok",
     );
   }
 

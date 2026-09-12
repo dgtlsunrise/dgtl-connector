@@ -8,6 +8,7 @@ import { SHOPIFY_STORE_FILE } from "../shopify/auth.js";
 export type PluginFlagBooleans = {
   adsMutateEnabled: boolean;
   metaMutateEnabled: boolean;
+  tiktokMutateEnabled: boolean;
   writesEnabled: boolean;
   gbpEnabled: boolean;
 };
@@ -16,6 +17,7 @@ export type PluginFlagBooleans = {
 export type WorkerFlagBooleans = {
   adsMutateEnabled: boolean | null;
   metaMutateEnabled: boolean | null;
+  tiktokMutateEnabled: boolean | null;
 };
 
 /** Dual-gate lane: live mutate requires plugin AND Worker both true. All booleans. */
@@ -29,6 +31,7 @@ export type DualGateLane = {
 export type DualGateMatrix = {
   ads: DualGateLane;
   meta: DualGateLane;
+  tiktok: DualGateLane;
 };
 
 export type ConsentStorePresence = {
@@ -38,6 +41,7 @@ export type ConsentStorePresence = {
   consent_mc: boolean;
   consent_b: boolean;
   meta: boolean;
+  tiktok: boolean;
   shopify: boolean;
 };
 
@@ -45,6 +49,7 @@ export function pluginFlagBooleans(flags: Flags): PluginFlagBooleans {
   return {
     adsMutateEnabled: flags.adsMutateEnabled,
     metaMutateEnabled: flags.metaMutateEnabled,
+    tiktokMutateEnabled: flags.tiktokMutateEnabled,
     writesEnabled: flags.writesEnabled,
     gbpEnabled: flags.gbpEnabled,
   };
@@ -65,6 +70,7 @@ export function dualGateMatrix(plugin: PluginFlagBooleans, worker: WorkerFlagBoo
   return {
     ads: lane(plugin.adsMutateEnabled, worker.adsMutateEnabled),
     meta: lane(plugin.metaMutateEnabled, worker.metaMutateEnabled),
+    tiktok: lane(plugin.tiktokMutateEnabled, worker.tiktokMutateEnabled),
   };
 }
 
@@ -77,6 +83,7 @@ export function consentStorePresence(pluginDataDir: string): ConsentStorePresenc
     consent_mc: existsSync(join(pluginDataDir, STORE_FILE.mc)),
     consent_b: existsSync(join(pluginDataDir, STORE_FILE.gbp)),
     meta: existsSync(join(pluginDataDir, STORE_FILE.meta)),
+    tiktok: existsSync(join(pluginDataDir, STORE_FILE.tiktok)),
     shopify: existsSync(join(pluginDataDir, SHOPIFY_STORE_FILE)),
   };
 }

@@ -1630,3 +1630,34 @@ export const shopifyAdjustInventory = z
   .strict()
   .superRefine(requireConfirmWhenLive);
 
+/** TikTok Ads — Polar `tiktok` + stamp hop. App secret never in this plugin. */
+export const tiktokListAdvertisers = emptyInput;
+
+export const tiktokListCampaigns = z
+  .object({
+    advertiser_id: z.string().min(1),
+    page_size: pageSize,
+  })
+  .strict();
+
+export const tiktokInsights = z
+  .object({
+    advertiser_id: z.string().min(1),
+    level: z.enum(["advertiser", "campaign", "adgroup", "ad"]).optional(),
+    date_start: z.string().min(1),
+    date_stop: z.string().min(1),
+    page_size: pageSize,
+  })
+  .strict();
+
+export const tiktokUpdateCampaign = z
+  .object({
+    advertiser_id: z.string().min(1),
+    campaign_id: z.string().min(1),
+    status: z.enum(["ENABLE", "DISABLE", "ACTIVE", "PAUSED"]),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+

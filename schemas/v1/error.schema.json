@@ -51,7 +51,10 @@
         "MC_NOT_CONNECTED",
         "MC_SCOPE_MISSING",
         "GBP_NOT_CONNECTED",
-        "GBP_SCOPE_MISSING"
+        "GBP_SCOPE_MISSING",
+        "TIKTOK_NOT_CONNECTED",
+        "TIKTOK_MUTATE_NOT_ENABLED",
+        "TIKTOK_SCOPE_MISSING"
       ]
     },
     "message": {

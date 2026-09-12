@@ -33,6 +33,9 @@ export const ERROR_CODES = [
   "MC_SCOPE_MISSING",
   "GBP_NOT_CONNECTED",
   "GBP_SCOPE_MISSING",
+  "TIKTOK_NOT_CONNECTED",
+  "TIKTOK_MUTATE_NOT_ENABLED",
+  "TIKTOK_SCOPE_MISSING",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -72,7 +75,7 @@ export const MSG = {
   UNSUPPORTED_OPERATION:
     "v1 is read-only. I cannot publish Tag Manager containers, create tags, submit sitemaps, request indexing, or create GA4–Search Console links (analytics.readonly cannot create those links). Use the Google UI.",
   LICENSE_REQUIRED:
-    "This tool needs DGTL Pro ($19/mo flat, unlimited) for Google Ads / Meta Ads. Free GA4, Search Console, Tag Manager, and local Shopify tools still work. Get Pro at https://www.dgtlsunrise.com/ then paste a license JWT via DGTL_LICENSE_JWT or PLUGIN_DATA/license.jwt — never a Google Ads developer-token.",
+    "This tool needs DGTL Pro ($19/mo flat, unlimited) for Google Ads / Meta Ads (and a separate Polar `tiktok` feature for TikTok Ads). Free GA4, Search Console, Tag Manager, and local Shopify tools still work. Get Pro at https://www.dgtlsunrise.com/ then paste a license JWT via DGTL_LICENSE_JWT or PLUGIN_DATA/license.jwt — never a Google Ads developer-token. TikTok is not included in ads/meta bits until Noel mints `tiktok`.",
   GATEWAY_UNAVAILABLE:
     "The DGTL Ads/Meta gateway is not reachable. Set DGTL_GATEWAY_URL to https://stamp.dgtlsunrise.com (backup https://dgtl-stamp.noel-4ea.workers.dev), or wait until the hosted gateway is up. Free GA4, Search Console, and Tag Manager tools still work. This is not a missing Ads OAuth reconnect.",
   FEEDBACK_GATEWAY_UNAVAILABLE:
@@ -113,6 +116,12 @@ export const MSG = {
     "This Shopify token is missing a required Admin API scope. Default install is read_products + read_orders + read_inventory + read_locations. write_inventory is an explicit merchant-app expansion (not Polar, not stamp vault).",
   META_NOT_CONNECTED:
     "Meta Ads is a separate OAuth (ads_read). After a valid DGTL license + gateway, set META_ACCESS_TOKEN or run `dgtl-connector-mcp auth login-meta --code <grant>`. Support never collects Meta tokens; the app secret is never in this plugin.",
+  TIKTOK_NOT_CONNECTED:
+    "TikTok Ads is a separate OAuth (Marketing API advertiser grant). After a valid DGTL license with feature `tiktok` + gateway, set TIKTOK_ACCESS_TOKEN or PLUGIN_DATA/tiktok-oauth.json. Support never collects TikTok tokens; the app secret is never in this plugin.",
+  TIKTOK_MUTATE_NOT_ENABLED:
+    "TikTok Ads mutate tools are opted out (DGTL_TIKTOK_MUTATE_ENABLED=false). Plugin defaults on; unset the env or set true to re-enable. Live hop still needs Worker TIKTOK_MUTATE_ENABLED=true after Marketing API write access. Reads still work with Pro + tiktok feature.",
+  TIKTOK_SCOPE_MISSING:
+    "This TikTok login did not grant Marketing API access for this advertiser (or TikTok denied the mutate). Re-authorize after app review. Do not silently retry. Reads may still work.",
   INVALID_ARGUMENT:
     "Google rejected the request (INVALID_ARGUMENT). Check dates (YYYY-MM-DD), GA4 limits (≤9 dimensions, ≤10 metrics), and names from ga4_get_metadata. I will not invent a replacement metric.",
   NOT_FOUND:

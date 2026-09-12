@@ -150,3 +150,23 @@ export class HostInjectedMetaTokenSource implements AccessTokenSource {
     };
   }
 }
+
+/** TikTok user host-injected — TIKTOK_ACCESS_TOKEN only. Never Google A / Meta. */
+export class HostInjectedTikTokTokenSource implements AccessTokenSource {
+  readonly name = "host-injected-tiktok";
+
+  constructor(private readonly env: NodeJS.ProcessEnv = process.env) {}
+
+  async getAccessToken(): Promise<AccessToken | null> {
+    const accessToken = this.env.TIKTOK_ACCESS_TOKEN?.trim();
+    if (!accessToken) return null;
+    const expiresRaw = this.env.TIKTOK_ACCESS_TOKEN_EXPIRES_IN;
+    const expiresIn = expiresRaw ? Number(expiresRaw) : undefined;
+    return {
+      accessToken,
+      expiresIn: Number.isFinite(expiresIn) ? expiresIn : undefined,
+      scopes: parseScopeList(this.env.TIKTOK_GRANTED_SCOPES),
+      source: "host-injected",
+    };
+  }
+}

@@ -206,8 +206,10 @@ describe("doctor CLI (no secrets)", () => {
       assert.deepEqual(report.flags.plugin, W03.plugin_mutate_defaults);
       assert.equal(report.flags.worker.adsMutateEnabled, null);
       assert.equal(report.flags.worker.metaMutateEnabled, null);
+      assert.equal(report.flags.worker.tiktokMutateEnabled, null);
       assert.equal(report.dual_gate.ads.plugin_mutate_enabled, true);
       assert.equal(report.dual_gate.meta.plugin_mutate_enabled, true);
+      assert.equal(report.dual_gate.tiktok.plugin_mutate_enabled, true);
       assert.equal(report.dual_gate.ads.worker_mutate_enabled, false);
       assert.equal(report.dual_gate.meta.worker_mutate_enabled, false);
       assert.equal(report.dual_gate.ads.worker_flag_known, false);
@@ -223,12 +225,14 @@ describe("doctor CLI (no secrets)", () => {
       assert.ok(text.includes("live=false"));
       assert.ok(text.includes("adsMutateEnabled: true"));
       assert.ok(text.includes("metaMutateEnabled: true"));
+      assert.ok(text.includes("tiktokMutateEnabled: true"));
       assert.ok(text.includes("writesEnabled: false"));
       assert.ok(text.includes("gbpEnabled: false"));
       assert.ok(!text.includes("host-token-not-printed"));
       for (const k of W03.dual_gate_lane_keys) {
         assert.ok(k in report.dual_gate.ads, k);
         assert.ok(k in report.dual_gate.meta, k);
+        assert.ok(k in report.dual_gate.tiktok, k);
       }
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -242,6 +246,7 @@ describe("doctor CLI (no secrets)", () => {
       writeFileSync(join(dir, "google-oauth-ads.json"), JSON.stringify({ access_token: "ads-secret-must-not-print" }));
       writeFileSync(join(dir, "google-oauth-write.json"), JSON.stringify({ access_token: "write-secret-must-not-print" }));
       writeFileSync(join(dir, "meta-oauth.json"), JSON.stringify({ access_token: "meta-secret-must-not-print" }));
+      writeFileSync(join(dir, "tiktok-oauth.json"), JSON.stringify({ access_token: "tiktok-secret-must-not-print" }));
       writeFileSync(join(dir, "google-oauth-mc.json"), JSON.stringify({ access_token: "mc-secret-must-not-print" }));
       writeFileSync(join(dir, "google-oauth-gbp.json"), JSON.stringify({ access_token: "gbp-secret-must-not-print" }));
       writeFileSync(join(dir, "shopify-oauth.json"), JSON.stringify({ access_token: "shpat_secret-must-not-print" }));
@@ -254,6 +259,7 @@ describe("doctor CLI (no secrets)", () => {
       assert.equal(report.plugin_data.google_oauth_ads_json, true);
       assert.equal(report.plugin_data.google_oauth_write_json, true);
       assert.equal(report.plugin_data.meta_oauth_json, true);
+      assert.equal(report.plugin_data.tiktok_oauth_json, true);
       assert.equal(report.plugin_data.google_oauth_mc_json, true);
       assert.equal(report.plugin_data.google_oauth_gbp_json, true);
       assert.equal(report.plugin_data.shopify_oauth_json, true);
@@ -264,6 +270,7 @@ describe("doctor CLI (no secrets)", () => {
         consent_mc: true,
         consent_b: true,
         meta: true,
+        tiktok: true,
         shopify: true,
       });
       for (const k of W03.store_keys) assert.ok(k in report.stores, k);
@@ -276,6 +283,7 @@ describe("doctor CLI (no secrets)", () => {
       assert.ok(!text.includes("ads-secret-must-not-print"));
       assert.ok(!text.includes("write-secret-must-not-print"));
       assert.ok(!text.includes("meta-secret-must-not-print"));
+      assert.ok(!text.includes("tiktok-secret-must-not-print"));
       assert.ok(!text.includes("shpat_secret-must-not-print"));
       assert.ok(!text.includes("mc-secret-must-not-print"));
       assert.ok(!text.includes("gbp-secret-must-not-print"));
@@ -304,6 +312,7 @@ describe("doctor CLI (no secrets)", () => {
               service: "stamp",
               ads_mutate_enabled: true,
               meta_mutate_enabled: false,
+              tiktok_mutate_enabled: false,
             }),
             { status: 200, headers: { "content-type": "application/json" } },
           );
@@ -314,8 +323,10 @@ describe("doctor CLI (no secrets)", () => {
       assert.equal(report.gateway.host, "stamp.example.test");
       assert.equal(report.flags.worker.adsMutateEnabled, true);
       assert.equal(report.flags.worker.metaMutateEnabled, false);
+      assert.equal(report.flags.worker.tiktokMutateEnabled, false);
       assert.equal(report.dual_gate.ads.live_mutate_possible, true);
       assert.equal(report.dual_gate.meta.live_mutate_possible, false);
+      assert.equal(report.dual_gate.tiktok.live_mutate_possible, false);
       assert.equal(report.dual_gate.ads.worker_flag_known, true);
       const text = formatDoctorReport(report);
       assert.ok(text.includes("host=stamp.example.test"));

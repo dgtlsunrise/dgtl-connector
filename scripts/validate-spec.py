@@ -56,6 +56,7 @@ SKILLS = [
     "shopify-readonly",
     "shopify-ads-mc-join",
     "shopping-mc-readiness",
+    "tiktok-ads",
 ]
 
 SCOPES = [
@@ -226,7 +227,7 @@ def check_catalog_and_tools() -> None:
             )
         elif "shopify_adjust_inventory" in names:
             err("catalog.json: Shopify write tool must not be in Consent A tools[]")
-        for paid in ("gads_search", "meta_insights", "mc_list_products"):
+        for paid in ("gads_search", "meta_insights", "mc_list_products", "tiktok_list_advertisers", "tiktok_insights"):
             g = by_name.get(paid)
             if not g:
                 err(f"catalog.json gated_tools missing {paid}")

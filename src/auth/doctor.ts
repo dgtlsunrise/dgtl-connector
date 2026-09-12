@@ -37,6 +37,7 @@ export const DOCTOR_ENV_NAMES = [
   "GOOGLE_WRITE_ACCESS_TOKEN",
   "GOOGLE_OAUTH_WRITE_CLIENT_ID",
   "META_ACCESS_TOKEN",
+  "TIKTOK_ACCESS_TOKEN",
   "GOOGLE_OAUTH_WRITE_CLIENT_SECRET",
   "SHOPIFY_CLIENT_SECRET",
   "SHOPIFY_CLIENT_ID",
@@ -49,6 +50,7 @@ export const DOCTOR_ENV_NAMES = [
   "DGTL_WRITES_ENABLED",
   "DGTL_ADS_MUTATE_ENABLED",
   "DGTL_META_MUTATE_ENABLED",
+  "DGTL_TIKTOK_MUTATE_ENABLED",
   "DGTL_GBP_ENABLED",
   "DGTL_SKIP_UPDATE_CHECK",
   "DGTL_AUDIT_LOCAL",
@@ -80,6 +82,7 @@ export type DoctorReport = {
     google_oauth_mc_json: boolean;
     google_oauth_gbp_json: boolean;
     meta_oauth_json: boolean;
+    tiktok_oauth_json: boolean;
     shopify_oauth_json: boolean;
     license_jwt: boolean;
   };
@@ -100,6 +103,7 @@ export type DoctorReport = {
     features: string[];
     ads: boolean;
     meta: boolean;
+    tiktok: boolean;
     /** Present only when locally verifiable; never the JWT or payload body. */
     missing_features?: string[];
   };
@@ -171,6 +175,7 @@ export async function collectDoctor(opts: DoctorOpts): Promise<DoctorReport> {
   const worker: WorkerFlagBooleans = {
     adsMutateEnabled: probe.reachable ? (probe.ads_mutate_enabled ?? null) : null,
     metaMutateEnabled: probe.reachable ? (probe.meta_mutate_enabled ?? null) : null,
+    tiktokMutateEnabled: probe.reachable ? (probe.tiktok_mutate_enabled ?? null) : null,
   };
 
   const hostInjected = envSet(env, "GOOGLE_ACCESS_TOKEN") || envSet(env, "DGTL_GOOGLE_ACCESS_TOKEN");
@@ -196,6 +201,7 @@ export async function collectDoctor(opts: DoctorOpts): Promise<DoctorReport> {
       google_oauth_mc_json: stores.consent_mc,
       google_oauth_gbp_json: stores.consent_b,
       meta_oauth_json: stores.meta,
+      tiktok_oauth_json: stores.tiktok,
       shopify_oauth_json: stores.shopify,
       license_jwt: licenseJwtFile,
     },
@@ -213,6 +219,7 @@ export async function collectDoctor(opts: DoctorOpts): Promise<DoctorReport> {
       features,
       ads: features.includes("ads"),
       meta: features.includes("meta"),
+      tiktok: features.includes("tiktok"),
       ...(present && status === "valid" && missing_features.length > 0 ? { missing_features } : {}),
     },
     auth: {
@@ -248,12 +255,14 @@ export function formatDoctorReport(report: DoctorReport): string {
     `  google-oauth-mc.json (Consent MC): ${report.plugin_data.google_oauth_mc_json ? "present" : "absent"}`,
     `  google-oauth-gbp.json (Consent B): ${report.plugin_data.google_oauth_gbp_json ? "present" : "absent"}`,
     `  meta-oauth.json: ${report.plugin_data.meta_oauth_json ? "present" : "absent"}`,
+    `  tiktok-oauth.json: ${report.plugin_data.tiktok_oauth_json ? "present" : "absent"}`,
     `  shopify-oauth.json: ${report.plugin_data.shopify_oauth_json ? "present" : "absent"}`,
     `  license.jwt: ${report.plugin_data.license_jwt ? "present" : "absent"}`,
     "",
-    "plugin flags (ads/meta mutate default ON; writes/gbp default OFF):",
+    "plugin flags (ads/meta/tiktok mutate default ON; writes/gbp default OFF):",
     `  adsMutateEnabled: ${report.flags.plugin.adsMutateEnabled}`,
     `  metaMutateEnabled: ${report.flags.plugin.metaMutateEnabled}`,
+    `  tiktokMutateEnabled: ${report.flags.plugin.tiktokMutateEnabled}`,
     `  writesEnabled: ${report.flags.plugin.writesEnabled}`,
     `  gbpEnabled: ${report.flags.plugin.gbpEnabled}`,
     "",
@@ -262,10 +271,12 @@ export function formatDoctorReport(report: DoctorReport): string {
     "worker flags (fail-closed; unknown unless health reachable):",
     `  adsMutateEnabled: ${workerFlagLine(report.flags.worker.adsMutateEnabled)}`,
     `  metaMutateEnabled: ${workerFlagLine(report.flags.worker.metaMutateEnabled)}`,
+    `  tiktokMutateEnabled: ${workerFlagLine(report.flags.worker.tiktokMutateEnabled)}`,
     "",
     "dual-gate (live mutate = plugin AND worker; booleans only):",
     `  ads: plugin=${report.dual_gate.ads.plugin_mutate_enabled} worker=${report.dual_gate.ads.worker_mutate_enabled} worker_known=${report.dual_gate.ads.worker_flag_known} live=${report.dual_gate.ads.live_mutate_possible}`,
     `  meta: plugin=${report.dual_gate.meta.plugin_mutate_enabled} worker=${report.dual_gate.meta.worker_mutate_enabled} worker_known=${report.dual_gate.meta.worker_flag_known} live=${report.dual_gate.meta.live_mutate_possible}`,
+    `  tiktok: plugin=${report.dual_gate.tiktok.plugin_mutate_enabled} worker=${report.dual_gate.tiktok.worker_mutate_enabled} worker_known=${report.dual_gate.tiktok.worker_flag_known} live=${report.dual_gate.tiktok.live_mutate_possible}`,
     "",
     `license: ${licenseLine(report)}`,
     `auth: host_injected=${report.auth.host_injected} pkce_store=${report.auth.pkce_store} GOOGLE_OAUTH_CLIENT_ID=${report.auth.oauth_client_id}`,

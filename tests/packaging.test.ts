@@ -135,6 +135,9 @@ describe("packaging and secrets", () => {
       "meta_describe_insights_schema",
       "mc_list_products",
       "mc_list_product_statuses",
+      "tiktok_list_advertisers",
+      "tiktok_insights",
+      "tiktok_update_campaign",
     ]) {
       assert.ok(LICENSE_GATED_TOOLS.includes(name), name);
       const g = catalog.gated_tools.find((x: { name: string }) => x.name === name);

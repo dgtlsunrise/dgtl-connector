@@ -123,6 +123,6 @@ export function writeLicenseToken(pluginDataDir: string, token: string): void {
   }
 }
 
-export function hasFeature(status: LicenseStatus, feature: "ads" | "meta"): boolean {
+export function hasFeature(status: LicenseStatus, feature: "ads" | "meta" | "tiktok"): boolean {
   return status.ok && status.features.includes(feature);
 }

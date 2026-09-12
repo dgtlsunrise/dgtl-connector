@@ -1,6 +1,6 @@
 # Architecture
 
-**Lock:** `ARCHITECTURE-LOCK.md`, `SECOND-OPINION.md`, and [ops/PRODUCT-DESIGN.md](ops/PRODUCT-DESIGN.md) override this file on auth, paid topology, and packaging. stdio auth is **AuthPort** (host-injected token, then installed-app PKCE). There is no Gmail-style Connect card for stdio. Paid Ads/Meta use a DGTL allowlisted gateway in the **same** plugin (not a second MCP; not in this package yet). This file is the vendored cloud spec; keep it for the **24**-tool free kernel and error/non-bug discussion.
+**Lock:** `ARCHITECTURE-LOCK.md`, `SECOND-OPINION.md`, and [ops/PRODUCT-DESIGN.md](ops/PRODUCT-DESIGN.md) override this file on auth, paid topology, and packaging. stdio auth is **AuthPort** (host-injected token, then installed-app PKCE). There is no Gmail-style Connect card for stdio. Paid Ads/Meta/TikTok use a DGTL allowlisted gateway in the **same** plugin (not a second MCP; not in this package yet). This file is the vendored cloud spec; keep it for the **24**-tool free kernel and error/non-bug discussion.
 
 v1 is a **local MCP server** packaged as an **Agent Plugin**. Google API calls for GA4 / GSC / GTM leave the **user's** computer **directly to Google**. DGTL Sunrise is not on that path.
 

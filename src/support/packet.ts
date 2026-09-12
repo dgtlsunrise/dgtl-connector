@@ -43,6 +43,7 @@ export type SupportPacketData = SupportFields & {
     features: string[];
     ads: boolean;
     meta: boolean;
+    tiktok: boolean;
   };
   stores: ConsentStorePresence;
 };
@@ -91,6 +92,7 @@ export async function collectSupportPacket(
   const worker: WorkerFlagBooleans = {
     adsMutateEnabled: probe.reachable ? (probe.ads_mutate_enabled ?? null) : null,
     metaMutateEnabled: probe.reachable ? (probe.meta_mutate_enabled ?? null) : null,
+    tiktokMutateEnabled: probe.reachable ? (probe.tiktok_mutate_enabled ?? null) : null,
   };
   const features = safeLicenseFeatures(ctx.license.features);
   return {
@@ -108,6 +110,7 @@ export async function collectSupportPacket(
       features,
       ads: features.includes("ads"),
       meta: features.includes("meta"),
+      tiktok: features.includes("tiktok"),
     },
     stores: consentStorePresence(ctx.pluginDataDir),
   };

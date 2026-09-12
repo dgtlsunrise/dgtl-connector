@@ -50,6 +50,7 @@ export type GatewayParams = {
   amount_micros?: string | number;
   daily_budget_dollars?: number;
   ad_account_id?: string;
+  advertiser_id?: string;
   object_id?: string;
   level?: "account" | "campaign" | "adset" | "ad";
   date_start?: string;
@@ -206,6 +207,8 @@ export type GatewayReachable = {
   ads_mutate_enabled?: boolean | null;
   /** Worker META_MUTATE_ENABLED — boolean from health, else null. Never the env string. */
   meta_mutate_enabled?: boolean | null;
+  /** Worker TIKTOK_MUTATE_ENABLED — boolean from health, else null. Never the env string. */
+  tiktok_mutate_enabled?: boolean | null;
 };
 
 function healthBool(value: unknown): boolean | null {
@@ -254,6 +257,7 @@ export async function probeGatewayReachable(
       ok?: boolean;
       ads_mutate_enabled?: unknown;
       meta_mutate_enabled?: unknown;
+      tiktok_mutate_enabled?: unknown;
     } = {};
     try {
       body = (await res.json()) as typeof body;
@@ -267,6 +271,7 @@ export async function probeGatewayReachable(
       reachable: true,
       ads_mutate_enabled: healthBool(body.ads_mutate_enabled),
       meta_mutate_enabled: healthBool(body.meta_mutate_enabled),
+      tiktok_mutate_enabled: healthBool(body.tiktok_mutate_enabled),
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -296,6 +301,7 @@ export const GATEWAY_PARAM_ALLOW = new Set([
   "amount_micros",
   "daily_budget_dollars",
   "ad_account_id",
+  "advertiser_id",
   "object_id",
   "level",
   "date_start",
@@ -672,6 +678,9 @@ const KNOWN_ERROR_CODES = new Set<string>([
   "META_MUTATE_NOT_ENABLED",
   "META_SCOPE_MISSING",
   "SPEND_CAP_EXCEEDED",
+  "TIKTOK_NOT_CONNECTED",
+  "TIKTOK_MUTATE_NOT_ENABLED",
+  "TIKTOK_SCOPE_MISSING",
 ]);
 
 function mapGatewayResponse(tool: string, body: Record<string, unknown>, httpStatus: number): Envelope {
@@ -708,15 +717,15 @@ function mapGatewayResponse(tool: string, body: Record<string, unknown>, httpSta
 }
 
 export type GatewayHopOpts = {
-  family: "gads" | "meta";
+  family: "gads" | "meta" | "tiktok";
   tool: string;
-  /** User access token from Consent C or Meta store only. */
+  /** User access token from Consent C, Meta, or TikTok store only. */
   userAccessToken: string;
   args?: Record<string, unknown>;
 };
 
 /**
- * POST GatewayRequest to /v1/gads/{tool} or /v1/meta/{tool}.
+ * POST GatewayRequest to /v1/gads/{tool}, /v1/meta/{tool}, or /v1/tiktok/{tool}.
  * Never attaches developer-token. Never sends open proxy URL hops (closed final_url/file_url/link OK).
  * Does not read ctx.auth or GOOGLE_ACCESS_TOKEN.
  */
@@ -758,7 +767,11 @@ export async function postGateway(ctx: AppContext, opts: GatewayHopOpts): Promis
   }
 
   const path =
-    opts.family === "gads" ? `${base}/v1/gads/${opts.tool}` : `${base}/v1/meta/${opts.tool}`;
+    opts.family === "gads"
+      ? `${base}/v1/gads/${opts.tool}`
+      : opts.family === "tiktok"
+        ? `${base}/v1/tiktok/${opts.tool}`
+        : `${base}/v1/meta/${opts.tool}`;
   const requestId = newRequestId();
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), HOP_TIMEOUT_MS);

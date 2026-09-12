@@ -279,3 +279,24 @@ Consent MC token present but missing `https://www.googleapis.com/auth/content`. 
 **User-visible:**  
 "This Merchant Center login did not grant https://www.googleapis.com/auth/content. Re-authorize Consent MC (`auth login-mc` or GOOGLE_MC_ACCESS_TOKEN). Do not add content scope to Consent A."
 
+### `TIKTOK_NOT_CONNECTED`
+
+TikTok Ads tools without an advertiser user token. Polar feature `tiktok` + gateway are not enough. App secret stays on the Worker.
+
+**User-visible:**  
+"TikTok Ads is a separate OAuth (Marketing API advertiser grant). After a valid DGTL license with feature `tiktok` + gateway, set TIKTOK_ACCESS_TOKEN or PLUGIN_DATA/tiktok-oauth.json. Support never collects TikTok tokens; the app secret is never in this plugin."
+
+### `TIKTOK_MUTATE_NOT_ENABLED`
+
+Plugin TikTok mutate opted out, or Worker `TIKTOK_MUTATE_ENABLED` is off. Reads still work with the tiktok license.
+
+**User-visible:**  
+"TikTok Ads mutate tools are opted out (DGTL_TIKTOK_MUTATE_ENABLED=false). Plugin defaults on; unset the env or set true to re-enable. Live hop still needs Worker TIKTOK_MUTATE_ENABLED=true after Marketing API write access. Reads still work with Pro + tiktok feature."
+
+### `TIKTOK_SCOPE_MISSING`
+
+TikTok token lacks Marketing API permission for this advertiser (or TikTok denied the mutate). Re-authorize after app review. Do not silently retry.
+
+**User-visible:**  
+"This TikTok login did not grant Marketing API access for this advertiser (or TikTok denied the mutate). Re-authorize after app review. Do not silently retry. Reads may still work."
+

@@ -218,14 +218,16 @@ describe("session proofs", () => {
     assert.ok(LOCAL_FREE_TOOLS.includes("shopify_get_shop"));
     assert.ok(LOCAL_FREE_TOOLS.includes("gbp_list_accounts"));
 
-    const adsMeta = TOOLS.filter((t) => t.family === "gads" || t.family === "meta" || t.family === "mc").map(
-      (t) => t.name,
-    );
+    const adsMeta = TOOLS.filter(
+      (t) => t.family === "gads" || t.family === "meta" || t.family === "mc" || t.family === "tiktok",
+    ).map((t) => t.name);
     assert.ok(adsMeta.includes("gads_search"));
     assert.ok(adsMeta.includes("meta_insights"));
     assert.ok(adsMeta.includes("gads_describe_recipes"));
     assert.ok(adsMeta.includes("meta_describe_insights_schema"));
     assert.ok(adsMeta.includes("mc_list_products"));
+    assert.ok(adsMeta.includes("tiktok_list_advertisers"));
+    assert.ok(LICENSE_GATED_TOOLS.includes("tiktok_update_campaign"));
     assert.ok(LICENSE_GATED_TOOLS.includes("mc_list_product_statuses"));
     for (const name of adsMeta) {
       assert.ok(LICENSE_GATED_TOOLS.includes(name), name);

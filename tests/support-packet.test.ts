@@ -121,7 +121,7 @@ describe("support_packet", () => {
       const data = env.data as {
         flags?: { plugin?: Record<string, boolean>; worker?: Record<string, boolean | null> };
         stores?: Record<string, boolean>;
-        license?: { present?: boolean; ok?: boolean; features?: string[]; ads?: boolean; meta?: boolean };
+        license?: { present?: boolean; ok?: boolean; features?: string[]; ads?: boolean; meta?: boolean; tiktok?: boolean };
         gateway?: { configured?: boolean; reachable?: boolean; host?: string | null };
         dual_gate?: { ads?: Record<string, boolean>; meta?: Record<string, boolean> };
       };
@@ -141,6 +141,7 @@ describe("support_packet", () => {
       assert.deepEqual(data.license?.features, ["ads", "meta"]);
       assert.equal(data.license?.ads, true);
       assert.equal(data.license?.meta, true);
+      assert.equal(data.license?.tiktok, false);
       assert.equal(data.gateway?.configured, false);
       assert.equal(data.gateway?.reachable, false);
       assert.equal(data.gateway?.host, null);
@@ -181,6 +182,7 @@ describe("support_packet", () => {
               version: "0.0.1-pr9",
               ads_mutate_enabled: true,
               meta_mutate_enabled: false,
+              tiktok_mutate_enabled: false,
             }),
             { status: 200, headers: { "content-type": "application/json" } },
           )) as typeof fetch,

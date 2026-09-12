@@ -14,10 +14,16 @@ export type Flags = {
    * Mirror of Worker META_MUTATE_ENABLED — Worker flag still required for live mutate hop.
    */
   metaMutateEnabled: boolean;
+  /**
+   * TikTok Ads mutate tools (campaign status).
+   * Default on when env unset; opt out with DGTL_TIKTOK_MUTATE_ENABLED / TIKTOK_MUTATE_ENABLED=false.
+   * Mirror of Worker TIKTOK_MUTATE_ENABLED — Worker flag still required for live mutate hop.
+   */
+  tiktokMutateEnabled: boolean;
   /** Append redacted tool audit lines to PLUGIN_DATA/audit.jsonl. Default off. */
   auditLocal: boolean;
   /**
-   * DGTL Worker base URL (no trailing slash). Unset → paid Ads/Meta return GATEWAY_UNAVAILABLE.
+   * DGTL Worker base URL (no trailing slash). Unset → paid Ads/Meta/TikTok return GATEWAY_UNAVAILABLE.
    * Power-user DGTL_ADS_DEVELOPER_TOKEN bypass is unimplemented.
    */
   gatewayUrl: string | undefined;
@@ -52,6 +58,7 @@ export function loadFlags(env: NodeJS.ProcessEnv = process.env): Flags {
     writesEnabled: truthy(env.DGTL_WRITES_ENABLED || env.WRITES_ENABLED),
     adsMutateEnabled: envFlag(env.DGTL_ADS_MUTATE_ENABLED, env.ADS_MUTATE_ENABLED, true),
     metaMutateEnabled: envFlag(env.DGTL_META_MUTATE_ENABLED, env.META_MUTATE_ENABLED, true),
+    tiktokMutateEnabled: envFlag(env.DGTL_TIKTOK_MUTATE_ENABLED, env.TIKTOK_MUTATE_ENABLED, true),
     auditLocal: truthy(env.DGTL_AUDIT_LOCAL),
     gatewayUrl: raw ? raw.replace(/\/+$/, "") : undefined,
     feedbackUrl: feedbackRaw ? feedbackRaw.replace(/\/+$/, "") : undefined,

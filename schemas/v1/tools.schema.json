@@ -1473,6 +1473,77 @@
         "name",
         "creative_id"
       ]
+    },
+    "tiktok_list_advertisers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "tiktok_list_campaigns": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "advertiser_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "page_size": {
+          "$ref": "#/$defs/page_size"
+        }
+      },
+      "required": ["advertiser_id"]
+    },
+    "tiktok_insights": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "advertiser_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "level": {
+          "type": "string",
+          "enum": ["advertiser", "campaign", "adgroup", "ad"]
+        },
+        "date_start": {
+          "type": "string",
+          "minLength": 1
+        },
+        "date_stop": {
+          "type": "string",
+          "minLength": 1
+        },
+        "page_size": {
+          "$ref": "#/$defs/page_size"
+        }
+      },
+      "required": ["advertiser_id", "date_start", "date_stop"]
+    },
+    "tiktok_update_campaign": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "advertiser_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "campaign_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": ["ENABLE", "DISABLE", "ACTIVE", "PAUSED"]
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": {
+          "type": "string"
+        }
+      },
+      "required": ["advertiser_id", "campaign_id", "status"]
     }
   }
 }

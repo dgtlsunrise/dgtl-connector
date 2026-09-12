@@ -10,6 +10,7 @@ import { CLOSED_HTTPS_FIELDS, GATEWAY_PARAM_ALLOW } from "../src/gateway/client.
 import {
   GADS_MUTATE_TOOL_NAMES,
   META_MUTATE_TOOL_NAMES,
+  TIKTOK_MUTATE_TOOL_NAMES,
   PLUGIN_LOCAL_DESCRIBE_TOOLS,
   TOOLS,
 } from "../src/tools/registry.js";
@@ -21,6 +22,8 @@ type ParityFixture = {
   plugin_local_describe: string[];
   gads_read_hop: string[];
   meta_read_hop: string[];
+  tiktok_mutate?: string[];
+  tiktok_read_hop?: string[];
   closed_https_fields: string[];
   path_only_url_adjacent: string[];
 };
@@ -69,11 +72,17 @@ function findStampRoot(): string | undefined {
 describe("W0.2 registry ↔ stamp mutate allowlist parity", () => {
   const parity = loadParity();
 
-  it("every gads_*/meta_* tool is mutate, read-hop, or plugin-local describe", () => {
-    const gadsMeta = TOOLS.filter((t) => t.name.startsWith("gads_") || t.name.startsWith("meta_"));
+  it("every gads_*/meta_*/tiktok_* tool is mutate, read-hop, or plugin-local describe", () => {
+    const gadsMeta = TOOLS.filter(
+      (t) => t.name.startsWith("gads_") || t.name.startsWith("meta_") || t.name.startsWith("tiktok_"),
+    );
     const describe = new Set<string>(PLUGIN_LOCAL_DESCRIBE_TOOLS);
-    const mutate = new Set([...GADS_MUTATE_TOOL_NAMES, ...META_MUTATE_TOOL_NAMES]);
-    const readHop = new Set([...parity.gads_read_hop, ...parity.meta_read_hop]);
+    const mutate = new Set([...GADS_MUTATE_TOOL_NAMES, ...META_MUTATE_TOOL_NAMES, ...TIKTOK_MUTATE_TOOL_NAMES]);
+    const readHop = new Set([
+      ...parity.gads_read_hop,
+      ...parity.meta_read_hop,
+      ...(parity.tiktok_read_hop ?? []),
+    ]);
     for (const t of gadsMeta) {
       const bucket = describe.has(t.name) ? "describe" : mutate.has(t.name) ? "mutate" : readHop.has(t.name) ? "read-hop" : "unknown";
       assert.notEqual(bucket, "unknown", `unclassified ${t.name} (add to write group, describe list, or read-hop fixture)`);
@@ -86,12 +95,19 @@ describe("W0.2 registry ↔ stamp mutate allowlist parity", () => {
       gadsMeta.filter((t) => t.name.startsWith("meta_")).length,
       parity.meta_mutate.length + parity.meta_read_hop.length + 1,
     );
+    assert.equal(
+      gadsMeta.filter((t) => t.name.startsWith("tiktok_")).length,
+      (parity.tiktok_mutate ?? []).length + (parity.tiktok_read_hop ?? []).length,
+    );
   });
 
   it("registry mutate tools match the shared W0.2 fixture (stamp mutate surface)", () => {
     assert.deepEqual(sorted(GADS_MUTATE_TOOL_NAMES), sorted(parity.gads_mutate));
     assert.deepEqual(sorted(META_MUTATE_TOOL_NAMES), sorted(parity.meta_mutate));
-    for (const t of TOOLS.filter((x) => x.group === "gads-write" || x.group === "meta-write")) {
+    assert.deepEqual(sorted(TIKTOK_MUTATE_TOOL_NAMES), sorted(parity.tiktok_mutate ?? []));
+    for (const t of TOOLS.filter(
+      (x) => x.group === "gads-write" || x.group === "meta-write" || x.group === "tiktok-write",
+    )) {
       assert.equal(t.annotations.destructiveHint, true, `${t.name} mutate must be destructive`);
       assert.equal(t.annotations.readOnlyHint, false, `${t.name} mutate must not be readOnly`);
     }
@@ -104,6 +120,8 @@ describe("W0.2 registry ↔ stamp mutate allowlist parity", () => {
       ...parity.meta_mutate,
       ...parity.gads_read_hop,
       ...parity.meta_read_hop,
+      ...(parity.tiktok_mutate ?? []),
+      ...(parity.tiktok_read_hop ?? []),
     ]);
     for (const name of PLUGIN_LOCAL_DESCRIBE_TOOLS) {
       const spec = TOOLS.find((t) => t.name === name);
@@ -138,12 +156,16 @@ describe("W0.2 registry ↔ stamp mutate allowlist parity", () => {
     const allowlist = readFileSync(join(stamp, "src/gateway/allowlist.ts"), "utf8");
     const stampGadsMutate = extractExportedStringArray(allowlist, "GADS_MUTATE_TOOLS");
     const stampMetaMutate = extractExportedStringArray(allowlist, "META_MUTATE_TOOLS");
+    const stampTikTokMutate = extractExportedStringArray(allowlist, "TIKTOK_MUTATE_TOOLS");
     const stampGads = extractExportedStringArray(allowlist, "GADS_TOOLS");
     const stampMeta = extractExportedStringArray(allowlist, "META_TOOLS");
+    const stampTikTok = extractExportedStringArray(allowlist, "TIKTOK_TOOLS");
     assert.deepEqual(sorted(stampGadsMutate), sorted(GADS_MUTATE_TOOL_NAMES), "stamp GADS_MUTATE_TOOLS ≠ plugin gads-write");
     assert.deepEqual(sorted(stampMetaMutate), sorted(META_MUTATE_TOOL_NAMES), "stamp META_MUTATE_TOOLS ≠ plugin meta-write");
+    assert.deepEqual(sorted(stampTikTokMutate), sorted(TIKTOK_MUTATE_TOOL_NAMES), "stamp TIKTOK_MUTATE_TOOLS ≠ plugin tiktok-write");
     assert.deepEqual(sorted(stampGads), sorted([...parity.gads_mutate, ...parity.gads_read_hop]));
     assert.deepEqual(sorted(stampMeta), sorted([...parity.meta_mutate, ...parity.meta_read_hop]));
+    assert.deepEqual(sorted(stampTikTok), sorted([...(parity.tiktok_mutate ?? []), ...(parity.tiktok_read_hop ?? [])]));
     for (const name of PLUGIN_LOCAL_DESCRIBE_TOOLS) {
       assert.equal(stampGads.includes(name), false, `${name} leaked into stamp GADS_TOOLS`);
       assert.equal(stampMeta.includes(name), false, `${name} leaked into stamp META_TOOLS`);

@@ -2,7 +2,7 @@
 
 Skills are Agent Skills (`skills/<name>/SKILL.md`). They are how the plugin behaves in conversation. Tools are dumb and typed; skills carry the product judgment.
 
-This index is closed for v1 spec plus Waves 4–7. **16 skills.** Each directory below must exist.
+This index is closed for v1 spec plus Waves 4–8. **17 skills.** Each directory below must exist.
 
 | Skill | Directory | Job |
 | --- | --- | --- |
@@ -16,6 +16,7 @@ This index is closed for v1 spec plus Waves 4–7. **16 skills.** Each directory
 | Shopify readonly | `skills/shopify-readonly/` | Local merchant products/orders/locations/inventory; SHOPIFY_NOT_CONNECTED without token. |
 | Shopify ↔ Ads/MC join | `skills/shopify-ads-mc-join/` | Join Shopify SKU/handle/inventory to MC offerId and Ads listing groups. Never invent SKUs. |
 | Shopping ↔ MC readiness | `skills/shopping-mc-readiness/` | Merchant API products/status/issues then Shopping campaign create. Consent MC, not Consent A. |
+| TikTok Ads | `skills/tiktok-ads/` | Stamp hop. Polar `tiktok` (not ads/meta). List advertisers first. Mutate dry_run + confirm. App secret never in the plugin. |
 | Google marketing support | `skills/google-marketing-support/` | Diagnose OAuth / empty / quota / API-not-enabled. One optional DGTL line after a real answer. |
 | Send feedback | `skills/send-feedback/` | After a hard-failure diagnosis, offer once to prepare a draft for support@dgtlsunrise.com. User must approve before `feedback_send`. |
 | License and reconnect | `skills/license-and-reconnect/` | Map `LICENSE_REQUIRED` / `REAUTH_REQUIRED` / `CONSENT_MISSING`. |
@@ -34,7 +35,7 @@ This index is closed for v1 spec plus Waves 4–7. **16 skills.** Each directory
 7. Never ask the user to paste refresh tokens, `client_secret`, or `token.json`.
 8. **Not all tools are read.** Consent A + Shopify + GBP (when flag on) are read (or fail-closed). GTM write and Ads/Meta mutate/create are registered writes. See [TOOLS.md](TOOLS.md) Mutate honesty.
 9. **ACTIVE / ENABLED on confirm only.** `dry_run` defaults true. Live needs `confirm_phrase` with resource IDs **and** a user message this turn containing those IDs. Meta **ACTIVE** / Ads **ENABLED** only with explicit `status` + confirm. Campaign/RSA/Meta creates default **PAUSED**. Standalone `gads_add_keywords` defaults **PAUSED**. Search/Display-create **children stay ENABLED** under a PAUSED campaign (intentional). Omitted keyword `match_type` is **BROAD** — do not flip.
-10. **Dual-gate.** Plugin Ads/Meta mutate flags default **on**; Worker flags fail-closed. Live hop needs both. Do not flip plugin defaults. GBP: flag off → `GBP_NOT_ENABLED`; flag on hops Consent B (never Consent A).
+10. **Dual-gate.** Plugin Ads/Meta/TikTok mutate flags default **on**; Worker flags fail-closed. Live hop needs both. Do not flip plugin defaults. GBP: flag off → `GBP_NOT_ENABLED`; flag on hops Consent B (never Consent A). TikTok JWT feature is `tiktok`, not ads/meta.
 
 ## Failure modes these skills exist to catch
 
