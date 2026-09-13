@@ -1,6 +1,6 @@
 ---
 name: license-and-reconnect
-description: Map LICENSE_REQUIRED, GATEWAY_UNAVAILABLE, REAUTH_REQUIRED, CONSENT_MISSING, GBP_NOT_ENABLED, GBP_NOT_CONNECTED, GBP_SCOPE_MISSING, WRITE_NOT_ENABLED, CONSENT_W_REQUIRED, CONSENT_G_REQUIRED, CONSENT_S_REQUIRED, ADS_MUTATE_NOT_ENABLED, META_MUTATE_NOT_ENABLED, META_CAPI_NOT_ENABLED, TIKTOK_EVENTS_NOT_ENABLED, META_SCOPE_MISSING, SPEND_CAP_EXCEEDED, ADS_SCOPE_MISSING, META_NOT_CONNECTED, KLAVIYO_NOT_CONNECTED. Use when a paid tool failed, Google access expired, a scope was unchecked, writes are gated, gateway is down, or the user asks about Ads/Meta unlock. Free GA4/GSC/GTM and local Shopify/Klaviyo keep working without a license.
+description: Map LICENSE_REQUIRED, GATEWAY_UNAVAILABLE, REAUTH_REQUIRED, CONSENT_MISSING, GBP_NOT_ENABLED, GBP_NOT_CONNECTED, GBP_SCOPE_MISSING, WRITE_NOT_ENABLED, CONSENT_W_REQUIRED, CONSENT_G_REQUIRED, CONSENT_S_REQUIRED, ADS_MUTATE_NOT_ENABLED, META_MUTATE_NOT_ENABLED, META_CAPI_NOT_ENABLED, TIKTOK_EVENTS_NOT_ENABLED, TIKTOK_SCOPE_MISSING, META_SCOPE_MISSING, SPEND_CAP_EXCEEDED, ADS_SCOPE_MISSING, META_NOT_CONNECTED, KLAVIYO_NOT_CONNECTED, KLAVIYO_SCOPE_MISSING, SGTM_NOT_ENABLED, SGTM_APPLY_KEY_MISSING. Use when a paid tool failed, Google access expired, a scope was unchecked, writes are gated, gateway is down, conversion fabric is opted out, or the user asks about Ads/Meta unlock. Free GA4/GSC/GTM and local Shopify/Klaviyo keep working without a license.
 ---
 
 # License and reconnect
@@ -28,7 +28,7 @@ Do not ask for a Google Ads developer-token or a Meta app secret.
 | `GBP_NOT_ENABLED` | `DGTL_GBP_ENABLED` false | Flag default off. Not a Consent A reconnect. Enable only after GBP quota is non-zero. |
 | `GBP_NOT_CONNECTED` | Flag on, no Consent B token | `GOOGLE_GBP_ACCESS_TOKEN` or `auth login-gbp`. Never reuse Consent A / `GOOGLE_ACCESS_TOKEN`. No stamp hop. |
 | `GBP_SCOPE_MISSING` | Token lacks `business.manage` | Re-authorize Consent B. Do not add `business.manage` to Consent A. Tools are GET-only. |
-| `WRITE_NOT_ENABLED` | `DGTL_WRITES_ENABLED` false | Write/publish stubs fail closed. Free Consent A stays readonly. See `gtm-readonly-limits`. |
+| `WRITE_NOT_ENABLED` | `DGTL_WRITES_ENABLED` false | Consent W/G/S, Shopify productSet / inventory, Klaviyo draft/upsert/event/catalog/send-job, and MC ProductInput fail closed. Marketplace default off. Free Consent A stays readonly. See `gtm-readonly-limits`. |
 | `CONSENT_W_REQUIRED` | Writes flagged on but Consent W missing | Separate write OAuth client — never add edit/publish scopes to Consent A. |
 | `CONSENT_G_REQUIRED` | GA4 Admin write path but Consent G missing | Separate `analytics.edit` client — `auth login-ga4-admin`. Never add edit to Consent A. |
 | `CONSENT_S_REQUIRED` | GSC sitemap write path but Consent S missing | Separate `webmasters` write client — `auth login-gsc-write`. Never add write to Consent A. Then `DGTL_WRITES_ENABLED=true` for `gsc_submit_sitemap` / `gsc_delete_sitemap`. |
@@ -41,6 +41,10 @@ Do not ask for a Google Ads developer-token or a Meta app secret.
 | `ADS_SCOPE_MISSING` | License + gateway ok, Ads OAuth missing | Consent C (`adwords`) is a second grant — never reuse Consent A / `GOOGLE_ACCESS_TOKEN`. |
 | `META_NOT_CONNECTED` | License + gateway ok, Meta OAuth missing | Separate Meta login (`ads_read`). App secret is never in the plugin. |
 | `KLAVIYO_NOT_CONNECTED` | Local `pk_` missing / invalid | `KLAVIYO_API_KEY` or `PLUGIN_DATA/klaviyo.json`. Local-free — no Polar OAuth, no stamp hop, not Consent A. Support never collects Klaviyo keys. Never log the key. |
+| `KLAVIYO_SCOPE_MISSING` | `pk_` present but Klaviyo 403 | Generate a new key with accounts/profiles/lists/flows/campaigns/metrics/events/catalogs/reviews. Not Polar OAuth. |
+| `TIKTOK_SCOPE_MISSING` | Token lacks Marketing API for this advertiser | Re-authorize after app review. Do not silently retry. App secret stays on the Worker. |
+| `SGTM_NOT_ENABLED` | Plugin ingest test off or Worker `SGTM_INGEST_ENABLED` off | Plugin flag defaults **off**. Polar `sgtm` is reserved, default-off, **not minted**. Never put apply/funded keys in web GTM. |
+| `SGTM_APPLY_KEY_MISSING` | Live ingest without host apply key | Set `DGTL_SGTM_APPLY_KEY` on the host only. Never send `X-DGTL-Ingest-Key`. Never log the key. |
 
 ## Rules
 

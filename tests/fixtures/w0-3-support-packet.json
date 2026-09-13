@@ -10,6 +10,7 @@
     "dual_gate",
     "license",
     "stores",
+    "conversion_fabric",
     "runbook",
     "next_human_step"
   ],
@@ -50,6 +51,8 @@
     "DGTL_TIKTOK_EVENTS_ENABLED",
     "DGTL_ADS_DATA_MANAGER_ENABLED",
     "DGTL_SGTM_INGEST_TEST_ENABLED",
+    "DGTL_SGTM_APPLY_KEY",
+    "DGTL_APPLY_KEY",
     "DGTL_GBP_ENABLED"
   ]
 }

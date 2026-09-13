@@ -28,7 +28,7 @@ Do not paraphrase into “jump on a call,” “limited slots,” or pricing. Do
 
 ## Intake fields
 
-The agent should call `support_packet` (plugin version, host, flag matrix, gateway configured/reachable, license feature names, consent-store booleans, last tool, `error_code`, resource id) instead of asking the user to assemble this. Collect **only** these. A mail template or issue form is enough. This is diagnostics, not a CRM bait form. Never tokens, JWT, or store contents.
+The agent should call `support_packet` (plugin version, host, flag matrix, gateway configured/reachable, license feature names including Polar `sgtm` reserved/off, consent-store booleans for A/C/W/G/S/MC/B + Meta/TikTok/Shopify/Klaviyo, conversion-fabric `apply_key_present` boolean only, last tool, `error_code`, resource id) instead of asking the user to assemble this. Collect **only** these. A mail template or issue form is enough. This is diagnostics, not a CRM bait form. Never tokens, JWT, apply keys, or store contents.
 
 | Field | Required | Why |
 | --- | --- | --- |

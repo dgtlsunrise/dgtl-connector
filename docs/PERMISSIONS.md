@@ -27,24 +27,26 @@ So `google_whoami` can show **which Google account** connected, request these **
 
 Do **not** request `https://www.googleapis.com/auth/userinfo.profile` unless a later spec proves a need. Do not request Gmail, Drive, Calendar, or People.
 
-### Explicitly never requested (v1)
+### Explicitly never requested on Consent A (free listing / verification client)
+
+These scopes are **never** on the marketplace Consent A Desktop client. Separate write / paid clients are documented below — they are not listing promises.
 
 | Scope | Reason |
 | --- | --- |
 | `https://www.googleapis.com/auth/adwords` | Google Ads — Consent C (separate client) |
 | `https://www.googleapis.com/auth/content` | Merchant Center / Merchant API — Consent MC (separate client; Wave 4 reads + Wave 14 ProductInput writes). Never on Consent A. |
-| `https://www.googleapis.com/auth/analytics` | Read/write Analytics |
-| `https://www.googleapis.com/auth/analytics.edit` | Would be needed to create some GA4 links; still not v1 |
-| `https://www.googleapis.com/auth/webmasters` | Read/write Search Console |
-| `https://www.googleapis.com/auth/tagmanager.edit.containers` | Edit GTM |
-| `https://www.googleapis.com/auth/tagmanager.publish` | Publish GTM |
-| `https://www.googleapis.com/auth/tagmanager.delete.containers` | Delete containers |
-| `https://www.googleapis.com/auth/tagmanager.manage.users` | Manage GTM users |
+| `https://www.googleapis.com/auth/analytics` | Read/write Analytics — never on Consent A |
+| `https://www.googleapis.com/auth/analytics.edit` | Never on Consent A. Consent G is a separate Desktop client (Wave 11 Admin writes). |
+| `https://www.googleapis.com/auth/webmasters` | Never on Consent A. Consent S is a separate Desktop client (Wave 12 sitemap writes). |
+| `https://www.googleapis.com/auth/tagmanager.edit.containers` | Never on Consent A. Consent W is a separate Desktop client (GTM writes). |
+| `https://www.googleapis.com/auth/tagmanager.publish` | Never on Consent A. Consent W publish only. |
+| `https://www.googleapis.com/auth/tagmanager.delete.containers` | Delete containers — not registered |
+| `https://www.googleapis.com/auth/tagmanager.manage.users` | Manage GTM users — not registered |
 | `https://www.googleapis.com/auth/gmail.*` | Restricted; not marketing reporting |
 | `https://www.googleapis.com/auth/drive*` | Restricted; not in product |
-| `https://www.googleapis.com/auth/business.manage` | GBP out of v1 |
+| `https://www.googleapis.com/auth/business.manage` | Never on Consent A. Consent B + `DGTL_GBP_ENABLED` (GET-only tools). |
 
-Google verification rejects “future enhancement” scopes. Do not pre-declare Ads scopes on this OAuth client.
+Google verification rejects “future enhancement” scopes. Do not pre-declare Ads, write, or GBP scopes on the Consent A OAuth client.
 
 ## Google Cloud APIs to Enable
 

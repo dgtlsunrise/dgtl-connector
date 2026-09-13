@@ -121,7 +121,8 @@ describe("support_packet", () => {
       const data = env.data as {
         flags?: { plugin?: Record<string, boolean>; worker?: Record<string, boolean | null> };
         stores?: Record<string, boolean>;
-        license?: { present?: boolean; ok?: boolean; features?: string[]; ads?: boolean; meta?: boolean; tiktok?: boolean };
+        license?: { present?: boolean; ok?: boolean; features?: string[]; ads?: boolean; meta?: boolean; tiktok?: boolean; sgtm?: boolean };
+        conversion_fabric?: { polar_sgtm?: { reserved?: boolean; default?: string; mint?: boolean; present?: boolean }; apply_key_present?: boolean };
         gateway?: { configured?: boolean; reachable?: boolean; host?: string | null };
         dual_gate?: { ads?: Record<string, boolean>; meta?: Record<string, boolean> };
       };
@@ -144,6 +145,12 @@ describe("support_packet", () => {
       assert.equal(data.license?.ads, true);
       assert.equal(data.license?.meta, true);
       assert.equal(data.license?.tiktok, false);
+      assert.equal(data.license?.sgtm, false);
+      assert.equal(data.conversion_fabric?.polar_sgtm?.reserved, true);
+      assert.equal(data.conversion_fabric?.polar_sgtm?.default, "off");
+      assert.equal(data.conversion_fabric?.polar_sgtm?.mint, false);
+      assert.equal(data.conversion_fabric?.polar_sgtm?.present, false);
+      assert.equal(data.conversion_fabric?.apply_key_present, false);
       assert.equal(data.gateway?.configured, false);
       assert.equal(data.gateway?.reachable, false);
       assert.equal(data.gateway?.host, null);

@@ -81,7 +81,7 @@ export const ERROR_RUNBOOKS: Partial<Record<ErrorCode, RunbookHint>> = {
   WRITE_NOT_ENABLED: {
     runbook: `${RUNBOOK_INDEX}#write_not_enabled`,
     next_human_step:
-      "Set DGTL_WRITES_ENABLED=true for Consent W GTM writes, Consent G/S writes, Shopify inventory adjust, Klaviyo draft/upsert/event, or live Merchant Center ProductInput writes. Marketplace default stays off. Consent A remains readonly. Klaviyo live confirm must include the account id.",
+      "Set DGTL_WRITES_ENABLED=true for Consent W GTM writes, Consent G/S writes, Shopify inventory adjust / productSet, Klaviyo draft/upsert/event/catalog/send-job, or live Merchant Center ProductInput writes. Marketplace default stays off. Consent A remains readonly. Shopify live confirm must include the shop domain; Klaviyo live confirm must include the account id; MC live confirm must include merchant_id.",
   },
   MC_NOT_CONNECTED: {
     runbook: `${RUNBOOK_INDEX}#mc_not_connected`,
@@ -126,7 +126,17 @@ export const ERROR_RUNBOOKS: Partial<Record<ErrorCode, RunbookHint>> = {
   KLAVIYO_SCOPE_MISSING: {
     runbook: `${RUNBOOK_INDEX}#klaviyo_scope_missing`,
     next_human_step:
-      "Generate a new Klaviyo private key with accounts/profiles/lists/flows/campaigns/metrics/events scopes. Not Polar OAuth.",
+      "Generate a new Klaviyo private key with accounts/profiles/lists/flows/campaigns/metrics/events/catalogs/reviews scopes. Not Polar OAuth.",
+  },
+  META_NOT_CONNECTED: {
+    runbook: `${RUNBOOK_INDEX}#meta_not_connected`,
+    next_human_step:
+      "Set META_ACCESS_TOKEN or run `dgtl-connector-mcp auth login-meta --code`. License + gateway are not enough. Support never collects Meta tokens. App secret stays on the Worker.",
+  },
+  TIKTOK_SCOPE_MISSING: {
+    runbook: `${RUNBOOK_INDEX}#tiktok_scope_missing`,
+    next_human_step:
+      "Re-authorize TikTok after Marketing API / app review for this advertiser. Do not silently retry. Support never collects TikTok tokens. App secret stays on the Worker.",
   },
   CONSENT_W_REQUIRED: {
     runbook: `${RUNBOOK_INDEX}#consent_w_required`,
@@ -136,7 +146,7 @@ export const ERROR_RUNBOOKS: Partial<Record<ErrorCode, RunbookHint>> = {
   CONSENT_G_REQUIRED: {
     runbook: `${RUNBOOK_INDEX}#consent_g_required`,
     next_human_step:
-      "Run `dgtl-connector-mcp auth login-ga4-admin` (analytics.edit). Never add edit to Consent A. Wave 10 is plumbing only — no Admin mutate tools yet.",
+      "Run `dgtl-connector-mcp auth login-ga4-admin` (analytics.edit). Never add edit to Consent A. Then set DGTL_WRITES_ENABLED=true for mutate tools. Prefer dry_run. Live confirm must include properties/{id} (or accounts/{id} on create property).",
   },
   CONSENT_S_REQUIRED: {
     runbook: `${RUNBOOK_INDEX}#consent_s_required`,

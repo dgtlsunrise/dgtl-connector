@@ -112,6 +112,11 @@ describe("Wave 9 generate allowlists + tools/list freeze", () => {
       "GATEWAY_UNAVAILABLE",
       "SGTM_NOT_ENABLED",
       "SGTM_APPLY_KEY_MISSING",
+      "CONSENT_W_REQUIRED",
+      "CONSENT_G_REQUIRED",
+      "CONSENT_S_REQUIRED",
+      "META_NOT_CONNECTED",
+      "TIKTOK_SCOPE_MISSING",
     ];
     for (const code of required) {
       assert.ok((ERROR_CODES as readonly string[]).includes(code), code);

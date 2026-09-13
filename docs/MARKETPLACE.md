@@ -13,7 +13,7 @@ Reviewers will treat this as code that runs on a user's computer and talks to Go
 - [ ] `plugin.json` validates against Agent Plugins 1.0 (`$schema` + `name` constraints)
 - [ ] `mcp.json` validates against Agent Plugins MCP schema (`$schema` + `mcpServers`, stdio `type`+`command`)
 - [ ] Auth is **AuthPort**: host-injected token, then installed-app PKCE (public Desktop client). stdio is Manual — no Gmail-style Connect card. Do not embed a client secret.
-- [ ] Tools: closed **26** free Consent A tools in the listing story; any write/publish stubs are gated off / Consent W (different OAuth client) — listing copy promises **Consent A readonly only**
+- [ ] Tools: closed **26** free Consent A tools in the listing story; any write/publish stubs are gated off / Consent W (different OAuth client) — listing copy promises **Consent A readonly only**. Write consents (W / G / S / MC / Shopify / Klaviyo) stay in [TOOLS.md](TOOLS.md) / [PERMISSIONS.md](PERMISSIONS.md), not this listing.
 - [ ] README explains who it's for, Consent A in/out, AuthPort, and that users authorize **their** Google accounts
 - [ ] Skills refuse hallucinated metrics, silent property pick, Consent A publish, GA4 `searchQuery`; Consent W is gated, not eternal “no publish tool”
 - [ ] License is a public OSI license (replace `UNLICENSED` before submit)
@@ -90,6 +90,12 @@ Two reviews, two owners:
 | Google OAuth sensitive scopes | Cloud consent screen, demo video, privacy policy | Strangers signing in |
 
 A marketplace listing that still uses an unverified testing-mode OAuth client will strand users. Google may show “This app isn’t verified” or block sign-in — that is Google’s Testing allowlist, not a plugin Connect-card bug. Testers and the publisher’s own account can continue; strangers cannot until Google verification. Sequence: runtime + fixture tests → enable APIs → PKCE / host-injected against testers → Google verification → public git → marketplace submit.
+
+## Listing copy vs operator docs (Wave 23)
+
+Public marketplace / `plugin.json` / `package.json` description = **Consent A readonly** (26 tools: identity + GA4 + GSC + GTM). That is the free listing.
+
+Operator docs ([TOOLS.md](TOOLS.md), [PERMISSIONS.md](PERMISSIONS.md), [ops/RUNBOOKS.md](ops/RUNBOOKS.md)) document write consents and Polar-gated families separately. Do **not** paste those into marketplace title/description. Do **not** publish the site, Worker, or marketplace listing from a docs/support PR (Noel RED). Do not invent Polar checkout URLs in listing copy.
 
 ## What not to submit
 

@@ -44,6 +44,10 @@ Shopping create needs a digits `merchant_center_id` from `gads_list_merchant_cen
 
 Re-authorize Meta after `ads_management` Advanced Access. Do not silently retry. Support never collects Meta tokens.
 
+## `META_NOT_CONNECTED`
+
+License + gateway are ok, but Meta user OAuth is missing. Set `META_ACCESS_TOKEN` or run `dgtl-connector-mcp auth login-meta --code`. Never reuse Consent A. Support never collects Meta tokens. App secret stays on the Worker.
+
 ## `GBP_NOT_ENABLED`
 
 `DGTL_GBP_ENABLED=false` (default). Enable only after GBP Basic API Access quota is non-zero. Consent B (`business.manage`) is a separate grant — never on Consent A.
@@ -66,7 +70,7 @@ Reinstall the merchant custom app with the missing Admin scope. Default install 
 
 ## `WRITE_NOT_ENABLED`
 
-`DGTL_WRITES_ENABLED=false` (marketplace default). Required for Consent W GTM writes, Consent G/S writes, Shopify inventory adjust / productSet, Klaviyo draft/upsert/event/catalog, and live Merchant Center ProductInput writes. Consent A stays readonly. Prefer `dry_run` first; Shopify live confirm must include the shop domain; Klaviyo live confirm must include the account id; MC live confirm must include `merchant_id`.
+`DGTL_WRITES_ENABLED=false` (marketplace default). Required for Consent W GTM writes, Consent G/S writes, Shopify inventory adjust / productSet, Klaviyo draft/upsert/event/catalog/send-job, and live Merchant Center ProductInput writes. Consent A stays readonly. Prefer `dry_run` first; Shopify live confirm must include the shop domain; Klaviyo live confirm must include the account id (send-job also needs `campaign_id` + `SEND`); MC live confirm must include `merchant_id`.
 
 ## `KLAVIYO_NOT_CONNECTED`
 
@@ -99,6 +103,10 @@ Re-authorize Consent MC for `https://www.googleapis.com/auth/content`.
 ## `TIKTOK_NOT_CONNECTED`
 
 `TIKTOK_ACCESS_TOKEN` or `PLUGIN_DATA/tiktok-oauth.json` after Polar `tiktok` + stamp secrets. App id/secret stay on the Worker.
+
+## `TIKTOK_SCOPE_MISSING`
+
+Re-authorize TikTok after Marketing API / app review for this advertiser (or TikTok denied the mutate). Do not silently retry. Support never collects TikTok tokens. App secret stays on the Worker.
 
 ## `GATEWAY_UNAVAILABLE`
 

@@ -344,10 +344,10 @@ Klaviyo tools without a local private `pk_` key. Not Polar. Not Consent A. Never
 
 ### `KLAVIYO_SCOPE_MISSING`
 
-Private key present but Klaviyo returned 403 (missing accounts/profiles/lists/flows/campaigns/metrics/events scope). Generate a new `pk_`. Not Polar OAuth.
+Private key present but Klaviyo returned 403 (missing accounts/profiles/lists/flows/campaigns/metrics/events/catalogs/reviews scope). Generate a new `pk_`. Not Polar OAuth.
 
 **User-visible:**  
-"This Klaviyo private key is missing a required API scope (accounts, profiles, lists, segments, flows, campaigns, metrics, or events). Generate a new pk_ with those scopes. Not Polar OAuth. Not Consent A."
+"This Klaviyo private key is missing a required API scope (accounts, profiles, lists, segments, flows, campaigns, metrics, events, catalogs, or reviews). Generate a new pk_ with those scopes. Not Polar OAuth. Not Consent A."
 
 ### `SGTM_NOT_ENABLED`
 

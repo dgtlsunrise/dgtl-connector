@@ -2,13 +2,13 @@
 
 Skills are Agent Skills (`skills/<name>/SKILL.md`). They are how the plugin behaves in conversation. Tools are dumb and typed; skills carry the product judgment.
 
-This index is closed for v1 spec plus Waves 4–22. **21 skills.** Each directory below must exist.
+This index is closed for v1 spec plus Waves 4–23. **21 skills.** Each directory below must exist. Wave 23 did not add a skill.
 
 | Skill | Directory | Job |
 | --- | --- | --- |
 | First run | `skills/first-run/` | Just installed / get set up: whoami → Manual stdio auth if needed → list → pick → one default report. No Pro pitch on success. |
 | Select Google property | `skills/select-google-property/` | List, then make the human pick. Never first-of-40. Prefer `ga4_list_account_summaries`. |
-| Agency property isolation | `skills/agency-property-isolation/` | Label every answer with resource IDs; no cross-client joins. |
+| Agency property isolation | `skills/agency-property-isolation/` | Label every answer with resource IDs; no cross-client joins (Google, Shopify, Klaviyo, MC, Meta, TikTok). |
 | GA4 report recipes | `skills/ga4-report-recipes/` | Standard reports with real metrics from `ga4_run_report`. |
 | No hallucinated metrics | `skills/no-hallucinated-metrics/` | Numbers only from tool `data`. Refuse invented metrics. |
 | GSC vs GA4 search | `skills/gsc-vs-ga4-search/` | Queries live in Search Console. GA4 has no `searchQuery`. |

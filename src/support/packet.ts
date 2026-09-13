@@ -46,8 +46,23 @@ export type SupportPacketData = SupportFields & {
     ads: boolean;
     meta: boolean;
     tiktok: boolean;
+    /** Polar `sgtm` presence only — reserved, default-off, not minted. */
+    sgtm: boolean;
   };
   stores: ConsentStorePresence;
+  /**
+   * Wave 20/23 conversion-fabric intake (booleans / reserved Polar only).
+   * Never keys, JWT, user_data, or hop URLs. Full sink rows stay on conversion_fabric_status.
+   */
+  conversion_fabric: {
+    polar_sgtm: {
+      reserved: true;
+      default: "off";
+      mint: false;
+      present: boolean;
+    };
+    apply_key_present: boolean;
+  };
   /** Wave 9: docs-relative runbook for error_code. Null when no mapping. Never a hop URL. */
   runbook: string | null;
   next_human_step: string | null;
@@ -115,8 +130,20 @@ export async function collectSupportPacket(
       ads: features.includes("ads"),
       meta: features.includes("meta"),
       tiktok: features.includes("tiktok"),
+      sgtm: features.includes("sgtm"),
     },
     stores: consentStorePresence(ctx.pluginDataDir),
+    conversion_fabric: {
+      polar_sgtm: {
+        reserved: true,
+        default: "off",
+        mint: false,
+        present: features.includes("sgtm"),
+      },
+      apply_key_present: Boolean(
+        (ctx.env.DGTL_SGTM_APPLY_KEY || ctx.env.DGTL_APPLY_KEY || "").trim(),
+      ),
+    },
   };
 }
 

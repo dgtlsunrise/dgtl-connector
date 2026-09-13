@@ -446,6 +446,52 @@ def check_post_polar_backlog() -> None:
         err("first-run skill must not invent Polar checkout URLs")
 
 
+def check_marketplace_honesty() -> None:
+    """Public listing stays Consent A readonly. Writes live in operator docs only."""
+    plugin = load_json("plugin.json")
+    desc = ""
+    if isinstance(plugin, dict):
+        desc = str(plugin.get("description") or "")
+        ext = (plugin.get("extensions") or {}).get("com.dgtlsunrise") or {}
+        if ext.get("closedToolCount") != 26:
+            err("plugin.json closedToolCount must stay 26 for Consent A listing")
+        scopes = ext.get("consentA") or []
+        if scopes != SCOPES:
+            err("plugin.json consentA must stay the three readonly product scopes")
+    if "read-only" not in desc.lower() and "readonly" not in desc.lower():
+        err("plugin.json description must stay Consent A read-only for marketplace listing")
+    if re.search(r"\b(write|publish|mutate)\b", desc, re.I):
+        err("plugin.json description must not promise writes on the free listing")
+    pkg = load_json("package.json")
+    if isinstance(pkg, dict):
+        pkg_desc = str(pkg.get("description") or "")
+        if "read-only" not in pkg_desc.lower() and "readonly" not in pkg_desc.lower():
+            err("package.json description must stay Consent A read-only for public copy")
+        if re.search(r"\b(write|publish|mutate)\b", pkg_desc, re.I):
+            err("package.json description must not promise writes on the free listing")
+    market = read(ROOT / "docs/MARKETPLACE.md")
+    if "Consent A readonly" not in market and "consent a readonly" not in market.lower():
+        err("MARKETPLACE.md must keep listing copy Consent A readonly")
+    if "Listing copy vs operator docs" not in market:
+        err("MARKETPLACE.md must separate listing copy from operator write consents")
+    tools = read(ROOT / "docs/TOOLS.md")
+    if "Marketplace / public listing copy stays Consent A-only" not in tools:
+        err("docs/TOOLS.md must state marketplace listing stays Consent A-only")
+    catalog = load_json("schemas/v1/catalog.json")
+    if isinstance(catalog, dict):
+        names = [t.get("name") for t in catalog.get("tools") or [] if isinstance(t, dict)]
+        for banned in (
+            "gtm_create_tag",
+            "gtm_publish_container",
+            "gsc_submit_sitemap",
+            "shopify_product_set",
+            "klaviyo_create_campaign",
+            "mc_upsert_product_input",
+        ):
+            if banned in names:
+                err(f"catalog.json tools[] must not list write tool {banned} (Consent A kernel)")
+
+
 def check_readme_auth() -> None:
     text = read(ROOT / "README.md").lower()
     if "pkce" not in text:
@@ -520,6 +566,7 @@ def main() -> int:
     check_secrets()
     check_support_line()
     check_post_polar_backlog()
+    check_marketplace_honesty()
     check_readme_auth()
     check_ci()
     check_fixtures()

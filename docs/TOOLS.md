@@ -4,6 +4,8 @@
 
 That 26 is the **Consent A kernel** (`CONSENT_A_TOOLS` / `FREE_TOOL_NAMES` alias). Shopify and Klaviyo are **local-free** (`LOCAL_FREE_TOOLS` — Shopify merchant token / Klaviyo `pk_`; no Polar — fail `SHOPIFY_NOT_CONNECTED` / `KLAVIYO_NOT_CONNECTED`). Ads/Meta/Merchant Center/TikTok are **license-gated** (`LICENSE_GATED_TOOLS`, Polar Pro — fail `LICENSE_REQUIRED`). TikTok requires JWT feature `tiktok` (not ads/meta). GBP is local-free when the flag is on (Consent B, not Consent A). Flag off → `GBP_NOT_ENABLED`. Flag on without Consent B → `GBP_NOT_CONNECTED`. Do not stuff Shopify or Klaviyo into the 26-tool kernel.
 
+**Marketplace / public listing copy stays Consent A-only.** `plugin.json` / `package.json` / [MARKETPLACE.md](MARKETPLACE.md) describe the free listing as **read-only GA4 + GSC + GTM** (26 tools). Write consents (W / G / S / MC / Shopify / Klaviyo) and Polar-gated families live in this operator doc and [PERMISSIONS.md](PERMISSIONS.md) — they are **not** marketplace promises. Do not publish the site, Worker, or marketplace listing from a docs PR.
+
 If you need a 27th **Consent A** tool, bump a version and update `schemas/v1/catalog.json` in the same change. Do not “just add it.” Quality over dump. Small typed tools, not a mega-query kitchen sink.
 
 Machine-readable list: [`schemas/v1/catalog.json`](../schemas/v1/catalog.json). Parameter schema: [`schemas/v1/tools.schema.json`](../schemas/v1/tools.schema.json). Error envelope: [`schemas/v1/error.schema.json`](../schemas/v1/error.schema.json).
@@ -494,7 +496,7 @@ This is what you cite for “what is on the site.”
 
 ### `support_packet`
 
-**Why:** Support intake without asking for tokens. Local only — no Google call. Gated diagnostic (not one of the 23 Consent A tools).
+**Why:** Support intake without asking for tokens. Local only — no Google call. Gated diagnostic (not one of the 26 Consent A tools).
 
 | | |
 | --- | --- |
@@ -503,7 +505,7 @@ This is what you cite for “what is on the site.”
 | Params | optional `last_tool`, `error_code`, `resource_id` |
 | Idempotent | yes |
 
-**Returns (never tokens / never JWT / never gateway URL):** `plugin_version`, `host` (when known), echoed `last_tool` / `error_code` / `resource_id` when they are safe identifiers, `flags.plugin` (`adsMutateEnabled` / `metaMutateEnabled` default **on**; `writesEnabled` / `gbpEnabled` default **off**), `flags.worker` (booleans from `GET /v1/health`, else `null`), `dual_gate` (live mutate = plugin AND Worker; all booleans), `gateway` (`configured`, `reachable`, hostname only), `license` (`present`, `ok`, feature names, `ads`/`meta` booleans — never the JWT), `stores` (Consent A/C/W + Meta + Shopify file existence), `runbook` + `next_human_step` (docs-relative, from `docs/ops/RUNBOOKS.md` when `error_code` maps). Token-shaped strings are dropped. Worker mutate flags stay fail-closed until health reports them.
+**Returns (never tokens / never JWT / never gateway URL):** `plugin_version`, `host` (when known), echoed `last_tool` / `error_code` / `resource_id` when they are safe identifiers, `flags.plugin` (Ads/Meta/TikTok mutate + CAPI/Events/Ads Data Manager default **on**; sGTM ingest test / writes / GBP default **off**), `flags.worker` (booleans from `GET /v1/health`, else `null`), `dual_gate` (live mutate = plugin AND Worker; Ads/Meta/TikTok/CAPI/Events/Ads Data Manager/sGTM ingest lanes), `gateway` (`configured`, `reachable`, hostname only), `license` (`present`, `ok`, feature names, `ads`/`meta`/`tiktok`/`sgtm` booleans — never the JWT; Polar `sgtm` is reserved, default-off, not minted), `stores` (Consent A/C/W/G/S/MC/B + Meta + TikTok + Shopify + Klaviyo file existence), `conversion_fabric` (`polar_sgtm` reserved/off/not-minted + `apply_key_present` boolean only — never the apply key), `runbook` + `next_human_step` (docs-relative, from `docs/ops/RUNBOOKS.md` when `error_code` maps). Token-shaped strings are dropped. Worker mutate flags stay fail-closed until health reports them. Full sink rows stay on `conversion_fabric_status`.
 
 Named MCP tools are permanent. Wave 9 generates stamp allowlists from `src/gateway/hop-catalog.json`. There is no agent-facing `gads_mutate` / `meta_mutate`. `tools/list` must not shrink.
 
