@@ -97,6 +97,8 @@ describe("Wave 9 generate allowlists + tools/list freeze", () => {
       "META_SCOPE_MISSING",
       "GBP_NOT_ENABLED",
       "SHOPIFY_NOT_CONNECTED",
+      "KLAVIYO_NOT_CONNECTED",
+      "KLAVIYO_SCOPE_MISSING",
       "LICENSE_REQUIRED",
       "WRITE_NOT_ENABLED",
       "MC_NOT_CONNECTED",

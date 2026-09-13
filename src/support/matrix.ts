@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { STORE_FILE } from "../auth/types.js";
 import type { Flags } from "../flags.js";
+import { KLAVIYO_STORE_FILE } from "../klaviyo/auth.js";
 import { SHOPIFY_STORE_FILE } from "../shopify/auth.js";
 
 /** Plugin mutate defaults ON; writes/GBP default OFF. Worker is fail-closed. */
@@ -51,6 +52,7 @@ export type ConsentStorePresence = {
   meta: boolean;
   tiktok: boolean;
   shopify: boolean;
+  klaviyo: boolean;
 };
 
 export function pluginFlagBooleans(flags: Flags): PluginFlagBooleans {
@@ -99,6 +101,7 @@ export function consentStorePresence(pluginDataDir: string): ConsentStorePresenc
     meta: existsSync(join(pluginDataDir, STORE_FILE.meta)),
     tiktok: existsSync(join(pluginDataDir, STORE_FILE.tiktok)),
     shopify: existsSync(join(pluginDataDir, SHOPIFY_STORE_FILE)),
+    klaviyo: existsSync(join(pluginDataDir, KLAVIYO_STORE_FILE)),
   };
 }
 

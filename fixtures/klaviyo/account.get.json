@@ -1,0 +1,18 @@
+{
+  "data": [
+    {
+      "type": "account",
+      "id": "W18aCc",
+      "attributes": {
+        "contact_information": {
+          "organization_name": "Example Brand"
+        },
+        "industry": "e-commerce",
+        "timezone": "America/Los_Angeles",
+        "preferred_currency": "USD",
+        "locale": "en-US",
+        "test_account": true
+      }
+    }
+  ]
+}

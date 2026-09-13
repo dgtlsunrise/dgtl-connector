@@ -4,7 +4,7 @@ User-visible copy. Tools return `error_code` from this file. Skills do not inven
 
 Tokens, cookie headers, and HAR files do **not** belong in messages, logs, or support threads.
 
-Ops next-step copy lives in [ops/RUNBOOKS.md](ops/RUNBOOKS.md). `support_packet` returns `runbook` + `next_human_step` for mapped codes. Codes in this file stay stable — do not rename `ADS_MUTATE_NOT_ENABLED`, `MERCHANT_CENTER_REQUIRED`, `META_SCOPE_MISSING`, `GBP_NOT_ENABLED`, `SHOPIFY_NOT_CONNECTED`, `LICENSE_REQUIRED`, `WRITE_NOT_ENABLED`, `CONSENT_G_REQUIRED`, `CONSENT_S_REQUIRED`, `MC_*`, `TIKTOK_*`.
+Ops next-step copy lives in [ops/RUNBOOKS.md](ops/RUNBOOKS.md). `support_packet` returns `runbook` + `next_human_step` for mapped codes. Codes in this file stay stable — do not rename `ADS_MUTATE_NOT_ENABLED`, `MERCHANT_CENTER_REQUIRED`, `META_SCOPE_MISSING`, `GBP_NOT_ENABLED`, `SHOPIFY_NOT_CONNECTED`, `KLAVIYO_NOT_CONNECTED`, `LICENSE_REQUIRED`, `WRITE_NOT_ENABLED`, `CONSENT_G_REQUIRED`, `CONSENT_S_REQUIRED`, `MC_*`, `TIKTOK_*`.
 
 ## Envelope
 
@@ -109,7 +109,7 @@ Prefer `ok: true` with empty rows and a short success `hint` (“No rows is not 
 Paid Google Ads / Meta tool called without a valid DGTL license JWT.
 
 **User-visible:**  
-“This tool needs DGTL Pro ($19/mo flat, unlimited) for Google Ads / Meta Ads. Free GA4, Search Console, Tag Manager, and local Shopify tools still work. Get Pro at https://www.dgtlsunrise.com/ then paste a license JWT via DGTL_LICENSE_JWT or PLUGIN_DATA/license.jwt — never a Google Ads developer-token.”
+“This tool needs DGTL Pro ($19/mo flat, unlimited) for Google Ads / Meta Ads (and a separate Polar `tiktok` feature for TikTok Ads). Free GA4, Search Console, Tag Manager, and local Shopify / Klaviyo tools still work. Get Pro at https://www.dgtlsunrise.com/ then paste a license JWT via DGTL_LICENSE_JWT or PLUGIN_DATA/license.jwt — never a Google Ads developer-token.”
 
 Do not ask for a Google Ads developer-token.
 
@@ -334,4 +334,18 @@ TikTok token lacks Marketing API permission for this advertiser (or TikTok denie
 
 **User-visible:**  
 "This TikTok login did not grant Marketing API access for this advertiser (or TikTok denied the mutate). Re-authorize after app review. Do not silently retry. Reads may still work."
+
+### `KLAVIYO_NOT_CONNECTED`
+
+Klaviyo tools without a local private `pk_` key. Not Polar. Not Consent A. Never log the key.
+
+**User-visible:**  
+"Klaviyo is not connected. Set KLAVIYO_API_KEY (private pk_ key) or PLUGIN_DATA/klaviyo.json. Local-free — no Polar license, no stamp hop, not Consent A. Support never collects Klaviyo keys. Never log the key."
+
+### `KLAVIYO_SCOPE_MISSING`
+
+Private key present but Klaviyo returned 403 (missing accounts/profiles/lists/flows/campaigns/metrics/events scope). Generate a new `pk_`. Not Polar OAuth.
+
+**User-visible:**  
+"This Klaviyo private key is missing a required API scope (accounts, profiles, lists, segments, flows, campaigns, metrics, or events). Generate a new pk_ with those scopes. Not Polar OAuth. Not Consent A."
 

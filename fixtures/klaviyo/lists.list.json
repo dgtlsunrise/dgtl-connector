@@ -1,0 +1,16 @@
+{
+  "data": [
+    {
+      "type": "list",
+      "id": "X1List",
+      "attributes": {
+        "name": "Newsletter",
+        "created": "2026-02-01T00:00:00+00:00",
+        "updated": "2026-08-01T00:00:00+00:00"
+      }
+    }
+  ],
+  "links": {
+    "next": null
+  }
+}

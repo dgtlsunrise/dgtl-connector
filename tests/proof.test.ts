@@ -205,6 +205,7 @@ describe("session proofs", () => {
     assert.ok(CONSENT_A_TOOLS.includes("ga4_list_account_summaries"));
     assert.ok(CONSENT_A_TOOLS.includes("ga4_run_report"));
     assert.ok(!CONSENT_A_TOOLS.some((n) => n.startsWith("shopify_")));
+    assert.ok(!CONSENT_A_TOOLS.some((n) => n.startsWith("klaviyo_")));
     assert.ok(TOOLS.some((t) => t.name === "gads_search"));
     assert.ok(!TOOLS.some((t) => t.name.includes(".")));
   });
@@ -219,6 +220,9 @@ describe("session proofs", () => {
     }
     assert.ok(LOCAL_FREE_TOOLS.includes("shopify_get_shop"));
     assert.ok(LOCAL_FREE_TOOLS.includes("gbp_list_accounts"));
+    assert.ok(LOCAL_FREE_TOOLS.includes("klaviyo_get_account"));
+    assert.ok(LOCAL_FREE_TOOLS.includes("klaviyo_create_campaign"));
+    assert.ok(!LICENSE_GATED_TOOLS.includes("klaviyo_get_account"));
 
     const adsMeta = TOOLS.filter(
       (t) => t.family === "gads" || t.family === "meta" || t.family === "mc" || t.family === "tiktok",

@@ -1,0 +1,12 @@
+{
+  "data": {
+    "type": "profile",
+    "id": "01JWAVE18PROFILETEST02",
+    "attributes": {
+      "email": "sam@example.com",
+      "created": "2026-09-13T00:00:00+00:00",
+      "updated": "2026-09-13T00:00:00+00:00",
+      "external_id": "cust-1002"
+    }
+  }
+}

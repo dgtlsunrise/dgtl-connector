@@ -260,6 +260,7 @@ describe("doctor CLI (no secrets)", () => {
       writeFileSync(join(dir, "google-oauth-mc.json"), JSON.stringify({ access_token: "mc-secret-must-not-print" }));
       writeFileSync(join(dir, "google-oauth-gbp.json"), JSON.stringify({ access_token: "gbp-secret-must-not-print" }));
       writeFileSync(join(dir, "shopify-oauth.json"), JSON.stringify({ access_token: "shpat_secret-must-not-print" }));
+      writeFileSync(join(dir, "klaviyo.json"), JSON.stringify({ api_key: "pk_secret_must_not_print_xx" }));
       const report = await collectDoctor({
         pluginRoot: ROOT,
         pluginDataDir: dir,
@@ -275,6 +276,7 @@ describe("doctor CLI (no secrets)", () => {
       assert.equal(report.plugin_data.google_oauth_mc_json, true);
       assert.equal(report.plugin_data.google_oauth_gbp_json, true);
       assert.equal(report.plugin_data.shopify_oauth_json, true);
+      assert.equal(report.plugin_data.klaviyo_json, true);
       assert.deepEqual(report.stores, {
         consent_a: true,
         consent_c: true,
@@ -286,6 +288,7 @@ describe("doctor CLI (no secrets)", () => {
         meta: true,
         tiktok: true,
         shopify: true,
+        klaviyo: true,
       });
       for (const k of W03.store_keys) assert.ok(k in report.stores, k);
       const text = formatDoctorReport(report);
@@ -303,6 +306,7 @@ describe("doctor CLI (no secrets)", () => {
       assert.ok(!text.includes("meta-secret-must-not-print"));
       assert.ok(!text.includes("tiktok-secret-must-not-print"));
       assert.ok(!text.includes("shpat_secret-must-not-print"));
+      assert.ok(!text.includes("pk_secret_must_not_print_xx"));
       assert.ok(!text.includes("mc-secret-must-not-print"));
       assert.ok(!text.includes("gbp-secret-must-not-print"));
       assert.ok(text.includes("Consent MC"));

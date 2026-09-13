@@ -1,0 +1,22 @@
+{
+  "data": [
+    {
+      "type": "profile",
+      "id": "01JWAVE18PROFILETEST01",
+      "attributes": {
+        "email": "alex@example.com",
+        "created": "2026-01-15T12:00:00+00:00",
+        "updated": "2026-09-01T12:00:00+00:00",
+        "external_id": "cust-1001",
+        "phone_number": "+15555550100",
+        "location": { "city": "hidden" },
+        "properties": { "secret": "no" }
+      }
+    }
+  ],
+  "links": {
+    "self": "https://a.klaviyo.com/api/profiles",
+    "next": null,
+    "prev": null
+  }
+}

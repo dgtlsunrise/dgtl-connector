@@ -2,7 +2,7 @@
 
 Skills are Agent Skills (`skills/<name>/SKILL.md`). They are how the plugin behaves in conversation. Tools are dumb and typed; skills carry the product judgment.
 
-This index is closed for v1 spec plus Waves 4–8. **17 skills.** Each directory below must exist.
+This index is closed for v1 spec plus Waves 4–18. **18 skills.** Each directory below must exist.
 
 | Skill | Directory | Job |
 | --- | --- | --- |
@@ -17,6 +17,7 @@ This index is closed for v1 spec plus Waves 4–8. **17 skills.** Each directory
 | Shopify ↔ Ads/MC join | `skills/shopify-ads-mc-join/` | Join Shopify SKU/handle/inventory/publications to MC offerId and Ads listing groups. Never invent SKUs. |
 | Shopping ↔ MC readiness | `skills/shopping-mc-readiness/` | Merchant API products/status/issues then Shopping campaign create. Consent MC, not Consent A. |
 | TikTok Ads | `skills/tiktok-ads/` | Stamp hop. Polar `tiktok` (not ads/meta). List advertisers first. Catalog + Events API + mutate are dry_run + confirm. `content_id` must match catalog `sku_id`. App secret never in the plugin. |
+| Klaviyo readonly | `skills/klaviyo-readonly/` | Local `pk_` account/profiles/lists/flows/campaigns/metrics; `KLAVIYO_NOT_CONNECTED` without key. Draft/upsert/event writes are flag-gated. |
 | Google marketing support | `skills/google-marketing-support/` | Diagnose OAuth / empty / quota / API-not-enabled. One optional DGTL line after a real answer. |
 | Send feedback | `skills/send-feedback/` | After a hard-failure diagnosis, offer once to prepare a draft for support@dgtlsunrise.com. User must approve before `feedback_send`. |
 | License and reconnect | `skills/license-and-reconnect/` | Map `LICENSE_REQUIRED` / `REAUTH_REQUIRED` / `CONSENT_MISSING`. |
@@ -33,7 +34,7 @@ This index is closed for v1 spec plus Waves 4–8. **17 skills.** Each directory
 5. Write/publish requests: **Consent W gates** — if writes are flagged off or Consent W is absent, refuse (`WRITE_NOT_ENABLED` / `CONSENT_W_REQUIRED`) and point at Google UI or the separate write client (`auth login-write` is shipped; it does not flip `DGTL_WRITES_ENABLED`). Tag / trigger / variable writes exist; **publish last**. Do **not** eternally claim “there is no publish tool”; do **not** invent confirm phrases or publish on Consent A. Marketplace default stays flag **off**.
 6. Support pitches: **only** the support skill, **only** after a real answer, **only** the approved sentence in [SUPPORT_AND_CLIENTS.md](SUPPORT_AND_CLIENTS.md). Pro unlock ($19/mo): **only** `pro-upgrade`, and only on Ads / Meta / sGTM / `LICENSE_REQUIRED` / `GATEWAY_UNAVAILABLE` — never on a normal GA4 answer. Other skills: **zero** sales lines.
 7. Never ask the user to paste refresh tokens, `client_secret`, or `token.json`.
-8. **Not all tools are read.** Consent A + Shopify + GBP (when flag on) are read (or fail-closed). GTM write and Ads/Meta mutate/create are registered writes. See [TOOLS.md](TOOLS.md) Mutate honesty.
+8. **Not all tools are read.** Consent A + Shopify + Klaviyo + GBP (when flag on) are read (or fail-closed). GTM write, Shopify/Klaviyo flag-gated writes, and Ads/Meta mutate/create are registered writes. See [TOOLS.md](TOOLS.md) Mutate honesty.
 9. **ACTIVE / ENABLED on confirm only.** `dry_run` defaults true. Live needs `confirm_phrase` with resource IDs **and** a user message this turn containing those IDs. Meta **ACTIVE** / Ads **ENABLED** only with explicit `status` + confirm. Campaign/RSA/Meta creates default **PAUSED**. Standalone `gads_add_keywords` defaults **PAUSED**. Search/Display-create **children stay ENABLED** under a PAUSED campaign (intentional). Omitted keyword `match_type` is **BROAD** — do not flip.
 10. **Dual-gate.** Plugin Ads/Meta/TikTok mutate flags default **on**; Worker flags fail-closed. Live hop needs both. Do not flip plugin defaults. GBP: flag off → `GBP_NOT_ENABLED`; flag on hops Consent B (never Consent A). TikTok JWT feature is `tiktok`, not ads/meta.
 
@@ -53,6 +54,7 @@ This index is closed for v1 spec plus Waves 4–8. **17 skills.** Each directory
 | “Which Shopify SKUs are in Merchant Center / Shopping ads?” | `shopify-ads-mc-join` |
 | “Are my products ready for Shopping ads?” / feed issues | `shopping-mc-readiness` |
 | “What’s actually on production?” | `gtm-readonly-limits` → live version, not workspace |
+| “List my Klaviyo lists / draft a campaign” | `klaviyo-readonly` |
 | Auth cancelled / PKCE failed; GTM 403 API not enabled; empty property | `google-marketing-support` |
 | Quota / 429 | `google-marketing-support` |
 | Ads / Meta / sGTM unlock, `LICENSE_REQUIRED`, `GATEWAY_UNAVAILABLE` | `pro-upgrade` (+ `license-and-reconnect`) |
@@ -70,6 +72,7 @@ This index is closed for v1 spec plus Waves 4–8. **17 skills.** Each directory
 | gsc-vs-ga4-search | `gsc_query_search_analytics`, `gsc_list_sites`, `ga4_run_report` only for landing-page **sessions** | `ga4_run_report` with `searchQuery` |
 | gtm-readonly-limits | All readonly `gtm_*` | Live mutate without Consent W + user confirm; inventing confirm phrases |
 | shopify-readonly | `shopify_get_shop`, `shopify_list_*`, `shopify_get_*` | Calling Admin API without credentials; inventing ids; live writes without flag+confirm; silent scope expand |
+| klaviyo-readonly | `klaviyo_get_account`, `klaviyo_list_*`, `klaviyo_get_*` | Calling Klaviyo without a `pk_`; dumping full profile PII; campaign send jobs; Polar OAuth; logging the key |
 | shopify-ads-mc-join | `shopify_list_products`, `shopify_get_product`, `shopify_list_locations`, `shopify_list_inventory_levels`, `shopify_list_publications`, `shopify_list_catalogs`, `shopify_list_product_feeds`, `shopify_product_set`, `mc_*`, `gads_list_merchant_center_links`, `gads_add_shopping_listing_groups` | Inventing SKU/offerId; Consent A for MC; stamp Shopify hop; joining Shopify catalogs to Meta CAPI without the Wave 16 named tools |
 | shopping-mc-readiness | `mc_*`, `gads_list_merchant_center_links`, `gads_create_shopping_campaign`, `gads_add_shopping_listing_groups` | Consent A for MC; stamp Merchant API hop; inventing merchant_id; processed Product writes; inventing confirm |
 | google-marketing-support | `google_whoami` first, `support_packet` for intake, then the failing family; `feedback_prepare` only after a real hard-failure diagnosis | Token collection; `feedback_send` without user approval |

@@ -1,0 +1,16 @@
+{
+  "data": [
+    {
+      "type": "metric",
+      "id": "M1Metrc",
+      "attributes": {
+        "name": "Placed Order",
+        "created": "2025-01-01T00:00:00+00:00",
+        "updated": "2026-01-01T00:00:00+00:00"
+      }
+    }
+  ],
+  "links": {
+    "next": null
+  }
+}

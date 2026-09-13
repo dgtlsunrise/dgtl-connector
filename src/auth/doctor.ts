@@ -49,6 +49,8 @@ export const DOCTOR_ENV_NAMES = [
   "SHOPIFY_CLIENT_ID",
   "SHOPIFY_ACCESS_TOKEN",
   "SHOPIFY_STORE",
+  "KLAVIYO_API_KEY",
+  "DGTL_KLAVIYO_API_KEY",
   "DGTL_LICENSE_JWT",
   "DGTL_GATEWAY_URL",
   "DGTL_HOST",
@@ -94,6 +96,7 @@ export type DoctorReport = {
     meta_oauth_json: boolean;
     tiktok_oauth_json: boolean;
     shopify_oauth_json: boolean;
+    klaviyo_json: boolean;
     license_jwt: boolean;
   };
   stores: ConsentStorePresence;
@@ -217,6 +220,7 @@ export async function collectDoctor(opts: DoctorOpts): Promise<DoctorReport> {
       meta_oauth_json: stores.meta,
       tiktok_oauth_json: stores.tiktok,
       shopify_oauth_json: stores.shopify,
+      klaviyo_json: stores.klaviyo,
       license_jwt: licenseJwtFile,
     },
     stores,
@@ -273,6 +277,7 @@ export function formatDoctorReport(report: DoctorReport): string {
     `  meta-oauth.json: ${report.plugin_data.meta_oauth_json ? "present" : "absent"}`,
     `  tiktok-oauth.json: ${report.plugin_data.tiktok_oauth_json ? "present" : "absent"}`,
     `  shopify-oauth.json: ${report.plugin_data.shopify_oauth_json ? "present" : "absent"}`,
+    `  klaviyo.json: ${report.plugin_data.klaviyo_json ? "present" : "absent"}`,
     `  license.jwt: ${report.plugin_data.license_jwt ? "present" : "absent"}`,
     "",
     "plugin flags (ads/meta/tiktok mutate + CAPI/Events default ON; writes/gbp default OFF):",

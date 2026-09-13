@@ -1,0 +1,18 @@
+{
+  "data": [
+    {
+      "type": "flow",
+      "id": "F1Flow",
+      "attributes": {
+        "name": "Welcome series",
+        "status": "draft",
+        "archived": false,
+        "created": "2026-04-01T00:00:00+00:00",
+        "updated": "2026-08-20T00:00:00+00:00"
+      }
+    }
+  ],
+  "links": {
+    "next": null
+  }
+}

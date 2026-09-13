@@ -121,6 +121,22 @@ import {
   tiktokTrackEvents,
   tiktokUploadCatalogProducts,
 } from "../tiktok/tiktok-wave17.js";
+import {
+  klaviyoGetAccount,
+  klaviyoGetFlow,
+  klaviyoGetProfile,
+  klaviyoListCampaigns,
+  klaviyoListFlows,
+  klaviyoListLists,
+  klaviyoListMetrics,
+  klaviyoListProfiles,
+  klaviyoListSegments,
+} from "../klaviyo/klaviyo.js";
+import {
+  klaviyoCreateCampaign,
+  klaviyoCreateEvent,
+  klaviyoUpsertProfile,
+} from "../klaviyo/klaviyo-write.js";
 import { supportPacket } from "../support/packet.js";
 import { feedbackPrepare, feedbackSend } from "../support/feedback.js";
 import * as S from "./schemas.js";
@@ -140,6 +156,8 @@ export type ToolFamily =
   | "shopify"
   | "shopify_write"
   | "tiktok"
+  | "klaviyo"
+  | "klaviyo_write"
   | "license";
 
 export type ToolAnnotations = {
@@ -1953,6 +1971,129 @@ export const TOOLS: ToolSpec[] = [
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => tiktokCreateCampaign(ctx, args),
   },
+  {
+    name: "klaviyo_get_account",
+    group: "klaviyo",
+    family: "klaviyo",
+    title: "Klaviyo get account",
+    description: `${RO} Confirm the Klaviyo account for a local pk_ key (revision 2026-07-15). KLAVIYO_API_KEY or PLUGIN_DATA/klaviyo.json. Fail closed KLAVIYO_NOT_CONNECTED. Local-free — no Polar / stamp / Consent A.`,
+    inputSchema: S.klaviyoGetAccount,
+    annotations: ANN_RO,
+    handler: (ctx) => klaviyoGetAccount(ctx),
+  },
+  {
+    name: "klaviyo_list_profiles",
+    group: "klaviyo",
+    family: "klaviyo",
+    title: "Klaviyo list profiles",
+    description: `${RO} Sparse profiles (email, created, updated, external_id). Never dumps phone/location/properties. Optional email filter + first_name/last_name extra_fields. Local pk_. No Polar.`,
+    inputSchema: S.klaviyoListProfiles,
+    annotations: ANN_RO,
+    handler: (ctx, args) => klaviyoListProfiles(ctx, args),
+  },
+  {
+    name: "klaviyo_get_profile",
+    group: "klaviyo",
+    family: "klaviyo",
+    title: "Klaviyo get profile",
+    description: `${RO} One profile by id with the same sparse fieldset. Requires profile_id. Not a PII dump.`,
+    inputSchema: S.klaviyoGetProfile,
+    annotations: ANN_RO,
+    handler: (ctx, args) => klaviyoGetProfile(ctx, args),
+  },
+  {
+    name: "klaviyo_list_lists",
+    group: "klaviyo",
+    family: "klaviyo",
+    title: "Klaviyo list lists",
+    description: `${RO} Paginated Klaviyo lists. Local pk_. No CSV import mega-tool.`,
+    inputSchema: S.klaviyoListLists,
+    annotations: ANN_RO,
+    handler: (ctx, args) => klaviyoListLists(ctx, args),
+  },
+  {
+    name: "klaviyo_list_segments",
+    group: "klaviyo",
+    family: "klaviyo",
+    title: "Klaviyo list segments",
+    description: `${RO} Paginated Klaviyo segments. Local pk_. Revision 2026-07-15.`,
+    inputSchema: S.klaviyoListSegments,
+    annotations: ANN_RO,
+    handler: (ctx, args) => klaviyoListSegments(ctx, args),
+  },
+  {
+    name: "klaviyo_list_flows",
+    group: "klaviyo",
+    family: "klaviyo",
+    title: "Klaviyo list flows",
+    description: `${RO} Paginated flows. Local pk_. Enable/disable is not registered.`,
+    inputSchema: S.klaviyoListFlows,
+    annotations: ANN_RO,
+    handler: (ctx, args) => klaviyoListFlows(ctx, args),
+  },
+  {
+    name: "klaviyo_get_flow",
+    group: "klaviyo",
+    family: "klaviyo",
+    title: "Klaviyo get flow",
+    description: `${RO} One flow by id. Requires flow_id.`,
+    inputSchema: S.klaviyoGetFlow,
+    annotations: ANN_RO,
+    handler: (ctx, args) => klaviyoGetFlow(ctx, args),
+  },
+  {
+    name: "klaviyo_list_campaigns",
+    group: "klaviyo",
+    family: "klaviyo",
+    title: "Klaviyo list campaigns",
+    description: `${RO} Paginated campaigns. Required channel filter (default email). Local pk_. No send job.`,
+    inputSchema: S.klaviyoListCampaigns,
+    annotations: ANN_RO,
+    handler: (ctx, args) => klaviyoListCampaigns(ctx, args),
+  },
+  {
+    name: "klaviyo_list_metrics",
+    group: "klaviyo",
+    family: "klaviyo",
+    title: "Klaviyo list metrics",
+    description: `${RO} Paginated metrics catalog. Not an open Metric Aggregates passthrough.`,
+    inputSchema: S.klaviyoListMetrics,
+    annotations: ANN_RO,
+    handler: (ctx, args) => klaviyoListMetrics(ctx, args),
+  },
+  {
+    name: "klaviyo_create_campaign",
+    group: "klaviyo-write",
+    family: "klaviyo_write",
+    title: "Klaviyo create campaign",
+    description:
+      "Write. Draft email campaign only (POST /api/campaigns). dry_run default true. Live needs DGTL_WRITES_ENABLED plus confirm_phrase containing the account id. Never posts campaign-send-jobs. Local pk_ — no Polar.",
+    inputSchema: S.klaviyoCreateCampaign,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => klaviyoCreateCampaign(ctx, args),
+  },
+  {
+    name: "klaviyo_upsert_profile",
+    group: "klaviyo-write",
+    family: "klaviyo_write",
+    title: "Klaviyo upsert profile",
+    description:
+      "Write. POST /api/profile-import (email / external_id / profile_id). Closed fields only — no properties bag. dry_run default true. Live needs DGTL_WRITES_ENABLED plus account-id confirm. Local pk_.",
+    inputSchema: S.klaviyoUpsertProfile,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => klaviyoUpsertProfile(ctx, args),
+  },
+  {
+    name: "klaviyo_create_event",
+    group: "klaviyo-write",
+    family: "klaviyo_write",
+    title: "Klaviyo create event",
+    description:
+      "Write. POST /api/events backfill (backfill defaults true so flows do not re-fire). Closed properties. dry_run default true. Live needs DGTL_WRITES_ENABLED plus account-id confirm. Local pk_.",
+    inputSchema: S.klaviyoCreateEvent,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => klaviyoCreateEvent(ctx, args),
+  },
 ];
 
 export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
@@ -1960,7 +2101,7 @@ export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 /**
  * Consent A readonly kernel (identity + GA4 + GSC + GTM list/get).
  * Wave 13 added gtm_list_clients + gtm_list_environments (honest count 26).
- * Do not add Shopify, GBP, Consent W writes, Consent G/S writes, Ads, Meta, MC, or diagnostics.
+ * Do not add Shopify, GBP, Klaviyo, Consent W writes, Consent G/S writes, Ads, Meta, MC, or diagnostics.
  */
 export const CONSENT_A_TOOLS = TOOLS.filter(
   (t) => t.family === "identity" || t.family === "ga4" || t.family === "gsc" || t.family === "gtm",
@@ -1980,14 +2121,25 @@ export const MC_WRITE_TOOL_NAMES = TOOLS.filter((t) => t.group === "mc-write").m
 
 /**
  * Alias of CONSENT_A_TOOLS (W0.4). Not the commercial free set.
- * Shopify is LOCAL_FREE_TOOLS; Ads/Meta/MC/TikTok are LICENSE_GATED_TOOLS.
+ * Shopify + Klaviyo are LOCAL_FREE_TOOLS; Ads/Meta/MC/TikTok are LICENSE_GATED_TOOLS.
  */
 export const FREE_TOOL_NAMES = CONSENT_A_TOOLS;
 
-/** Local-free, not Polar: Shopify merchant token (reads + flag-gated writes); GBP. */
+/** Local-free, not Polar: Shopify merchant token; Klaviyo pk_; GBP. */
 export const LOCAL_FREE_TOOLS = TOOLS.filter(
-  (t) => t.family === "shopify" || t.family === "shopify_write" || t.family === "gbp",
+  (t) =>
+    t.family === "shopify" ||
+    t.family === "shopify_write" ||
+    t.family === "gbp" ||
+    t.family === "klaviyo" ||
+    t.family === "klaviyo_write",
 ).map((t) => t.name);
+
+export const KLAVIYO_TOOL_NAMES = TOOLS.filter(
+  (t) => t.family === "klaviyo" || t.family === "klaviyo_write",
+).map((t) => t.name);
+
+export const KLAVIYO_WRITE_TOOL_NAMES = TOOLS.filter((t) => t.family === "klaviyo_write").map((t) => t.name);
 
 /** Polar Pro surface: Google Ads + Meta Ads + Merchant Center + TikTok (including plugin-local describe tools). */
 export const LICENSE_GATED_TOOLS = TOOLS.filter(

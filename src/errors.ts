@@ -40,6 +40,8 @@ export const ERROR_CODES = [
   "TIKTOK_MUTATE_NOT_ENABLED",
   "TIKTOK_EVENTS_NOT_ENABLED",
   "TIKTOK_SCOPE_MISSING",
+  "KLAVIYO_NOT_CONNECTED",
+  "KLAVIYO_SCOPE_MISSING",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -79,7 +81,7 @@ export const MSG = {
   UNSUPPORTED_OPERATION:
     "v1 is read-only. I cannot publish Tag Manager containers, create tags, submit sitemaps, request indexing, or create GA4–Search Console links (analytics.readonly cannot create those links). Use the Google UI.",
   LICENSE_REQUIRED:
-    "This tool needs DGTL Pro ($19/mo flat, unlimited) for Google Ads / Meta Ads (and a separate Polar `tiktok` feature for TikTok Ads). Free GA4, Search Console, Tag Manager, and local Shopify tools still work. Get Pro at https://www.dgtlsunrise.com/ then paste a license JWT via DGTL_LICENSE_JWT or PLUGIN_DATA/license.jwt — never a Google Ads developer-token. TikTok is not included in ads/meta bits until Noel mints `tiktok`.",
+    "This tool needs DGTL Pro ($19/mo flat, unlimited) for Google Ads / Meta Ads (and a separate Polar `tiktok` feature for TikTok Ads). Free GA4, Search Console, Tag Manager, and local Shopify / Klaviyo tools still work. Get Pro at https://www.dgtlsunrise.com/ then paste a license JWT via DGTL_LICENSE_JWT or PLUGIN_DATA/license.jwt — never a Google Ads developer-token. TikTok is not included in ads/meta bits until Noel mints `tiktok`.",
   GATEWAY_UNAVAILABLE:
     "The DGTL Ads/Meta gateway is not reachable. Set DGTL_GATEWAY_URL to https://stamp.dgtlsunrise.com (backup https://dgtl-stamp.noel-4ea.workers.dev), or wait until the hosted gateway is up. Free GA4, Search Console, and Tag Manager tools still work. This is not a missing Ads OAuth reconnect.",
   FEEDBACK_GATEWAY_UNAVAILABLE:
@@ -134,6 +136,10 @@ export const MSG = {
     "TikTok Events API send is opted out or the Worker TIKTOK_EVENTS_ENABLED flag is off. Plugin defaults on; set DGTL_TIKTOK_EVENTS_ENABLED=false to opt out. Live hop needs Worker TIKTOK_EVENTS_ENABLED=true (fail-closed, separate from TIKTOK_MUTATE_ENABLED). Polar tiktok bit. App secret stays on the Worker. Never send unhashed PII. content_id must match catalog sku_id.",
   TIKTOK_SCOPE_MISSING:
     "This TikTok login did not grant Marketing API access for this advertiser (or TikTok denied the mutate). Re-authorize after app review. Do not silently retry. Reads may still work.",
+  KLAVIYO_NOT_CONNECTED:
+    "Klaviyo is not connected. Set KLAVIYO_API_KEY (private pk_ key) or PLUGIN_DATA/klaviyo.json. Local-free — no Polar license, no stamp hop, not Consent A. Support never collects Klaviyo keys. Never log the key.",
+  KLAVIYO_SCOPE_MISSING:
+    "This Klaviyo private key is missing a required API scope (accounts, profiles, lists, segments, flows, campaigns, metrics, or events). Generate a new pk_ with those scopes. Not Polar OAuth. Not Consent A.",
   INVALID_ARGUMENT:
     "Google rejected the request (INVALID_ARGUMENT). Check dates (YYYY-MM-DD), GA4 limits (≤9 dimensions, ≤10 metrics), and names from ga4_get_metadata. I will not invent a replacement metric.",
   NOT_FOUND:

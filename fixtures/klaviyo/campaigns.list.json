@@ -1,0 +1,18 @@
+{
+  "data": [
+    {
+      "type": "campaign",
+      "id": "C1Camp",
+      "attributes": {
+        "name": "September newsletter",
+        "status": "Draft",
+        "archived": false,
+        "created_at": "2026-09-01T00:00:00+00:00",
+        "updated_at": "2026-09-02T00:00:00+00:00"
+      }
+    }
+  ],
+  "links": {
+    "next": null
+  }
+}

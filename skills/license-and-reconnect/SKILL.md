@@ -1,6 +1,6 @@
 ---
 name: license-and-reconnect
-description: Map LICENSE_REQUIRED, GATEWAY_UNAVAILABLE, REAUTH_REQUIRED, CONSENT_MISSING, GBP_NOT_ENABLED, GBP_NOT_CONNECTED, GBP_SCOPE_MISSING, WRITE_NOT_ENABLED, CONSENT_W_REQUIRED, CONSENT_G_REQUIRED, CONSENT_S_REQUIRED, ADS_MUTATE_NOT_ENABLED, META_MUTATE_NOT_ENABLED, META_CAPI_NOT_ENABLED, TIKTOK_EVENTS_NOT_ENABLED, META_SCOPE_MISSING, SPEND_CAP_EXCEEDED, ADS_SCOPE_MISSING, META_NOT_CONNECTED. Use when a paid tool failed, Google access expired, a scope was unchecked, writes are gated, gateway is down, or the user asks about Ads/Meta unlock. Free GA4/GSC/GTM keep working without a license.
+description: Map LICENSE_REQUIRED, GATEWAY_UNAVAILABLE, REAUTH_REQUIRED, CONSENT_MISSING, GBP_NOT_ENABLED, GBP_NOT_CONNECTED, GBP_SCOPE_MISSING, WRITE_NOT_ENABLED, CONSENT_W_REQUIRED, CONSENT_G_REQUIRED, CONSENT_S_REQUIRED, ADS_MUTATE_NOT_ENABLED, META_MUTATE_NOT_ENABLED, META_CAPI_NOT_ENABLED, TIKTOK_EVENTS_NOT_ENABLED, META_SCOPE_MISSING, SPEND_CAP_EXCEEDED, ADS_SCOPE_MISSING, META_NOT_CONNECTED, KLAVIYO_NOT_CONNECTED. Use when a paid tool failed, Google access expired, a scope was unchecked, writes are gated, gateway is down, or the user asks about Ads/Meta unlock. Free GA4/GSC/GTM and local Shopify/Klaviyo keep working without a license.
 ---
 
 # License and reconnect
@@ -40,6 +40,7 @@ Do not ask for a Google Ads developer-token or a Meta app secret.
 | `SPEND_CAP_EXCEEDED` | Budget above sanity cap | Google: lower `amount_micros` / `daily_budget_dollars` (micros). Meta: lower `daily_budget` / `lifetime_budget` (**cents**, not micros). Cap $100k/day equivalent. No mutate hop. |
 | `ADS_SCOPE_MISSING` | License + gateway ok, Ads OAuth missing | Consent C (`adwords`) is a second grant — never reuse Consent A / `GOOGLE_ACCESS_TOKEN`. |
 | `META_NOT_CONNECTED` | License + gateway ok, Meta OAuth missing | Separate Meta login (`ads_read`). App secret is never in the plugin. |
+| `KLAVIYO_NOT_CONNECTED` | Local `pk_` missing / invalid | `KLAVIYO_API_KEY` or `PLUGIN_DATA/klaviyo.json`. Local-free — no Polar OAuth, no stamp hop, not Consent A. Support never collects Klaviyo keys. Never log the key. |
 
 ## Rules
 

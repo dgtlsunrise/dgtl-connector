@@ -132,6 +132,19 @@ describe("packaging and secrets", () => {
       }
       assert.ok(!catalog.tools.some((t: { name: string }) => t.name === name), name);
     }
+    for (const name of LOCAL_FREE_TOOLS.filter((n) => n.startsWith("klaviyo_"))) {
+      const g = catalog.gated_tools.find((x: { name: string }) => x.name === name);
+      assert.ok(g, name);
+      assert.notEqual(g.fail, "LICENSE_REQUIRED", name);
+      const spec = TOOLS.find((t) => t.name === name);
+      assert.ok(spec, name);
+      if (spec!.family === "klaviyo_write") {
+        assert.equal(g.fail, "WRITE_NOT_ENABLED", name);
+      } else {
+        assert.equal(g.fail, "KLAVIYO_NOT_CONNECTED", name);
+      }
+      assert.ok(!catalog.tools.some((t: { name: string }) => t.name === name), name);
+    }
     for (const name of [
       "gads_search",
       "meta_insights",

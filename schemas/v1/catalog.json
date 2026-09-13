@@ -1,5 +1,5 @@
 {
-  "$comment": "Closed Consent A kernel is 26 (vendored 22 + ga4_list_account_summaries + gsc_describe_schema + Wave 13 gtm_list_clients + gtm_list_environments). Shopify is local-free (not Polar, not this kernel). Ads/Meta/MC are LICENSE_REQUIRED. MC is direct Merchant API (not stamp, not Consent A). Other gated families are registered but fail closed.",
+  "$comment": "Closed Consent A kernel is 26 (vendored 22 + ga4_list_account_summaries + gsc_describe_schema + Wave 13 gtm_list_clients + gtm_list_environments). Shopify + Klaviyo + GBP are local-free (not Polar, not this kernel). Ads/Meta/MC/TikTok are LICENSE_REQUIRED. Other gated families are registered but fail closed.",
   "version": "0.1.0",
   "closed": true,
   "count": 26,
@@ -956,6 +956,75 @@
       "flag": "tiktok.mutate.enabled",
       "fail": "TIKTOK_MUTATE_NOT_ENABLED",
       "note": "Wave 17; defaults DISABLE; confirm advertiser_id; closed objective_type"
+    },
+    {
+      "name": "klaviyo_get_account",
+      "group": "klaviyo",
+      "fail": "KLAVIYO_NOT_CONNECTED",
+      "note": "Wave 18; local pk_; revision 2026-07-15; not Polar; not Consent A"
+    },
+    {
+      "name": "klaviyo_list_profiles",
+      "group": "klaviyo",
+      "fail": "KLAVIYO_NOT_CONNECTED",
+      "note": "Sparse fields only; never dump full PII"
+    },
+    {
+      "name": "klaviyo_get_profile",
+      "group": "klaviyo",
+      "fail": "KLAVIYO_NOT_CONNECTED"
+    },
+    {
+      "name": "klaviyo_list_lists",
+      "group": "klaviyo",
+      "fail": "KLAVIYO_NOT_CONNECTED"
+    },
+    {
+      "name": "klaviyo_list_segments",
+      "group": "klaviyo",
+      "fail": "KLAVIYO_NOT_CONNECTED"
+    },
+    {
+      "name": "klaviyo_list_flows",
+      "group": "klaviyo",
+      "fail": "KLAVIYO_NOT_CONNECTED"
+    },
+    {
+      "name": "klaviyo_get_flow",
+      "group": "klaviyo",
+      "fail": "KLAVIYO_NOT_CONNECTED"
+    },
+    {
+      "name": "klaviyo_list_campaigns",
+      "group": "klaviyo",
+      "fail": "KLAVIYO_NOT_CONNECTED",
+      "note": "Channel filter required (default email); no send job"
+    },
+    {
+      "name": "klaviyo_list_metrics",
+      "group": "klaviyo",
+      "fail": "KLAVIYO_NOT_CONNECTED"
+    },
+    {
+      "name": "klaviyo_create_campaign",
+      "group": "klaviyo-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED",
+      "note": "Wave 18 draft only; dry_run default; confirm account id; never campaign-send-jobs"
+    },
+    {
+      "name": "klaviyo_upsert_profile",
+      "group": "klaviyo-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED",
+      "note": "POST /api/profile-import; closed fields; no properties bag"
+    },
+    {
+      "name": "klaviyo_create_event",
+      "group": "klaviyo-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED",
+      "note": "Backfill event; backfill defaults true; confirm account id"
     }
   ]
 }

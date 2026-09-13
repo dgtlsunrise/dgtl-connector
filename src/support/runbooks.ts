@@ -71,7 +71,7 @@ export const ERROR_RUNBOOKS: Partial<Record<ErrorCode, RunbookHint>> = {
   WRITE_NOT_ENABLED: {
     runbook: `${RUNBOOK_INDEX}#write_not_enabled`,
     next_human_step:
-      "Set DGTL_WRITES_ENABLED=true for Consent W GTM writes, Consent G/S writes, Shopify inventory adjust, or live Merchant Center ProductInput writes. Marketplace default stays off. Consent A remains readonly. MC live confirm must include merchant_id.",
+      "Set DGTL_WRITES_ENABLED=true for Consent W GTM writes, Consent G/S writes, Shopify inventory adjust, Klaviyo draft/upsert/event, or live Merchant Center ProductInput writes. Marketplace default stays off. Consent A remains readonly. Klaviyo live confirm must include the account id.",
   },
   MC_NOT_CONNECTED: {
     runbook: `${RUNBOOK_INDEX}#mc_not_connected`,
@@ -107,6 +107,16 @@ export const ERROR_RUNBOOKS: Partial<Record<ErrorCode, RunbookHint>> = {
     runbook: `${RUNBOOK_INDEX}#shopify_scope_missing`,
     next_human_step:
       "Reinstall the merchant custom app with the missing Admin scope. read_publications / read_product_listings / write_inventory / write_products are explicit expansions, not Polar. Never silently expand existing apps.",
+  },
+  KLAVIYO_NOT_CONNECTED: {
+    runbook: `${RUNBOOK_INDEX}#klaviyo_not_connected`,
+    next_human_step:
+      "Set KLAVIYO_API_KEY (private pk_ key) or PLUGIN_DATA/klaviyo.json. Local-free — no Polar, not Consent A. Support never collects Klaviyo keys.",
+  },
+  KLAVIYO_SCOPE_MISSING: {
+    runbook: `${RUNBOOK_INDEX}#klaviyo_scope_missing`,
+    next_human_step:
+      "Generate a new Klaviyo private key with accounts/profiles/lists/flows/campaigns/metrics/events scopes. Not Polar OAuth.",
   },
   CONSENT_W_REQUIRED: {
     runbook: `${RUNBOOK_INDEX}#consent_w_required`,

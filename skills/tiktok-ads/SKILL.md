@@ -44,4 +44,4 @@ HTTPS only for catalog `image_url` / `landing_page_url` and Events `event_source
 - Invent `content_id` that does not match a catalog `sku_id`.
 - Use Axos advertisers.
 - Treat fixtures as live. Live app + Marketing API + Polar `tiktok` mint are **Noel gates**.
-- Call Klaviyo tools (Wave 18 — not this plugin).
+- Call Klaviyo tools (`klaviyo-readonly` — local `pk_`, not this Polar/stamp skill).

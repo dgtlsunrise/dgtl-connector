@@ -2481,3 +2481,115 @@ export const ga4CreateProperty = z
   .strict()
   .superRefine(requireConfirmWhenLive);
 
+/** Klaviyo local pk_ — not Polar, not Consent A. */
+export const klaviyoGetAccount = emptyInput;
+
+const klaviyoExtraFields = z.array(z.enum(["first_name", "last_name"])).max(2).optional();
+
+export const klaviyoListProfiles = z
+  .object({
+    page_size: pageSize,
+    page_token: pageToken,
+    email: z.string().min(1).optional(),
+    extra_fields: klaviyoExtraFields,
+  })
+  .strict();
+
+export const klaviyoGetProfile = z
+  .object({
+    profile_id: z.string().min(1),
+    extra_fields: klaviyoExtraFields,
+  })
+  .strict();
+
+export const klaviyoListLists = z
+  .object({
+    page_size: pageSize,
+    page_token: pageToken,
+  })
+  .strict();
+
+export const klaviyoListSegments = z
+  .object({
+    page_size: pageSize,
+    page_token: pageToken,
+  })
+  .strict();
+
+export const klaviyoListFlows = z
+  .object({
+    page_size: pageSize,
+    page_token: pageToken,
+  })
+  .strict();
+
+export const klaviyoGetFlow = z
+  .object({
+    flow_id: z.string().min(1),
+  })
+  .strict();
+
+export const klaviyoListCampaigns = z
+  .object({
+    page_size: pageSize,
+    page_token: pageToken,
+    channel: z.enum(["email", "sms", "mobile_push"]).optional(),
+  })
+  .strict();
+
+export const klaviyoListMetrics = z
+  .object({
+    page_size: pageSize,
+    page_token: pageToken,
+  })
+  .strict();
+
+export const klaviyoCreateCampaign = z
+  .object({
+    name: z.string().min(1).max(128),
+    included_list_ids: z.array(z.string().min(1)).min(1).max(5),
+    excluded_list_ids: z.array(z.string().min(1)).max(5).optional(),
+    subject: z.string().min(1).max(255),
+    from_email: z.string().min(1).max(255),
+    from_label: z.string().min(1).max(128),
+    preview_text: z.string().min(1).max(255).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+    confirm: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const klaviyoUpsertProfile = z
+  .object({
+    email: z.string().min(1).optional(),
+    external_id: z.string().min(1).optional(),
+    profile_id: z.string().min(1).optional(),
+    first_name: z.string().min(1).max(128).optional(),
+    last_name: z.string().min(1).max(128).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+    confirm: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const klaviyoCreateEvent = z
+  .object({
+    metric_name: z.string().min(1).max(128),
+    email: z.string().min(1).optional(),
+    external_id: z.string().min(1).optional(),
+    profile_id: z.string().min(1).optional(),
+    properties: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
+    time: z.string().min(1).optional(),
+    unique_id: z.string().min(1).optional(),
+    value: z.number().optional(),
+    value_currency: z.string().min(1).max(8).optional(),
+    backfill: z.boolean().default(true),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+    confirm: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+

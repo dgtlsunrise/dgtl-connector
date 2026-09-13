@@ -328,6 +328,14 @@ async function main(argv: string[]): Promise<void> {
               ),
               store_file: "shopify-oauth.json",
             },
+            klaviyo: {
+              host_injected: Boolean(
+                ctx.env.KLAVIYO_API_KEY?.trim() ||
+                  ctx.env.DGTL_KLAVIYO_API_KEY?.trim() ||
+                  ctx.env.KLAVIYO_PRIVATE_KEY?.trim(),
+              ),
+              store_file: "klaviyo.json",
+            },
             license_ok: ctx.license.ok,
             license_features: ctx.license.features,
           },

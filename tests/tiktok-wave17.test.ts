@@ -95,7 +95,7 @@ describe("Wave 17 TikTok catalog + Events API (plugin)", () => {
     assert.ok(TIKTOK_MUTATE_TOOL_NAMES.includes("tiktok_create_campaign"));
     assert.deepEqual(TIKTOK_EVENTS_TOOL_NAMES, ["tiktok_track_events"]);
     assert.equal(TOOLS.some((t) => t.name === "tiktok_mutate"), false);
-    assert.equal(TOOLS.some((t) => t.name.startsWith("klaviyo_")), false);
+    assert.ok(TOOLS.some((t) => t.name === "tiktok_create_campaign"));
   });
 
   it("catalog gated_tools + fixtures exist", () => {

@@ -2,7 +2,7 @@
 
 **Closed free tool count: 26.** (the original 22 plus `ga4_list_account_summaries` plus `gsc_describe_schema` plus Wave 13 `gtm_list_clients` plus `gtm_list_environments`)
 
-That 26 is the **Consent A kernel** (`CONSENT_A_TOOLS` / `FREE_TOOL_NAMES` alias). Shopify is **local-free** (`LOCAL_FREE_TOOLS`, merchant token, no Polar — fail `SHOPIFY_NOT_CONNECTED`). Ads/Meta/Merchant Center/TikTok are **license-gated** (`LICENSE_GATED_TOOLS`, Polar Pro — fail `LICENSE_REQUIRED`). TikTok requires JWT feature `tiktok` (not ads/meta). GBP is local-free when the flag is on (Consent B, not Consent A). Flag off → `GBP_NOT_ENABLED`. Flag on without Consent B → `GBP_NOT_CONNECTED`. Do not stuff Shopify into the 26-tool kernel.
+That 26 is the **Consent A kernel** (`CONSENT_A_TOOLS` / `FREE_TOOL_NAMES` alias). Shopify and Klaviyo are **local-free** (`LOCAL_FREE_TOOLS` — Shopify merchant token / Klaviyo `pk_`; no Polar — fail `SHOPIFY_NOT_CONNECTED` / `KLAVIYO_NOT_CONNECTED`). Ads/Meta/Merchant Center/TikTok are **license-gated** (`LICENSE_GATED_TOOLS`, Polar Pro — fail `LICENSE_REQUIRED`). TikTok requires JWT feature `tiktok` (not ads/meta). GBP is local-free when the flag is on (Consent B, not Consent A). Flag off → `GBP_NOT_ENABLED`. Flag on without Consent B → `GBP_NOT_CONNECTED`. Do not stuff Shopify or Klaviyo into the 26-tool kernel.
 
 If you need a 27th **Consent A** tool, bump a version and update `schemas/v1/catalog.json` in the same change. Do not “just add it.” Quality over dump. Small typed tools, not a mega-query kitchen sink.
 
@@ -15,7 +15,7 @@ Machine-readable list: [`schemas/v1/catalog.json`](../schemas/v1/catalog.json). 
 ### ACTIVE / ENABLED only on confirm
 
 - `dry_run` **defaults true**. Omitted or `true` → proposed payload, **zero** mutate HTTP.
-- Live (`dry_run=false`) requires `confirm_phrase` containing the resource IDs for that tool (Ads: digits-only `customer_id`; Meta: `act_{ad_account_id}` plus child ids; TikTok: `advertiser_id` plus `campaign_id` / `catalog_id` / `pixel_code` when those tools use them; Consent W: container `publicId`; Shopify writes: shop domain `*.myshopify.com`; Merchant Center writes: digits `merchant_id`).
+- Live (`dry_run=false`) requires `confirm_phrase` containing the resource IDs for that tool (Ads: digits-only `customer_id`; Meta: `act_{ad_account_id}` plus child ids; TikTok: `advertiser_id` plus `campaign_id` / `catalog_id` / `pixel_code` when those tools use them; Consent W: container `publicId`; Shopify writes: shop domain `*.myshopify.com`; Merchant Center writes: digits `merchant_id`; Klaviyo writes: account id from `klaviyo_get_account`).
 - **Harness:** a **user** message this turn must contain those IDs. List-tool output is not the user message (`harnessUserMessageContainsCustomerId` in `src/ads/gads-write.ts`).
 - Campaign / RSA / Meta **creates** default **PAUSED**.
 - **ACTIVE** (Meta) / **ENABLED** (Google Ads) only when the caller passes **explicit** `status` **and** live confirm. Do not infer ENABLED/ACTIVE from a dry-run or from a PAUSED parent.
@@ -45,6 +45,7 @@ Live Ads / Meta / TikTok mutate requires **plugin AND Worker**. Plugin Ads / Met
 | TikTok Events (`DGTL_TIKTOK_EVENTS_ENABLED` / `TIKTOK_EVENTS_ENABLED`) | **on** | fail-closed (`tiktok_events_enabled`, **not** `TIKTOK_MUTATE_ENABLED`) | both true |
 | Consent W writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `GoogleWriteHttp`) | flag on + Consent W token |
 | Shopify writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `ShopifyHttp` mutation) | flag on + merchant `write_inventory` / `write_products` + shop-domain confirm |
+| Klaviyo writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `KlaviyoHttp` POST) | flag on + local `pk_` + confirm_phrase containing the Klaviyo account id |
 | GBP (`DGTL_GBP_ENABLED`) | **off** | n/a | flag on + Consent B token → GET hop (no stamp) |
 
 `support_packet` / `doctor` print this matrix (booleans only; never tokens).
@@ -794,7 +795,34 @@ Fail order (reads): `LICENSE_REQUIRED` → `GATEWAY_UNAVAILABLE` → `TIKTOK_NOT
 | `tiktok_track_events` | Events API 2.0. Closed `event_name`; SHA-256 email/phone; required `event_id`. `content_id` must match catalog `sku_id`. Confirm `advertiser_id` AND `pixel_code`. Dual-gate Worker `TIKTOK_EVENTS_ENABLED` (fail-closed, **not** status mutate). Never unhashed PII. |
 | `tiktok_create_campaign` | Mutate. Defaults **DISABLE** (`PAUSED`→DISABLE). Closed `objective_type`. Confirm `advertiser_id`. Spend cap $100,000. Dual-gate `TIKTOK_MUTATE_ENABLED`. |
 
-Live TikTok app + Marketing API + secrets + Polar `tiktok` mint are **Noel gates**. Code lands with fixtures. Never Axos. No Klaviyo in this wave.
+Live TikTok app + Marketing API + secrets + Polar `tiktok` mint are **Noel gates**. Code lands with fixtures. Never Axos.
 
 Skill: `tiktok-ads`.
+
+## Klaviyo — local `pk_` lane (Wave 18; not Consent A)
+
+Merchant-held **private** API key on the Bot computer. **No Polar. No stamp hop. No Polar `klaviyo` OAuth.** Fail closed `KLAVIYO_NOT_CONNECTED` without `KLAVIYO_API_KEY` (or `PLUGIN_DATA/klaviyo.json`). Revision header **`2026-07-15`**. Host `a.klaviyo.com`. Closed free Google count stays **26**. Never log the key.
+
+**Consent decision:** Klaviyo is not Google OAuth. Reads stay **LOCAL_FREE**. Writes use the **same** `pk_` after `DGTL_WRITES_ENABLED` (default **false**) + `confirm_phrase` containing the account id from `klaviyo_get_account`.
+
+| Tool | Notes |
+| --- | --- |
+| `klaviyo_get_account` | Account whoami. Copy the account id for write confirms. |
+| `klaviyo_list_profiles` | Sparse (`email`, `created`, `updated`, `external_id`). Optional email filter. `extra_fields` may add `first_name` / `last_name` only. Never dumps phone, location, or properties. |
+| `klaviyo_get_profile` | Requires `profile_id`. Same sparse fieldset. |
+| `klaviyo_list_lists` | Paginated lists. No CSV import mega-tool. |
+| `klaviyo_list_segments` | Paginated segments. |
+| `klaviyo_list_flows` | Paginated flows. |
+| `klaviyo_get_flow` | Requires `flow_id`. |
+| `klaviyo_list_campaigns` | Channel filter required by the API (default `email`). Closed `email` / `sms` / `mobile_push`. |
+| `klaviyo_list_metrics` | Metrics catalog. Not an open Metric Aggregates passthrough. |
+| `klaviyo_create_campaign` | Write. **Draft email only** (`POST /api/campaigns`). `dry_run` default true. Live: `confirm_phrase` must include the account id. **Never** `POST /api/campaign-send-jobs`. |
+| `klaviyo_upsert_profile` | Write. `POST /api/profile-import`. Closed fields (`email` / `external_id` / `profile_id` + optional names). No properties bag. |
+| `klaviyo_create_event` | Write. `POST /api/events` backfill. `backfill` defaults **true** (flows do not re-fire). Closed flat properties. |
+
+Fail order for writes: `WRITE_NOT_ENABLED` → `KLAVIYO_NOT_CONNECTED` → dry-run (GET account, zero mutate POST) → live needs account id in `confirm_phrase`.
+
+**Out of this wave:** campaign send jobs (Wave 19/22), catalog items, reviews, Polar `klaviyo` OAuth, stamp hop, Consent A kernel membership.
+
+Skill: `klaviyo-readonly`.
 

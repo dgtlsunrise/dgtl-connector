@@ -59,6 +59,7 @@ SKILLS = [
     "shopify-ads-mc-join",
     "shopping-mc-readiness",
     "tiktok-ads",
+    "klaviyo-readonly",
 ]
 
 SCOPES = [
@@ -243,6 +244,36 @@ def check_catalog_and_tools() -> None:
                 )
             elif wname in names:
                 err(f"catalog.json: Shopify write tool {wname} must not be in Consent A tools[]")
+        for kname in (
+            "klaviyo_get_account",
+            "klaviyo_list_profiles",
+            "klaviyo_get_profile",
+            "klaviyo_list_lists",
+            "klaviyo_list_segments",
+            "klaviyo_list_flows",
+            "klaviyo_get_flow",
+            "klaviyo_list_campaigns",
+            "klaviyo_list_metrics",
+        ):
+            g = by_name.get(kname)
+            if not g:
+                err(f"catalog.json gated_tools missing {kname}")
+            elif g.get("fail") == "LICENSE_REQUIRED":
+                err(f"catalog.json {kname} must not be LICENSE_REQUIRED (local-free, not Polar)")
+            elif g.get("fail") != "KLAVIYO_NOT_CONNECTED":
+                err(f"catalog.json {kname} fail must be KLAVIYO_NOT_CONNECTED, got {g.get('fail')!r}")
+            elif kname in names:
+                err(f"catalog.json: Klaviyo tool {kname} must not be in Consent A tools[]")
+        for kwname in ("klaviyo_create_campaign", "klaviyo_upsert_profile", "klaviyo_create_event"):
+            gwrite = by_name.get(kwname)
+            if not gwrite:
+                err(f"catalog.json gated_tools missing {kwname}")
+            elif gwrite.get("fail") != "WRITE_NOT_ENABLED":
+                err(
+                    f"catalog.json {kwname} fail must be WRITE_NOT_ENABLED, got {gwrite.get('fail')!r}"
+                )
+            elif kwname in names:
+                err(f"catalog.json: Klaviyo write tool {kwname} must not be in Consent A tools[]")
         for paid in ("gads_search", "meta_insights", "mc_list_products", "tiktok_list_advertisers", "tiktok_insights"):
             g = by_name.get(paid)
             if not g:
@@ -484,7 +515,28 @@ def main() -> int:
             print(f"  - {item}")
         return 1
     catalog = json.loads(read(ROOT / "schemas/v1/catalog.json"))
-    print(f"SPEC OK  tools={catalog['count']}  skills={len(SKILLS)}")
+    gated = catalog.get("gated_tools") if isinstance(catalog.get("gated_tools"), list) else []
+    local_free = 0
+    for g in gated:
+        if not isinstance(g, dict):
+            continue
+        fail = g.get("fail")
+        name = str(g.get("name") or "")
+        if fail in {
+            "SHOPIFY_NOT_CONNECTED",
+            "KLAVIYO_NOT_CONNECTED",
+            "GBP_NOT_ENABLED",
+            "GBP_NOT_CONNECTED",
+        }:
+            local_free += 1
+        elif fail == "WRITE_NOT_ENABLED" and (
+            name.startswith("shopify_") or name.startswith("klaviyo_")
+        ):
+            local_free += 1
+    print(
+        f"SPEC OK  tools={catalog['count']} (Consent A kernel)  "
+        f"local_free={local_free}  skills={len(SKILLS)}"
+    )
     return 0
 
 

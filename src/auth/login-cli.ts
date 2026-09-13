@@ -571,13 +571,19 @@ Shopify (free local): set SHOPIFY_STORE + SHOPIFY_ACCESS_TOKEN (merchant custom
   read_product_listings, write_inventory, write_products. Writes also need
   DGTL_WRITES_ENABLED (default off).
 
+Klaviyo (free local pk_): set KLAVIYO_API_KEY or PLUGIN_DATA/klaviyo.json.
+  Fail closed KLAVIYO_NOT_CONNECTED. Revision 2026-07-15. No Polar OAuth, no
+  stamp, not Consent A. Never log the key. Writes (draft campaign / profile
+  upsert / backfill event) need DGTL_WRITES_ENABLED + confirm_phrase with the
+  account id. No campaign send job.
+
 Paid Google Ads / Meta tools are listed and return LICENSE_REQUIRED until a
 DGTL license JWT is present. This binary never ships a developer-token.
 
 DIAGNOSTICS
   doctor / auth doctor prints node + package versions, whether dist/ exists,
   which known env names are SET (never values), PLUGIN_DATA file existence
-  (Consent A/C/W/G/S/MC, Meta, Shopify, license.jwt), plugin vs Worker dual-gate
+  (Consent A/C/W/G/S/MC, Meta, Shopify, Klaviyo, license.jwt), plugin vs Worker dual-gate
   mutate booleans, and a local license summary (valid/invalid/missing features).
   Never prints tokens, JWT, or gateway URLs. Exits 1 if there is no build or
   no way to auth. Same as \`npm run doctor\`.
