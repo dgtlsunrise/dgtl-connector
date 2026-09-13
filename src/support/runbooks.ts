@@ -31,7 +31,12 @@ export const ERROR_RUNBOOKS: Partial<Record<ErrorCode, RunbookHint>> = {
   TIKTOK_MUTATE_NOT_ENABLED: {
     runbook: `${RUNBOOK_INDEX}#tiktok_mutate_not_enabled`,
     next_human_step:
-      "Check plugin DGTL_TIKTOK_MUTATE_ENABLED (default on) AND Worker TIKTOK_MUTATE_ENABLED. Polar JWT must include tiktok. App secret stays on the Worker.",
+      "Check plugin DGTL_TIKTOK_MUTATE_ENABLED (default on) AND Worker TIKTOK_MUTATE_ENABLED. Catalog create/upload/bind and campaign create use this flag. Polar JWT must include tiktok. App secret stays on the Worker.",
+  },
+  TIKTOK_EVENTS_NOT_ENABLED: {
+    runbook: `${RUNBOOK_INDEX}#tiktok_events_not_enabled`,
+    next_human_step:
+      "Check plugin DGTL_TIKTOK_EVENTS_ENABLED (default on) AND Worker TIKTOK_EVENTS_ENABLED (fail-closed, separate from TIKTOK_MUTATE_ENABLED). Polar tiktok bit. App secret stays on the Worker. Never collect unhashed PII. content_id must match catalog sku_id.",
   },
   LICENSE_REQUIRED: {
     runbook: `${RUNBOOK_INDEX}#license_required`,

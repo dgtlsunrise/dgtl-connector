@@ -2130,6 +2130,181 @@ export const tiktokUpdateCampaign = z
   .strict()
   .superRefine(requireConfirmWhenLive);
 
+const TIKTOK_CATALOG_TYPES = ["ECOM", "HOTEL", "FLIGHT", "DESTINATION", "AUTO"] as const;
+const TIKTOK_AVAIL = ["IN_STOCK", "OUT_OF_STOCK", "PREORDER"] as const;
+const TIKTOK_CONDITION = ["NEW", "REFURBISHED", "USED"] as const;
+const TIKTOK_EVENT_NAMES = [
+  "AddPaymentInfo",
+  "AddToCart",
+  "AddToWishlist",
+  "ClickButton",
+  "CompletePayment",
+  "CompleteRegistration",
+  "Contact",
+  "CustomizeProduct",
+  "Download",
+  "FindLocation",
+  "InitiateCheckout",
+  "PlaceAnOrder",
+  "Schedule",
+  "Search",
+  "StartTrial",
+  "SubmitApplication",
+  "SubmitForm",
+  "Subscribe",
+  "ViewContent",
+] as const;
+const TIKTOK_EVENT_SOURCES = ["web", "app", "offline", "crm"] as const;
+const TIKTOK_OBJECTIVES = [
+  "APP_PROMOTION",
+  "WEB_CONVERSIONS",
+  "REACH",
+  "TRAFFIC",
+  "VIDEO_VIEWS",
+  "PRODUCT_SALES",
+  "ENGAGEMENT",
+  "LEAD_GENERATION",
+] as const;
+const TIKTOK_BUDGET_MODES = ["BUDGET_MODE_DAY", "BUDGET_MODE_TOTAL", "BUDGET_MODE_INFINITE"] as const;
+
+const tiktokCatalogProduct = z
+  .object({
+    sku_id: z.string().min(1).max(100),
+    title: z.string().min(1).max(200),
+    description: z.string().max(1000).optional(),
+    availability: z.enum(TIKTOK_AVAIL).optional(),
+    condition: z.enum(TIKTOK_CONDITION).optional(),
+    price: z.union([z.string().min(1).max(40), z.number()]),
+    currency: z.string().length(3).optional(),
+    sale_price: z.string().max(40).optional(),
+    image_url: z.string().url().max(2048),
+    additional_image_urls: z.union([z.array(z.string().url().max(2048)).max(10), z.string()]).optional(),
+    landing_page_url: z.string().url().max(2048),
+    brand: z.string().max(200).optional(),
+    item_group_id: z.string().max(100).optional(),
+    google_product_category: z.string().max(200).optional(),
+    color: z.string().max(80).optional(),
+    size: z.string().max(80).optional(),
+    gender: z.string().max(40).optional(),
+    age_group: z.string().max(40).optional(),
+    material: z.string().max(80).optional(),
+    pattern: z.string().max(80).optional(),
+    product_type: z.string().max(200).optional(),
+    quantity: z.union([z.number().int().min(0), z.string()]).optional(),
+  })
+  .strict();
+
+const tiktokEvent = z
+  .object({
+    event_name: z.enum(TIKTOK_EVENT_NAMES),
+    event_id: z.string().min(1).max(128),
+    event_time: z.union([z.number().int().positive(), z.string()]).optional(),
+    event_source_url: z.string().url().max(2048).optional(),
+    email: z.string().min(1).max(256).optional(),
+    em: z.string().min(1).max(256).optional(),
+    phone: z.string().min(1).max(64).optional(),
+    ph: z.string().min(1).max(64).optional(),
+    external_id: z.string().min(1).max(256).optional(),
+    ip: z.string().min(1).max(64).optional(),
+    user_agent: z.string().min(1).max(512).optional(),
+    ttclid: z.string().min(1).max(256).optional(),
+    ttp: z.string().min(1).max(256).optional(),
+    content_id: z.string().min(1).max(100).optional(),
+    content_ids: z.union([z.array(z.string().min(1)).max(50), z.string()]).optional(),
+    content_type: z.string().max(64).optional(),
+    content_name: z.string().max(256).optional(),
+    value: z.union([z.number().min(0), z.string()]).optional(),
+    event_value: z.union([z.number().min(0), z.string()]).optional(),
+    currency: z.string().length(3).optional(),
+    quantity: z.union([z.number().int().positive(), z.string()]).optional(),
+    order_id: z.string().max(128).optional(),
+  })
+  .strict();
+
+export const tiktokListCatalogs = z
+  .object({
+    advertiser_id: z.string().min(1),
+    bc_id: z.string().min(1).optional(),
+    catalog_id: z.string().min(1).optional(),
+    page_size: pageSize,
+  })
+  .strict();
+
+export const tiktokListPixels = z
+  .object({
+    advertiser_id: z.string().min(1),
+    pixel_id: z.string().min(1).optional(),
+    pixel_code: z.string().min(1).optional(),
+    page_size: pageSize,
+  })
+  .strict();
+
+export const tiktokCreateCatalog = z
+  .object({
+    advertiser_id: z.string().min(1),
+    name: z.string().min(1).max(400),
+    catalog_type: z.enum(TIKTOK_CATALOG_TYPES).optional(),
+    bc_id: z.string().min(1).optional(),
+    currency: z.string().length(3).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const tiktokUploadCatalogProducts = z
+  .object({
+    advertiser_id: z.string().min(1),
+    catalog_id: z.string().min(1),
+    bc_id: z.string().min(1).optional(),
+    products: z.array(tiktokCatalogProduct).min(1).max(50),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const tiktokBindCatalogEventsource = z
+  .object({
+    advertiser_id: z.string().min(1),
+    catalog_id: z.string().min(1),
+    pixel_code: z.string().min(1).optional(),
+    app_id: z.string().min(1).optional(),
+    bc_id: z.string().min(1).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const tiktokTrackEvents = z
+  .object({
+    advertiser_id: z.string().min(1),
+    pixel_code: z.string().min(1),
+    event_source: z.enum(TIKTOK_EVENT_SOURCES).optional(),
+    events: z.array(tiktokEvent).min(1).max(10),
+    test_event_code: z.string().min(1).max(64).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const tiktokCreateCampaign = z
+  .object({
+    advertiser_id: z.string().min(1),
+    campaign_name: z.string().min(1).max(400),
+    objective_type: z.enum(TIKTOK_OBJECTIVES),
+    budget_mode: z.enum(TIKTOK_BUDGET_MODES).optional(),
+    budget: z.union([z.number().positive(), z.string()]).optional(),
+    operation_status: z.enum(["ENABLE", "DISABLE", "ACTIVE", "PAUSED"]).optional(),
+    status: z.enum(["ENABLE", "DISABLE", "ACTIVE", "PAUSED"]).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
 /** Consent G / Consent A GA4 Admin Wave 11 — dry_run defaults true on writes. */
 export const ga4ListGoogleAdsLinks = propertyPage;
 

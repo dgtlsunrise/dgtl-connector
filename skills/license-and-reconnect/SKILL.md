@@ -1,6 +1,6 @@
 ---
 name: license-and-reconnect
-description: Map LICENSE_REQUIRED, GATEWAY_UNAVAILABLE, REAUTH_REQUIRED, CONSENT_MISSING, GBP_NOT_ENABLED, GBP_NOT_CONNECTED, GBP_SCOPE_MISSING, WRITE_NOT_ENABLED, CONSENT_W_REQUIRED, CONSENT_G_REQUIRED, CONSENT_S_REQUIRED, ADS_MUTATE_NOT_ENABLED, META_MUTATE_NOT_ENABLED, META_CAPI_NOT_ENABLED, META_SCOPE_MISSING, SPEND_CAP_EXCEEDED, ADS_SCOPE_MISSING, META_NOT_CONNECTED. Use when a paid tool failed, Google access expired, a scope was unchecked, writes are gated, gateway is down, or the user asks about Ads/Meta unlock. Free GA4/GSC/GTM keep working without a license.
+description: Map LICENSE_REQUIRED, GATEWAY_UNAVAILABLE, REAUTH_REQUIRED, CONSENT_MISSING, GBP_NOT_ENABLED, GBP_NOT_CONNECTED, GBP_SCOPE_MISSING, WRITE_NOT_ENABLED, CONSENT_W_REQUIRED, CONSENT_G_REQUIRED, CONSENT_S_REQUIRED, ADS_MUTATE_NOT_ENABLED, META_MUTATE_NOT_ENABLED, META_CAPI_NOT_ENABLED, TIKTOK_EVENTS_NOT_ENABLED, META_SCOPE_MISSING, SPEND_CAP_EXCEEDED, ADS_SCOPE_MISSING, META_NOT_CONNECTED. Use when a paid tool failed, Google access expired, a scope was unchecked, writes are gated, gateway is down, or the user asks about Ads/Meta unlock. Free GA4/GSC/GTM keep working without a license.
 ---
 
 # License and reconnect
@@ -35,6 +35,7 @@ Do not ask for a Google Ads developer-token or a Meta app secret.
 | `ADS_MUTATE_NOT_ENABLED` | Ads mutate opted out (`DGTL_ADS_MUTATE_ENABLED=false`) | Plugin defaults **on**. Opt out with env=`false`. Live hop still needs Worker `ADS_MUTATE_ENABLED=true`. Never Consent A. |
 | `META_MUTATE_NOT_ENABLED` | Meta mutate opted out (`DGTL_META_MUTATE_ENABLED=false`) | Plugin defaults **on**. Opt out with env=`false`. Live hop still needs Worker `META_MUTATE_ENABLED=true` after `ads_management` Advanced Access. Catalog items_batch / create catalog use this flag. Closed fields only — do not invent objective/creative. |
 | `META_CAPI_NOT_ENABLED` | CAPI opted out or Worker `META_CAPI_ENABLED` off | Plugin defaults **on**. Live hop needs Worker `META_CAPI_ENABLED=true` (fail-closed, **not** `META_MUTATE_ENABLED`). Polar Pro `meta`. Never collect unhashed PII. |
+| `TIKTOK_EVENTS_NOT_ENABLED` | Events API opted out or Worker `TIKTOK_EVENTS_ENABLED` off | Plugin defaults **on**. Live hop needs Worker `TIKTOK_EVENTS_ENABLED=true` (fail-closed, **not** `TIKTOK_MUTATE_ENABLED`). Polar `tiktok`. `content_id` must match catalog `sku_id`. Never collect unhashed PII. |
 | `META_SCOPE_MISSING` | Token lacks `ads_management` / `catalog_management` (or Graph denied mutate) | Re-authorize Meta after App Review Advanced Access. Do not silently retry. Reads may still work. |
 | `SPEND_CAP_EXCEEDED` | Budget above sanity cap | Google: lower `amount_micros` / `daily_budget_dollars` (micros). Meta: lower `daily_budget` / `lifetime_budget` (**cents**, not micros). Cap $100k/day equivalent. No mutate hop. |
 | `ADS_SCOPE_MISSING` | License + gateway ok, Ads OAuth missing | Consent C (`adwords`) is a second grant — never reuse Consent A / `GOOGLE_ACCESS_TOKEN`. |

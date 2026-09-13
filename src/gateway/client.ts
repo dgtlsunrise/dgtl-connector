@@ -243,6 +243,29 @@ export type GatewayParams = {
   num_items?: string | number;
   order_id?: string;
   events?: Array<Record<string, unknown>>;
+  /** Wave 17 TikTok catalog + Events API. */
+  bc_id?: string;
+  catalog_name?: string;
+  catalog_type?: string;
+  sku_id?: string;
+  image_url?: string;
+  additional_image_urls?: string[];
+  landing_page_url?: string;
+  products?: Array<Record<string, unknown>>;
+  pixel_code?: string;
+  event_source?: string;
+  event_source_id?: string;
+  content_id?: string;
+  email?: string;
+  phone?: string;
+  ip?: string;
+  user_agent?: string;
+  ttclid?: string;
+  ttp?: string;
+  value?: string | number;
+  budget_mode?: string;
+  budget?: string | number;
+  operation_status?: string;
 };
 
 export type GatewayRequest = {
@@ -262,6 +285,8 @@ export type GatewayReachable = {
   tiktok_mutate_enabled?: boolean | null;
   /** Worker META_CAPI_ENABLED — boolean from health, else null. Never the env string. Fail-closed. */
   meta_capi_enabled?: boolean | null;
+  /** Worker TIKTOK_EVENTS_ENABLED — boolean from health, else null. Never the env string. Fail-closed. */
+  tiktok_events_enabled?: boolean | null;
 };
 
 function healthBool(value: unknown): boolean | null {
@@ -312,6 +337,7 @@ export async function probeGatewayReachable(
       meta_mutate_enabled?: unknown;
       tiktok_mutate_enabled?: unknown;
       meta_capi_enabled?: unknown;
+      tiktok_events_enabled?: unknown;
     } = {};
     try {
       body = (await res.json()) as typeof body;
@@ -327,6 +353,7 @@ export async function probeGatewayReachable(
       meta_mutate_enabled: healthBool(body.meta_mutate_enabled),
       tiktok_mutate_enabled: healthBool(body.tiktok_mutate_enabled),
       meta_capi_enabled: healthBool(body.meta_capi_enabled),
+      tiktok_events_enabled: healthBool(body.tiktok_events_enabled),
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -411,6 +438,40 @@ const CAPI_EVENT_KEYS = new Set([
   "content_name",
   "num_items",
   "order_id",
+  "email",
+  "phone",
+  "ip",
+  "user_agent",
+  "ttclid",
+  "ttp",
+  "content_id",
+  "value",
+  "quantity",
+]);
+
+const TIKTOK_PRODUCT_KEYS = new Set([
+  "sku_id",
+  "title",
+  "description",
+  "availability",
+  "condition",
+  "price",
+  "currency",
+  "sale_price",
+  "image_url",
+  "additional_image_urls",
+  "landing_page_url",
+  "brand",
+  "item_group_id",
+  "google_product_category",
+  "color",
+  "size",
+  "gender",
+  "age_group",
+  "material",
+  "pattern",
+  "product_type",
+  "quantity",
 ]);
 
 function copyAllowedObject(raw: unknown, keys: Set<string>): Record<string, unknown> | null {
@@ -437,6 +498,13 @@ function copyAllowedObject(raw: unknown, keys: Set<string>): Record<string, unkn
     }
     if (k === "content_ids" && Array.isArray(v)) {
       const arr = v.filter((x): x is string => typeof x === "string" && x.trim().length > 0).map((x) => x.trim());
+      if (arr.length) out[k] = arr;
+    }
+    if (k === "additional_image_urls" && Array.isArray(v)) {
+      const arr = v
+        .filter((x): x is string => typeof x === "string" && /^https:\/\//i.test(x.trim()))
+        .map((x) => x.trim())
+        .slice(0, 10);
       if (arr.length) out[k] = arr;
     }
   }
@@ -651,9 +719,18 @@ function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
       if (items.length) out.items = items;
       continue;
     }
+    if (k === "products" && Array.isArray(v)) {
+      const products = copyAllowedObjectArray(v, TIKTOK_PRODUCT_KEYS, 50);
+      if (products.length) out.products = products;
+      continue;
+    }
     if (k === "events" && Array.isArray(v)) {
       const events = copyAllowedObjectArray(v, CAPI_EVENT_KEYS, 10);
       if (events.length) out.events = events;
+      continue;
+    }
+    if ((k === "budget" || k === "value") && (typeof v === "string" || typeof v === "number")) {
+      (out as Record<string, unknown>)[k] = v;
       continue;
     }
     if (k === "content_ids" && Array.isArray(v)) {
@@ -731,6 +808,7 @@ const KNOWN_ERROR_CODES = new Set<string>([
   "SPEND_CAP_EXCEEDED",
   "TIKTOK_NOT_CONNECTED",
   "TIKTOK_MUTATE_NOT_ENABLED",
+  "TIKTOK_EVENTS_NOT_ENABLED",
   "TIKTOK_SCOPE_MISSING",
 ]);
 

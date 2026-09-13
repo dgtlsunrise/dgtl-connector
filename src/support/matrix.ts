@@ -10,6 +10,7 @@ export type PluginFlagBooleans = {
   metaMutateEnabled: boolean;
   tiktokMutateEnabled: boolean;
   metaCapiEnabled: boolean;
+  tiktokEventsEnabled: boolean;
   writesEnabled: boolean;
   gbpEnabled: boolean;
 };
@@ -20,6 +21,7 @@ export type WorkerFlagBooleans = {
   metaMutateEnabled: boolean | null;
   tiktokMutateEnabled: boolean | null;
   metaCapiEnabled: boolean | null;
+  tiktokEventsEnabled: boolean | null;
 };
 
 /** Dual-gate lane: live mutate requires plugin AND Worker both true. All booleans. */
@@ -35,6 +37,7 @@ export type DualGateMatrix = {
   meta: DualGateLane;
   tiktok: DualGateLane;
   capi: DualGateLane;
+  tiktok_events: DualGateLane;
 };
 
 export type ConsentStorePresence = {
@@ -56,6 +59,7 @@ export function pluginFlagBooleans(flags: Flags): PluginFlagBooleans {
     metaMutateEnabled: flags.metaMutateEnabled,
     tiktokMutateEnabled: flags.tiktokMutateEnabled,
     metaCapiEnabled: flags.metaCapiEnabled,
+    tiktokEventsEnabled: flags.tiktokEventsEnabled,
     writesEnabled: flags.writesEnabled,
     gbpEnabled: flags.gbpEnabled,
   };
@@ -78,6 +82,7 @@ export function dualGateMatrix(plugin: PluginFlagBooleans, worker: WorkerFlagBoo
     meta: lane(plugin.metaMutateEnabled, worker.metaMutateEnabled),
     tiktok: lane(plugin.tiktokMutateEnabled, worker.tiktokMutateEnabled),
     capi: lane(plugin.metaCapiEnabled, worker.metaCapiEnabled),
+    tiktok_events: lane(plugin.tiktokEventsEnabled, worker.tiktokEventsEnabled),
   };
 }
 

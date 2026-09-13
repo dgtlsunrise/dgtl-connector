@@ -57,6 +57,7 @@
         "GBP_SCOPE_MISSING",
         "TIKTOK_NOT_CONNECTED",
         "TIKTOK_MUTATE_NOT_ENABLED",
+        "TIKTOK_EVENTS_NOT_ENABLED",
         "TIKTOK_SCOPE_MISSING"
       ]
     },

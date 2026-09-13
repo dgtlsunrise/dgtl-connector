@@ -18,7 +18,11 @@ Plugin `DGTL_META_CAPI_ENABLED` defaults on; Worker `META_CAPI_ENABLED` is fail-
 
 ## `TIKTOK_MUTATE_NOT_ENABLED`
 
-Plugin default on; Worker `TIKTOK_MUTATE_ENABLED` fail-closed. Polar JWT must include `tiktok` (not ads/meta bits). App secret stays on the Worker.
+Plugin default on; Worker `TIKTOK_MUTATE_ENABLED` fail-closed. Catalog create/upload/bind and campaign create use this flag. Polar JWT must include `tiktok` (not ads/meta bits). App secret stays on the Worker.
+
+## `TIKTOK_EVENTS_NOT_ENABLED`
+
+Plugin `DGTL_TIKTOK_EVENTS_ENABLED` defaults on; Worker `TIKTOK_EVENTS_ENABLED` is fail-closed and **separate** from `TIKTOK_MUTATE_ENABLED`. Polar `tiktok` bit. App secret stays on the Worker. Never collect unhashed PII. `content_id` must match catalog `sku_id`. Stamp hop `POST /open_api/{TIKTOK_API_VERSION}/event/track/`.
 
 ## `LICENSE_REQUIRED`
 

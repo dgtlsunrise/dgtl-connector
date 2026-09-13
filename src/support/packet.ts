@@ -98,6 +98,7 @@ export async function collectSupportPacket(
     metaMutateEnabled: probe.reachable ? (probe.meta_mutate_enabled ?? null) : null,
     tiktokMutateEnabled: probe.reachable ? (probe.tiktok_mutate_enabled ?? null) : null,
     metaCapiEnabled: probe.reachable ? (probe.meta_capi_enabled ?? null) : null,
+    tiktokEventsEnabled: probe.reachable ? (probe.tiktok_events_enabled ?? null) : null,
   };
   const features = safeLicenseFeatures(ctx.license.features);
   const book = runbookForError(intake.error_code);

@@ -316,10 +316,17 @@ TikTok Ads tools without an advertiser user token. Polar feature `tiktok` + gate
 
 ### `TIKTOK_MUTATE_NOT_ENABLED`
 
-Plugin TikTok mutate opted out, or Worker `TIKTOK_MUTATE_ENABLED` is off. Reads still work with the tiktok license.
+Plugin TikTok mutate opted out, or Worker `TIKTOK_MUTATE_ENABLED` is off. Catalog create/upload/bind and campaign create use this flag. Reads still work with the tiktok license.
 
 **User-visible:**  
-"TikTok Ads mutate tools are opted out (DGTL_TIKTOK_MUTATE_ENABLED=false). Plugin defaults on; unset the env or set true to re-enable. Live hop still needs Worker TIKTOK_MUTATE_ENABLED=true after Marketing API write access. Reads still work with Pro + tiktok feature."
+"TikTok Ads mutate tools are opted out (DGTL_TIKTOK_MUTATE_ENABLED=false). Plugin defaults on; unset the env or set true to re-enable. Live hop still needs Worker TIKTOK_MUTATE_ENABLED=true after Marketing API write access. Catalog create/upload/bind and campaign create use this flag. Reads still work with Pro + tiktok feature."
+
+### `TIKTOK_EVENTS_NOT_ENABLED`
+
+TikTok Events API send opted out, or Worker `TIKTOK_EVENTS_ENABLED` is off / unknown. Plugin `DGTL_TIKTOK_EVENTS_ENABLED` defaults **on**. Live hop dual-gates Worker `TIKTOK_EVENTS_ENABLED` (fail-closed, **separate** from `TIKTOK_MUTATE_ENABLED`). Polar `tiktok` bit. App secret stays on the Worker. Never unhashed PII. `content_id` must match catalog `sku_id`.
+
+**User-visible:**  
+"TikTok Events API send is opted out or the Worker TIKTOK_EVENTS_ENABLED flag is off. Plugin defaults on; set DGTL_TIKTOK_EVENTS_ENABLED=false to opt out. Live hop needs Worker TIKTOK_EVENTS_ENABLED=true (fail-closed, separate from TIKTOK_MUTATE_ENABLED). Polar tiktok bit. App secret stays on the Worker. Never send unhashed PII. content_id must match catalog sku_id."
 
 ### `TIKTOK_SCOPE_MISSING`
 

@@ -93,7 +93,8 @@ describe("W0.2 registry ↔ stamp mutate allowlist parity", () => {
         x.group === "gads-write" ||
         x.group === "meta-write" ||
         x.group === "meta-capi" ||
-        x.group === "tiktok-write",
+        x.group === "tiktok-write" ||
+        x.group === "tiktok-events",
     )) {
       assert.equal(t.annotations.destructiveHint, true, `${t.name} mutate must be destructive`);
       assert.equal(t.annotations.readOnlyHint, false, `${t.name} mutate must not be readOnly`);

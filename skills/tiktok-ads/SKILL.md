@@ -1,6 +1,6 @@
 ---
 name: tiktok-ads
-description: Use TikTok Ads tools via the DGTL stamp hop. Polar feature tiktok (not ads/meta). List advertisers first. Mutate is dry_run + confirm. App secret never in the plugin.
+description: Use TikTok Ads tools via the DGTL stamp hop. Polar feature tiktok (not ads/meta). List advertisers first. Catalog + Events API + mutate are dry_run + confirm. content_id must match catalog sku_id. App secret never in the plugin.
 ---
 
 # TikTok Ads
@@ -12,7 +12,13 @@ Stamp hop. App id + secret live on the Worker. This plugin holds only the advert
 1. `tiktok_list_advertisers` — copy `advertiser_id`. Do not invent.
 2. `tiktok_list_campaigns` with that id.
 3. `tiktok_insights` with `advertiser_id` + `date_start`/`date_stop` (YYYY-MM-DD). Optional `level`: advertiser | campaign | adgroup | ad.
-4. Mutate: `tiktok_update_campaign` **dry_run first**. Live needs `confirm_phrase` containing **advertiser_id AND campaign_id** in a **user** message this turn. List-tool output is not the user message.
+4. Catalog: `tiktok_list_catalogs` → optional `tiktok_create_catalog` → `tiktok_upload_catalog_products`. **`sku_id` is the Events API `content_id`.**
+5. Pixels: `tiktok_list_pixels` — copy `pixel_code`. Bind with `tiktok_bind_catalog_eventsource` (`pixel_code` XOR `app_id`).
+6. Events: `tiktok_track_events` **dry_run first**. `content_id` / `content_ids` **must match catalog `sku_id`**. Live needs `confirm_phrase` containing **advertiser_id AND pixel_code**.
+7. Status mutate: `tiktok_update_campaign` **dry_run first**. Live needs `confirm_phrase` containing **advertiser_id AND campaign_id**.
+8. Optional create: `tiktok_create_campaign` defaults **DISABLE** (`PAUSED`→DISABLE). Confirm `advertiser_id`.
+
+List-tool output is not the user message.
 
 ## Gates
 
@@ -23,14 +29,19 @@ Stamp hop. App id + secret live on the Worker. This plugin holds only the advert
 | No user token | `TIKTOK_NOT_CONNECTED` |
 | Plugin mutate flag off | `TIKTOK_MUTATE_NOT_ENABLED` |
 | Worker `TIKTOK_MUTATE_ENABLED` off | `TIKTOK_MUTATE_NOT_ENABLED` (from stamp) |
+| Plugin Events flag off / Worker `TIKTOK_EVENTS_ENABLED` off | `TIKTOK_EVENTS_NOT_ENABLED` |
 
-Plugin mutate defaults **on**. Worker mutate defaults **off**. Live needs both.
+Plugin mutate + Events flags default **on**. Worker flags default **off** (fail-closed). Live needs both. Events is **separate** from status mutate.
 
-Status: TikTok `ENABLE` / `DISABLE`. `ACTIVE`→ENABLE, `PAUSED`→DISABLE. **No DELETE.**
+Status / create: TikTok `ENABLE` / `DISABLE`. `ACTIVE`→ENABLE, `PAUSED`→DISABLE. **No DELETE.** Creates default DISABLE.
+
+HTTPS only for catalog `image_url` / `landing_page_url` and Events `event_source_url`.
 
 ## Do not
 
 - Overload Polar `ads` or `meta` bits.
-- Send app secret, `campaign_ids` arrays, budget, or hop URLs.
+- Send app secret, hop URLs, or unhashed email/phone.
+- Invent `content_id` that does not match a catalog `sku_id`.
 - Use Axos advertisers.
 - Treat fixtures as live. Live app + Marketing API + Polar `tiktok` mint are **Noel gates**.
+- Call Klaviyo tools (Wave 18 — not this plugin).

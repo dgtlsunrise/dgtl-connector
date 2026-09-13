@@ -1,6 +1,6 @@
 {
   "comment": "Wave 9 tools/list freeze. Additive named tools are allowed. Deleting a name fails CI. No gads_mutate / meta_mutate.",
-  "count": 134,
+  "count": 141,
   "names": [
     "google_whoami",
     "ga4_list_accounts",
@@ -135,6 +135,13 @@
     "tiktok_list_advertisers",
     "tiktok_list_campaigns",
     "tiktok_insights",
-    "tiktok_update_campaign"
+    "tiktok_update_campaign",
+    "tiktok_list_catalogs",
+    "tiktok_create_catalog",
+    "tiktok_upload_catalog_products",
+    "tiktok_bind_catalog_eventsource",
+    "tiktok_list_pixels",
+    "tiktok_track_events",
+    "tiktok_create_campaign"
   ]
 }

@@ -14,7 +14,9 @@
     "logo_file_url",
     "image_link",
     "additional_image_link",
-    "event_source_url"
+    "event_source_url",
+    "image_url",
+    "landing_page_url"
   ],
   "path_only_url_adjacent": [
     "path1",
@@ -202,7 +204,29 @@
     "content_name",
     "num_items",
     "order_id",
-    "events"
+    "events",
+    "bc_id",
+    "catalog_name",
+    "catalog_type",
+    "sku_id",
+    "image_url",
+    "additional_image_urls",
+    "landing_page_url",
+    "products",
+    "pixel_code",
+    "event_source",
+    "event_source_id",
+    "content_id",
+    "email",
+    "phone",
+    "ip",
+    "user_agent",
+    "ttclid",
+    "ttp",
+    "value",
+    "budget_mode",
+    "budget",
+    "operation_status"
   ],
   "tools": [
     {
@@ -694,6 +718,55 @@
       "kind": "mutate",
       "method": "POST",
       "path_template": "/open_api/{TIKTOK_API_VERSION}/campaign/status/update/"
+    },
+    {
+      "name": "tiktok_list_catalogs",
+      "family": "tiktok",
+      "kind": "read_hop",
+      "method": "GET",
+      "path_template": "/open_api/{TIKTOK_API_VERSION}/catalog/get/"
+    },
+    {
+      "name": "tiktok_create_catalog",
+      "family": "tiktok",
+      "kind": "mutate",
+      "method": "POST",
+      "path_template": "/open_api/{TIKTOK_API_VERSION}/catalog/create/"
+    },
+    {
+      "name": "tiktok_upload_catalog_products",
+      "family": "tiktok",
+      "kind": "mutate",
+      "method": "POST",
+      "path_template": "/open_api/{TIKTOK_API_VERSION}/catalog/product/upload/"
+    },
+    {
+      "name": "tiktok_bind_catalog_eventsource",
+      "family": "tiktok",
+      "kind": "mutate",
+      "method": "POST",
+      "path_template": "/open_api/{TIKTOK_API_VERSION}/catalog/eventsource/bind/"
+    },
+    {
+      "name": "tiktok_list_pixels",
+      "family": "tiktok",
+      "kind": "read_hop",
+      "method": "GET",
+      "path_template": "/open_api/{TIKTOK_API_VERSION}/pixel/list/"
+    },
+    {
+      "name": "tiktok_track_events",
+      "family": "tiktok",
+      "kind": "mutate",
+      "method": "POST",
+      "path_template": "/open_api/{TIKTOK_API_VERSION}/event/track/"
+    },
+    {
+      "name": "tiktok_create_campaign",
+      "family": "tiktok",
+      "kind": "mutate",
+      "method": "POST",
+      "path_template": "/open_api/{TIKTOK_API_VERSION}/campaign/create/"
     }
   ]
 }

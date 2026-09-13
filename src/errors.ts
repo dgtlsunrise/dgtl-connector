@@ -38,6 +38,7 @@ export const ERROR_CODES = [
   "GBP_SCOPE_MISSING",
   "TIKTOK_NOT_CONNECTED",
   "TIKTOK_MUTATE_NOT_ENABLED",
+  "TIKTOK_EVENTS_NOT_ENABLED",
   "TIKTOK_SCOPE_MISSING",
 ] as const;
 
@@ -128,7 +129,9 @@ export const MSG = {
   TIKTOK_NOT_CONNECTED:
     "TikTok Ads is a separate OAuth (Marketing API advertiser grant). After a valid DGTL license with feature `tiktok` + gateway, set TIKTOK_ACCESS_TOKEN or PLUGIN_DATA/tiktok-oauth.json. Support never collects TikTok tokens; the app secret is never in this plugin.",
   TIKTOK_MUTATE_NOT_ENABLED:
-    "TikTok Ads mutate tools are opted out (DGTL_TIKTOK_MUTATE_ENABLED=false). Plugin defaults on; unset the env or set true to re-enable. Live hop still needs Worker TIKTOK_MUTATE_ENABLED=true after Marketing API write access. Reads still work with Pro + tiktok feature.",
+    "TikTok Ads mutate tools are opted out (DGTL_TIKTOK_MUTATE_ENABLED=false). Plugin defaults on; unset the env or set true to re-enable. Live hop still needs Worker TIKTOK_MUTATE_ENABLED=true after Marketing API write access. Catalog create/upload/bind and campaign create use this flag. Reads still work with Pro + tiktok feature.",
+  TIKTOK_EVENTS_NOT_ENABLED:
+    "TikTok Events API send is opted out or the Worker TIKTOK_EVENTS_ENABLED flag is off. Plugin defaults on; set DGTL_TIKTOK_EVENTS_ENABLED=false to opt out. Live hop needs Worker TIKTOK_EVENTS_ENABLED=true (fail-closed, separate from TIKTOK_MUTATE_ENABLED). Polar tiktok bit. App secret stays on the Worker. Never send unhashed PII. content_id must match catalog sku_id.",
   TIKTOK_SCOPE_MISSING:
     "This TikTok login did not grant Marketing API access for this advertiser (or TikTok denied the mutate). Re-authorize after app review. Do not silently retry. Reads may still work.",
   INVALID_ARGUMENT:

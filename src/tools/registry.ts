@@ -112,6 +112,15 @@ import {
 import { shopifyAdjustInventory, shopifyProductSet } from "../shopify/shopify-write.js";
 import { tiktokDisabled } from "../tiktok/tiktok.js";
 import { tiktokUpdateCampaign } from "../tiktok/tiktok-write.js";
+import {
+  tiktokBindCatalogEventsource,
+  tiktokCreateCampaign,
+  tiktokCreateCatalog,
+  tiktokListCatalogs,
+  tiktokListPixels,
+  tiktokTrackEvents,
+  tiktokUploadCatalogProducts,
+} from "../tiktok/tiktok-wave17.js";
 import { supportPacket } from "../support/packet.js";
 import { feedbackPrepare, feedbackSend } from "../support/feedback.js";
 import * as S from "./schemas.js";
@@ -1867,6 +1876,83 @@ export const TOOLS: ToolSpec[] = [
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => tiktokUpdateCampaign(ctx, args),
   },
+  {
+    name: "tiktok_list_catalogs",
+    group: "tiktok",
+    family: "tiktok",
+    title: "TikTok list catalogs",
+    description:
+      "Paid. Polar `tiktok`. List product catalogs for advertiser_id (optional bc_id / catalog_id). Stamp hop. App secret stays on the Worker. LICENSE_REQUIRED without a tiktok license. Not Shopify catalogs. Never Axos.",
+    inputSchema: S.tiktokListCatalogs,
+    annotations: ANN_RO,
+    handler: (ctx, args) => tiktokListCatalogs(ctx, args),
+  },
+  {
+    name: "tiktok_create_catalog",
+    group: "tiktok-write",
+    family: "tiktok",
+    title: "TikTok create catalog",
+    description:
+      "Paid mutate. Create a TikTok catalog (closed catalog_type, default ECOM). dry_run default; live needs confirm_phrase containing advertiser_id. Dual-gate TIKTOK_MUTATE_ENABLED. Catalog API often needs bc_id. App secret stays on the Worker.",
+    inputSchema: S.tiktokCreateCatalog,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => tiktokCreateCatalog(ctx, args),
+  },
+  {
+    name: "tiktok_upload_catalog_products",
+    group: "tiktok-write",
+    family: "tiktok",
+    title: "TikTok upload catalog products",
+    description:
+      "Paid mutate. JSON catalog product upload. sku_id is the Events API content_id. HTTPS image_url / landing_page_url only. dry_run default; live needs confirm_phrase containing advertiser_id AND catalog_id. Dual-gate TIKTOK_MUTATE_ENABLED. App secret stays on the Worker.",
+    inputSchema: S.tiktokUploadCatalogProducts,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => tiktokUploadCatalogProducts(ctx, args),
+  },
+  {
+    name: "tiktok_bind_catalog_eventsource",
+    group: "tiktok-write",
+    family: "tiktok",
+    title: "TikTok bind catalog event source",
+    description:
+      "Paid mutate. Bind pixel_code XOR app_id to a catalog. dry_run default; live needs confirm_phrase containing advertiser_id AND catalog_id. Dual-gate TIKTOK_MUTATE_ENABLED. App secret stays on the Worker.",
+    inputSchema: S.tiktokBindCatalogEventsource,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => tiktokBindCatalogEventsource(ctx, args),
+  },
+  {
+    name: "tiktok_list_pixels",
+    group: "tiktok",
+    family: "tiktok",
+    title: "TikTok list pixels",
+    description:
+      "Paid. Polar `tiktok`. List pixels for advertiser_id. Copy pixel_code for tiktok_track_events (Events API event_source_id). Stamp hop. LICENSE_REQUIRED without a tiktok license.",
+    inputSchema: S.tiktokListPixels,
+    annotations: ANN_RO,
+    handler: (ctx, args) => tiktokListPixels(ctx, args),
+  },
+  {
+    name: "tiktok_track_events",
+    group: "tiktok-events",
+    family: "tiktok",
+    title: "TikTok track events",
+    description:
+      "Paid Events API. Closed event_name; hashed email/phone; required event_id. content_id must match catalog sku_id. dry_run default; live needs confirm_phrase containing advertiser_id AND pixel_code. Dual-gate: plugin DGTL_TIKTOK_EVENTS_ENABLED (default on) AND Worker TIKTOK_EVENTS_ENABLED (fail-closed, not TIKTOK_MUTATE_ENABLED). Polar tiktok bit. App secret stays on Worker. Never unhashed PII in logs.",
+    inputSchema: S.tiktokTrackEvents,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => tiktokTrackEvents(ctx, args),
+  },
+  {
+    name: "tiktok_create_campaign",
+    group: "tiktok-write",
+    family: "tiktok",
+    title: "TikTok create campaign",
+    description:
+      "Paid mutate. Create a TikTok campaign. Defaults DISABLE (PAUSED maps to DISABLE). Closed objective_type. dry_run default; live needs confirm_phrase containing advertiser_id. Dual-gate TIKTOK_MUTATE_ENABLED. Spend cap $100,000. App secret stays on the Worker. Never Axos.",
+    inputSchema: S.tiktokCreateCampaign,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => tiktokCreateCampaign(ctx, args),
+  },
 ];
 
 export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
@@ -1936,7 +2022,10 @@ export function stampHopAnnotation(t: Pick<ToolSpec, "name" | "family" | "group"
     };
   }
   if (t.family === "tiktok") {
-    return { family: "tiktok", kind: t.group === "tiktok-write" ? "mutate" : "read_hop" };
+    return {
+      family: "tiktok",
+      kind: t.group === "tiktok-write" || t.group === "tiktok-events" ? "mutate" : "read_hop",
+    };
   }
   return null;
 }
@@ -1958,4 +2047,9 @@ export const META_MUTATE_TOOL_NAMES = TOOLS.filter(
 export const META_CAPI_TOOL_NAMES = TOOLS.filter((t) => t.group === "meta-capi").map((t) => t.name);
 
 /** Registry mutate surface (stamp hop). Keep ⊆ stamp TIKTOK_MUTATE_TOOLS. */
-export const TIKTOK_MUTATE_TOOL_NAMES = TOOLS.filter((t) => t.group === "tiktok-write").map((t) => t.name);
+export const TIKTOK_MUTATE_TOOL_NAMES = TOOLS.filter(
+  (t) => t.group === "tiktok-write" || t.group === "tiktok-events",
+).map((t) => t.name);
+
+/** Events API-only mutate surface. Dual-gates TIKTOK_EVENTS_ENABLED, not TIKTOK_MUTATE_ENABLED. */
+export const TIKTOK_EVENTS_TOOL_NAMES = TOOLS.filter((t) => t.group === "tiktok-events").map((t) => t.name);

@@ -1997,6 +1997,225 @@
       },
       "required": ["advertiser_id", "campaign_id", "status"]
     },
+    "tiktok_list_catalogs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["advertiser_id"],
+      "properties": {
+        "advertiser_id": { "type": "string", "minLength": 1 },
+        "bc_id": { "type": "string", "minLength": 1 },
+        "catalog_id": { "type": "string", "minLength": 1 },
+        "page_size": { "$ref": "#/$defs/page_size" }
+      }
+    },
+    "tiktok_create_catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["advertiser_id", "name"],
+      "properties": {
+        "advertiser_id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 400 },
+        "catalog_type": {
+          "type": "string",
+          "enum": ["ECOM", "HOTEL", "FLIGHT", "DESTINATION", "AUTO"]
+        },
+        "bc_id": { "type": "string", "minLength": 1 },
+        "currency": { "type": "string" },
+        "dry_run": { "type": "boolean", "default": true },
+        "confirm_phrase": { "type": "string" }
+      }
+    },
+    "tiktok_upload_catalog_products": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["advertiser_id", "catalog_id", "products"],
+      "properties": {
+        "advertiser_id": { "type": "string", "minLength": 1 },
+        "catalog_id": { "type": "string", "minLength": 1 },
+        "bc_id": { "type": "string", "minLength": 1 },
+        "products": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["sku_id", "title", "image_url", "landing_page_url", "price"],
+            "properties": {
+              "sku_id": { "type": "string", "minLength": 1 },
+              "title": { "type": "string", "minLength": 1 },
+              "description": { "type": "string" },
+              "availability": {
+                "type": "string",
+                "enum": ["IN_STOCK", "OUT_OF_STOCK", "PREORDER"]
+              },
+              "condition": { "type": "string", "enum": ["NEW", "REFURBISHED", "USED"] },
+              "price": { "oneOf": [{ "type": "string" }, { "type": "number" }] },
+              "currency": { "type": "string" },
+              "sale_price": { "type": "string" },
+              "image_url": { "type": "string" },
+              "additional_image_urls": {
+                "oneOf": [
+                  { "type": "array", "items": { "type": "string" } },
+                  { "type": "string" }
+                ]
+              },
+              "landing_page_url": { "type": "string" },
+              "brand": { "type": "string" },
+              "item_group_id": { "type": "string" },
+              "google_product_category": { "type": "string" },
+              "color": { "type": "string" },
+              "size": { "type": "string" },
+              "gender": { "type": "string" },
+              "age_group": { "type": "string" },
+              "material": { "type": "string" },
+              "pattern": { "type": "string" },
+              "product_type": { "type": "string" },
+              "quantity": { "oneOf": [{ "type": "integer" }, { "type": "string" }] }
+            }
+          }
+        },
+        "dry_run": { "type": "boolean", "default": true },
+        "confirm_phrase": { "type": "string" }
+      }
+    },
+    "tiktok_bind_catalog_eventsource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["advertiser_id", "catalog_id"],
+      "properties": {
+        "advertiser_id": { "type": "string", "minLength": 1 },
+        "catalog_id": { "type": "string", "minLength": 1 },
+        "pixel_code": { "type": "string", "minLength": 1 },
+        "app_id": { "type": "string", "minLength": 1 },
+        "bc_id": { "type": "string", "minLength": 1 },
+        "dry_run": { "type": "boolean", "default": true },
+        "confirm_phrase": { "type": "string" }
+      }
+    },
+    "tiktok_list_pixels": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["advertiser_id"],
+      "properties": {
+        "advertiser_id": { "type": "string", "minLength": 1 },
+        "pixel_id": { "type": "string", "minLength": 1 },
+        "pixel_code": { "type": "string", "minLength": 1 },
+        "page_size": { "$ref": "#/$defs/page_size" }
+      }
+    },
+    "tiktok_track_events": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["advertiser_id", "pixel_code", "events"],
+      "properties": {
+        "advertiser_id": { "type": "string", "minLength": 1 },
+        "pixel_code": { "type": "string", "minLength": 1 },
+        "event_source": { "type": "string", "enum": ["web", "app", "offline", "crm"] },
+        "events": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["event_name", "event_id"],
+            "properties": {
+              "event_name": {
+                "type": "string",
+                "enum": [
+                  "AddPaymentInfo",
+                  "AddToCart",
+                  "AddToWishlist",
+                  "ClickButton",
+                  "CompletePayment",
+                  "CompleteRegistration",
+                  "Contact",
+                  "CustomizeProduct",
+                  "Download",
+                  "FindLocation",
+                  "InitiateCheckout",
+                  "PlaceAnOrder",
+                  "Schedule",
+                  "Search",
+                  "StartTrial",
+                  "SubmitApplication",
+                  "SubmitForm",
+                  "Subscribe",
+                  "ViewContent"
+                ]
+              },
+              "event_id": { "type": "string", "minLength": 1 },
+              "event_time": { "oneOf": [{ "type": "integer" }, { "type": "string" }] },
+              "event_source_url": { "type": "string" },
+              "email": { "type": "string" },
+              "em": { "type": "string" },
+              "phone": { "type": "string" },
+              "ph": { "type": "string" },
+              "external_id": { "type": "string" },
+              "ip": { "type": "string" },
+              "user_agent": { "type": "string" },
+              "ttclid": { "type": "string" },
+              "ttp": { "type": "string" },
+              "content_id": { "type": "string" },
+              "content_ids": {
+                "oneOf": [
+                  { "type": "array", "items": { "type": "string" } },
+                  { "type": "string" }
+                ]
+              },
+              "content_type": { "type": "string" },
+              "content_name": { "type": "string" },
+              "value": { "oneOf": [{ "type": "number" }, { "type": "string" }] },
+              "event_value": { "oneOf": [{ "type": "number" }, { "type": "string" }] },
+              "currency": { "type": "string" },
+              "quantity": { "oneOf": [{ "type": "integer" }, { "type": "string" }] },
+              "order_id": { "type": "string" }
+            }
+          }
+        },
+        "test_event_code": { "type": "string" },
+        "dry_run": { "type": "boolean", "default": true },
+        "confirm_phrase": { "type": "string" }
+      }
+    },
+    "tiktok_create_campaign": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["advertiser_id", "campaign_name", "objective_type"],
+      "properties": {
+        "advertiser_id": { "type": "string", "minLength": 1 },
+        "campaign_name": { "type": "string", "minLength": 1 },
+        "objective_type": {
+          "type": "string",
+          "enum": [
+            "APP_PROMOTION",
+            "WEB_CONVERSIONS",
+            "REACH",
+            "TRAFFIC",
+            "VIDEO_VIEWS",
+            "PRODUCT_SALES",
+            "ENGAGEMENT",
+            "LEAD_GENERATION"
+          ]
+        },
+        "budget_mode": {
+          "type": "string",
+          "enum": ["BUDGET_MODE_DAY", "BUDGET_MODE_TOTAL", "BUDGET_MODE_INFINITE"]
+        },
+        "budget": { "oneOf": [{ "type": "number" }, { "type": "string" }] },
+        "operation_status": {
+          "type": "string",
+          "enum": ["ENABLE", "DISABLE", "ACTIVE", "PAUSED"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["ENABLE", "DISABLE", "ACTIVE", "PAUSED"]
+        },
+        "dry_run": { "type": "boolean", "default": true },
+        "confirm_phrase": { "type": "string" }
+      }
+    },
     "mc_create_data_source": {
       "type": "object",
       "additionalProperties": false,

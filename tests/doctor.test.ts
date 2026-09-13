@@ -208,10 +208,12 @@ describe("doctor CLI (no secrets)", () => {
       assert.equal(report.flags.worker.metaMutateEnabled, null);
       assert.equal(report.flags.worker.tiktokMutateEnabled, null);
       assert.equal(report.flags.worker.metaCapiEnabled, null);
+      assert.equal(report.flags.worker.tiktokEventsEnabled, null);
       assert.equal(report.dual_gate.ads.plugin_mutate_enabled, true);
       assert.equal(report.dual_gate.meta.plugin_mutate_enabled, true);
       assert.equal(report.dual_gate.tiktok.plugin_mutate_enabled, true);
       assert.equal(report.dual_gate.capi.plugin_mutate_enabled, true);
+      assert.equal(report.dual_gate.tiktok_events.plugin_mutate_enabled, true);
       assert.equal(report.dual_gate.ads.worker_mutate_enabled, false);
       assert.equal(report.dual_gate.meta.worker_mutate_enabled, false);
       assert.equal(report.dual_gate.ads.worker_flag_known, false);
@@ -229,6 +231,7 @@ describe("doctor CLI (no secrets)", () => {
       assert.ok(text.includes("metaMutateEnabled: true"));
       assert.ok(text.includes("tiktokMutateEnabled: true"));
       assert.ok(text.includes("metaCapiEnabled: true"));
+      assert.ok(text.includes("tiktokEventsEnabled: true"));
       assert.ok(text.includes("writesEnabled: false"));
       assert.ok(text.includes("gbpEnabled: false"));
       assert.ok(!text.includes("host-token-not-printed"));
@@ -237,6 +240,7 @@ describe("doctor CLI (no secrets)", () => {
         assert.ok(k in report.dual_gate.meta, k);
         assert.ok(k in report.dual_gate.tiktok, k);
         assert.ok(k in report.dual_gate.capi, k);
+        assert.ok(k in report.dual_gate.tiktok_events, k);
       }
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -328,6 +332,7 @@ describe("doctor CLI (no secrets)", () => {
               meta_mutate_enabled: false,
               tiktok_mutate_enabled: false,
               meta_capi_enabled: false,
+              tiktok_events_enabled: false,
             }),
             { status: 200, headers: { "content-type": "application/json" } },
           );
@@ -340,10 +345,12 @@ describe("doctor CLI (no secrets)", () => {
       assert.equal(report.flags.worker.metaMutateEnabled, false);
       assert.equal(report.flags.worker.tiktokMutateEnabled, false);
       assert.equal(report.flags.worker.metaCapiEnabled, false);
+      assert.equal(report.flags.worker.tiktokEventsEnabled, false);
       assert.equal(report.dual_gate.ads.live_mutate_possible, true);
       assert.equal(report.dual_gate.meta.live_mutate_possible, false);
       assert.equal(report.dual_gate.tiktok.live_mutate_possible, false);
       assert.equal(report.dual_gate.capi.live_mutate_possible, false);
+      assert.equal(report.dual_gate.tiktok_events.live_mutate_possible, false);
       assert.equal(report.dual_gate.ads.worker_flag_known, true);
       const text = formatDoctorReport(report);
       assert.ok(text.includes("host=stamp.example.test"));

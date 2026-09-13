@@ -909,6 +909,53 @@
       "group": "tiktok-write",
       "fail": "LICENSE_REQUIRED",
       "note": "dry_run default; confirm advertiser_id + campaign_id; Worker TIKTOK_MUTATE_ENABLED fail-closed"
+    },
+    {
+      "name": "tiktok_list_catalogs",
+      "group": "tiktok",
+      "fail": "LICENSE_REQUIRED",
+      "note": "Wave 17; Polar tiktok; stamp hop catalog/get; not Shopify catalogs"
+    },
+    {
+      "name": "tiktok_create_catalog",
+      "group": "tiktok-write",
+      "flag": "tiktok.mutate.enabled",
+      "fail": "TIKTOK_MUTATE_NOT_ENABLED",
+      "note": "Wave 17; dry_run default; confirm advertiser_id; Worker TIKTOK_MUTATE_ENABLED fail-closed"
+    },
+    {
+      "name": "tiktok_upload_catalog_products",
+      "group": "tiktok-write",
+      "flag": "tiktok.mutate.enabled",
+      "fail": "TIKTOK_MUTATE_NOT_ENABLED",
+      "note": "Wave 17; sku_id is Events API content_id; HTTPS image_url / landing_page_url"
+    },
+    {
+      "name": "tiktok_bind_catalog_eventsource",
+      "group": "tiktok-write",
+      "flag": "tiktok.mutate.enabled",
+      "fail": "TIKTOK_MUTATE_NOT_ENABLED",
+      "note": "Wave 17; pixel_code XOR app_id; confirm advertiser_id + catalog_id"
+    },
+    {
+      "name": "tiktok_list_pixels",
+      "group": "tiktok",
+      "fail": "LICENSE_REQUIRED",
+      "note": "Wave 17; copy pixel_code for tiktok_track_events"
+    },
+    {
+      "name": "tiktok_track_events",
+      "group": "tiktok-events",
+      "flag": "tiktok.events.enabled",
+      "fail": "TIKTOK_EVENTS_NOT_ENABLED",
+      "note": "Wave 17; Events API; content_id must match catalog sku_id; Worker TIKTOK_EVENTS_ENABLED fail-closed"
+    },
+    {
+      "name": "tiktok_create_campaign",
+      "group": "tiktok-write",
+      "flag": "tiktok.mutate.enabled",
+      "fail": "TIKTOK_MUTATE_NOT_ENABLED",
+      "note": "Wave 17; defaults DISABLE; confirm advertiser_id; closed objective_type"
     }
   ]
 }

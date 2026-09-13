@@ -26,6 +26,12 @@ export type Flags = {
    * Live hop dual-gates Worker META_CAPI_ENABLED (fail-closed). App secret stays on Worker.
    */
   metaCapiEnabled: boolean;
+  /**
+   * TikTok Events API (tiktok_track_events). Separate from TIKTOK_MUTATE_ENABLED.
+   * Plugin defaults on (listed); opt out with DGTL_TIKTOK_EVENTS_ENABLED / TIKTOK_EVENTS_ENABLED=false.
+   * Live hop dual-gates Worker TIKTOK_EVENTS_ENABLED (fail-closed). App secret stays on Worker.
+   */
+  tiktokEventsEnabled: boolean;
   /** Append redacted tool audit lines to PLUGIN_DATA/audit.jsonl. Default off. */
   auditLocal: boolean;
   /**
@@ -66,6 +72,7 @@ export function loadFlags(env: NodeJS.ProcessEnv = process.env): Flags {
     metaMutateEnabled: envFlag(env.DGTL_META_MUTATE_ENABLED, env.META_MUTATE_ENABLED, true),
     tiktokMutateEnabled: envFlag(env.DGTL_TIKTOK_MUTATE_ENABLED, env.TIKTOK_MUTATE_ENABLED, true),
     metaCapiEnabled: envFlag(env.DGTL_META_CAPI_ENABLED, env.META_CAPI_ENABLED, true),
+    tiktokEventsEnabled: envFlag(env.DGTL_TIKTOK_EVENTS_ENABLED, env.TIKTOK_EVENTS_ENABLED, true),
     auditLocal: truthy(env.DGTL_AUDIT_LOCAL),
     gatewayUrl: raw ? raw.replace(/\/+$/, "") : undefined,
     feedbackUrl: feedbackRaw ? feedbackRaw.replace(/\/+$/, "") : undefined,

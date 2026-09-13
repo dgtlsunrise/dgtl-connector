@@ -86,7 +86,7 @@ function mockWorker(opts: {
       });
     }
 
-    if (url.includes("/v1/gads/") || url.includes("/v1/meta/")) {
+    if (url.includes("/v1/gads/") || url.includes("/v1/meta/") || url.includes("/v1/tiktok/")) {
       const hop = opts.hop ?? {
         status: 200,
         body: {
@@ -402,6 +402,8 @@ describe("PR-5 license-gated gateway client", () => {
     assert.ok(CLOSED_HTTPS_FIELDS.has("link"));
     assert.ok(CLOSED_HTTPS_FIELDS.has("image_link"));
     assert.ok(CLOSED_HTTPS_FIELDS.has("event_source_url"));
+    assert.ok(CLOSED_HTTPS_FIELDS.has("image_url"));
+    assert.ok(CLOSED_HTTPS_FIELDS.has("landing_page_url"));
     assert.ok(CLOSED_HTTPS_FIELDS.has("marketing_image_file_url"));
     assert.ok(CLOSED_HTTPS_FIELDS.has("logo_file_url"));
     assert.ok(GATEWAY_PARAM_ALLOW.has("final_url"));
@@ -416,6 +418,10 @@ describe("PR-5 license-gated gateway client", () => {
     assert.ok(GATEWAY_PARAM_ALLOW.has("custom_audience_ids"));
     assert.ok(GATEWAY_PARAM_ALLOW.has("items"));
     assert.ok(GATEWAY_PARAM_ALLOW.has("events"));
+    assert.ok(GATEWAY_PARAM_ALLOW.has("products"));
+    assert.ok(GATEWAY_PARAM_ALLOW.has("sku_id"));
+    assert.ok(GATEWAY_PARAM_ALLOW.has("pixel_code"));
+    assert.ok(GATEWAY_PARAM_ALLOW.has("content_id"));
     assert.ok(GATEWAY_PARAM_ALLOW.has("event_id"));
     assert.ok(GATEWAY_PARAM_ALLOW.has("handle"));
     assert.equal(CLOSED_HTTPS_FIELDS.has("path1"), false);
@@ -513,6 +519,55 @@ describe("PR-5 license-gated gateway client", () => {
     const body = hop!.body as { params: { items?: Array<{ image_link?: string }>; events?: Array<{ event_source_url?: string }> } };
     assert.equal(body.params.items?.[0]?.image_link, "https://cdn.example.com/tee.jpg");
     assert.equal(body.params.events?.[0]?.event_source_url, "https://shop.example.com/thanks");
+  });
+
+  it("TikTok catalog image_url / landing_page_url survive stripUrlishParams", async () => {
+    const { fetchImpl, captures } = mockWorker({
+      healthOk: true,
+      hop: {
+        status: 200,
+        body: { ok: true, tool: "tiktok_upload_catalog_products", data: {} },
+      },
+    });
+    const jwt = signLicense({
+      sub: "gw-user",
+      exp: Math.floor(Date.now() / 1000) + 86400,
+      features: ["tiktok"],
+      jti: "gw-tiktok-catalog-https",
+    });
+    const envVars = testEnv({
+      DGTL_LICENSE_JWT: jwt,
+      DGTL_GATEWAY_URL: GATEWAY,
+      TIKTOK_ACCESS_TOKEN: "tiktok-user-token-xyz",
+    });
+    const ctx = createAppContext({ pluginRoot: ROOT, env: envVars, fetchImpl });
+    const env = await postGateway(ctx, {
+      family: "tiktok",
+      tool: "tiktok_upload_catalog_products",
+      userAccessToken: "tiktok-user-token-xyz",
+      args: {
+        advertiser_id: "1234567890",
+        catalog_id: "7000000001",
+        products: [
+          {
+            sku_id: "sku-sunrise-tee",
+            title: "Tee",
+            image_url: "https://cdn.dgtlsunrise.com/tee.jpg",
+            landing_page_url: "https://shop.dgtlsunrise.com/tee",
+            price: "29.00",
+          },
+        ],
+      },
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    const hop = captures.find((c) => c.url.includes("/v1/tiktok/tiktok_upload_catalog_products"));
+    assert.ok(hop);
+    const body = hop!.body as {
+      params: { products?: Array<{ image_url?: string; landing_page_url?: string; sku_id?: string }> };
+    };
+    assert.equal(body.params.products?.[0]?.sku_id, "sku-sunrise-tee");
+    assert.equal(body.params.products?.[0]?.image_url, "https://cdn.dgtlsunrise.com/tee.jpg");
+    assert.equal(body.params.products?.[0]?.landing_page_url, "https://shop.dgtlsunrise.com/tee");
   });
 
   it("still rejects open proxy https outside closed URL fields", async () => {

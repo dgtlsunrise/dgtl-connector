@@ -248,5 +248,7 @@ TikTok Marketing API app **id + secret** live on the stamp Worker only (like Met
 
 Fail closed: `LICENSE_REQUIRED` without `tiktok`; `TIKTOK_NOT_CONNECTED` without a user token; `GATEWAY_UNAVAILABLE` without Worker secrets / health. Support never collects TikTok tokens. App secret is never in this plugin.
 
+Wave 17 catalog writes and campaign create reuse plugin/Worker **`TIKTOK_MUTATE_ENABLED`** (Worker fail-closed). Events API uses a **separate** Worker `TIKTOK_EVENTS_ENABLED` (fail-closed, **not** status mutate). Plugin `DGTL_TIKTOK_EVENTS_ENABLED` defaults on; live hop requires health `tiktok_events_enabled===true`. `content_id` must match catalog `sku_id`. Never Axos. Never unhashed PII in logs. No Klaviyo.
+
 Live developer app + Marketing API access are **Noel gates**.
 

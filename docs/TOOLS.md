@@ -15,7 +15,7 @@ Machine-readable list: [`schemas/v1/catalog.json`](../schemas/v1/catalog.json). 
 ### ACTIVE / ENABLED only on confirm
 
 - `dry_run` **defaults true**. Omitted or `true` → proposed payload, **zero** mutate HTTP.
-- Live (`dry_run=false`) requires `confirm_phrase` containing the resource IDs for that tool (Ads: digits-only `customer_id`; Meta: `act_{ad_account_id}` plus child ids; TikTok: `advertiser_id` plus `campaign_id`; Consent W: container `publicId`; Shopify writes: shop domain `*.myshopify.com`; Merchant Center writes: digits `merchant_id`).
+- Live (`dry_run=false`) requires `confirm_phrase` containing the resource IDs for that tool (Ads: digits-only `customer_id`; Meta: `act_{ad_account_id}` plus child ids; TikTok: `advertiser_id` plus `campaign_id` / `catalog_id` / `pixel_code` when those tools use them; Consent W: container `publicId`; Shopify writes: shop domain `*.myshopify.com`; Merchant Center writes: digits `merchant_id`).
 - **Harness:** a **user** message this turn must contain those IDs. List-tool output is not the user message (`harnessUserMessageContainsCustomerId` in `src/ads/gads-write.ts`).
 - Campaign / RSA / Meta **creates** default **PAUSED**.
 - **ACTIVE** (Meta) / **ENABLED** (Google Ads) only when the caller passes **explicit** `status` **and** live confirm. Do not infer ENABLED/ACTIVE from a dry-run or from a PAUSED parent.
@@ -42,6 +42,7 @@ Live Ads / Meta / TikTok mutate requires **plugin AND Worker**. Plugin Ads / Met
 | Meta mutate (`DGTL_META_MUTATE_ENABLED` / `META_MUTATE_ENABLED`) | **on** | fail-closed | both true |
 | Meta CAPI (`DGTL_META_CAPI_ENABLED` / `META_CAPI_ENABLED`) | **on** | fail-closed (`meta_capi_enabled`, **not** `META_MUTATE_ENABLED`) | both true |
 | TikTok mutate (`DGTL_TIKTOK_MUTATE_ENABLED` / `TIKTOK_MUTATE_ENABLED`) | **on** | fail-closed (`tiktok_mutate_enabled`) | both true |
+| TikTok Events (`DGTL_TIKTOK_EVENTS_ENABLED` / `TIKTOK_EVENTS_ENABLED`) | **on** | fail-closed (`tiktok_events_enabled`, **not** `TIKTOK_MUTATE_ENABLED`) | both true |
 | Consent W writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `GoogleWriteHttp`) | flag on + Consent W token |
 | Shopify writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `ShopifyHttp` mutation) | flag on + merchant `write_inventory` / `write_products` + shop-domain confirm |
 | GBP (`DGTL_GBP_ENABLED`) | **off** | n/a | flag on + Consent B token → GET hop (no stamp) |
@@ -785,8 +786,15 @@ Fail order (reads): `LICENSE_REQUIRED` → `GATEWAY_UNAVAILABLE` → `TIKTOK_NOT
 | `tiktok_list_campaigns` | Requires `advertiser_id`. |
 | `tiktok_insights` | Requires `advertiser_id` + `date_start`/`date_stop` (YYYY-MM-DD). Optional `level`: advertiser/campaign/adgroup/ad. Closed BASIC metrics. |
 | `tiktok_update_campaign` | Mutate. Status `ENABLE`/`DISABLE` (`ACTIVE`→ENABLE, `PAUSED`→DISABLE). `dry_run` default true. Live: `confirm_phrase` must contain `advertiser_id` AND `campaign_id`. Plugin flag default **on**; Worker `TIKTOK_MUTATE_ENABLED` default **off**. No DELETE / budget / create. |
+| `tiktok_list_catalogs` | Read hop. Requires `advertiser_id`. Optional `bc_id` / `catalog_id`. Not Shopify catalogs. |
+| `tiktok_create_catalog` | Mutate. Closed `catalog_type` (default `ECOM`). Confirm `advertiser_id`. Catalog API often needs `bc_id`. Dual-gate `TIKTOK_MUTATE_ENABLED`. |
+| `tiktok_upload_catalog_products` | Mutate. JSON upload. `sku_id` **is** the Events API `content_id`. HTTPS `image_url` / `landing_page_url` only. Confirm `advertiser_id` AND `catalog_id`. |
+| `tiktok_bind_catalog_eventsource` | Mutate. `pixel_code` XOR `app_id`. Confirm `advertiser_id` AND `catalog_id`. |
+| `tiktok_list_pixels` | Read hop. Copy `pixel_code` for Events API `event_source_id`. |
+| `tiktok_track_events` | Events API 2.0. Closed `event_name`; SHA-256 email/phone; required `event_id`. `content_id` must match catalog `sku_id`. Confirm `advertiser_id` AND `pixel_code`. Dual-gate Worker `TIKTOK_EVENTS_ENABLED` (fail-closed, **not** status mutate). Never unhashed PII. |
+| `tiktok_create_campaign` | Mutate. Defaults **DISABLE** (`PAUSED`→DISABLE). Closed `objective_type`. Confirm `advertiser_id`. Spend cap $100,000. Dual-gate `TIKTOK_MUTATE_ENABLED`. |
 
-Live TikTok app + Marketing API + secrets + Polar `tiktok` mint are **Noel gates**. Code lands with fixtures. Never Axos.
+Live TikTok app + Marketing API + secrets + Polar `tiktok` mint are **Noel gates**. Code lands with fixtures. Never Axos. No Klaviyo in this wave.
 
 Skill: `tiktok-ads`.
 

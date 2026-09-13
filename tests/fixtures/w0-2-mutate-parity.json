@@ -79,12 +79,19 @@
     "meta_get_batch_status"
   ],
   "tiktok_mutate": [
-    "tiktok_update_campaign"
+    "tiktok_update_campaign",
+    "tiktok_create_catalog",
+    "tiktok_upload_catalog_products",
+    "tiktok_bind_catalog_eventsource",
+    "tiktok_track_events",
+    "tiktok_create_campaign"
   ],
   "tiktok_read_hop": [
     "tiktok_list_advertisers",
     "tiktok_list_campaigns",
-    "tiktok_insights"
+    "tiktok_insights",
+    "tiktok_list_catalogs",
+    "tiktok_list_pixels"
   ],
   "closed_https_fields": [
     "final_url",
@@ -95,7 +102,9 @@
     "logo_file_url",
     "image_link",
     "additional_image_link",
-    "event_source_url"
+    "event_source_url",
+    "image_url",
+    "landing_page_url"
   ],
   "path_only_url_adjacent": [
     "path1",
