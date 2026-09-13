@@ -134,7 +134,7 @@ export async function loadAccount(
   const rows = asList(json.data);
   const account = rows[0];
   const id = account?.id?.trim();
-  if (!id) {
+  if (!account || !id) {
     throw new ToolError("NOT_FOUND", "Klaviyo returned no account for this private key.", {
       api: "klaviyo",
     });
