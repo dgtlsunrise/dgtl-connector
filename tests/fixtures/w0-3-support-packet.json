@@ -13,8 +13,8 @@
     "runbook",
     "next_human_step"
   ],
-  "plugin_flag_keys": ["adsMutateEnabled", "metaMutateEnabled", "tiktokMutateEnabled", "writesEnabled", "gbpEnabled"],
-  "worker_flag_keys": ["adsMutateEnabled", "metaMutateEnabled", "tiktokMutateEnabled"],
+  "plugin_flag_keys": ["adsMutateEnabled", "metaMutateEnabled", "tiktokMutateEnabled", "metaCapiEnabled", "writesEnabled", "gbpEnabled"],
+  "worker_flag_keys": ["adsMutateEnabled", "metaMutateEnabled", "tiktokMutateEnabled", "metaCapiEnabled"],
   "dual_gate_lane_keys": [
     "plugin_mutate_enabled",
     "worker_mutate_enabled",
@@ -26,17 +26,20 @@
     "adsMutateEnabled": true,
     "metaMutateEnabled": true,
     "tiktokMutateEnabled": true,
+    "metaCapiEnabled": true,
     "writesEnabled": false,
     "gbpEnabled": false
   },
   "worker_mutate_defaults_fail_closed": {
     "adsMutateEnabled": false,
     "metaMutateEnabled": false,
-    "tiktokMutateEnabled": false
+    "tiktokMutateEnabled": false,
+    "metaCapiEnabled": false
   },
   "doctor_env_names": [
     "DGTL_ADS_MUTATE_ENABLED",
     "DGTL_META_MUTATE_ENABLED",
+    "DGTL_META_CAPI_ENABLED",
     "DGTL_TIKTOK_MUTATE_ENABLED",
     "DGTL_GBP_ENABLED"
   ]

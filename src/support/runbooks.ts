@@ -23,6 +23,11 @@ export const ERROR_RUNBOOKS: Partial<Record<ErrorCode, RunbookHint>> = {
     next_human_step:
       "Check plugin DGTL_META_MUTATE_ENABLED (default on) AND Worker META_MUTATE_ENABLED. Live Graph mutates also need ads_management Advanced Access.",
   },
+  META_CAPI_NOT_ENABLED: {
+    runbook: `${RUNBOOK_INDEX}#meta_capi_not_enabled`,
+    next_human_step:
+      "Check plugin DGTL_META_CAPI_ENABLED (default on) AND Worker META_CAPI_ENABLED (fail-closed, separate from META_MUTATE_ENABLED). Polar Pro meta bit. App secret stays on the Worker. Never collect unhashed PII.",
+  },
   TIKTOK_MUTATE_NOT_ENABLED: {
     runbook: `${RUNBOOK_INDEX}#tiktok_mutate_not_enabled`,
     next_human_step:
@@ -41,7 +46,7 @@ export const ERROR_RUNBOOKS: Partial<Record<ErrorCode, RunbookHint>> = {
   META_SCOPE_MISSING: {
     runbook: `${RUNBOOK_INDEX}#meta_scope_missing`,
     next_human_step:
-      "Re-authorize Meta after ads_management Advanced Access. Do not silently retry. ads_read reads may still work. Support never collects Meta tokens.",
+      "Re-authorize Meta after ads_management and/or catalog_management Advanced Access. Do not silently retry. ads_read reads may still work. Support never collects Meta tokens.",
   },
   GBP_NOT_ENABLED: {
     runbook: `${RUNBOOK_INDEX}#gbp_not_enabled`,

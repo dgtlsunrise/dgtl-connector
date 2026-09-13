@@ -1623,6 +1623,169 @@ export const metaCreateAdCreative = z
     }
   });
 
+const META_CATALOG_ITEM_TYPES = [
+  "PRODUCT_ITEM",
+  "DESTINATION",
+  "FLIGHT",
+  "HOME_LISTING",
+  "HOTEL",
+  "VEHICLE",
+] as const;
+const META_CATALOG_METHODS = ["CREATE", "UPDATE", "DELETE"] as const;
+const META_CATALOG_AVAIL = [
+  "in stock",
+  "out of stock",
+  "preorder",
+  "available for order",
+  "discontinued",
+] as const;
+const META_CATALOG_CONDITION = ["new", "refurbished", "used"] as const;
+const META_CATALOG_VERTICAL = [
+  "commerce",
+  "hotels",
+  "flights",
+  "destinations",
+  "vehicles",
+  "home_listings",
+] as const;
+const META_CAPI_EVENT_NAMES = [
+  "Purchase",
+  "Lead",
+  "CompleteRegistration",
+  "AddToCart",
+  "AddToWishlist",
+  "InitiateCheckout",
+  "ViewContent",
+  "Search",
+  "AddPaymentInfo",
+  "Subscribe",
+  "StartTrial",
+  "SubmitApplication",
+  "Contact",
+  "CustomizeProduct",
+  "Donate",
+  "FindLocation",
+  "Schedule",
+  "PageView",
+] as const;
+const META_CAPI_ACTION_SOURCES = [
+  "website",
+  "app",
+  "email",
+  "phone_call",
+  "chat",
+  "physical_store",
+  "system_generated",
+  "business_messaging",
+  "other",
+] as const;
+
+const metaCatalogItem = z
+  .object({
+    method: z.enum(META_CATALOG_METHODS),
+    retailer_id: z.string().min(1).max(100),
+    title: z.string().min(1).max(200).optional(),
+    description: z.string().max(1000).optional(),
+    availability: z.enum(META_CATALOG_AVAIL).optional(),
+    condition: z.enum(META_CATALOG_CONDITION).optional(),
+    price: z.string().min(3).max(40).optional(),
+    link: z.string().url().max(2048).optional(),
+    image_link: z.string().url().max(2048).optional(),
+    additional_image_link: z.string().url().max(2048).optional(),
+    brand: z.string().max(200).optional(),
+    item_group_id: z.string().max(100).optional(),
+    sale_price: z.string().max(40).optional(),
+    google_product_category: z.string().max(200).optional(),
+    color: z.string().max(80).optional(),
+    size: z.string().max(80).optional(),
+    gender: z.string().max(40).optional(),
+    age_group: z.string().max(40).optional(),
+    material: z.string().max(80).optional(),
+    pattern: z.string().max(80).optional(),
+    product_type: z.string().max(200).optional(),
+    quantity: z.union([z.number().int().min(0), z.string()]).optional(),
+    status: z.string().max(40).optional(),
+  })
+  .strict();
+
+const metaCapiEvent = z
+  .object({
+    event_name: z.enum(META_CAPI_EVENT_NAMES),
+    event_id: z.string().min(1).max(128),
+    event_time: z.union([z.number().int().positive(), z.string()]).optional(),
+    action_source: z.enum(META_CAPI_ACTION_SOURCES).optional(),
+    event_source_url: z.string().url().max(2048).optional(),
+    em: z.string().min(1).max(256).optional(),
+    ph: z.string().min(1).max(64).optional(),
+    fn: z.string().min(1).max(256).optional(),
+    ln: z.string().min(1).max(256).optional(),
+    ct: z.string().min(1).max(256).optional(),
+    st: z.string().min(1).max(256).optional(),
+    zp: z.string().min(1).max(64).optional(),
+    country: z.string().min(2).max(64).optional(),
+    external_id: z.string().min(1).max(256).optional(),
+    client_ip_address: z.string().min(1).max(64).optional(),
+    client_user_agent: z.string().min(1).max(512).optional(),
+    fbc: z.string().min(1).max(256).optional(),
+    fbp: z.string().min(1).max(256).optional(),
+    event_value: z.union([z.number().min(0), z.string()]).optional(),
+    currency: z.string().length(3).optional(),
+    content_ids: z.union([z.array(z.string().min(1)).max(50), z.string()]).optional(),
+    content_type: z.string().max(64).optional(),
+    content_name: z.string().max(256).optional(),
+    num_items: z.union([z.number().int().positive(), z.string()]).optional(),
+    order_id: z.string().max(128).optional(),
+  })
+  .strict();
+
+/** Catalog items_batch upsert — HTTPS image URLs; confirm act_ + catalog_id. */
+export const metaCatalogItemsBatch = z
+  .object({
+    ad_account_id: z.string().min(1),
+    catalog_id: z.string().min(1),
+    item_type: z.enum(META_CATALOG_ITEM_TYPES).optional(),
+    allow_upsert: z.boolean().optional(),
+    items: z.array(metaCatalogItem).min(1).max(50),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+/** Batch handle status read. */
+export const metaGetBatchStatus = z
+  .object({
+    catalog_id: z.string().min(1),
+    handle: z.string().min(1).max(128),
+    ad_account_id: z.string().min(1).optional(),
+  })
+  .strict();
+
+/** Create owned product catalog — confirm act_. */
+export const metaCreateCatalog = z
+  .object({
+    ad_account_id: z.string().min(1),
+    name: z.string().min(1).max(400),
+    vertical: z.enum(META_CATALOG_VERTICAL).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+/** Closed CAPI events — hashed user_data; required event_id; confirm act_ + pixel_id. */
+export const metaSendCapiEvents = z
+  .object({
+    ad_account_id: z.string().min(1),
+    pixel_id: z.string().min(1),
+    events: z.array(metaCapiEvent).min(1).max(10),
+    test_event_code: z.string().min(1).max(64).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
 /** Merchant Center — Merchant API reads. merchant_id never guessed. */
 export const mcListAccounts = pageInput;
 

@@ -48,7 +48,10 @@
     "meta_update_adset_targeting",
     "meta_create_custom_audience",
     "meta_create_lookalike_audience",
-    "meta_attach_audience"
+    "meta_attach_audience",
+    "meta_catalog_items_batch",
+    "meta_send_capi_events",
+    "meta_create_catalog"
   ],
   "plugin_local_describe": [
     "gads_describe_recipes",
@@ -72,7 +75,8 @@
     "meta_get_pixel",
     "meta_list_catalogs",
     "meta_list_catalog_products",
-    "meta_list_custom_audiences"
+    "meta_list_custom_audiences",
+    "meta_get_batch_status"
   ],
   "tiktok_mutate": [
     "tiktok_update_campaign"
@@ -88,7 +92,10 @@
     "link",
     "marketing_image_file_url",
     "square_marketing_image_file_url",
-    "logo_file_url"
+    "logo_file_url",
+    "image_link",
+    "additional_image_link",
+    "event_source_url"
   ],
   "path_only_url_adjacent": [
     "path1",

@@ -118,6 +118,8 @@ Paid Ads/Meta **user** grants use a **separate** Google OAuth client (`adwords`)
 
 Live Ads/Meta hops still need `DGTL_LICENSE_JWT` + `DGTL_GATEWAY_URL`. Fail closed until those exist (`LICENSE_REQUIRED` / `GATEWAY_UNAVAILABLE` / `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`).
 
+Wave 16 catalog writes and CAPI use the same Polar Pro **`meta`** bit (no extra Polar product). App Review needs **`ads_management` and/or `catalog_management`**. Plugin dual-gates CAPI via stamp health `meta_capi_enabled` (Worker `META_CAPI_ENABLED`, fail-closed, **not** `META_MUTATE_ENABLED`). Catalog items_batch / create catalog reuse the Meta mutate dual-gate. App secret stays on the Worker. Never Axos BM. Never unhashed PII in logs.
+
 ## Consent MC (Merchant Center) — separate from Consent A and Consent C
 
 Merchant API reads use a **third Google Desktop client**. Not Consent A (no `content` on the free screen). Not Consent C (`adwords` is Ads, not Merchant Center). Not stamp (no DGTL secret).

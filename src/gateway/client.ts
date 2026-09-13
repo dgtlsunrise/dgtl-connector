@@ -193,6 +193,56 @@ export type GatewayParams = {
   url_contains?: string;
   prefill?: boolean | string | number;
   subtype?: string;
+  /** Wave 16 catalog batch / CAPI. */
+  item_type?: string;
+  allow_upsert?: boolean | string;
+  retailer_id?: string;
+  image_link?: string;
+  additional_image_link?: string;
+  availability?: string;
+  condition?: string;
+  price?: string;
+  brand?: string;
+  handle?: string;
+  vertical?: string;
+  item_group_id?: string;
+  sale_price?: string;
+  google_product_category?: string;
+  color?: string;
+  size?: string;
+  gender?: string;
+  age_group?: string;
+  material?: string;
+  pattern?: string;
+  product_type?: string;
+  quantity?: string | number;
+  items?: Array<Record<string, unknown>>;
+  event_name?: string;
+  event_time?: string | number;
+  event_id?: string;
+  action_source?: string;
+  event_source_url?: string;
+  test_event_code?: string;
+  em?: string;
+  ph?: string;
+  fn?: string;
+  ln?: string;
+  ct?: string;
+  st?: string;
+  zp?: string;
+  external_id?: string;
+  client_ip_address?: string;
+  client_user_agent?: string;
+  fbc?: string;
+  fbp?: string;
+  event_value?: string | number;
+  currency?: string;
+  content_ids?: string[];
+  content_type?: string;
+  content_name?: string;
+  num_items?: string | number;
+  order_id?: string;
+  events?: Array<Record<string, unknown>>;
 };
 
 export type GatewayRequest = {
@@ -210,6 +260,8 @@ export type GatewayReachable = {
   meta_mutate_enabled?: boolean | null;
   /** Worker TIKTOK_MUTATE_ENABLED — boolean from health, else null. Never the env string. */
   tiktok_mutate_enabled?: boolean | null;
+  /** Worker META_CAPI_ENABLED — boolean from health, else null. Never the env string. Fail-closed. */
+  meta_capi_enabled?: boolean | null;
 };
 
 function healthBool(value: unknown): boolean | null {
@@ -259,6 +311,7 @@ export async function probeGatewayReachable(
       ads_mutate_enabled?: unknown;
       meta_mutate_enabled?: unknown;
       tiktok_mutate_enabled?: unknown;
+      meta_capi_enabled?: unknown;
     } = {};
     try {
       body = (await res.json()) as typeof body;
@@ -273,6 +326,7 @@ export async function probeGatewayReachable(
       ads_mutate_enabled: healthBool(body.ads_mutate_enabled),
       meta_mutate_enabled: healthBool(body.meta_mutate_enabled),
       tiktok_mutate_enabled: healthBool(body.tiktok_mutate_enabled),
+      meta_capi_enabled: healthBool(body.meta_capi_enabled),
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -304,6 +358,116 @@ export const GATEWAY_PARAM_ALLOW = new Set<string>(GATEWAY_PARAM_ALLOW_KEYS);
  * `path1` / `path2` are path-only sitelink fields (not https) — keep them off this set.
  */
 export const CLOSED_HTTPS_FIELDS = new Set<string>(CLOSED_HTTPS_FIELD_KEYS);
+
+const CATALOG_ITEM_KEYS = new Set([
+  "method",
+  "retailer_id",
+  "title",
+  "description",
+  "availability",
+  "condition",
+  "price",
+  "link",
+  "image_link",
+  "additional_image_link",
+  "brand",
+  "item_group_id",
+  "sale_price",
+  "google_product_category",
+  "color",
+  "size",
+  "gender",
+  "age_group",
+  "material",
+  "pattern",
+  "product_type",
+  "quantity",
+  "status",
+]);
+
+const CAPI_EVENT_KEYS = new Set([
+  "event_name",
+  "event_time",
+  "event_id",
+  "action_source",
+  "event_source_url",
+  "em",
+  "ph",
+  "fn",
+  "ln",
+  "ct",
+  "st",
+  "zp",
+  "country",
+  "external_id",
+  "client_ip_address",
+  "client_user_agent",
+  "fbc",
+  "fbp",
+  "event_value",
+  "currency",
+  "content_ids",
+  "content_type",
+  "content_name",
+  "num_items",
+  "order_id",
+]);
+
+function copyAllowedObject(raw: unknown, keys: Set<string>): Record<string, unknown> | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!keys.has(k)) continue;
+    if (CLOSED_HTTPS_FIELDS.has(k)) {
+      if (typeof v === "string" && /^https:\/\//i.test(v.trim())) out[k] = v.trim();
+      continue;
+    }
+    if (typeof v === "string") {
+      if (/^https?:\/\//i.test(v)) continue;
+      out[k] = v;
+      continue;
+    }
+    if (typeof v === "number" && Number.isFinite(v)) {
+      out[k] = v;
+      continue;
+    }
+    if (typeof v === "boolean") {
+      out[k] = v;
+      continue;
+    }
+    if (k === "content_ids" && Array.isArray(v)) {
+      const arr = v.filter((x): x is string => typeof x === "string" && x.trim().length > 0).map((x) => x.trim());
+      if (arr.length) out[k] = arr;
+    }
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+function copyAllowedObjectArray(raw: unknown, keys: Set<string>, max: number): Array<Record<string, unknown>> {
+  if (!Array.isArray(raw)) return [];
+  const out: Array<Record<string, unknown>> = [];
+  for (const item of raw.slice(0, max)) {
+    const row = copyAllowedObject(item, keys);
+    if (row) out.push(row);
+  }
+  return out;
+}
+
+function redactClosedHttpsDeep(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(redactClosedHttpsDeep);
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (CLOSED_HTTPS_FIELDS.has(k) && typeof v === "string") {
+        out[k] = "<closed-https>";
+      } else {
+        out[k] = redactClosedHttpsDeep(v);
+      }
+    }
+    return out;
+  }
+  return value;
+}
 
 function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
   const out: GatewayParams = {};
@@ -471,6 +635,32 @@ function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
       (out as Record<string, unknown>)[k] = v;
       continue;
     }
+    if (k === "allow_upsert" && (typeof v === "boolean" || typeof v === "string")) {
+      out.allow_upsert = v;
+      continue;
+    }
+    if (
+      (k === "event_time" || k === "event_value" || k === "num_items" || k === "quantity") &&
+      (typeof v === "string" || typeof v === "number")
+    ) {
+      (out as Record<string, unknown>)[k] = v;
+      continue;
+    }
+    if (k === "items" && Array.isArray(v)) {
+      const items = copyAllowedObjectArray(v, CATALOG_ITEM_KEYS, 50);
+      if (items.length) out.items = items;
+      continue;
+    }
+    if (k === "events" && Array.isArray(v)) {
+      const events = copyAllowedObjectArray(v, CAPI_EVENT_KEYS, 10);
+      if (events.length) out.events = events;
+      continue;
+    }
+    if (k === "content_ids" && Array.isArray(v)) {
+      const arr = v.filter((x): x is string => typeof x === "string" && x.trim().length > 0).map((x) => x.trim());
+      if (arr.length) out.content_ids = arr;
+      continue;
+    }
     if (typeof v === "string") {
       (out as Record<string, unknown>)[k] = v;
     }
@@ -536,6 +726,7 @@ const KNOWN_ERROR_CODES = new Set<string>([
   "CONSENT_S_REQUIRED",
   "ADS_MUTATE_NOT_ENABLED",
   "META_MUTATE_NOT_ENABLED",
+  "META_CAPI_NOT_ENABLED",
   "META_SCOPE_MISSING",
   "SPEND_CAP_EXCEEDED",
   "TIKTOK_NOT_CONNECTED",
@@ -613,16 +804,12 @@ export async function postGateway(ctx: AppContext, opts: GatewayHopOpts): Promis
   };
 
   // Refuse open proxy / client hop URLs on the wire. Closed landing/media URL
-  // fields (final_url, file_url, link) are allowlisted after stripUrlishParams.
-  const scrubbedParams: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(body.params as Record<string, unknown>)) {
-    scrubbedParams[k] =
-      CLOSED_HTTPS_FIELDS.has(k) && typeof v === "string" ? "<closed-https>" : v;
-  }
+  // fields (final_url, file_url, link, image_link, event_source_url) are allowlisted.
+  const scrubbedParams = redactClosedHttpsDeep(body.params);
   const scrubbed = JSON.stringify({ ...body, params: scrubbedParams });
   if (/https?:\/\//i.test(scrubbed)) {
     return failEnvelope(opts.tool, "INVALID_ARGUMENT", MSG.INVALID_ARGUMENT, {
-      hint: "Gateway request must not contain open proxy URLs. Closed final_url/file_url/link only.",
+      hint: "Gateway request must not contain open proxy URLs. Closed final_url/file_url/link/image_link/event_source_url only.",
     });
   }
 

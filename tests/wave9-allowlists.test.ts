@@ -104,6 +104,7 @@ describe("Wave 9 generate allowlists + tools/list freeze", () => {
       "TIKTOK_NOT_CONNECTED",
       "TIKTOK_MUTATE_NOT_ENABLED",
       "META_MUTATE_NOT_ENABLED",
+      "META_CAPI_NOT_ENABLED",
       "GBP_NOT_CONNECTED",
       "GATEWAY_UNAVAILABLE",
     ];

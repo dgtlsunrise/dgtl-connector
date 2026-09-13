@@ -258,11 +258,18 @@ Google Ads mutate tools opted out (`DGTL_ADS_MUTATE_ENABLED=false`). Plugin defa
 
 ### `META_MUTATE_NOT_ENABLED`
 
-Meta mutate tools opted out (`DGTL_META_MUTATE_ENABLED=false`). Plugin defaults **on**; live hop still needs Worker `META_MUTATE_ENABLED=true` after `ads_management` Advanced Access.
+Meta mutate tools opted out (`DGTL_META_MUTATE_ENABLED=false`). Plugin defaults **on**; live hop still needs Worker `META_MUTATE_ENABLED=true` after `ads_management` Advanced Access. Catalog items_batch / create catalog use this flag (not CAPI).
+
+### `META_CAPI_NOT_ENABLED`
+
+Meta CAPI event send opted out, or Worker `META_CAPI_ENABLED` is off / unknown. Plugin `DGTL_META_CAPI_ENABLED` defaults **on**. Live hop dual-gates Worker `META_CAPI_ENABLED` (fail-closed, **separate** from `META_MUTATE_ENABLED`). Polar Pro `meta` bit. App secret stays on the Worker. Never unhashed PII.
+
+**User-visible:**  
+"Meta CAPI event send is opted out or the Worker META_CAPI_ENABLED flag is off. Plugin defaults on; set DGTL_META_CAPI_ENABLED=false to opt out. Live hop needs Worker META_CAPI_ENABLED=true (fail-closed, separate from META_MUTATE_ENABLED). Polar Pro meta bit. App secret stays on the Worker. Never send unhashed PII."
 
 ### `META_SCOPE_MISSING`
 
-Meta token lacks `ads_management` (or Graph denied the mutate). Re-authorize after Advanced Access. Do not silently retry.
+Meta token lacks `ads_management` (or `catalog_management` for catalog writes), or Graph denied the mutate. Re-authorize after App Review Advanced Access. Do not silently retry.
 
 ### `SPEND_CAP_EXCEEDED`
 

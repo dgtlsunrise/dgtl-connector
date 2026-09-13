@@ -10,7 +10,11 @@ Live Google Ads mutate needs **both** plugin `DGTL_ADS_MUTATE_ENABLED` (default 
 
 ## `META_MUTATE_NOT_ENABLED`
 
-Same dual-gate for Meta. Live Graph mutates also need `ads_management` Advanced Access. ads_read reads may still work.
+Same dual-gate for Meta. Live Graph mutates also need `ads_management` Advanced Access. Catalog items_batch / create catalog use this flag. ads_read reads may still work.
+
+## `META_CAPI_NOT_ENABLED`
+
+Plugin `DGTL_META_CAPI_ENABLED` defaults on; Worker `META_CAPI_ENABLED` is fail-closed and **separate** from `META_MUTATE_ENABLED`. Polar Pro `meta` bit. App secret stays on the Worker. Never collect unhashed PII. Stamp hop `POST /{GRAPH_API_VERSION}/{pixel_id}/events`.
 
 ## `TIKTOK_MUTATE_NOT_ENABLED`
 

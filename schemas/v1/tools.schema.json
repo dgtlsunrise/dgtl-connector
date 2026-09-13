@@ -1758,6 +1758,174 @@
         "creative_id"
       ]
     },
+    "meta_catalog_items_batch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ad_account_id", "catalog_id", "items"],
+      "properties": {
+        "ad_account_id": { "type": "string", "minLength": 1 },
+        "catalog_id": { "type": "string", "minLength": 1 },
+        "item_type": {
+          "type": "string",
+          "enum": ["PRODUCT_ITEM", "DESTINATION", "FLIGHT", "HOME_LISTING", "HOTEL", "VEHICLE"]
+        },
+        "allow_upsert": { "type": "boolean" },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["method", "retailer_id"],
+            "properties": {
+              "method": { "type": "string", "enum": ["CREATE", "UPDATE", "DELETE"] },
+              "retailer_id": { "type": "string", "minLength": 1 },
+              "title": { "type": "string" },
+              "description": { "type": "string" },
+              "availability": {
+                "type": "string",
+                "enum": ["in stock", "out of stock", "preorder", "available for order", "discontinued"]
+              },
+              "condition": { "type": "string", "enum": ["new", "refurbished", "used"] },
+              "price": { "type": "string" },
+              "link": { "type": "string" },
+              "image_link": { "type": "string" },
+              "additional_image_link": { "type": "string" },
+              "brand": { "type": "string" },
+              "item_group_id": { "type": "string" },
+              "sale_price": { "type": "string" },
+              "google_product_category": { "type": "string" },
+              "color": { "type": "string" },
+              "size": { "type": "string" },
+              "gender": { "type": "string" },
+              "age_group": { "type": "string" },
+              "material": { "type": "string" },
+              "pattern": { "type": "string" },
+              "product_type": { "type": "string" },
+              "quantity": { "oneOf": [{ "type": "integer" }, { "type": "string" }] },
+              "status": { "type": "string" }
+            }
+          }
+        },
+        "dry_run": { "type": "boolean", "default": true },
+        "confirm_phrase": { "type": "string" }
+      }
+    },
+    "meta_get_batch_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["catalog_id", "handle"],
+      "properties": {
+        "catalog_id": { "type": "string", "minLength": 1 },
+        "handle": { "type": "string", "minLength": 1 },
+        "ad_account_id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "meta_create_catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ad_account_id", "name"],
+      "properties": {
+        "ad_account_id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 400 },
+        "vertical": {
+          "type": "string",
+          "enum": ["commerce", "hotels", "flights", "destinations", "vehicles", "home_listings"]
+        },
+        "dry_run": { "type": "boolean", "default": true },
+        "confirm_phrase": { "type": "string" }
+      }
+    },
+    "meta_send_capi_events": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ad_account_id", "pixel_id", "events"],
+      "properties": {
+        "ad_account_id": { "type": "string", "minLength": 1 },
+        "pixel_id": { "type": "string", "minLength": 1 },
+        "events": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["event_name", "event_id"],
+            "properties": {
+              "event_name": {
+                "type": "string",
+                "enum": [
+                  "Purchase",
+                  "Lead",
+                  "CompleteRegistration",
+                  "AddToCart",
+                  "AddToWishlist",
+                  "InitiateCheckout",
+                  "ViewContent",
+                  "Search",
+                  "AddPaymentInfo",
+                  "Subscribe",
+                  "StartTrial",
+                  "SubmitApplication",
+                  "Contact",
+                  "CustomizeProduct",
+                  "Donate",
+                  "FindLocation",
+                  "Schedule",
+                  "PageView"
+                ]
+              },
+              "event_id": { "type": "string", "minLength": 1 },
+              "event_time": { "oneOf": [{ "type": "integer" }, { "type": "string" }] },
+              "action_source": {
+                "type": "string",
+                "enum": [
+                  "website",
+                  "app",
+                  "email",
+                  "phone_call",
+                  "chat",
+                  "physical_store",
+                  "system_generated",
+                  "business_messaging",
+                  "other"
+                ]
+              },
+              "event_source_url": { "type": "string" },
+              "em": { "type": "string" },
+              "ph": { "type": "string" },
+              "fn": { "type": "string" },
+              "ln": { "type": "string" },
+              "ct": { "type": "string" },
+              "st": { "type": "string" },
+              "zp": { "type": "string" },
+              "country": { "type": "string" },
+              "external_id": { "type": "string" },
+              "client_ip_address": { "type": "string" },
+              "client_user_agent": { "type": "string" },
+              "fbc": { "type": "string" },
+              "fbp": { "type": "string" },
+              "event_value": { "oneOf": [{ "type": "number" }, { "type": "string" }] },
+              "currency": { "type": "string" },
+              "content_ids": {
+                "oneOf": [
+                  { "type": "array", "items": { "type": "string" } },
+                  { "type": "string" }
+                ]
+              },
+              "content_type": { "type": "string" },
+              "content_name": { "type": "string" },
+              "num_items": { "oneOf": [{ "type": "integer" }, { "type": "string" }] },
+              "order_id": { "type": "string" }
+            }
+          }
+        },
+        "test_event_code": { "type": "string" },
+        "dry_run": { "type": "boolean", "default": true },
+        "confirm_phrase": { "type": "string" }
+      }
+    },
     "tiktok_list_advertisers": {
       "type": "object",
       "additionalProperties": false,

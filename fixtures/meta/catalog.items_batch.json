@@ -1,0 +1,9 @@
+{
+  "handles": ["AcmeCatalogBatchHandle001"],
+  "validation_status": [
+    {
+      "retailer_id": "sku-sunrise-tee",
+      "errors": []
+    }
+  ]
+}

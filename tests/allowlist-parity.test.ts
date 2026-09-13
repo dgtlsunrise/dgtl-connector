@@ -89,7 +89,11 @@ describe("W0.2 registry ↔ stamp mutate allowlist parity", () => {
     assert.deepEqual(sorted(META_MUTATE_TOOL_NAMES), sorted(parity.meta_mutate));
     assert.deepEqual(sorted(TIKTOK_MUTATE_TOOL_NAMES), sorted(parity.tiktok_mutate ?? []));
     for (const t of TOOLS.filter(
-      (x) => x.group === "gads-write" || x.group === "meta-write" || x.group === "tiktok-write",
+      (x) =>
+        x.group === "gads-write" ||
+        x.group === "meta-write" ||
+        x.group === "meta-capi" ||
+        x.group === "tiktok-write",
     )) {
       assert.equal(t.annotations.destructiveHint, true, `${t.name} mutate must be destructive`);
       assert.equal(t.annotations.readOnlyHint, false, `${t.name} mutate must not be readOnly`);

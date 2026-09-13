@@ -76,6 +76,12 @@ import {
   metaListPixels,
   metaUpdateAdsetTargeting,
 } from "../meta/meta-wave3.js";
+import {
+  metaCatalogItemsBatch,
+  metaCreateCatalog,
+  metaGetBatchStatus,
+  metaSendCapiEvents,
+} from "../meta/meta-wave16.js";
 import { metaDisabled, metaDescribeInsightsSchema } from "../meta/meta.js";
 import {
   mcGetProduct,
@@ -1459,7 +1465,7 @@ export const TOOLS: ToolSpec[] = [
     family: "meta",
     title: "Meta get pixel",
     description:
-      "Paid. Pro $19/mo. Pixel metadata (not CAPI event upload — sGTM is out of v1). Cite pixel_id from meta_list_pixels.",
+      "Paid. Pro $19/mo. Pixel metadata. CAPI event upload is meta_send_capi_events (separate META_CAPI_ENABLED dual-gate). Cite pixel_id from meta_list_pixels.",
     inputSchema: S.metaPixel,
     annotations: ANN_RO,
     handler: (ctx, args) => metaGetPixel(ctx, args),
@@ -1470,7 +1476,7 @@ export const TOOLS: ToolSpec[] = [
     family: "meta",
     title: "Meta list catalogs",
     description:
-      "Paid. Pro $19/mo. List owned product catalogs for an ad_account_id. Read only — Commerce catalog writes / Advantage+ shopping create stay out of this wave. LICENSE_REQUIRED without a license.",
+      "Paid. Pro $19/mo. List owned product catalogs for an ad_account_id. Writes use meta_create_catalog / meta_catalog_items_batch. LICENSE_REQUIRED without a license.",
     inputSchema: S.metaAccountOptionalLimit,
     annotations: ANN_RO,
     handler: (ctx, args) => metaListCatalogs(ctx, args),
@@ -1540,6 +1546,50 @@ export const TOOLS: ToolSpec[] = [
     inputSchema: S.metaAttachAudience,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => metaAttachAudience(ctx, args),
+  },
+  {
+    name: "meta_catalog_items_batch",
+    group: "meta-write",
+    family: "meta",
+    title: "Meta catalog items batch",
+    description:
+      "Paid mutate. Marketing API catalog items_batch upsert (CREATE/UPDATE/DELETE). dry_run default; live needs confirm_phrase containing act_{ad_account_id} AND catalog_id. HTTPS image_link/link only. ads_management or catalog_management when detectable. Polar Pro meta bit. Opt out with DGTL_META_MUTATE_ENABLED=false.",
+    inputSchema: S.metaCatalogItemsBatch,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => metaCatalogItemsBatch(ctx, args),
+  },
+  {
+    name: "meta_get_batch_status",
+    group: "meta",
+    family: "meta",
+    title: "Meta get catalog batch status",
+    description:
+      "Paid. Pro $19/mo. Read catalog check_batch_request_status for a handle from meta_catalog_items_batch. ads_read. LICENSE_REQUIRED without a license.",
+    inputSchema: S.metaGetBatchStatus,
+    annotations: ANN_RO,
+    handler: (ctx, args) => metaGetBatchStatus(ctx, args),
+  },
+  {
+    name: "meta_create_catalog",
+    group: "meta-write",
+    family: "meta",
+    title: "Meta create catalog",
+    description:
+      "Paid mutate. Create an owned product catalog on act_{ad_account_id}. dry_run default; live needs confirm_phrase containing act_{ad_account_id}. Closed vertical enum. ads_management or catalog_management when detectable. Polar Pro meta bit.",
+    inputSchema: S.metaCreateCatalog,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => metaCreateCatalog(ctx, args),
+  },
+  {
+    name: "meta_send_capi_events",
+    group: "meta-capi",
+    family: "meta",
+    title: "Meta send CAPI events",
+    description:
+      "Paid CAPI. Closed event_name enum; hashed user_data (SHA-256); required event_id. dry_run default; live needs confirm_phrase containing act_{ad_account_id} AND pixel_id. Dual-gate: plugin DGTL_META_CAPI_ENABLED (default on) AND Worker META_CAPI_ENABLED (fail-closed, not META_MUTATE_ENABLED). Polar Pro meta bit. App secret stays on Worker. Never unhashed PII in logs.",
+    inputSchema: S.metaSendCapiEvents,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => metaSendCapiEvents(ctx, args),
   },
   {
     name: "mc_list_accounts",
@@ -1879,7 +1929,12 @@ export function stampHopAnnotation(t: Pick<ToolSpec, "name" | "family" | "group"
     };
   }
   if (t.family === "gads") return { family: "gads", kind: t.group === "gads-write" ? "mutate" : "read_hop" };
-  if (t.family === "meta") return { family: "meta", kind: t.group === "meta-write" ? "mutate" : "read_hop" };
+  if (t.family === "meta") {
+    return {
+      family: "meta",
+      kind: t.group === "meta-write" || t.group === "meta-capi" ? "mutate" : "read_hop",
+    };
+  }
   if (t.family === "tiktok") {
     return { family: "tiktok", kind: t.group === "tiktok-write" ? "mutate" : "read_hop" };
   }
@@ -1895,7 +1950,12 @@ for (const t of TOOLS) {
 export const GADS_MUTATE_TOOL_NAMES = TOOLS.filter((t) => t.group === "gads-write").map((t) => t.name);
 
 /** Registry mutate surface (stamp hop). Keep ⊆ stamp META_MUTATE_TOOLS. */
-export const META_MUTATE_TOOL_NAMES = TOOLS.filter((t) => t.group === "meta-write").map((t) => t.name);
+export const META_MUTATE_TOOL_NAMES = TOOLS.filter(
+  (t) => t.group === "meta-write" || t.group === "meta-capi",
+).map((t) => t.name);
+
+/** CAPI-only mutate surface. Dual-gates META_CAPI_ENABLED, not META_MUTATE_ENABLED. */
+export const META_CAPI_TOOL_NAMES = TOOLS.filter((t) => t.group === "meta-capi").map((t) => t.name);
 
 /** Registry mutate surface (stamp hop). Keep ⊆ stamp TIKTOK_MUTATE_TOOLS. */
 export const TIKTOK_MUTATE_TOOL_NAMES = TOOLS.filter((t) => t.group === "tiktok-write").map((t) => t.name);

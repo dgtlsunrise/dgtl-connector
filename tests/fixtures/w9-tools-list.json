@@ -1,6 +1,6 @@
 {
   "comment": "Wave 9 tools/list freeze. Additive named tools are allowed. Deleting a name fails CI. No gads_mutate / meta_mutate.",
-  "count": 130,
+  "count": 134,
   "names": [
     "google_whoami",
     "ga4_list_accounts",
@@ -106,6 +106,10 @@
     "meta_create_custom_audience",
     "meta_create_lookalike_audience",
     "meta_attach_audience",
+    "meta_catalog_items_batch",
+    "meta_get_batch_status",
+    "meta_create_catalog",
+    "meta_send_capi_events",
     "mc_list_accounts",
     "mc_list_products",
     "mc_get_product",

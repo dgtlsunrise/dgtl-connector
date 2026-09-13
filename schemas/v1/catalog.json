@@ -741,6 +741,29 @@
       "fail": "META_MUTATE_NOT_ENABLED"
     },
     {
+      "name": "meta_catalog_items_batch",
+      "group": "meta-write",
+      "flag": "meta.mutate.enabled",
+      "fail": "META_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "meta_get_batch_status",
+      "group": "meta",
+      "fail": "LICENSE_REQUIRED"
+    },
+    {
+      "name": "meta_create_catalog",
+      "group": "meta-write",
+      "flag": "meta.mutate.enabled",
+      "fail": "META_MUTATE_NOT_ENABLED"
+    },
+    {
+      "name": "meta_send_capi_events",
+      "group": "meta-capi",
+      "flag": "meta.capi.enabled",
+      "fail": "META_CAPI_NOT_ENABLED"
+    },
+    {
       "name": "mc_list_accounts",
       "group": "mc",
       "fail": "LICENSE_REQUIRED",

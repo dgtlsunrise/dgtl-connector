@@ -1,0 +1,11 @@
+{
+  "data": [
+    {
+      "handle": "AcmeCatalogBatchHandle001",
+      "status": "finished",
+      "errors_total_count": 0,
+      "warnings_total_count": 0,
+      "ids_of_invalid_requests": []
+    }
+  ]
+}

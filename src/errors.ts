@@ -25,6 +25,7 @@ export const ERROR_CODES = [
   "CONSENT_S_REQUIRED",
   "ADS_MUTATE_NOT_ENABLED",
   "META_MUTATE_NOT_ENABLED",
+  "META_CAPI_NOT_ENABLED",
   "META_SCOPE_MISSING",
   "SPEND_CAP_EXCEEDED",
   "NOT_IMPLEMENTED",
@@ -102,8 +103,10 @@ export const MSG = {
     "Google Ads mutate tools are opted out (DGTL_ADS_MUTATE_ENABLED=false). Plugin defaults on; unset the env or set true to re-enable. Live hop still needs Worker ADS_MUTATE_ENABLED=true. Reads still work with Pro + Consent C — never on Consent A.",
   META_MUTATE_NOT_ENABLED:
     "Meta Ads mutate tools are opted out (DGTL_META_MUTATE_ENABLED=false). Plugin defaults on; unset the env or set true to re-enable. Live hop still needs Worker META_MUTATE_ENABLED=true after ads_management Advanced Access. Reads stay ads_read-only.",
+  META_CAPI_NOT_ENABLED:
+    "Meta CAPI event send is opted out or the Worker META_CAPI_ENABLED flag is off. Plugin defaults on; set DGTL_META_CAPI_ENABLED=false to opt out. Live hop needs Worker META_CAPI_ENABLED=true (fail-closed, separate from META_MUTATE_ENABLED). Polar Pro meta bit. App secret stays on the Worker. Never send unhashed PII.",
   META_SCOPE_MISSING:
-    "This Meta login did not grant ads_management (or Graph denied the mutate). Re-authorize after ads_management Advanced Access. Do not silently retry. ads_read reads may still work.",
+    "This Meta login did not grant ads_management (or catalog_management for catalog writes), or Graph denied the mutate. Re-authorize after App Review Advanced Access. Do not silently retry. ads_read reads may still work.",
   SPEND_CAP_EXCEEDED:
     "Requested budget exceeds the product sanity cap ($100,000/day equivalent). Google Ads: lower amount_micros / daily_budget_dollars (micros). Meta: lower daily_budget / lifetime_budget (cents, not micros). No mutate HTTP was sent.",
   NOT_IMPLEMENTED:

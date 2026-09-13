@@ -40,6 +40,7 @@ Live Ads / Meta / TikTok mutate requires **plugin AND Worker**. Plugin Ads / Met
 | --- | --- | --- | --- |
 | Ads mutate (`DGTL_ADS_MUTATE_ENABLED` / `ADS_MUTATE_ENABLED`) | **on** | fail-closed (`false` until health `ads_mutate_enabled=true`) | both true |
 | Meta mutate (`DGTL_META_MUTATE_ENABLED` / `META_MUTATE_ENABLED`) | **on** | fail-closed | both true |
+| Meta CAPI (`DGTL_META_CAPI_ENABLED` / `META_CAPI_ENABLED`) | **on** | fail-closed (`meta_capi_enabled`, **not** `META_MUTATE_ENABLED`) | both true |
 | TikTok mutate (`DGTL_TIKTOK_MUTATE_ENABLED` / `TIKTOK_MUTATE_ENABLED`) | **on** | fail-closed (`tiktok_mutate_enabled`) | both true |
 | Consent W writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `GoogleWriteHttp`) | flag on + Consent W token |
 | Shopify writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `ShopifyHttp` mutation) | flag on + merchant `write_inventory` / `write_products` + shop-domain confirm |
@@ -624,8 +625,12 @@ Consent A kernel stays **26**. These are Polar-gated; local describe tools need 
 | `meta_describe_insights_schema` | Local levels / date_presets / breakdowns / fields — call before `meta_insights`. |
 | `meta_insights` | `date_preset` or dates; optional `breakdowns` / `fields` / `time_increment`; cite `data.cited`. ads_read only. |
 | `meta_list_*` / `meta_get_creative` | Read lists + creative metadata (URLs, not bytes). |
-| `meta_list_pixels` / `meta_get_pixel` | Pixel read (id, name, last_fired_time). Not CAPI event upload. |
-| `meta_list_catalogs` / `meta_list_catalog_products` | Catalog read. Advantage+ shopping create is not in this wave. |
+| `meta_list_pixels` / `meta_get_pixel` | Pixel read (id, name, last_fired_time). CAPI upload is `meta_send_capi_events`. |
+| `meta_list_catalogs` / `meta_list_catalog_products` | Catalog read. Writes: `meta_create_catalog` / `meta_catalog_items_batch`. |
+| `meta_catalog_items_batch` | Marketing API `items_batch` upsert. dry_run default; live confirm `act_{ad_account_id}` AND `catalog_id`. HTTPS `image_link` / `link` only. `ads_management` or `catalog_management` when detectable. Worker `META_MUTATE_ENABLED`. |
+| `meta_get_batch_status` | Read `check_batch_request_status` for a batch `handle`. ads_read. |
+| `meta_create_catalog` | Confirm-gated owned catalog create (`act_{ad_account_id}/owned_product_catalogs`). Closed `vertical`. |
+| `meta_send_capi_events` | Closed `event_name` enum; SHA-256 `user_data`; required `event_id`. Confirm `act_` AND `pixel_id`. Dual-gate Worker `META_CAPI_ENABLED` (fail-closed, not ads mutate). Never unhashed PII in logs. |
 | `meta_list_custom_audiences` | List custom audiences for attach / lookalike origin. |
 | `meta_update_campaign` / `meta_update_adset` / `meta_update_ad` | Confirm-gated status/name/ad-set budget updates; dry-run default; `ads_management` required. |
 | `meta_create_campaign` | Closed Outcome-objective campaign create; defaults **PAUSED**; **ACTIVE** only with explicit `status` + confirm with `act_{ad_account_id}`. |
@@ -659,7 +664,7 @@ Consent A kernel stays **26**. These are Polar-gated; local describe tools need 
 | `gads_link_merchant_center` / `gads_unlink_merchant_center` | ProductLink create/remove (not MCC; not Merchant API). Confirm-gated. |
 | `gads_create_experiment` | Experiment in **SETUP** (not live) with control arm on an existing campaign. |
 
-`gads_search` closed recipes now include assets, asset_groups, audiences, shared_sets, bidding_strategies, geo, demographics, shopping_performance, recommendations, change_event, account_budget (billing **read**), negatives, experiments. Still **no raw GAQL**. Meta pixel/catalog/audience **reads** and named targeting/audience mutates are Wave 3. Lift, activity logs, Advantage+ shopping create, Customer Match hashed PII, and Meta hosted `ads_mcp_management` remain **deferred**. Meta live mutates fail closed with `META_SCOPE_MISSING` until `ads_management` Advanced Access and a reauthorized token are present. See [ops/META-CREATE-SPEEDRUN-2026-09-11.md](ops/META-CREATE-SPEEDRUN-2026-09-11.md) and [ops/ADS-META-FOUNDATIONS-2026-09-11.md](ops/ADS-META-FOUNDATIONS-2026-09-11.md). No agent-facing `meta_mutate`.
+`gads_search` closed recipes now include assets, asset_groups, audiences, shared_sets, bidding_strategies, geo, demographics, shopping_performance, recommendations, change_event, account_budget (billing **read**), negatives, experiments. Still **no raw GAQL**. Meta pixel/catalog/audience **reads** and named targeting/audience mutates are Wave 3. Wave 16 adds catalog `items_batch` + CAPI. Lift, activity logs, Advantage+ shopping create, Customer Match hashed PII lists, and Meta hosted `ads_mcp_management` remain **deferred**. Meta live mutates fail closed with `META_SCOPE_MISSING` until `ads_management` / `catalog_management` Advanced Access and a reauthorized token are present. See [ops/META-CREATE-SPEEDRUN-2026-09-11.md](ops/META-CREATE-SPEEDRUN-2026-09-11.md) and [ops/ADS-META-FOUNDATIONS-2026-09-11.md](ops/ADS-META-FOUNDATIONS-2026-09-11.md). No agent-facing `meta_mutate`.
 
 ---
 
@@ -723,7 +728,7 @@ No posts, replies, Q&A, or location mutate in this wave.
 | GA4 realtime, funnel, pivot, batch | No tool |
 | GTM users / folders / built-in variables / environment reauthorize | No tool (Wave 16+) |
 | MC data-source delete/patch, promotions, reviews | No tool (Wave 16+) |
-| Meta catalog / CAPI | No tool (Wave 16+) |
+| Meta catalog / CAPI | Wave 16 named tools (`meta_catalog_items_batch`, `meta_get_batch_status`, `meta_create_catalog`, `meta_send_capi_events`). No open Graph proxy. |
 | Stamp conversion ingest / CAPI sinks | No plugin tool (Wave 20). Never put ingest keys in GTM clients or web variables. |
 | Gmail / Drive | No tool |
 | Mega `run_any_google_json` | Forbidden |
@@ -764,7 +769,7 @@ Merchant-held Admin API credentials on the Bot computer. **No Polar. No stamp ho
 
 Fail order for writes: `WRITE_NOT_ENABLED` → `SHOPIFY_NOT_CONNECTED` → `SHOPIFY_SCOPE_MISSING` → dry-run (shop domain, zero mutation HTTP) → live needs shop domain in `confirm_phrase` / `confirm`.
 
-**Out of this wave:** customers dump, ShopifyQL, raw GraphQL, themes, Multipass, stamp multi-store vault, draft orders, collections/metafields/files on productSet, Meta catalog/CAPI (Wave 16+).
+**Out of this wave:** customers dump, ShopifyQL, raw GraphQL, themes, Multipass, stamp multi-store vault, draft orders, collections/metafields/files on productSet. Meta catalog/CAPI is Wave 16 (`meta_catalog_items_batch` / `meta_send_capi_events`), not Shopify.
 
 Skill: `shopify-ads-mc-join` joins Shopify SKU → MC `offerId` → Ads listing groups (and publications/feeds for catalog source of truth). `shopify-readonly` covers list/get.
 

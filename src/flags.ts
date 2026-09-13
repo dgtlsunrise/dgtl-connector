@@ -20,6 +20,12 @@ export type Flags = {
    * Mirror of Worker TIKTOK_MUTATE_ENABLED — Worker flag still required for live mutate hop.
    */
   tiktokMutateEnabled: boolean;
+  /**
+   * Meta CAPI event send (meta_send_capi_events). Separate from META_MUTATE_ENABLED.
+   * Plugin defaults on (listed); opt out with DGTL_META_CAPI_ENABLED / META_CAPI_ENABLED=false.
+   * Live hop dual-gates Worker META_CAPI_ENABLED (fail-closed). App secret stays on Worker.
+   */
+  metaCapiEnabled: boolean;
   /** Append redacted tool audit lines to PLUGIN_DATA/audit.jsonl. Default off. */
   auditLocal: boolean;
   /**
@@ -59,6 +65,7 @@ export function loadFlags(env: NodeJS.ProcessEnv = process.env): Flags {
     adsMutateEnabled: envFlag(env.DGTL_ADS_MUTATE_ENABLED, env.ADS_MUTATE_ENABLED, true),
     metaMutateEnabled: envFlag(env.DGTL_META_MUTATE_ENABLED, env.META_MUTATE_ENABLED, true),
     tiktokMutateEnabled: envFlag(env.DGTL_TIKTOK_MUTATE_ENABLED, env.TIKTOK_MUTATE_ENABLED, true),
+    metaCapiEnabled: envFlag(env.DGTL_META_CAPI_ENABLED, env.META_CAPI_ENABLED, true),
     auditLocal: truthy(env.DGTL_AUDIT_LOCAL),
     gatewayUrl: raw ? raw.replace(/\/+$/, "") : undefined,
     feedbackUrl: feedbackRaw ? feedbackRaw.replace(/\/+$/, "") : undefined,

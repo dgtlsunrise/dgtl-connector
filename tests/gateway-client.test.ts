@@ -400,6 +400,8 @@ describe("PR-5 license-gated gateway client", () => {
     assert.ok(CLOSED_HTTPS_FIELDS.has("final_url"));
     assert.ok(CLOSED_HTTPS_FIELDS.has("file_url"));
     assert.ok(CLOSED_HTTPS_FIELDS.has("link"));
+    assert.ok(CLOSED_HTTPS_FIELDS.has("image_link"));
+    assert.ok(CLOSED_HTTPS_FIELDS.has("event_source_url"));
     assert.ok(CLOSED_HTTPS_FIELDS.has("marketing_image_file_url"));
     assert.ok(CLOSED_HTTPS_FIELDS.has("logo_file_url"));
     assert.ok(GATEWAY_PARAM_ALLOW.has("final_url"));
@@ -412,6 +414,10 @@ describe("PR-5 license-gated gateway client", () => {
     assert.ok(GATEWAY_PARAM_ALLOW.has("catalog_id"));
     assert.ok(GATEWAY_PARAM_ALLOW.has("interest_ids"));
     assert.ok(GATEWAY_PARAM_ALLOW.has("custom_audience_ids"));
+    assert.ok(GATEWAY_PARAM_ALLOW.has("items"));
+    assert.ok(GATEWAY_PARAM_ALLOW.has("events"));
+    assert.ok(GATEWAY_PARAM_ALLOW.has("event_id"));
+    assert.ok(GATEWAY_PARAM_ALLOW.has("handle"));
     assert.equal(CLOSED_HTTPS_FIELDS.has("path1"), false);
 
     const { fetchImpl, captures } = mockWorker({
@@ -452,6 +458,61 @@ describe("PR-5 license-gated gateway client", () => {
     const body = hop!.body as { params: Record<string, unknown> };
     assert.equal(body.params.link, "https://example.com/offer");
     assert.equal(body.params.file_url, "https://cdn.example.com/clip.mp4");
+  });
+
+  it("catalog items image_link and CAPI event_source_url survive stripUrlishParams", async () => {
+    const { fetchImpl, captures } = mockWorker({
+      healthOk: true,
+      hop: {
+        status: 200,
+        body: { ok: true, tool: "meta_catalog_items_batch", data: {} },
+      },
+    });
+    const jwt = signLicense({
+      sub: "gw-user",
+      exp: Math.floor(Date.now() / 1000) + 86400,
+      features: ["meta"],
+      jti: "gw-catalog-https",
+    });
+    const envVars = testEnv({
+      DGTL_LICENSE_JWT: jwt,
+      DGTL_GATEWAY_URL: GATEWAY,
+      META_ACCESS_TOKEN: META_TOKEN,
+    });
+    const ctx = createAppContext({ pluginRoot: ROOT, env: envVars, fetchImpl });
+    const env = await postGateway(ctx, {
+      family: "meta",
+      tool: "meta_catalog_items_batch",
+      userAccessToken: META_TOKEN,
+      args: {
+        ad_account_id: "111222333",
+        catalog_id: "5566778899",
+        item_type: "PRODUCT_ITEM",
+        items: [
+          {
+            method: "UPDATE",
+            retailer_id: "sku-1",
+            title: "Tee",
+            link: "https://shop.example.com/tee",
+            image_link: "https://cdn.example.com/tee.jpg",
+          },
+        ],
+        events: [
+          {
+            event_name: "Purchase",
+            event_id: "evt-1",
+            event_source_url: "https://shop.example.com/thanks",
+            em: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          },
+        ],
+      },
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    const hop = captures.find((c) => c.url.includes("/v1/meta/meta_catalog_items_batch"));
+    assert.ok(hop);
+    const body = hop!.body as { params: { items?: Array<{ image_link?: string }>; events?: Array<{ event_source_url?: string }> } };
+    assert.equal(body.params.items?.[0]?.image_link, "https://cdn.example.com/tee.jpg");
+    assert.equal(body.params.events?.[0]?.event_source_url, "https://shop.example.com/thanks");
   });
 
   it("still rejects open proxy https outside closed URL fields", async () => {

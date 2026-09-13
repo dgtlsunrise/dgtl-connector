@@ -17,7 +17,10 @@ export const CLOSED_HTTPS_FIELD_KEYS = [
   "link",
   "marketing_image_file_url",
   "square_marketing_image_file_url",
-  "logo_file_url"
+  "logo_file_url",
+  "image_link",
+  "additional_image_link",
+  "event_source_url"
 ] as const;
 
 export const PATH_ONLY_URL_ADJACENT = [
@@ -158,7 +161,56 @@ export const GATEWAY_PARAM_ALLOW_KEYS = [
   "lookalike_type",
   "url_contains",
   "prefill",
-  "subtype"
+  "subtype",
+  "item_type",
+  "allow_upsert",
+  "retailer_id",
+  "image_link",
+  "additional_image_link",
+  "availability",
+  "condition",
+  "price",
+  "brand",
+  "handle",
+  "vertical",
+  "item_group_id",
+  "sale_price",
+  "google_product_category",
+  "color",
+  "size",
+  "gender",
+  "age_group",
+  "material",
+  "pattern",
+  "product_type",
+  "quantity",
+  "items",
+  "event_name",
+  "event_time",
+  "event_id",
+  "action_source",
+  "event_source_url",
+  "test_event_code",
+  "em",
+  "ph",
+  "fn",
+  "ln",
+  "ct",
+  "st",
+  "zp",
+  "external_id",
+  "client_ip_address",
+  "client_user_agent",
+  "fbc",
+  "fbp",
+  "event_value",
+  "currency",
+  "content_ids",
+  "content_type",
+  "content_name",
+  "num_items",
+  "order_id",
+  "events"
 ] as const;
 
 export const HOP_TOOLS = [
@@ -595,6 +647,34 @@ export const HOP_TOOLS = [
     "kind": "mutate",
     "method": "POST",
     "path_template": "/{GRAPH_API_VERSION}/{adset_id}"
+  },
+  {
+    "name": "meta_catalog_items_batch",
+    "family": "meta",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{GRAPH_API_VERSION}/{catalog_id}/items_batch"
+  },
+  {
+    "name": "meta_get_batch_status",
+    "family": "meta",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/{GRAPH_API_VERSION}/{catalog_id}/check_batch_request_status"
+  },
+  {
+    "name": "meta_send_capi_events",
+    "family": "meta",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{GRAPH_API_VERSION}/{pixel_id}/events"
+  },
+  {
+    "name": "meta_create_catalog",
+    "family": "meta",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{GRAPH_API_VERSION}/act_{ad_account_id}/owned_product_catalogs"
   },
   {
     "name": "tiktok_list_advertisers",
