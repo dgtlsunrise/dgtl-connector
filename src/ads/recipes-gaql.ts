@@ -69,6 +69,15 @@ export function isWave21GadsRecipe(recipe: string): recipe is Wave21GadsRecipe {
  * Unknown recipes throw — do not invent fields or accept raw GAQL.
  */
 export function compileGadsRecipe(recipe: string): CompiledGadsRecipe {
+  if (!isWave21GadsRecipe(recipe)) {
+    throw new ToolError(
+      "INVALID_ARGUMENT",
+      "Unknown Wave 21 recipe. Valid: click_view, keyword_performance, ad_performance.",
+      {
+        hint: "Call gads_describe_recipes. Do not send raw GAQL. Other recipes compile on stamp.",
+      },
+    );
+  }
   switch (recipe) {
     case "click_view":
       return {
@@ -109,14 +118,30 @@ export function compileGadsRecipe(recipe: string): CompiledGadsRecipe {
         ],
       };
     default: {
-      throw new ToolError(
-        "INVALID_ARGUMENT",
-        "Unknown Wave 21 recipe. Valid: click_view, keyword_performance, ad_performance.",
-        {
-          hint: "Call gads_describe_recipes. Do not send raw GAQL. Other recipes compile on stamp.",
-        },
-      );
+      const _never: never = recipe;
+      throw new ToolError("INVALID_ARGUMENT", `Unknown Wave 21 recipe ${String(_never)}`);
     }
+  }
+}
+
+/** Plugin-side ClickView lock — stamp also compiles single-day; hop never sends raw GAQL. */
+export function assertClickViewSingleDay(args: Record<string, unknown>): void {
+  if (args.recipe !== "click_view") return;
+  const raw = args.date_range;
+  const range =
+    raw && typeof raw === "object" && !Array.isArray(raw)
+      ? (raw as { start_date?: unknown; end_date?: unknown })
+      : {};
+  const start = typeof range.start_date === "string" ? range.start_date.trim() : "";
+  const end = typeof range.end_date === "string" ? range.end_date.trim() : "";
+  if (!start || !end || start !== end) {
+    throw new ToolError(
+      "INVALID_ARGUMENT",
+      "click_view requires a single-day date_range (same start_date and end_date).",
+      {
+        hint: "Google ClickView is one segments.date. gclid is not a GA4 dimension — join GA4 on Ads-id dimensions.",
+      },
+    );
   }
 }
 

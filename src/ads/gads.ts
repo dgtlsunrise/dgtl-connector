@@ -1,11 +1,12 @@
 import type { AppContext } from "../context.js";
 import { failEnvelope, okEnvelope, HINT_EMPTY_ROWS, type Envelope } from "../envelope.js";
-import { MSG } from "../errors.js";
+import { MSG, ToolError } from "../errors.js";
 import { probeGatewayReachable, postGateway } from "../gateway/client.js";
 import { hasFeature } from "../license/verify.js";
 import { checkPluginUpdate } from "../update-check.js";
 import { PLUGIN_VERSION, detectHost } from "../version.js";
 import { SCOPE } from "../google/scopes.js";
+import { assertClickViewSingleDay } from "./recipes-gaql.js";
 import { GADS_RECIPE_NAMES, describeGadsRecipes } from "./recipes-schema.js";
 
 export function requireAdsLicense(ctx: AppContext, tool: string): Envelope | null {
@@ -54,6 +55,15 @@ export async function gadsDisabled(
     return failEnvelope(tool, "INVALID_ARGUMENT", MSG.INVALID_ARGUMENT, {
       hint: `Unknown recipe. Valid: ${[...GADS_RECIPE_NAMES].join(", ")}. Call gads_describe_recipes — no raw GAQL.`,
     });
+  }
+
+  try {
+    assertClickViewSingleDay(args);
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope(tool, err.error_code, err.message, err.extra);
+    }
+    throw err;
   }
 
   const base = ctx.flags.gatewayUrl;

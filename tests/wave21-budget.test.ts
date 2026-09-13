@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 import {
+  assertClickViewSingleDay,
   assertSelectOnlyGaql,
   compileGadsRecipe,
   WAVE21_GADS_RECIPES,
@@ -16,11 +17,14 @@ import {
   nextPlatformAfterConfirm,
   PLATFORM_BUDGET_TOOLS,
   proposeMtaLtvBudgets,
+  type AdsLastClickRow,
+  type CurrentBudget,
+  type Ga4MtaRow,
 } from "../src/budget/mta-ltv.js";
-import { createAppContext } from "../src/context.js";
 import { ToolError } from "../src/errors.js";
 import { dispatch } from "../src/tools/dispatch.js";
 import { CONSENT_A_TOOLS, LICENSE_GATED_TOOLS, TOOLS } from "../src/tools/registry.js";
+import * as S from "../src/tools/schemas.js";
 import {
   installNetworkGuard,
   makeCtx,
@@ -31,7 +35,7 @@ import {
   TEST_TOKEN,
 } from "./helpers.js";
 
-const GATEWAY = "https://gateway.test.dgtl";
+const GATEWAY = "https://stamp.test";
 const ADS_TOKEN = "consent-c-ads-user-token";
 
 function licensedEnv(extra: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
@@ -64,31 +68,42 @@ const PROPOSAL_FIX = loadJson("fixtures/budget/mta-ltv.proposal.json") as {
   property_id: string;
   ga4_attribution_model: string;
   pool_daily_budget_dollars: number;
-  ga4_rows: Array<{ campaign_id: string; key_events: number; sessions: number }>;
-  ads_last_click_rows: Array<{ campaign_id: string; conversions: number }>;
-  current_budgets: Array<{
-    platform: "gads" | "meta" | "tiktok";
-    campaign_id: string;
-    customer_id?: string;
-    campaign_budget_id?: string;
-    advertiser_id?: string;
-    current_daily_budget_dollars: number;
-  }>;
+  ga4_rows: Ga4MtaRow[];
+  ads_last_click_rows: AdsLastClickRow[];
+  current_budgets: CurrentBudget[];
   expected: {
-    winner: null;
-    used_ltv: boolean;
     gads_share: number;
     tiktok_share: number;
     gads_dollars: number;
     tiktok_dollars: number;
-    sequence: string[];
-    gads_tool: string;
-    tiktok_tool: string;
-    note_contains: string;
   };
 };
 
-describe("Wave 21 MTA / LTV → budget", () => {
+function hopFetch(onHop: (url: string, body: Record<string, unknown>) => Response | void): typeof fetch {
+  return (async (input, init) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.includes("/v1/health")) {
+      return new Response(JSON.stringify({ ok: true, tiktok_mutate_enabled: true }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
+    const body = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
+    const override = onHop(url, body);
+    if (override) return override;
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        tool: "hop",
+        data: { results: [] },
+        page: { truncated: false, row_count: 0 },
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+  }) as typeof fetch;
+}
+
+describe("wave21 mta ltv budget", () => {
   let restore: () => void;
   before(() => {
     restore = installNetworkGuard();
@@ -111,14 +126,17 @@ describe("Wave 21 MTA / LTV → budget", () => {
     assert.ok(gated);
     assert.equal(gated!.fail, "TIKTOK_MUTATE_NOT_ENABLED");
     const hops = JSON.parse(readFileSync(join(ROOT, "src/gateway/hop-catalog.json"), "utf8")) as {
+      comment: string;
       tools: Array<{ name: string; path_template: string }>;
     };
+    assert.match(hops.comment, /tiktok_update_campaign_budget/);
+    assert.match(hops.comment, /allocate_budgets/);
     const hop = hops.tools.find((x) => x.name === "tiktok_update_campaign_budget");
     assert.ok(hop);
     assert.match(hop!.path_template, /campaign\/update/);
   });
 
-  it("closed Wave 21 recipes are in describe + compiler; no raw GAQL", () => {
+  it("closed Wave 21 recipes compile SELECT-only GAQL matching fixtures", () => {
     for (const recipe of WAVE21_GADS_RECIPES) {
       assert.ok(GADS_RECIPE_NAMES.has(recipe), recipe);
       const compiled = compileGadsRecipe(recipe);
@@ -133,50 +151,37 @@ describe("Wave 21 MTA / LTV → budget", () => {
       () => compileGadsRecipe("SELECT campaign.id FROM campaign"),
       (err: unknown) => err instanceof ToolError && err.error_code === "INVALID_ARGUMENT",
     );
+    assert.throws(
+      () => assertClickViewSingleDay({ recipe: "click_view", date_range: { start_date: "2026-09-01", end_date: "2026-09-12" } }),
+      (err: unknown) => err instanceof ToolError && err.error_code === "INVALID_ARGUMENT",
+    );
+    assert.doesNotThrow(() =>
+      assertClickViewSingleDay({
+        recipe: "click_view",
+        date_range: { start_date: "2026-09-12", end_date: "2026-09-12" },
+      }),
+    );
   });
 
   it("gads_describe_recipes lists Wave 21 recipes when licensed", async () => {
-    const ctx = createAppContext({
-      pluginRoot: ROOT,
-      env: licensedEnv(),
-      fetchImpl: async () => {
-        throw new Error("no fetch");
-      },
-    });
+    const ctx = makeCtx({}, licensedEnv());
     const env = await dispatch(ctx, "gads_describe_recipes", {});
     assert.equal(env.ok, true);
     const recipes = (env.data as { recipes: Array<{ recipe: string }> }).recipes.map((r) => r.recipe);
     for (const recipe of WAVE21_GADS_RECIPES) assert.ok(recipes.includes(recipe), recipe);
   });
 
-  it("gads_search hops recipe name for click_view (no GAQL on the wire)", async () => {
+  it("gads_search hops recipe name for click_view without GAQL", async () => {
     let hopBody: Record<string, unknown> | undefined;
-    const fetchImpl: typeof fetch = async (input, init) => {
-      const url = String(input);
-      if (url.endsWith("/v1/health")) {
-        return new Response(JSON.stringify({ ok: true }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        });
-      }
-      hopBody = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
-      return new Response(
-        JSON.stringify({
-          ok: true,
-          tool: "gads_search",
-          data: { results: [] },
-          page: { truncated: false, row_count: 0 },
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    };
-    const ctx = createAppContext({
-      pluginRoot: ROOT,
-      env: licensedEnv({
+    const ctx = makeCtx(
+      {},
+      licensedEnv({
         DGTL_GATEWAY_URL: GATEWAY,
         GOOGLE_ADS_ACCESS_TOKEN: ADS_TOKEN,
       }),
-      fetchImpl,
+    );
+    ctx.fetchImpl = hopFetch((url, body) => {
+      if (url.includes("/v1/gads/")) hopBody = body;
     });
     const env = await dispatch(ctx, "gads_search", {
       customer_id: "123-456-7890",
@@ -191,29 +196,34 @@ describe("Wave 21 MTA / LTV → budget", () => {
     assert.equal(cited?.customer_id, "1234567890");
   });
 
-  it("unknown recipe still fails closed without hop", async () => {
+  it("unknown recipe and multi-day click_view fail closed without hop", async () => {
     const captures: string[] = [];
-    const fetchImpl: typeof fetch = async (input) => {
-      captures.push(String(input));
-      return new Response(JSON.stringify({ ok: true }), { status: 200 });
-    };
-    const ctx = createAppContext({
-      pluginRoot: ROOT,
-      env: licensedEnv({
+    const ctx = makeCtx(
+      {},
+      licensedEnv({
         DGTL_GATEWAY_URL: GATEWAY,
         GOOGLE_ADS_ACCESS_TOKEN: ADS_TOKEN,
       }),
-      fetchImpl,
+    );
+    ctx.fetchImpl = hopFetch((url) => {
+      captures.push(url);
     });
-    const env = await dispatch(ctx, "gads_search", {
+    const unknown = await dispatch(ctx, "gads_search", {
       customer_id: "123",
       recipe: "raw_gaql_please",
     });
-    assert.equal(env.error_code, "INVALID_ARGUMENT");
+    assert.equal(unknown.error_code, "INVALID_ARGUMENT");
+    const multi = await dispatch(ctx, "gads_search", {
+      customer_id: "123",
+      recipe: "click_view",
+      date_range: { start_date: "2026-09-01", end_date: "2026-09-12" },
+    });
+    assert.equal(multi.error_code, "INVALID_ARGUMENT");
+    assert.match(String(multi.message ?? multi.hint), /single-day|click_view/i);
     assert.ok(!captures.some((u) => u.includes("/v1/gads/")));
   });
 
-  it("ga4_run_report refuses gclid (not a GA4 dimension)", async () => {
+  it("ga4_run_report refuses gclid", async () => {
     const ctx = makeCtx();
     const env = await dispatch(ctx, "ga4_run_report", {
       ...reportArgs(),
@@ -225,9 +235,9 @@ describe("Wave 21 MTA / LTV → budget", () => {
   });
 
   it("refuses missing metadata names and invented userLifetimeValue", () => {
-    const meta = loadJson("fixtures/budget/mta-ltv.metadata.json") as {
-      api_names: string[];
-    };
+    const meta = loadJson("fixtures/budget/mta-ltv.metadata.json") as { api_names: string[] };
+    assert.ok(!meta.api_names.includes("userLifetimeValue"));
+    assert.ok(!meta.api_names.includes("gclid"));
     assert.throws(
       () => assertMetadataNames(["sessions", "userLifetimeValue"], meta.api_names),
       (err: unknown) => err instanceof ToolError && err.error_code === "INVALID_ARGUMENT",
@@ -317,82 +327,79 @@ describe("Wave 21 MTA / LTV → budget", () => {
     );
   });
 
-  it("tiktok_update_campaign_budget dry_run + confirm hop", async () => {
+  it("tiktok_update_campaign_budget schema dry_run default; live needs confirm", () => {
     const t = TOOLS.find((x) => x.name === "tiktok_update_campaign_budget");
     assert.ok(t);
     assert.equal(t!.group, "tiktok-write");
     assert.equal(t!.annotations.destructiveHint, true);
+    const parsed = S.tiktokUpdateCampaignBudget.parse({
+      advertiser_id: "1234567890",
+      campaign_id: "987654321",
+      budget: 25,
+    });
+    assert.equal(parsed.dry_run, true);
+    const liveMissing = S.tiktokUpdateCampaignBudget.safeParse({
+      advertiser_id: "1234567890",
+      campaign_id: "987654321",
+      budget: 25,
+      dry_run: false,
+    });
+    assert.equal(liveMissing.success, false);
+  });
 
-    const dry = await dispatch(
-      createAppContext({
-        pluginRoot: ROOT,
-        env: tiktokLicenseEnv(),
-        fetchImpl: async () => {
-          throw new Error("no fetch");
-        },
-      }),
-      "tiktok_update_campaign_budget",
-      { advertiser_id: "1234567890", campaign_id: "987654321", budget: 25 },
-    );
-    assert.equal(dry.ok, true, JSON.stringify(dry));
-    assert.equal((dry.data as { dry_run?: boolean }).dry_run, true);
+  it("tiktok_update_campaign_budget dry_run proposes without hop", async () => {
+    let hops = 0;
+    const ctx = makeCtx({}, tiktokLicenseEnv());
+    ctx.fetchImpl = hopFetch((url) => {
+      if (url.includes("/v1/tiktok/tiktok_update_")) hops += 1;
+    });
+    const env = await dispatch(ctx, "tiktok_update_campaign_budget", {
+      advertiser_id: "1234567890",
+      campaign_id: "987654321",
+      budget: 25,
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    assert.equal((env.data as { dry_run?: boolean }).dry_run, true);
+    assert.equal(hops, 0);
+  });
 
-    const liveNoConfirm = await dispatch(
-      createAppContext({
-        pluginRoot: ROOT,
-        env: tiktokLicenseEnv(),
-        fetchImpl: async () => new Response(JSON.stringify({ ok: true }), { status: 200 }),
-      }),
-      "tiktok_update_campaign_budget",
-      {
-        advertiser_id: "1234567890",
-        campaign_id: "987654321",
-        budget: 25,
-        dry_run: false,
-      },
-    );
-    assert.equal(liveNoConfirm.ok, false);
+  it("tiktok_update_campaign_budget live without confirm fails before hop", async () => {
+    let hops = 0;
+    const ctx = makeCtx({}, tiktokLicenseEnv());
+    ctx.fetchImpl = hopFetch((url) => {
+      if (url.includes("/v1/tiktok/tiktok_update_")) hops += 1;
+    });
+    const env = await dispatch(ctx, "tiktok_update_campaign_budget", {
+      advertiser_id: "1234567890",
+      campaign_id: "987654321",
+      budget: 25,
+      dry_run: false,
+    });
+    assert.equal(env.ok, false);
+    assert.equal(hops, 0);
+  });
 
+  it("tiktok_update_campaign_budget live confirm hops campaign update", async () => {
     let seenUrl = "";
     let hopBody: Record<string, unknown> | undefined;
-    const fetchImpl: typeof fetch = async (input, init) => {
-      const url = String(input);
-      if (url.endsWith("/v1/health")) {
-        return new Response(JSON.stringify({ ok: true, tiktok_mutate_enabled: true }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        });
+    const ctx = makeCtx({}, tiktokLicenseEnv());
+    ctx.fetchImpl = hopFetch((url, body) => {
+      if (url.includes("/v1/tiktok/")) {
+        seenUrl = url;
+        hopBody = body;
       }
-      seenUrl = url;
-      hopBody = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
-      return new Response(
-        JSON.stringify({
-          ok: true,
-          tool: "tiktok_update_campaign_budget",
-          data: { campaign_ids: ["987654321"] },
-          api: "tiktok",
-        }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      );
-    };
-    const live = await dispatch(
-      createAppContext({
-        pluginRoot: ROOT,
-        env: tiktokLicenseEnv(),
-        fetchImpl,
-      }),
-      "tiktok_update_campaign_budget",
-      {
-        advertiser_id: "1234567890",
-        campaign_id: "987654321",
-        budget: 25,
-        dry_run: false,
-        confirm_phrase: "update 1234567890 987654321",
-      },
-    );
-    assert.equal(live.ok, true, JSON.stringify(live));
+    });
+    const env = await dispatch(ctx, "tiktok_update_campaign_budget", {
+      advertiser_id: "1234567890",
+      campaign_id: "987654321",
+      budget: 25,
+      dry_run: false,
+      confirm_phrase: "update 1234567890 987654321",
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
     assert.ok(seenUrl.endsWith("/v1/tiktok/tiktok_update_campaign_budget"));
     assert.equal((hopBody?.params as { budget?: number } | undefined)?.budget, 25);
+    assert.equal((hopBody?.params as { budget_mode?: string } | undefined)?.budget_mode, "BUDGET_MODE_DAY");
   });
 
   it("skill documents DDA vs last-click, dry_run, one-platform confirm", () => {
@@ -405,8 +412,23 @@ describe("Wave 21 MTA / LTV → budget", () => {
     assert.ok(skill.includes("meta_update_adset"));
     assert.ok(skill.includes("tiktok_update_campaign_budget"));
     assert.ok(skill.includes("click_view"));
-    assert.ok(skill.includes("one platform"));
+    assert.ok(skill.includes("one platform per confirm"));
     assert.ok(skill.includes("dry_run"));
-    assert.ok(!/axos/i.test(skill));
+    assert.match(skill, /Never Axos/);
+  });
+
+  it("sibling stamp hop-catalog tiktok budget row matches when checkout is present", () => {
+    const stamp = process.env.DGTL_STAMP_ROOT?.trim() || "/workspace/dgtl-planning/services/stamp";
+    if (!existsSync(join(stamp, "src/gateway/hop-catalog.json"))) return;
+    const plugin = JSON.parse(readFileSync(join(ROOT, "src/gateway/hop-catalog.json"), "utf8")) as {
+      tools: Array<{ name: string; path_template: string; method: string }>;
+    };
+    const remote = JSON.parse(readFileSync(join(stamp, "src/gateway/hop-catalog.json"), "utf8")) as {
+      tools: Array<{ name: string; path_template: string; method: string }>;
+    };
+    const a = plugin.tools.find((t) => t.name === "tiktok_update_campaign_budget");
+    const b = remote.tools.find((t) => t.name === "tiktok_update_campaign_budget");
+    assert.ok(a);
+    assert.deepEqual(a, b);
   });
 });
