@@ -1,0 +1,19 @@
+{
+  "recipe": "click_view",
+  "from": "click_view",
+  "date_range": "single_day",
+  "select": [
+    "click_view.gclid",
+    "campaign.id",
+    "campaign.name",
+    "ad_group.id",
+    "metrics.clicks",
+    "segments.date"
+  ],
+  "gaql": "SELECT click_view.gclid, campaign.id, campaign.name, ad_group.id, metrics.clicks, segments.date FROM click_view",
+  "notes": [
+    "Google ClickView requires a single-day segments.date.",
+    "gclid is an Ads click_view field — not a GA4 dimension.",
+    "Ads last-click / click rows are not sole truth vs GA4 DDA Ads-id recipes."
+  ]
+}

@@ -36,6 +36,9 @@ export type GatewayRecipe =
   | "account_budget"
   | "negatives"
   | "experiments"
+  | "click_view"
+  | "keyword_performance"
+  | "ad_performance"
   | null;
 
 export type GatewayParams = {
@@ -775,6 +778,9 @@ const GADS_RECIPE_SET = new Set<Exclude<GatewayRecipe, null>>([
   "account_budget",
   "negatives",
   "experiments",
+  "click_view",
+  "keyword_performance",
+  "ad_performance",
 ]);
 
 function recipeFromArgs(tool: string, args: Record<string, unknown>): GatewayRecipe {

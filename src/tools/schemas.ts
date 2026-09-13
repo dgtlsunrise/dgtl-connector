@@ -243,6 +243,9 @@ export const gadsSearch = z
         "account_budget",
         "negatives",
         "experiments",
+        "click_view",
+        "keyword_performance",
+        "ad_performance",
       ])
       .optional(),
     date_range: dateRange.optional(),
@@ -2298,6 +2301,18 @@ export const tiktokTrackEvents = z
     event_source: z.enum(TIKTOK_EVENT_SOURCES).optional(),
     events: z.array(tiktokEvent).min(1).max(10),
     test_event_code: z.string().min(1).max(64).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const tiktokUpdateCampaignBudget = z
+  .object({
+    advertiser_id: z.string().min(1),
+    campaign_id: z.string().min(1),
+    budget: z.union([z.number().positive(), z.string()]),
+    budget_mode: z.enum(["BUDGET_MODE_DAY", "BUDGET_MODE_TOTAL"]).optional(),
     dry_run: z.boolean().default(true),
     confirm_phrase: z.string().optional(),
   })

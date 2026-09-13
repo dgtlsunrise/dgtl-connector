@@ -164,3 +164,133 @@ export async function tiktokUpdateCampaign(
   env.data = data;
   return env;
 }
+
+const BUDGET_MODES = new Set(["BUDGET_MODE_DAY", "BUDGET_MODE_TOTAL"]);
+const SPEND_CAP = 100_000;
+
+/**
+ * Wave 21 — campaign budget update via Marketing API campaign/update.
+ * Status-only remains tiktok_update_campaign. dry_run default; confirm advertiser+campaign.
+ */
+export async function tiktokUpdateCampaignBudget(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "tiktok_update_campaign_budget";
+  if (!ctx.flags.tiktokMutateEnabled) {
+    return failEnvelope(tool, "TIKTOK_MUTATE_NOT_ENABLED", MSG.TIKTOK_MUTATE_NOT_ENABLED, {
+      hint: HINT_FLAG,
+      api: "tiktok",
+    });
+  }
+
+  const miss = requireTikTokLicense(ctx, tool);
+  if (miss) return miss;
+
+  let advertiser_id: string;
+  let campaign_id: string;
+  try {
+    advertiser_id = requireId(args.advertiser_id, "advertiser_id").trim();
+    campaign_id = requireId(args.campaign_id, "campaign_id").trim();
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope(tool, err.error_code, err.message, { ...err.extra, api: "tiktok" });
+    }
+    throw err;
+  }
+  if (!/^\d{5,20}$/.test(advertiser_id)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "advertiser_id must be digits-only", {
+      api: "tiktok",
+    });
+  }
+  if (!/^\d{1,30}$/.test(campaign_id)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "campaign_id must be digits-only", {
+      api: "tiktok",
+    });
+  }
+
+  const budgetRaw = args.budget;
+  const budget = typeof budgetRaw === "number" ? budgetRaw : Number(budgetRaw);
+  if (!Number.isFinite(budget) || budget <= 0) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "budget must be a positive number in advertiser currency", {
+      api: "tiktok",
+    });
+  }
+  if (budget > SPEND_CAP) {
+    return failEnvelope(tool, "SPEND_CAP_EXCEEDED", MSG.SPEND_CAP_EXCEEDED, { api: "tiktok" });
+  }
+
+  const budget_mode =
+    typeof args.budget_mode === "string" && args.budget_mode.trim()
+      ? args.budget_mode.trim().toUpperCase()
+      : "BUDGET_MODE_DAY";
+  if (!BUDGET_MODES.has(budget_mode)) {
+    return failEnvelope(tool, "INVALID_ARGUMENT", "budget_mode must be BUDGET_MODE_DAY or BUDGET_MODE_TOTAL", {
+      api: "tiktok",
+      hint: "BUDGET_MODE_INFINITE is not a budget update. Status stays on tiktok_update_campaign.",
+    });
+  }
+
+  const dryRun = dryRunDefault(args);
+  const proposed = { advertiser_id, campaign_id, budget, budget_mode };
+
+  if (dryRun) {
+    return okEnvelope(tool, {
+      resource: { type: "tiktok_campaign", id: campaign_id, display_name: campaign_id },
+      data: {
+        dry_run: true,
+        proposed,
+        cited: proposed,
+        note: `No TikTok Marketing API mutate HTTP. Pass dry_run=false with confirm_phrase containing ${advertiser_id} AND ${campaign_id} only after a user message this turn that includes both. One platform per confirm — do not pair with gads/meta budget tools in the same confirm.`,
+      },
+    });
+  }
+
+  try {
+    assertConfirmContainsAdvertiserAndCampaign(args.confirm_phrase, advertiser_id, campaign_id);
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope(tool, err.error_code, err.message, { ...err.extra, api: "tiktok" });
+    }
+    throw err;
+  }
+
+  const base = ctx.flags.gatewayUrl;
+  if (!base) {
+    return failEnvelope(tool, "GATEWAY_UNAVAILABLE", MSG.GATEWAY_UNAVAILABLE, {
+      hint: "License + mutate flag ok. Set DGTL_GATEWAY_URL. Free tools still work.",
+    });
+  }
+
+  const probe = await probeGatewayReachable(ctx);
+  if (!probe.reachable) {
+    return failEnvelope(tool, "GATEWAY_UNAVAILABLE", MSG.GATEWAY_UNAVAILABLE, {
+      hint: probe.note ?? "Gateway health probe failed.",
+    });
+  }
+
+  const tok = await ctx.authTiktok.getAccessToken();
+  if (!tok?.accessToken) {
+    return failEnvelope(tool, "TIKTOK_NOT_CONNECTED", MSG.TIKTOK_NOT_CONNECTED, {
+      hint: "License and gateway are ok. Set TIKTOK_ACCESS_TOKEN — never reuse Google Consent A or Meta tokens.",
+    });
+  }
+
+  void ctx.auth;
+
+  const env = await postGateway(ctx, {
+    family: "tiktok",
+    tool,
+    userAccessToken: tok.accessToken,
+    args: proposed,
+  });
+
+  if (!env.ok) return env;
+  const cited = proposed;
+  const data =
+    env.data && typeof env.data === "object"
+      ? { ...(env.data as Record<string, unknown>), cited }
+      : { cited };
+  env.data = data;
+  return env;
+}

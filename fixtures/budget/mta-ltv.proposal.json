@@ -1,0 +1,40 @@
+{
+  "property_id": "properties/111111111",
+  "ga4_attribution_model": "PAID_AND_ORGANIC_CHANNELS_DATA_DRIVEN",
+  "pool_daily_budget_dollars": 100,
+  "ga4_rows": [
+    { "campaign_id": "1001", "key_events": 8, "sessions": 80 },
+    { "campaign_id": "2002", "key_events": 2, "sessions": 40 }
+  ],
+  "ads_last_click_rows": [
+    { "campaign_id": "1001", "conversions": 1 },
+    { "campaign_id": "2002", "conversions": 20 }
+  ],
+  "current_budgets": [
+    {
+      "platform": "gads",
+      "campaign_id": "1001",
+      "customer_id": "1234567890",
+      "campaign_budget_id": "333",
+      "current_daily_budget_dollars": 40
+    },
+    {
+      "platform": "tiktok",
+      "campaign_id": "2002",
+      "advertiser_id": "1234567890",
+      "current_daily_budget_dollars": 60
+    }
+  ],
+  "expected": {
+    "winner": null,
+    "used_ltv": false,
+    "gads_share": 0.8,
+    "tiktok_share": 0.2,
+    "gads_dollars": 80,
+    "tiktok_dollars": 20,
+    "sequence": ["gads", "tiktok"],
+    "gads_tool": "gads_update_campaign_budget",
+    "tiktok_tool": "tiktok_update_campaign_budget",
+    "note_contains": "not sole truth"
+  }
+}

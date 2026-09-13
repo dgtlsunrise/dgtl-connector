@@ -2,7 +2,7 @@
 
 Skills are Agent Skills (`skills/<name>/SKILL.md`). They are how the plugin behaves in conversation. Tools are dumb and typed; skills carry the product judgment.
 
-This index is closed for v1 spec plus Waves 4–20. **19 skills.** Each directory below must exist. Wave 20 adds tools, not a 20th skill.
+This index is closed for v1 spec plus Waves 4–21. **20 skills.** Each directory below must exist.
 
 | Skill | Directory | Job |
 | --- | --- | --- |
@@ -25,6 +25,7 @@ This index is closed for v1 spec plus Waves 4–20. **19 skills.** Each director
 | Pro upgrade | `skills/pro-upgrade/` | Ads / Meta / sGTM unlock at $19/mo flat. No nag on normal GA4. |
 | GSC vs Ads keywords | `skills/gsc-vs-ads-keywords/` | Join only on two named IDs. No default client. |
 | GA4 vs Ads conversions | `skills/ga4-vs-ads-conversions/` | Two numbers, two definitions, no winner. |
+| MTA / LTV → budget | `skills/mta-ltv-budget/` | GA4 DDA + Ads-id vs last-click recipes; propose budgets; confirm-gated per-platform tools. No mega allocate. |
 
 ## Shared laws (every skill)
 
@@ -61,6 +62,7 @@ This index is closed for v1 spec plus Waves 4–20. **19 skills.** Each director
 | Quota / 429 | `google-marketing-support` |
 | Ads / Meta / sGTM unlock, `LICENSE_REQUIRED`, `GATEWAY_UNAVAILABLE` | `pro-upgrade` (+ `license-and-reconnect`) |
 | Hard plugin failure after a real diagnosis; user wants to tell DGTL | `send-feedback` (once; approve before send) |
+| “Reallocate budget from DDA / LTV” / Ads last-click vs GA4 | `mta-ltv-budget` |
 
 ## Skill ↔ tool map
 
@@ -81,6 +83,7 @@ This index is closed for v1 spec plus Waves 4–20. **19 skills.** Each director
 | google-marketing-support | `google_whoami` first, `support_packet` for intake, then the failing family; `feedback_prepare` only after a real hard-failure diagnosis | Token collection; `feedback_send` without user approval |
 | send-feedback | `support_packet`, `feedback_prepare`, then `feedback_send` only after the user approves the draft | Sending without `confirm: true`; pitching on LICENSE_REQUIRED / empty rows / picker |
 | pro-upgrade | `license_status` when explaining unlock | Pitching Pro after a normal GA4/GSC/web GTM answer |
+| mta-ltv-budget | `ga4_get_attribution_settings`, `ga4_get_metadata`, `ga4_run_report` Ads-id recipes, `gads_search` click_view/keyword_performance/ad_performance, then `gads_update_campaign_budget` / `meta_update_adset` / `tiktok_update_campaign_budget` one platform at a time | Mega `allocate_budgets`; inventing `userLifetimeValue`; `gclid` on GA4; treating Ads last-click as sole truth; two-platform confirm |
 
 ## Frontmatter
 

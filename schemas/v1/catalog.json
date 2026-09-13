@@ -971,6 +971,13 @@
       "note": "Wave 17; defaults DISABLE; confirm advertiser_id; closed objective_type"
     },
     {
+      "name": "tiktok_update_campaign_budget",
+      "group": "tiktok-write",
+      "flag": "tiktok.mutate.enabled",
+      "fail": "TIKTOK_MUTATE_NOT_ENABLED",
+      "note": "Wave 21; campaign/update budget; dry_run default; confirm advertiser_id + campaign_id; no allocate_budgets"
+    },
+    {
       "name": "klaviyo_get_account",
       "group": "klaviyo",
       "fail": "KLAVIYO_NOT_CONNECTED",

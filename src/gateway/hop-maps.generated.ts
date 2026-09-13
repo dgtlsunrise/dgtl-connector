@@ -776,6 +776,13 @@ export const HOP_TOOLS = [
     "kind": "mutate",
     "method": "POST",
     "path_template": "/open_api/{TIKTOK_API_VERSION}/campaign/create/"
+  },
+  {
+    "name": "tiktok_update_campaign_budget",
+    "family": "tiktok",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/open_api/{TIKTOK_API_VERSION}/campaign/update/"
   }
 ] as const;
 

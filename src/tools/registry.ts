@@ -111,7 +111,7 @@ import {
 } from "../shopify/shopify.js";
 import { shopifyAdjustInventory, shopifyProductSet } from "../shopify/shopify-write.js";
 import { tiktokDisabled } from "../tiktok/tiktok.js";
-import { tiktokUpdateCampaign } from "../tiktok/tiktok-write.js";
+import { tiktokUpdateCampaign, tiktokUpdateCampaignBudget } from "../tiktok/tiktok-write.js";
 import {
   tiktokBindCatalogEventsource,
   tiktokCreateCampaign,
@@ -872,7 +872,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gads",
     title: "Google Ads search (recipes)",
     description:
-      "Paid. Pro $19/mo. Closed recipe enum only (campaigns, ad_groups, keywords, search_terms, conversion_actions, change_status, policy_topics, performance, assets, asset_groups, audiences, shared_sets, bidding_strategies, geo, demographics, shopping_performance, recommendations, change_event, account_budget, negatives, experiments). Call gads_describe_recipes first — do not invent GAQL. customer_id digits without hyphens; cite data.cited. LICENSE_REQUIRED without a license. No developer-token on this client.",
+      "Paid. Pro $19/mo. Closed recipe enum only (campaigns, ad_groups, keywords, search_terms, conversion_actions, change_status, policy_topics, performance, assets, asset_groups, audiences, shared_sets, bidding_strategies, geo, demographics, shopping_performance, recommendations, change_event, account_budget, negatives, experiments, click_view, keyword_performance, ad_performance). Call gads_describe_recipes first — do not invent GAQL. customer_id digits without hyphens; cite data.cited. LICENSE_REQUIRED without a license. No developer-token on this client.",
     inputSchema: S.gadsSearch,
     annotations: ANN_RO,
     handler: async (ctx, args) => gadsDisabled(ctx, "gads_search", args),
@@ -1999,6 +1999,17 @@ export const TOOLS: ToolSpec[] = [
     inputSchema: S.tiktokCreateCampaign,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => tiktokCreateCampaign(ctx, args),
+  },
+  {
+    name: "tiktok_update_campaign_budget",
+    group: "tiktok-write",
+    family: "tiktok",
+    title: "TikTok update campaign budget",
+    description:
+      "Paid mutate. Update TikTok campaign budget (BUDGET_MODE_DAY or BUDGET_MODE_TOTAL). dry_run default; live needs confirm_phrase containing advertiser_id AND campaign_id after a user message this turn. Dual-gate TIKTOK_MUTATE_ENABLED. Spend cap $100,000. Status stays on tiktok_update_campaign. App secret stays on the Worker. One platform per confirm.",
+    inputSchema: S.tiktokUpdateCampaignBudget,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => tiktokUpdateCampaignBudget(ctx, args),
   },
   {
     name: "klaviyo_get_account",

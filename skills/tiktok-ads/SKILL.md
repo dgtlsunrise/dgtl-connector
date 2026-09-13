@@ -16,7 +16,8 @@ Stamp hop. App id + secret live on the Worker. This plugin holds only the advert
 5. Pixels: `tiktok_list_pixels` — copy `pixel_code`. Bind with `tiktok_bind_catalog_eventsource` (`pixel_code` XOR `app_id`).
 6. Events: `tiktok_track_events` **dry_run first**. `content_id` / `content_ids` **must match catalog `sku_id`**. Live needs `confirm_phrase` containing **advertiser_id AND pixel_code**.
 7. Status mutate: `tiktok_update_campaign` **dry_run first**. Live needs `confirm_phrase` containing **advertiser_id AND campaign_id**.
-8. Optional create: `tiktok_create_campaign` defaults **DISABLE** (`PAUSED`→DISABLE). Confirm `advertiser_id`.
+8. Budget mutate: `tiktok_update_campaign_budget` **dry_run first**. `BUDGET_MODE_DAY` or `BUDGET_MODE_TOTAL`. Confirm `advertiser_id` AND `campaign_id`. One platform per confirm (`mta-ltv-budget`).
+9. Optional create: `tiktok_create_campaign` defaults **DISABLE** (`PAUSED`→DISABLE). Confirm `advertiser_id`.
 
 List-tool output is not the user message.
 

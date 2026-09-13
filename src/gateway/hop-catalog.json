@@ -1,6 +1,6 @@
 {
   "schema": "dgtl.hop-catalog.v1",
-  "comment": "Wave 9 source of truth for stamp GADS_TOOLS / META_TOOLS / TIKTOK_TOOLS, path templates, methods, and plugin hop GATEWAY_PARAM_ALLOW / CLOSED_HTTPS_FIELDS. Wave 20 adds top-level conversion_fabric (not tools[]) — stamp copies it byte-identical and implements FundedUploadSink. Keep byte-identical across dgtl-stamp and dgtl-connector. Plugin Zod schemas stay handwritten per named tool. Describe/recipe tools are plugin-local and MUST NOT appear in tools[]. Adding a named stamp hop: (1) register the MCP tool, (2) add a row here, (3) add a Worker builder, (4) run node scripts/generate-hop-maps.mjs in BOTH repos. Do not add gads_mutate / meta_mutate. Do not delete named tools. Do not add Ads Data Manager as a plugin send hop.",
+  "comment": "Wave 9 source of truth for stamp GADS_TOOLS / META_TOOLS / TIKTOK_TOOLS, path templates, methods, and plugin hop GATEWAY_PARAM_ALLOW / CLOSED_HTTPS_FIELDS. Wave 20 adds top-level conversion_fabric (not tools[]) — stamp copies it byte-identical and implements FundedUploadSink. Wave 21 adds tiktok_update_campaign_budget (campaign/update) plus stamp-side gads_search compilers for click_view / keyword_performance / ad_performance (plugin hops recipe name only; no raw GAQL). Keep byte-identical across dgtl-stamp and dgtl-connector. Plugin Zod schemas stay handwritten per named tool. Describe/recipe tools are plugin-local and MUST NOT appear in tools[]. Adding a named stamp hop: (1) register the MCP tool, (2) add a row here, (3) add a Worker builder, (4) run node scripts/generate-hop-maps.mjs in BOTH repos. Do not add gads_mutate / meta_mutate. Do not delete named tools. Do not add Ads Data Manager as a plugin send hop. Do not add allocate_budgets.",
   "plugin_local_describe": [
     "gads_describe_recipes",
     "meta_describe_insights_schema"
@@ -767,6 +767,13 @@
       "kind": "mutate",
       "method": "POST",
       "path_template": "/open_api/{TIKTOK_API_VERSION}/campaign/create/"
+    },
+    {
+      "name": "tiktok_update_campaign_budget",
+      "family": "tiktok",
+      "kind": "mutate",
+      "method": "POST",
+      "path_template": "/open_api/{TIKTOK_API_VERSION}/campaign/update/"
     }
   ],
   "conversion_fabric": {

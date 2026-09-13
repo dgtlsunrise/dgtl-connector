@@ -146,6 +146,34 @@ export const GADS_RECIPES: GadsRecipe[] = [
     typical_resources: ["experiment"],
     notes: ["Read only. Create/apply is Wave 2."],
   },
+  {
+    recipe: "click_view",
+    description: "Click-level last-click view (gclid + campaign). Ads reporting, not GA4 DDA.",
+    typical_resources: ["click_view"],
+    notes: [
+      "Requires a single-day date_range (Google ClickView).",
+      "gclid lives here — it is not a GA4 dimension.",
+      "Do not treat as sole truth vs ga4_run_report Ads-id / DDA.",
+    ],
+  },
+  {
+    recipe: "keyword_performance",
+    description: "Keyword view metrics (criterion id, match type, cost, conversions).",
+    typical_resources: ["keyword_view"],
+    notes: [
+      "Keyword *ids* live here. GA4 has no keyword id (ads_mta_keyword_ids refuses).",
+      "metrics.conversions is Ads last-click / Ads reporting — not GA4 DDA.",
+    ],
+  },
+  {
+    recipe: "ad_performance",
+    description: "Ad-level performance (ad_group_ad id + metrics).",
+    typical_resources: ["ad_group_ad"],
+    notes: [
+      "Join to GA4 on googleAdsCreativeId / sessionGoogleAdsCreativeId — not gclid.",
+      "Ads last-click is a second series, not the winner.",
+    ],
+  },
 ];
 
 export const GADS_RECIPE_NAMES = new Set(GADS_RECIPES.map((r) => r.recipe));

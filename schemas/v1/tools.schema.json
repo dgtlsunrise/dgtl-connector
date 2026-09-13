@@ -1086,7 +1086,10 @@
             "change_event",
             "account_budget",
             "negatives",
-            "experiments"
+            "experiments",
+            "click_view",
+            "keyword_performance",
+            "ad_performance"
           ]
         },
         "date_range": {
@@ -2216,6 +2219,22 @@
           }
         },
         "test_event_code": { "type": "string" },
+        "dry_run": { "type": "boolean", "default": true },
+        "confirm_phrase": { "type": "string" }
+      }
+    },
+    "tiktok_update_campaign_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["advertiser_id", "campaign_id", "budget"],
+      "properties": {
+        "advertiser_id": { "type": "string", "minLength": 1 },
+        "campaign_id": { "type": "string", "minLength": 1 },
+        "budget": { "oneOf": [{ "type": "number" }, { "type": "string" }] },
+        "budget_mode": {
+          "type": "string",
+          "enum": ["BUDGET_MODE_DAY", "BUDGET_MODE_TOTAL"]
+        },
         "dry_run": { "type": "boolean", "default": true },
         "confirm_phrase": { "type": "string" }
       }

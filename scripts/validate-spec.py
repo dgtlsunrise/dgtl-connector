@@ -61,6 +61,7 @@ SKILLS = [
     "tiktok-ads",
     "klaviyo-readonly",
     "catalog-fan-out",
+    "mta-ltv-budget",
 ]
 
 SCOPES = [

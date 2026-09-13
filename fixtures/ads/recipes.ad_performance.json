@@ -1,0 +1,23 @@
+{
+  "recipe": "ad_performance",
+  "from": "ad_group_ad",
+  "date_range": "required",
+  "select": [
+    "campaign.id",
+    "campaign.name",
+    "ad_group.id",
+    "ad_group_ad.ad.id",
+    "ad_group_ad.ad.name",
+    "ad_group_ad.status",
+    "metrics.impressions",
+    "metrics.clicks",
+    "metrics.cost_micros",
+    "metrics.conversions",
+    "segments.date"
+  ],
+  "gaql": "SELECT campaign.id, campaign.name, ad_group.id, ad_group_ad.ad.id, ad_group_ad.ad.name, ad_group_ad.status, metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions, segments.date FROM ad_group_ad",
+  "notes": [
+    "Ad-level last-click / Ads reporting metrics.",
+    "Join to GA4 on googleAdsCreativeId / sessionGoogleAdsCreativeId — not gclid."
+  ]
+}

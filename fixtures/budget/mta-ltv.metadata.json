@@ -1,0 +1,12 @@
+{
+  "property_id": "properties/111111111",
+  "api_names": [
+    "sessions",
+    "keyEvents",
+    "purchaseRevenue",
+    "sessionGoogleAdsCampaignId",
+    "googleAdsCampaignId"
+  ],
+  "absent": ["userLifetimeValue", "gclid"],
+  "note": "Do not invent userLifetimeValue. gclid is not a GA4 dimension."
+}

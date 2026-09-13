@@ -84,7 +84,8 @@
     "tiktok_upload_catalog_products",
     "tiktok_bind_catalog_eventsource",
     "tiktok_track_events",
-    "tiktok_create_campaign"
+    "tiktok_create_campaign",
+    "tiktok_update_campaign_budget"
   ],
   "tiktok_read_hop": [
     "tiktok_list_advertisers",

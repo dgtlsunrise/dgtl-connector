@@ -10,7 +10,7 @@ import {
   type Ga4AdsIdRecipe,
   GA4_ADS_ID_RECIPES,
 } from "./ga4-ads-id.js";
-import { denySearchQueryDimensions } from "../tools/denylist.js";
+import { denyGa4GclidDimensions, denySearchQueryDimensions } from "../tools/denylist.js";
 import { capDateRange } from "../tools/dates.js";
 import { compileFilterExpression, compileOrderBys } from "../tools/filters.js";
 import { APIS, SCOPE } from "./scopes.js";
@@ -246,6 +246,8 @@ export async function ga4RunReport(ctx: AppContext, args: Rec): Promise<Envelope
 
   denySearchQueryDimensions(dimensions);
   denySearchQueryDimensions(metrics);
+  denyGa4GclidDimensions(dimensions);
+  denyGa4GclidDimensions(metrics);
   denyGa4AdsTextDimensions(dimensions);
   denyGa4AdsTextDimensions(metrics);
   assertGa4AdsIdDimensionsAllowed(dimensions);

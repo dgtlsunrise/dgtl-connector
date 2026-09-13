@@ -1,0 +1,24 @@
+{
+  "recipe": "keyword_performance",
+  "from": "keyword_view",
+  "date_range": "required",
+  "select": [
+    "campaign.id",
+    "campaign.name",
+    "ad_group.id",
+    "ad_group_criterion.criterion_id",
+    "ad_group_criterion.keyword.text",
+    "ad_group_criterion.keyword.match_type",
+    "metrics.impressions",
+    "metrics.clicks",
+    "metrics.cost_micros",
+    "metrics.conversions",
+    "segments.date"
+  ],
+  "gaql": "SELECT campaign.id, campaign.name, ad_group.id, ad_group_criterion.criterion_id, ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type, metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions, segments.date FROM keyword_view",
+  "notes": [
+    "Keyword ids live here (ad_group_criterion.criterion_id).",
+    "GA4 has no keyword *id* dimension — ads_mta_keyword_ids refuses.",
+    "metrics.conversions is Ads last-click (or Ads reporting), not GA4 DDA."
+  ]
+}
