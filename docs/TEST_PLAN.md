@@ -59,7 +59,7 @@ All property names are **synthetic** (`Example Brand`, `properties/111111111`, `
 `python3 scripts/validate-spec.py` (stdlib only):
 
 - Enumerate required files
-- `catalog.json` `count` == `len(tools)` == 24
+- `catalog.json` `count` == `len(tools)` == 26
 - Every catalog `name` appears in `docs/TOOLS.md` as `` `name` ``
 - Every skill directory has `SKILL.md`
 - `plugin.json` / `mcp.json` JSON parse; required keys present
