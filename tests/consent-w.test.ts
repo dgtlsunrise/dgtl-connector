@@ -347,17 +347,19 @@ describe("Consent W token store separate from AuthPort A", () => {
     assert.ok(!JSON.stringify(plugin).includes("DGTL_WRITES_ENABLED=true"));
   });
 
-  it("GSC write tools and ga4_update_property stay unregistered (Wave 12+)", () => {
+  it("Wave 13+ GSC/GA4 tools stay unregistered; Wave 12 sitemap writes are registered", () => {
     const banned = [
       "ga4_update_property",
-      "gsc_submit_sitemap",
-      "gsc_delete_sitemap",
+      "gsc_add_site",
+      "gsc_delete_site",
       "gsc_inspect_url_index",
       "gsc_request_indexing",
     ];
     for (const name of banned) {
       assert.ok(!TOOLS.some((t) => t.name === name), name);
     }
+    assert.ok(TOOLS.some((t) => t.name === "gsc_submit_sitemap"));
+    assert.ok(TOOLS.some((t) => t.name === "gsc_delete_sitemap"));
     assert.ok(TOOLS.some((t) => t.name === "ga4_create_property"));
     assert.ok(TOOLS.some((t) => t.name === "ga4_create_data_stream"));
   });

@@ -33,6 +33,9 @@ fixtures/google/
   gsc/searchanalytics.query.json
   gsc/urlInspection.inspect.json
   gsc/sitemaps.list.json
+  gsc/sitemaps.submit.json
+  gsc/sitemaps.delete.json
+  errors/sitemaps.notFound.json
   gtm/accounts.list.json
   gtm/containers.list.json
   gtm/workspaces.list.json

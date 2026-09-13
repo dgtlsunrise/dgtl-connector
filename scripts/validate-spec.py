@@ -194,6 +194,8 @@ def check_catalog_and_tools() -> None:
             "gtm_create_variable",
             "gtm_update_variable",
             "gtm_publish_container",
+            "gsc_submit_sitemap",
+            "gsc_delete_sitemap",
         ):
             g = by_name.get(wname)
             if not g:

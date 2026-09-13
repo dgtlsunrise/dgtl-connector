@@ -111,7 +111,7 @@ export const ERROR_RUNBOOKS: Partial<Record<ErrorCode, RunbookHint>> = {
   CONSENT_S_REQUIRED: {
     runbook: `${RUNBOOK_INDEX}#consent_s_required`,
     next_human_step:
-      "Run `dgtl-connector-mcp auth login-gsc-write` (webmasters write). Never add write to Consent A. Wave 10 is plumbing only — no GSC mutate tools yet.",
+      "Run `dgtl-connector-mcp auth login-gsc-write` (webmasters write). Never add write to Consent A. Then set DGTL_WRITES_ENABLED=true for gsc_submit_sitemap / gsc_delete_sitemap. Prefer dry_run; live confirm must include the exact site_url.",
   },
 };
 

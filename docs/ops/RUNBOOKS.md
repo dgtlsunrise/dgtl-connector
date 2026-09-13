@@ -62,7 +62,7 @@ Reinstall the merchant custom app with the missing Admin scope. `write_inventory
 
 ## `CONSENT_S_REQUIRED`
 
-`auth login-gsc-write` with the Consent S Desktop client (`webmasters` write). Never add write to Consent A. Wave 10 is plumbing only — no GSC mutate tools yet.
+`auth login-gsc-write` with the Consent S Desktop client (`webmasters` write). Never add write to Consent A. Then set `DGTL_WRITES_ENABLED=true` for `gsc_submit_sitemap` / `gsc_delete_sitemap`. Prefer `dry_run`. Live confirm must include the exact `site_url`.
 
 ## `MC_NOT_CONNECTED`
 

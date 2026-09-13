@@ -19,7 +19,7 @@ import { ERROR_CODES, MSG } from "../src/errors.js";
 import { loadFlags } from "../src/flags.js";
 import { CONSENT_A, CONSENT_C_GOOGLE, CONSENT_G, CONSENT_S, CONSENT_W, SCOPE } from "../src/google/scopes.js";
 import { dispatch } from "../src/tools/dispatch.js";
-import { CONSENT_A_TOOLS, FREE_TOOL_NAMES, GA4_WRITE_TOOL_NAMES } from "../src/tools/registry.js";
+import { CONSENT_A_TOOLS, FREE_TOOL_NAMES, GA4_WRITE_TOOL_NAMES, GSC_WRITE_TOOL_NAMES } from "../src/tools/registry.js";
 import { installNetworkGuard, makeCtx, ROOT, testEnv, TEST_TOKEN } from "./helpers.js";
 
 const WRITE_TOOLS = [
@@ -128,8 +128,13 @@ describe("Wave 10 Consent G / Consent S plumbing", () => {
     }
     assert.ok(!CONSENT_A_TOOLS.includes("ga4_create_property"));
     assert.ok(!CONSENT_A_TOOLS.includes("gsc_submit_sitemap"));
+    assert.ok(!CONSENT_A_TOOLS.includes("gsc_delete_sitemap"));
     assert.ok(!CONSENT_A_TOOLS.includes("gsc_add_site"));
     for (const name of GA4_WRITE_TOOL_NAMES) {
+      assert.ok(!CONSENT_A_TOOLS.includes(name), name);
+    }
+    assert.deepEqual([...GSC_WRITE_TOOL_NAMES].sort(), ["gsc_delete_sitemap", "gsc_submit_sitemap"]);
+    for (const name of GSC_WRITE_TOOL_NAMES) {
       assert.ok(!CONSENT_A_TOOLS.includes(name), name);
     }
   });

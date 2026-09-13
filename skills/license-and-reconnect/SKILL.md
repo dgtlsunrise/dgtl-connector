@@ -31,7 +31,7 @@ Do not ask for a Google Ads developer-token or a Meta app secret.
 | `WRITE_NOT_ENABLED` | `DGTL_WRITES_ENABLED` false | Write/publish stubs fail closed. Free Consent A stays readonly. See `gtm-readonly-limits`. |
 | `CONSENT_W_REQUIRED` | Writes flagged on but Consent W missing | Separate write OAuth client — never add edit/publish scopes to Consent A. |
 | `CONSENT_G_REQUIRED` | GA4 Admin write path but Consent G missing | Separate `analytics.edit` client — `auth login-ga4-admin`. Never add edit to Consent A. |
-| `CONSENT_S_REQUIRED` | GSC write path but Consent S missing | Separate `webmasters` write client — `auth login-gsc-write`. Never add write to Consent A. |
+| `CONSENT_S_REQUIRED` | GSC sitemap write path but Consent S missing | Separate `webmasters` write client — `auth login-gsc-write`. Never add write to Consent A. Then `DGTL_WRITES_ENABLED=true` for `gsc_submit_sitemap` / `gsc_delete_sitemap`. |
 | `ADS_MUTATE_NOT_ENABLED` | Ads mutate opted out (`DGTL_ADS_MUTATE_ENABLED=false`) | Plugin defaults **on**. Opt out with env=`false`. Live hop still needs Worker `ADS_MUTATE_ENABLED=true`. Never Consent A. |
 | `META_MUTATE_NOT_ENABLED` | Meta mutate opted out (`DGTL_META_MUTATE_ENABLED=false`) | Plugin defaults **on**. Opt out with env=`false`. Live hop still needs Worker `META_MUTATE_ENABLED=true` after `ads_management` Advanced Access. Closed fields only — do not invent objective/creative. |
 | `META_SCOPE_MISSING` | Token lacks `ads_management` (or Graph denied mutate) | Re-authorize Meta after Advanced Access. Do not silently retry. Reads may still work. |

@@ -11,6 +11,7 @@ import {
 import * as ga4 from "../google/ga4.js";
 import * as ga4Write from "../google/ga4-write.js";
 import * as gsc from "../google/gsc.js";
+import * as gscWrite from "../google/gsc-write.js";
 import * as gtm from "../google/gtm.js";
 import * as gtmWrite from "../google/gtm-write.js";
 import { googleWhoami } from "../google/whoami.js";
@@ -105,6 +106,7 @@ export type ToolFamily =
   | "ga4"
   | "ga4_write"
   | "gsc"
+  | "gsc_write"
   | "gtm"
   | "gtm_write"
   | "gbp"
@@ -481,6 +483,28 @@ export const TOOLS: ToolSpec[] = [
     inputSchema: S.gscSitemap,
     annotations: ANN_RO,
     handler: (ctx, args) => gsc.gscGetSitemap(ctx, args),
+  },
+  {
+    name: "gsc_submit_sitemap",
+    group: "gsc-write",
+    family: "gsc_write",
+    title: "GSC submit sitemap (Consent S)",
+    description:
+      "PUT sitemaps.submit for an exact site_url + feedpath. Consent S (webmasters write), not Consent A. dry_run default; live needs confirm_phrase containing that site_url. Flagged off by default (WRITE_NOT_ENABLED). No request-indexing tool.",
+    inputSchema: S.gscSubmitSitemap,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => gscWrite.gscSubmitSitemap(ctx, args),
+  },
+  {
+    name: "gsc_delete_sitemap",
+    group: "gsc-write",
+    family: "gsc_write",
+    title: "GSC delete sitemap (Consent S)",
+    description:
+      "DELETE sitemaps.delete for an exact site_url + feedpath. Consent S. dry_run default; live needs confirm_phrase containing that site_url. Flagged off by default (WRITE_NOT_ENABLED).",
+    inputSchema: S.gscDeleteSitemap,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => gscWrite.gscDeleteSitemap(ctx, args),
   },
   {
     name: "gtm_list_accounts",
@@ -1650,6 +1674,9 @@ export const CONSENT_A_TOOLS = TOOLS.filter(
 
 /** Consent G Admin tools (reads that stay on A HTTP still use this family so the 24-tool kernel is unchanged). */
 export const GA4_WRITE_TOOL_NAMES = TOOLS.filter((t) => t.family === "ga4_write").map((t) => t.name);
+
+/** Consent S sitemap submit/delete — never in the 24-tool Consent A kernel. */
+export const GSC_WRITE_TOOL_NAMES = TOOLS.filter((t) => t.family === "gsc_write").map((t) => t.name);
 
 /**
  * Alias of CONSENT_A_TOOLS (W0.4). Not the commercial free set.

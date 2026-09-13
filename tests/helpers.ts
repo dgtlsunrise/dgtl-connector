@@ -201,7 +201,19 @@ function route(method: string, url: URL, opts: FixtureOpts): unknown {
       return opts.emptyGscQuery ? { rows: [] } : loadFixture("gsc/searchanalytics.query.json");
     }
     if (p.includes("urlInspection")) return loadFixture("gsc/urlInspection.inspect.json");
-    if (/\/sitemaps\/.+/.test(p)) return loadFixture("gsc/sitemaps.get.json");
+    if (/\/sitemaps\/.+/.test(p)) {
+      if (method === "PUT" || method === "DELETE") {
+        const siteMatch = p.match(/\/webmasters\/v3\/sites\/([^/]+)\/sitemaps\//);
+        const siteUrl = siteMatch?.[1] ? decodeURIComponent(siteMatch[1]) : "";
+        const known = new Set(["sc-domain:example.com", "https://www.example.com/"]);
+        if (!known.has(siteUrl)) {
+          const err = loadFixture("errors/sitemaps.notFound.json") as { error: unknown };
+          return { ...err, __status: 404 };
+        }
+        return method === "PUT" ? loadFixture("gsc/sitemaps.submit.json") : loadFixture("gsc/sitemaps.delete.json");
+      }
+      return loadFixture("gsc/sitemaps.get.json");
+    }
     if (p.endsWith("/sitemaps")) return loadFixture("gsc/sitemaps.list.json");
     if (p.includes("/sites/") && method === "GET") return loadFixture("gsc/sites.get.json");
   }

@@ -167,9 +167,9 @@ License **and** gateway are ok, but the second OAuth (Ads `adwords` / Meta `ads_
 GA4 Admin writes (Consent G) and Search Console writes (Consent S) use **separate** OAuth clients and token stores. They are **never** granted on free Consent A.
 
 - `CONSENT_G_REQUIRED` — GA4 Admin writes (and MP secret list) need `analytics.edit` via `auth login-ga4-admin` → `PLUGIN_DATA/google-oauth-ga4-admin.json` (or `GOOGLE_GA4_ADMIN_ACCESS_TOKEN`). Do not add `analytics.edit` to the Desktop readonly client.
-- `CONSENT_S_REQUIRED` — later GSC mutate tools need `webmasters` (write) via `auth login-gsc-write` → `PLUGIN_DATA/google-oauth-gsc-write.json` (or `GOOGLE_GSC_WRITE_ACCESS_TOKEN`). Do not add `webmasters` write to Consent A.
+- `CONSENT_S_REQUIRED` — GSC sitemap submit/delete need `webmasters` (write) via `auth login-gsc-write` → `PLUGIN_DATA/google-oauth-gsc-write.json` (or `GOOGLE_GSC_WRITE_ACCESS_TOKEN`). Do not add `webmasters` write to Consent A.
 
-Wave 11 ships named Admin tools. Writes still require `DGTL_WRITES_ENABLED` (login does **not** flip it). Live `confirm_phrase` must include `properties/{id}` (or `accounts/{id}` on create property). Measurement Protocol `secretValue` is never written to logs.
+Wave 11 ships named Admin tools. Wave 12 ships `gsc_submit_sitemap` / `gsc_delete_sitemap`. Writes still require `DGTL_WRITES_ENABLED` (login does **not** flip it). Live GSC confirm must include the exact `site_url`. Measurement Protocol `secretValue` is never written to logs.
 
 **User-visible (G):**  
 “This GA4 Admin write path needs Consent G (separate OAuth client with analytics.edit). It is not part of free Consent A. Do not add analytics.edit to the Desktop readonly client. Run `dgtl-connector-mcp auth login-ga4-admin`.”

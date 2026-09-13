@@ -548,7 +548,7 @@ Spike: Admin **GET** `googleAdsLinks.list` and v1alpha `getAttributionSettings` 
 | `ga4_create_mp_secret` | Consent G write. `secretValue` returned in data once; never logged. |
 | `ga4_create_property` | Consent G. Live confirm must include `accounts/{id}`. Ordinary property only. |
 
-Not registered: `ga4_update_property`, GSC writes (Consent S / Wave 12+).
+Not registered: `ga4_update_property`. GSC sitemap submit/delete is Wave 12 (Consent S).
 
 | Lane | CLI | Store | Scopes | Error when missing |
 | --- | --- | --- | --- | --- |
@@ -556,6 +556,19 @@ Not registered: `ga4_update_property`, GSC writes (Consent S / Wave 12+).
 | **S** (GSC write) | `auth login-gsc-write` | `google-oauth-gsc-write.json` (0600) | `webmasters` (write) | `CONSENT_S_REQUIRED` |
 
 `google_whoami` may report `consent_g` / `consent_s` connection booleans (never tokens). Doctor / `support_packet` report whether those stores **exist** (boolean only).
+
+## Consent S — GSC sitemap writes (Wave 12)
+
+Free Consent A stays readonly forever. Sitemap submit/delete use **`GoogleGscWriteHttp`** + Consent S store (`GOOGLE_GSC_WRITE_ACCESS_TOKEN` / `google-oauth-gsc-write.json`) — never `ctx.auth`. PKCE CLI **`dgtl-connector-mcp auth login-gsc-write`**. Login does **not** flip `DGTL_WRITES_ENABLED`. Named tools only — no Indexing API / `gsc_request_indexing`, no add/remove site.
+
+Reads (`gsc_list_sitemaps`, `gsc_get_sitemap`, inspect, search analytics) stay on Consent A (`webmasters.readonly`).
+
+| Tool | Notes |
+| --- | --- |
+| `gsc_submit_sitemap` | PUT `sitemaps.submit`. Params: exact `site_url` + `feedpath`. `dry_run` default true. Live `confirm` / `confirm_phrase` must include that `site_url`. |
+| `gsc_delete_sitemap` | DELETE the same path. Same confirm / flag / Consent S rules. |
+
+Wrong `site_url` (trailing slash / `sc-domain:` mismatch, or confirm that names a different property) is a clear `INVALID_ARGUMENT` / `NOT_FOUND` — copy the URL from `gsc_list_sites`. Flag off → `WRITE_NOT_ENABLED` (zero HTTP). Flag on without Consent S → `CONSENT_S_REQUIRED`.
 
 ### Consent W E2E order (Wave 6)
 
@@ -671,7 +684,7 @@ No posts, replies, Q&A, or location mutate in this wave.
 | --- | --- |
 | GTM write when flag off / no Consent W | `WRITE_NOT_ENABLED` / `CONSENT_W_REQUIRED` |
 | GA4 Admin writes when flag off / no Consent G | `WRITE_NOT_ENABLED` / `CONSENT_G_REQUIRED` |
-| GSC write tools (not shipped yet) | Later: `CONSENT_S_REQUIRED`. Do not add write scopes to Consent A. |
+| GSC sitemap write when flag off / no Consent S | `WRITE_NOT_ENABLED` / `CONSENT_S_REQUIRED` |
 | Request indexing | No tool |
 | Create GA4–GSC link | No tool; `analytics.readonly` cannot |
 | Google Ads / Meta (live HTTP) | Tools are registered; fail closed: `LICENSE_REQUIRED` → `GATEWAY_UNAVAILABLE` → `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`. Consent C via `auth login-ads` / `auth login-meta --code` or host-injected tokens. No developer-token in this plugin. |

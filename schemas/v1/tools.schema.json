@@ -576,6 +576,36 @@
         }
       }
     },
+    "gsc_submit_sitemap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "site_url",
+        "feedpath"
+      ],
+      "properties": {
+        "site_url": {
+          "$ref": "#/$defs/site_url"
+        },
+        "feedpath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": {
+          "type": "string"
+        },
+        "confirm": {
+          "type": "string"
+        }
+      }
+    },
+    "gsc_delete_sitemap": {
+      "$ref": "#/$defs/gsc_submit_sitemap"
+    },
     "gtm_list_accounts": {
       "type": "object",
       "additionalProperties": false,

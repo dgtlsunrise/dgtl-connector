@@ -117,6 +117,24 @@ export class GoogleHttp {
         { api: req.api },
       );
     }
+    // Consent A may POST searchanalytics.query + urlInspection.inspect only.
+    // Sitemap submit/delete and Indexing API go through GoogleGscWriteHttp + Consent S (or are unregistered).
+    const isSearchConsole =
+      url.hostname === "searchconsole.googleapis.com" ||
+      (url.hostname === "www.googleapis.com" &&
+        (url.pathname.startsWith("/webmasters/") || url.pathname.includes("urlInspection")));
+    if (isSearchConsole) {
+      const path = url.pathname;
+      const allowedPost =
+        path.includes("/searchAnalytics/query") || path.includes("/urlInspection/index:inspect");
+      if (req.method !== "GET" && !allowedPost) {
+        throw new ToolError(
+          "UNSUPPORTED_OPERATION",
+          "Consent A GoogleHttp cannot mutate Search Console sitemaps or request indexing. Use GoogleGscWriteHttp with Consent S for sitemap submit/delete.",
+          { api: req.api },
+        );
+      }
+    }
     if (GET_ONLY_HOSTS.has(url.hostname) && req.method !== "GET") {
       throw new ToolError(
         "UNSUPPORTED_OPERATION",

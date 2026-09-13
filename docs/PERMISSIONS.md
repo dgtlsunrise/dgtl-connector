@@ -93,7 +93,7 @@ Product rules: explicit tools only; publish requires confirmation (`dry_run` / `
 
 ## Consent G (GA4 Admin writes) and Consent S (GSC writes) — separate from Consent A
 
-Consent A stays **readonly forever**. Wave 11 registers named GA4 Admin tools. Writes use Consent G (`analytics.edit`) + `DGTL_WRITES_ENABLED`. Admin GET `googleAdsLinks.list` and v1alpha `getAttributionSettings` stay on Consent A HTTP. Search Console writes remain later (Consent S). No write scopes on the free Desktop client.
+Consent A stays **readonly forever**. Wave 11 registers named GA4 Admin tools. Writes use Consent G (`analytics.edit`) + `DGTL_WRITES_ENABLED`. Admin GET `googleAdsLinks.list` and v1alpha `getAttributionSettings` stay on Consent A HTTP. Wave 12 registers `gsc_submit_sitemap` / `gsc_delete_sitemap` on Consent S (`webmasters` write) + the same writes flag. GSC reads stay on Consent A. No write scopes on the free Desktop client. No Indexing API.
 
 | Lane | Scopes | Login | Store (mode 0600) | Fail |
 | --- | --- | --- | --- | --- |
@@ -160,7 +160,7 @@ Do **not** add `business.manage` to Consent A verification. Account Management /
 
 ## Least privilege in the tools
 
-- Free GA4 / GSC / GTM tools are read/list/get on Consent A. GTM write/publish tools (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`) are registered, flagged off by default (`WRITE_NOT_ENABLED`), and use Consent W + `GoogleWriteHttp` when enabled — they are **not** on the free consent screen. GA4 / GSC write tools stay **unregistered** in Wave 10 (Consent G / Consent S plumbing only).
+- Free GA4 / GSC / GTM tools are read/list/get on Consent A. GTM write/publish tools (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`) are registered, flagged off by default (`WRITE_NOT_ENABLED`), and use Consent W + `GoogleWriteHttp` when enabled — they are **not** on the free consent screen. GA4 Admin writes use Consent G + `GoogleGa4AdminHttp`. GSC sitemap submit/delete (`gsc_submit_sitemap`, `gsc_delete_sitemap`) use Consent S + `GoogleGscWriteHttp`. None of those write tools are on the free consent screen.
 - `ga4_run_report` defaults to small row limits (see [TOOLS.md](TOOLS.md)) so one prompt cannot burn a property's daily Data API tokens.
 - URL Inspection is read of index state, not request indexing (`webmasters.readonly` cannot submit anyway).
 - Workspace GTM lists may include **unpublished drafts**. Live tags come from `gtm_get_live_container_version`. Skills must not imply a draft tag is in production.

@@ -144,6 +144,31 @@ export const gscSitemaps = z
 
 export const gscSitemap = z.object({ site_url: str, feedpath: str }).strict();
 
+/** Consent S sitemap submit/delete — dry_run defaults true; live needs confirm containing site_url. */
+export const gscSubmitSitemap = z
+  .object({
+    site_url: str,
+    feedpath: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+    confirm: z.string().optional(),
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    if (val.dry_run === false) {
+      const phrase = val.confirm_phrase ?? val.confirm;
+      if (!phrase || !String(phrase).trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "confirm_phrase is required when dry_run is false",
+          path: ["confirm_phrase"],
+        });
+      }
+    }
+  });
+
+export const gscDeleteSitemap = gscSubmitSitemap;
+
 export const gtmContainer = z
   .object({ account_id: str, container_id: str, page_size: pageSize, page_token: pageToken })
   .strict();
