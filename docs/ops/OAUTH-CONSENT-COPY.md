@@ -29,26 +29,35 @@ Authorized domain is the **top private domain** only: `dgtlsunrise.com` (no `www
 
 ## One-line product description (questionnaire / demo intro)
 
-DGTL Sunrise is a local agent plugin. The user authorizes their own Google account so the plugin can read Google Analytics 4, Search Console, and Tag Manager on their computer. Sunrise Consulting LLC does not receive report bytes. This OAuth client (Consent A) is readonly only — it cannot create, update, publish, or delete. Separate write/publish tools, if present in the package, are flagged off and use a **different** OAuth client (Consent W), not this verification client.
+DGTL Sunrise is a local agent plugin. The user authorizes their own Google account so the plugin can read and manage Google Analytics 4, Search Console, and Tag Manager on their computer. Sunrise Consulting LLC does not receive report bytes. Mutate tools stay flagged off until the user opts in. This OAuth client (Free Google / Consent A) does **not** request Google Ads, Merchant Center, or Business Profile. Those stay on separate grants / Pro.
+
+**Noel RED:** do not change Consent A Data Access in Google Cloud from an agent PR. The plugin now requests the Free Google manage scopes. Adding them on the Cloud consent screen is a Noel console atom.
 
 ---
 
-## Scopes to declare (exactly Consent A)
+## Scopes the plugin requests (Free Google / CONSENT_A)
 
-Request all five on **one** consent screen. Do not add others on this client.
+The binary requests these on **one** consent screen. **Noel RED:** adding them on Google Cloud Data Access is a console atom, not an agent PR.
 
-### Sensitive
+### Identity
 
-1. `https://www.googleapis.com/auth/analytics.readonly`
-2. `https://www.googleapis.com/auth/webmasters.readonly`
-3. `https://www.googleapis.com/auth/tagmanager.readonly`
+1. `openid`
+2. `https://www.googleapis.com/auth/userinfo.email`
 
-### Non-sensitive identity (same screen)
+### Sensitive read
 
-4. `openid`
-5. `https://www.googleapis.com/auth/userinfo.email`
+3. `https://www.googleapis.com/auth/analytics.readonly`
+4. `https://www.googleapis.com/auth/webmasters.readonly`
+5. `https://www.googleapis.com/auth/tagmanager.readonly`
 
-Do **not** declare `userinfo.profile`, `adwords`, `business.manage`, `analytics` (read/write), `webmasters` (read/write), `tagmanager.edit.containers`, `tagmanager.publish`, Gmail, or Drive.
+### Sensitive manage (same screen; mutates still flag-gated)
+
+6. `https://www.googleapis.com/auth/analytics.edit`
+7. `https://www.googleapis.com/auth/tagmanager.edit.containers`
+8. `https://www.googleapis.com/auth/tagmanager.publish`
+9. `https://www.googleapis.com/auth/webmasters`
+
+Do **not** declare `userinfo.profile`, `adwords`, `business.manage`, blanket `analytics`, `content`, Gmail, or Drive on this client.
 
 ---
 
@@ -66,7 +75,7 @@ The app lists Search Console sites the signed-in user already has access to, rea
 
 ### `https://www.googleapis.com/auth/tagmanager.readonly`
 
-The app lists the signed-in user's Tag Manager accounts, containers, workspaces, tags, triggers, variables, and the live (published) container version so they can audit what is on a site. This Consent A client does not create, edit, delete, or publish tags — `tagmanager.readonly` cannot publish. Publish/edit tools may exist in the package **flagged off** behind a **different** OAuth client (Consent W); they are not granted by this scope and are not part of this verification.
+The app lists the signed-in user's Tag Manager accounts, containers, workspaces, tags, triggers, variables, and the live (published) container version so they can audit what is on a site. `tagmanager.readonly` cannot publish. Create/edit/publish tools on this same Free Google grant stay flagged off until the user sets `DGTL_WRITES_ENABLED` and confirms.
 
 ### `openid` (non-sensitive)
 
@@ -76,13 +85,29 @@ Used so `google_whoami` can return a stable subject identifier for the connected
 
 Used so `google_whoami` can show which Google account connected (email only). The plugin does not request `userinfo.profile`. Email is displayed locally and is never sent to Sunrise Consulting LLC as part of a report payload.
 
+### `https://www.googleapis.com/auth/analytics.edit`
+
+The app lets the signed-in user manage their own GA4 properties, data streams, key events, custom definitions, and Measurement Protocol secrets on their computer. Calls use Analytics Admin API. Mutates stay flagged off until the user opts in (`DGTL_WRITES_ENABLED`) and confirms the target property. The app does not access other users' Analytics data. Property IDs are chosen by the user.
+
+### `https://www.googleapis.com/auth/tagmanager.edit.containers`
+
+The app lets the signed-in user create and update tags, triggers, variables, clients, containers, and environments in Tag Manager workspaces they already can access. Mutates stay flagged off until the user opts in and confirms the container publicId. The app does not access other users' Tag Manager accounts.
+
+### `https://www.googleapis.com/auth/tagmanager.publish`
+
+The app lets the signed-in user publish a Tag Manager container version they already can access. Publish stays flagged off until the user opts in and confirms the container publicId. Publish is irreversible; the app does not publish without that confirm.
+
+### `https://www.googleapis.com/auth/webmasters`
+
+The app lets the signed-in user submit and delete sitemaps for Search Console sites they already verify. Mutates stay flagged off until the user opts in and confirms the exact site URL. The app does not request indexing and does not add or remove sites.
+
 ---
 
 ## How Google user data is used (Limited Use paragraph)
 
 DGTL Sunrise's use of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements.
 
-- Data is used only to provide the user-facing read features of the local plugin (list properties/sites/containers and show reports the user asked for).
+- Data is used only to provide the user-facing read and manage features of the local plugin (list properties/sites/containers, show reports the user asked for, and apply confirmed local mutates the user opted into).
 - GA4 / Search Console / Tag Manager report bytes are fetched on the user's computer and are not stored on DGTL servers.
 - We do not sell Google user data. We do not use it for advertising. We do not transfer it to third parties except as needed to complete a request the user initiated or as required by law.
 - Full policy: https://www.dgtlsunrise.com/privacy
@@ -93,7 +118,7 @@ Paid Google Ads / Meta (later, not this OAuth client) will use a separate consen
 
 ## Demo video pointer
 
-Unlisted YouTube script: [DEMO-VIDEO-SCRIPT.md](DEMO-VIDEO-SCRIPT.md). The video must show the consent URL including this client's `client_id`, the app name **DGTL Sunrise**, the three product scopes, list → pick → report, GSC queries, GTM live version, and a refused publish. Auth on camera is installed-app PKCE (`auth login`), not a Gmail Connect card.
+Unlisted YouTube script: [DEMO-VIDEO-SCRIPT.md](DEMO-VIDEO-SCRIPT.md). The video must show the consent URL including this client's `client_id`, the app name **DGTL Sunrise**, the Free Google scopes, list → pick → report, GSC queries, GTM live version, and a refused publish (flag off). Auth on camera is installed-app PKCE (`auth login`), not a Gmail Connect card.
 
 ---
 

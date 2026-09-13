@@ -62,12 +62,13 @@ describe("Wave 11 GA4 Admin (Consent G)", () => {
     assert.ok(!CONSENT_A_TOOLS.includes("ga4_get_attribution_settings"));
   });
 
-  it("A ∩ G = ∅ still", () => {
+  it("G sits on Free Google; A never includes adwords", () => {
     const setG = new Set<string>(CONSENT_G);
     assert.deepEqual(
       CONSENT_A.filter((s) => setG.has(s)),
-      [],
+      [...CONSENT_G],
     );
+    assert.ok(!CONSENT_A.includes("https://www.googleapis.com/auth/adwords" as (typeof CONSENT_A)[number]));
   });
 
   it("schemas default dry_run true; live needs confirm_phrase", () => {

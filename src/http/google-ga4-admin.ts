@@ -18,9 +18,9 @@ export type Ga4AdminRequest = {
 };
 
 /**
- * Consent G HTTP client — analyticsadmin.googleapis.com only, method+path allowlist.
- * Never uses Consent A AuthPort / ctx.auth. Measurement Protocol secretValue is
- * never written to HttpCall search strings.
+ * GA4 Admin write HTTP client — analyticsadmin.googleapis.com only, method+path allowlist.
+ * Uses authGa4Admin (legacy G store, then Free Google when analytics.edit is present).
+ * Measurement Protocol secretValue is never written to HttpCall search strings.
  */
 const ALLOWED: Array<{ method: Ga4AdminMethod; pattern: RegExp }> = [
   { method: "GET", pattern: /^\/v1beta\/properties\/[0-9]+\/googleAdsLinks$/ },

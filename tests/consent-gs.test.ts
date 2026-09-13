@@ -48,15 +48,15 @@ describe("Wave 10 Consent G / Consent S plumbing", () => {
   });
   after(() => restore());
 
-  it("A ∩ G = ∅, A ∩ S = ∅, A ∩ W ∩ C still hold", () => {
+  it("G/S/W sit on Free Google; A ∩ C stays empty", () => {
     assert.deepEqual([...CONSENT_G], [SCOPE.analyticsEdit]);
     assert.deepEqual([...CONSENT_S], [SCOPE.webmastersWrite]);
     assert.ok(!CONSENT_G.includes(SCOPE.analytics as (typeof CONSENT_G)[number]));
     assert.ok(!CONSENT_S.includes(SCOPE.webmasters as (typeof CONSENT_S)[number]));
 
-    assert.deepEqual(intersect(CONSENT_A, CONSENT_G), []);
-    assert.deepEqual(intersect(CONSENT_A, CONSENT_S), []);
-    assert.deepEqual(intersect(CONSENT_A, CONSENT_W), []);
+    assert.deepEqual(intersect(CONSENT_A, CONSENT_G), [...CONSENT_G]);
+    assert.deepEqual(intersect(CONSENT_A, CONSENT_S), [...CONSENT_S]);
+    assert.deepEqual(intersect(CONSENT_A, CONSENT_W).sort(), [...CONSENT_W].sort());
     assert.deepEqual(intersect(CONSENT_A, CONSENT_C_GOOGLE), []);
     assert.deepEqual(intersect(CONSENT_W, CONSENT_C_GOOGLE), []);
     assert.deepEqual(intersect(CONSENT_G, CONSENT_C_GOOGLE), []);
@@ -67,7 +67,7 @@ describe("Wave 10 Consent G / Consent S plumbing", () => {
     );
   });
 
-  it("default Consent A auth URL never requests G / S / W / C write scopes", () => {
+  it("default Free Google auth URL requests G / S / W and never adwords", () => {
     const pkce = generatePkce();
     const url = buildGoogleAuthUrl({
       clientId: "example-public-client-id.apps.googleusercontent.com",
@@ -77,7 +77,10 @@ describe("Wave 10 Consent G / Consent S plumbing", () => {
     });
     const granted = new URL(url).searchParams.get("scope")?.split(/\s+/) ?? [];
     assert.deepEqual(granted, [...CONSENT_A]);
-    for (const bad of [...CONSENT_G, ...CONSENT_S, ...CONSENT_W, ...CONSENT_C_GOOGLE]) {
+    for (const needed of [...CONSENT_G, ...CONSENT_S, ...CONSENT_W]) {
+      assert.ok(granted.includes(needed), needed);
+    }
+    for (const bad of CONSENT_C_GOOGLE) {
       assert.ok(!granted.includes(bad), bad);
       assert.ok(!url.includes(bad), bad);
     }

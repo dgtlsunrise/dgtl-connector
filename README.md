@@ -1,17 +1,17 @@
 # dgtl-connector
 
-Read-only **GA4**, **Search Console**, and **Tag Manager** for Grok Bot, Cursor, and Grok Build. You authorize **your** Google account. Tools run on **your** computer. DGTL Sunrise does not see report bytes.
+Local **GA4**, **Search Console**, and **Tag Manager** (read and manage) for Grok Bot, Cursor, and Grok Build. You authorize **your** Google account. Tools run on **your** computer. DGTL Sunrise does not see report bytes.
 
 Publisher: **DGTL Sunrise** (Sunrise Consulting LLC), `noel@dgtlsunrise.com`. Apache-2.0.  
 Homepage: https://www.dgtlsunrise.com/ · Privacy: https://www.dgtlsunrise.com/privacy
 
-Working package id: `dgtl-connector`. Version **0.1.0**. Marketplace listing copy = **Consent A readonly** only (title/description can still say marketing/Ads for discovery).
+Working package id: `dgtl-connector`. Version **0.1.0**. Marketplace listing copy = Free Google **read and manage**. Mutates stay flag-gated. Ads / Meta / TikTok are Pro. Submit is deferred.
 
 ## What it is / is not
 
-**Is:** a local stdio MCP plugin. Closed typed tools (26 free: identity + GA4 + GSC + GTM, including Wave 13 client/environment lists). Skills that refuse hallucinated metrics and will not pick the first of 40 agency properties.
+**Is:** a local stdio MCP plugin. Closed typed tools (26 free kernel: identity + GA4 + GSC + GTM, including Wave 13 client/environment lists). One Free Google Connect with read and manage scopes. Skills that refuse hallucinated metrics and will not pick the first of 40 agency properties.
 
-**Is not:** a hosted analytics warehouse, a Gmail-style Connect card for stdio, Google Ads/Meta (those tools are listed and return `LICENSE_REQUIRED` until a paid license + Worker), or a GBP client until `DGTL_GBP_ENABLED=true` **and** Consent B (flag off → `GBP_NOT_ENABLED`). GTM write/publish stubs (if registered) are **flagged off** on a **separate Consent W** OAuth client — not on free Consent A, and not marketplace listing promises.
+**Is not:** a hosted analytics warehouse, a Gmail-style Connect card for stdio, Google Ads/Meta/TikTok (those tools are listed and return `LICENSE_REQUIRED` until a paid license + Worker), or a GBP client until `DGTL_GBP_ENABLED=true` **and** Consent B (flag off → `GBP_NOT_ENABLED`). GTM / GA4 Admin / GSC write tools are **flagged off** by default (`DGTL_WRITES_ENABLED`) even after Free Google grants manage scopes.
 
 ## Auth on this host (stdio is Manual)
 

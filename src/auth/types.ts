@@ -17,7 +17,10 @@ export interface AccessTokenSource {
   invalidateAccessToken?(): void;
 }
 
-/** PLUGIN_DATA filenames — one file per consent lane. Never share A with W/C/MC/B/G/S. */
+/**
+ * PLUGIN_DATA filenames. Free Google writes `a`. Legacy W/G/S files are still
+ * accepted when present. Ads/MC/GBP/Meta/TikTok stay off the free store.
+ */
 export const STORE_FILE = {
   a: "google-oauth.json",
   w: "google-oauth-write.json",

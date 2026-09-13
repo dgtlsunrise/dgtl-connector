@@ -11,10 +11,10 @@ import {
 import { APIS, SCOPE } from "./scopes.js";
 
 const HINT_FLAG =
-  "Set DGTL_WRITES_ENABLED=true only after a separate Consent G OAuth client exists (auth login-ga4-admin). Free Consent A (analytics.readonly) must stay readonly.";
+  "Set DGTL_WRITES_ENABLED=true to allow local GA4 Admin mutates. Free Google can already hold analytics.edit. Ads/Meta/TikTok stay Pro.";
 
 const HINT_CONSENT =
-  "Use GOOGLE_GA4_ADMIN_ACCESS_TOKEN or PLUGIN_DATA/google-oauth-ga4-admin.json (Consent G). Do not reuse GOOGLE_ACCESS_TOKEN / google-oauth.json (Consent A). Do not add analytics.edit to the free Desktop Consent A client.";
+  "Use Free Google (`auth login` / GOOGLE_ACCESS_TOKEN with analytics.edit) or a legacy GOOGLE_GA4_ADMIN_ACCESS_TOKEN / google-oauth-ga4-admin.json. Do not add adwords, content, or business.manage to Free Google.";
 
 const HOST = APIS.admin;
 const ADMIN = APIS.admin;

@@ -6,10 +6,10 @@ import { APIS, SCOPE } from "./scopes.js";
 import { siteUrlHint } from "./gsc.js";
 
 const HINT_FLAG =
-  "Set DGTL_WRITES_ENABLED=true only after a separate Consent S OAuth client exists (auth login-gsc-write). Free Consent A (webmasters.readonly) must stay readonly.";
+  "Set DGTL_WRITES_ENABLED=true to allow local Search Console sitemap mutates. Free Google can already hold webmasters write. Ads/Meta/TikTok stay Pro.";
 
 const HINT_CONSENT =
-  "Use GOOGLE_GSC_WRITE_ACCESS_TOKEN or PLUGIN_DATA/google-oauth-gsc-write.json (Consent S). Do not reuse GOOGLE_ACCESS_TOKEN / google-oauth.json (Consent A). Do not add webmasters (write) to the free Desktop Consent A client.";
+  "Use Free Google (`auth login` / GOOGLE_ACCESS_TOKEN with webmasters write) or a legacy GOOGLE_GSC_WRITE_ACCESS_TOKEN / google-oauth-gsc-write.json. Do not add adwords, content, or business.manage to Free Google.";
 
 const HOST = APIS.searchconsole;
 type Rec = Record<string, unknown>;

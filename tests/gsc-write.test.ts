@@ -64,12 +64,13 @@ describe("Wave 12 GSC sitemap writes (Consent S)", () => {
     }
   });
 
-  it("A ∩ S = ∅ still", () => {
+  it("S sits on Free Google; A never includes adwords", () => {
     const setS = new Set<string>(CONSENT_S);
     assert.deepEqual(
       CONSENT_A.filter((s) => setS.has(s)),
-      [],
+      [...CONSENT_S],
     );
+    assert.ok(!CONSENT_A.includes("https://www.googleapis.com/auth/adwords" as (typeof CONSENT_A)[number]));
   });
 
   it("Wave 13+ site/index tools stay unregistered", () => {

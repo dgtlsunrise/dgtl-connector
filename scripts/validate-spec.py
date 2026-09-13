@@ -69,6 +69,16 @@ SCOPES = [
     "https://www.googleapis.com/auth/analytics.readonly",
     "https://www.googleapis.com/auth/webmasters.readonly",
     "https://www.googleapis.com/auth/tagmanager.readonly",
+    "https://www.googleapis.com/auth/analytics.edit",
+    "https://www.googleapis.com/auth/tagmanager.edit.containers",
+    "https://www.googleapis.com/auth/tagmanager.publish",
+    "https://www.googleapis.com/auth/webmasters",
+]
+
+FREE_GOOGLE_NEVER = [
+    "https://www.googleapis.com/auth/adwords",
+    "https://www.googleapis.com/auth/content",
+    "https://www.googleapis.com/auth/business.manage",
 ]
 
 SECRET_PATTERNS = [
@@ -330,7 +340,10 @@ def check_manifests() -> None:
         spec = (plugin.get("extensions") or {}).get("com.dgtlsunrise") or {}
         scopes = spec.get("consentA") or spec.get("productScopes") or []
         if scopes != SCOPES:
-            err("plugin.json: consentA / productScopes must be the three readonly product scopes in order")
+            err("plugin.json: consentA / productScopes must be the Free Google product+manage scopes in order")
+        for banned in FREE_GOOGLE_NEVER:
+            if banned in scopes:
+                err(f"plugin.json: consentA must not include {banned}")
     pkg = load_json("package.json")
     if isinstance(pkg, dict):
         if pkg.get("name") != "dgtl-connector":
@@ -447,36 +460,47 @@ def check_post_polar_backlog() -> None:
 
 
 def check_marketplace_honesty() -> None:
-    """Public listing stays Consent A readonly. Writes live in operator docs only."""
+    """Public copy is Free Google manage + Pro Ads/Meta/TikTok. Submit stays deferred."""
     plugin = load_json("plugin.json")
     desc = ""
     if isinstance(plugin, dict):
         desc = str(plugin.get("description") or "")
         ext = (plugin.get("extensions") or {}).get("com.dgtlsunrise") or {}
         if ext.get("closedToolCount") != 26:
-            err("plugin.json closedToolCount must stay 26 for Consent A listing")
+            err("plugin.json closedToolCount must stay 26 for the free kernel")
         scopes = ext.get("consentA") or []
         if scopes != SCOPES:
-            err("plugin.json consentA must stay the three readonly product scopes")
-    if "read-only" not in desc.lower() and "readonly" not in desc.lower():
-        err("plugin.json description must stay Consent A read-only for marketplace listing")
-    if re.search(r"\b(write|publish|mutate)\b", desc, re.I):
-        err("plugin.json description must not promise writes on the free listing")
+            err("plugin.json consentA must be the Free Google product+manage scopes")
+        for banned in FREE_GOOGLE_NEVER:
+            if banned in scopes:
+                err(f"plugin.json consentA must not include {banned}")
+    if "read and manage" not in desc.lower():
+        err("plugin.json description must say Free Google is read and manage")
+    if "flag-gated" not in desc.lower() and "flag gated" not in desc.lower():
+        err("plugin.json description must say mutates stay flag-gated")
+    if not re.search(r"\b(ads|meta|tiktok)\b", desc, re.I):
+        err("plugin.json description must say Ads/Meta/TikTok are Pro")
+    if re.search(r"\bread-only\b|\breadonly-only\b", desc, re.I):
+        err("plugin.json description must not promise a readonly-only product")
     pkg = load_json("package.json")
     if isinstance(pkg, dict):
         pkg_desc = str(pkg.get("description") or "")
-        if "read-only" not in pkg_desc.lower() and "readonly" not in pkg_desc.lower():
-            err("package.json description must stay Consent A read-only for public copy")
-        if re.search(r"\b(write|publish|mutate)\b", pkg_desc, re.I):
-            err("package.json description must not promise writes on the free listing")
+        if "read and manage" not in pkg_desc.lower():
+            err("package.json description must say Free Google is read and manage")
+        if "flag-gated" not in pkg_desc.lower() and "flag gated" not in pkg_desc.lower():
+            err("package.json description must say mutates stay flag-gated")
+        if re.search(r"\bread-only\b|\breadonly-only\b", pkg_desc, re.I):
+            err("package.json description must not promise a readonly-only product")
     market = read(ROOT / "docs/MARKETPLACE.md")
-    if "Consent A readonly" not in market and "consent a readonly" not in market.lower():
-        err("MARKETPLACE.md must keep listing copy Consent A readonly")
+    if "read and manage" not in market.lower():
+        err("MARKETPLACE.md must say Free Google is read and manage")
     if "Listing copy vs operator docs" not in market:
         err("MARKETPLACE.md must separate listing copy from operator write consents")
+    if "do not submit" not in market.lower() and "submit deferred" not in market.lower() and "Submit **only**" not in market:
+        err("MARKETPLACE.md must keep marketplace submit deferred")
     tools = read(ROOT / "docs/TOOLS.md")
-    if "Marketplace / public listing copy stays Consent A-only" not in tools:
-        err("docs/TOOLS.md must state marketplace listing stays Consent A-only")
+    if "read and manage" not in tools.lower():
+        err("docs/TOOLS.md must state Free Google is read and manage")
     catalog = load_json("schemas/v1/catalog.json")
     if isinstance(catalog, dict):
         names = [t.get("name") for t in catalog.get("tools") or [] if isinstance(t, dict)]

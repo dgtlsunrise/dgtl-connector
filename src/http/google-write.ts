@@ -18,8 +18,8 @@ export type GoogleWriteRequest = {
 };
 
 /**
- * Consent W HTTP client — tagmanager.googleapis.com only, method+path allowlist.
- * Never uses Consent A AuthPort / ctx.auth.
+ * GTM write HTTP client — tagmanager.googleapis.com only, method+path allowlist.
+ * Uses authWrite (legacy W store, then Free Google when GTM write scopes are present).
  */
 const ALLOWED: Array<{ method: GoogleWriteMethod; pattern: RegExp }> = [
   // Resolve publicId / workspace name (read via W; not a mutate)

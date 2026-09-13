@@ -6,7 +6,7 @@ export const SCOPE = {
   openid: "openid",
   business: "https://www.googleapis.com/auth/business.manage",
   adwords: "https://www.googleapis.com/auth/adwords",
-  /** Consent W — never add to CONSENT_A */
+  /** GTM write family — on free Connect; mutates still need DGTL_WRITES_ENABLED. */
   tagmanagerEditContainers: "https://www.googleapis.com/auth/tagmanager.edit.containers",
   tagmanagerPublish: "https://www.googleapis.com/auth/tagmanager.publish",
   webmastersWrite: "https://www.googleapis.com/auth/webmasters",
@@ -15,18 +15,39 @@ export const SCOPE = {
   content: "https://www.googleapis.com/auth/content",
 } as const;
 
-/** Free Desktop Consent A — readonly product scopes + identity only. Never intersects CONSENT_W / CONSENT_C_GOOGLE / Meta ads_management. */
+/**
+ * Free Google (CONSENT_A) — one Desktop Connect with identity + GA4/GSC/GTM
+ * read and manage. Never includes adwords, content (MC), or business.manage.
+ */
 export const CONSENT_A = [
+  SCOPE.openid,
+  SCOPE.email,
   SCOPE.analytics,
   SCOPE.webmasters,
   SCOPE.tagmanager,
-  SCOPE.openid,
-  SCOPE.email,
+  SCOPE.analyticsEdit,
+  SCOPE.tagmanagerEditContainers,
+  SCOPE.tagmanagerPublish,
+  SCOPE.webmastersWrite,
 ] as const;
 
+/** Product + manage scopes on plugin.json `consentA` (identity stays in identityScopesSameConsent). */
+export const CONSENT_A_PRODUCT = [
+  SCOPE.analytics,
+  SCOPE.webmasters,
+  SCOPE.tagmanager,
+  SCOPE.analyticsEdit,
+  SCOPE.tagmanagerEditContainers,
+  SCOPE.tagmanagerPublish,
+  SCOPE.webmastersWrite,
+] as const;
+
+/** Scopes that must never land on free Connect. */
+export const FREE_GOOGLE_NEVER = [SCOPE.adwords, SCOPE.content, SCOPE.business] as const;
+
 /**
- * Consent W candidate scopes (separate OAuth client). Pick per tool; do not
- * request unused. Never merge into CONSENT_A / free Desktop client.
+ * GTM/GSC/GA4 write family. Requested on free Connect. Legacy W/G/S stores
+ * still accepted. Mutates stay fail-closed without DGTL_WRITES_ENABLED.
  */
 export const CONSENT_W = [
   SCOPE.tagmanagerEditContainers,
@@ -35,18 +56,17 @@ export const CONSENT_W = [
   SCOPE.analyticsEdit,
 ] as const;
 
-/** GTM edit/publish subset of Consent W (first write tools). */
+/** GTM edit/publish subset used by GoogleWriteHttp. */
 export const CONSENT_W_GTM = [SCOPE.tagmanagerEditContainers, SCOPE.tagmanagerPublish] as const;
 
 /**
- * Consent G — GA4 Admin writes (separate client / store). Edit-only login.
- * Never merge into CONSENT_A / free Desktop client. Do not request blanket `analytics`.
+ * GA4 Admin write family (`analytics.edit` only). On free Connect.
+ * Do not request blanket `analytics`.
  */
 export const CONSENT_G = [SCOPE.analyticsEdit] as const;
 
 /**
- * Consent S — Search Console writes (separate client / store).
- * `webmasters` (not `.readonly`). Never merge into CONSENT_A.
+ * Search Console write family (`webmasters`, not `.readonly`). On free Connect.
  */
 export const CONSENT_S = [SCOPE.webmastersWrite] as const;
 

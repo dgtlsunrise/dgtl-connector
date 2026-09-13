@@ -97,13 +97,13 @@ export const MSG = {
   GBP_SCOPE_MISSING:
     "This Google Business Profile login did not grant https://www.googleapis.com/auth/business.manage. Re-authorize Consent B (`auth login-gbp` or GOOGLE_GBP_ACCESS_TOKEN). Do not add business.manage to Consent A. Tools are GET-only even though the scope is write-capable.",
   WRITE_NOT_ENABLED:
-    "Write/publish tools are flagged off (DGTL_WRITES_ENABLED=false). Free Consent A stays readonly (analytics/webmasters/tagmanager.readonly). Writes use a separate Consent W OAuth client — see docs/ops/FULL-STACK-ACCELERATE.md.",
+    "Write/publish tools are flagged off (DGTL_WRITES_ENABLED=false). Free Google can already hold manage scopes (analytics.edit, tagmanager.edit.containers, tagmanager.publish, webmasters). Mutates still need this flag plus a confirm. Ads/Meta/TikTok stay Pro.",
   CONSENT_W_REQUIRED:
-    "This write tool needs Consent W (separate OAuth client with edit/publish scopes). It is not part of free Consent A. Do not add write scopes to the Desktop readonly client.",
+    "This GTM write tool needs tagmanager.edit.containers / tagmanager.publish on the Free Google (Consent A) token (`auth login`) or a legacy google-oauth-write.json / GOOGLE_WRITE_ACCESS_TOKEN. It does not enable DGTL_WRITES_ENABLED.",
   CONSENT_G_REQUIRED:
-    "This GA4 Admin write path needs Consent G (separate OAuth client with analytics.edit). It is not part of free Consent A. Do not add analytics.edit to the Desktop readonly client. Run `dgtl-connector-mcp auth login-ga4-admin`.",
+    "This GA4 Admin write path needs analytics.edit on the Free Google (Consent A) token (`auth login`, or the login-ga4-admin alias) or a legacy google-oauth-ga4-admin.json / GOOGLE_GA4_ADMIN_ACCESS_TOKEN. Then set DGTL_WRITES_ENABLED=true for mutate tools.",
   CONSENT_S_REQUIRED:
-    "This Search Console write path needs Consent S (separate OAuth client with webmasters write). It is not part of free Consent A. Do not add webmasters (write) to the Desktop readonly client. Run `dgtl-connector-mcp auth login-gsc-write`.",
+    "This Search Console write path needs webmasters (write) on the Free Google (Consent A) token (`auth login`, or the login-gsc-write alias) or a legacy google-oauth-gsc-write.json / GOOGLE_GSC_WRITE_ACCESS_TOKEN. Then set DGTL_WRITES_ENABLED=true for gsc_submit_sitemap / gsc_delete_sitemap.",
   ADS_MUTATE_NOT_ENABLED:
     "Google Ads mutate tools are opted out (DGTL_ADS_MUTATE_ENABLED=false). Plugin defaults on; unset the env or set true to re-enable. Live hop still needs Worker ADS_MUTATE_ENABLED=true. Reads still work with Pro + Consent C — never on Consent A.",
   META_MUTATE_NOT_ENABLED:

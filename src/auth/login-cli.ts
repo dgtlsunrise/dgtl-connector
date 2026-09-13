@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { buildGoogleAuthUrl, exchangeAuthorizationCode, generatePkce } from "./pkce.js";
 import { writeStore, STORE_FILE } from "./store.js";
-import { CONSENT_A, CONSENT_B, CONSENT_C_GOOGLE, CONSENT_G, CONSENT_MC, CONSENT_S, CONSENT_W_GTM } from "../google/scopes.js";
+import { CONSENT_A, CONSENT_B, CONSENT_C_GOOGLE, CONSENT_MC } from "../google/scopes.js";
 import { postMetaExchange } from "../gateway/meta-exchange.js";
 import { postLicenseRedeem } from "../gateway/license-redeem.js";
 import {
@@ -136,7 +136,7 @@ export async function runAuthLogin(opts: {
     fetchImpl: opts.fetchImpl,
     scopes: CONSENT_A,
     storeFile: STORE_FILE.a,
-    laneLabel: "Consent A",
+    laneLabel: "Free Google",
     allowConsentASecretFallback: true,
   });
 }
@@ -147,26 +147,17 @@ export async function runAuthLogin(opts: {
  * Tools still need DGTL_GATEWAY_URL + license (no developer-token in this binary).
  */
 
-/**
- * Consent W GTM write PKCE — separate client; never merges write scopes into Consent A.
- * Writes PLUGIN_DATA/google-oauth-write.json only. Fail-closed without GOOGLE_OAUTH_WRITE_CLIENT_ID.
- * Does NOT enable DGTL_WRITES_ENABLED — flag stays default false until Noel opts in locally.
- */
+/** @deprecated Aliases to Free Google (`auth login`). Does not enable DGTL_WRITES_ENABLED. */
 export async function runAuthLoginWrite(opts: {
   clientId: string;
   clientSecret?: string;
   pluginDataDir: string;
   fetchImpl: typeof fetch;
 }): Promise<number> {
-  return runGooglePkceLogin({
+  return runAuthLogin({
     clientId: opts.clientId,
-    clientSecret: opts.clientSecret,
-    allowConsentASecretFallback: false,
     pluginDataDir: opts.pluginDataDir,
     fetchImpl: opts.fetchImpl,
-    scopes: CONSENT_W_GTM,
-    storeFile: STORE_FILE.w,
-    laneLabel: "Consent W (GTM writes)",
   });
 }
 
@@ -235,49 +226,31 @@ export async function runAuthLoginGbp(opts: {
   });
 }
 
-/**
- * Consent G GA4 Admin PKCE — separate client; never merges analytics.edit into Consent A.
- * Writes PLUGIN_DATA/google-oauth-ga4-admin.json only. Fail-closed without
- * GOOGLE_OAUTH_GA4_ADMIN_CLIENT_ID. Does NOT enable DGTL_WRITES_ENABLED.
- */
+/** @deprecated Aliases to Free Google (`auth login`). Does not enable DGTL_WRITES_ENABLED. */
 export async function runAuthLoginGa4Admin(opts: {
   clientId: string;
   clientSecret?: string;
   pluginDataDir: string;
   fetchImpl: typeof fetch;
 }): Promise<number> {
-  return runGooglePkceLogin({
+  return runAuthLogin({
     clientId: opts.clientId,
-    clientSecret: opts.clientSecret,
-    allowConsentASecretFallback: false,
     pluginDataDir: opts.pluginDataDir,
     fetchImpl: opts.fetchImpl,
-    scopes: CONSENT_G,
-    storeFile: STORE_FILE.ga4Admin,
-    laneLabel: "Consent G (GA4 Admin)",
   });
 }
 
-/**
- * Consent S GSC write PKCE — separate client; never merges webmasters write into Consent A.
- * Writes PLUGIN_DATA/google-oauth-gsc-write.json only. Fail-closed without
- * GOOGLE_OAUTH_GSC_WRITE_CLIENT_ID. Does NOT enable DGTL_WRITES_ENABLED.
- */
+/** @deprecated Aliases to Free Google (`auth login`). Does not enable DGTL_WRITES_ENABLED. */
 export async function runAuthLoginGscWrite(opts: {
   clientId: string;
   clientSecret?: string;
   pluginDataDir: string;
   fetchImpl: typeof fetch;
 }): Promise<number> {
-  return runGooglePkceLogin({
+  return runAuthLogin({
     clientId: opts.clientId,
-    clientSecret: opts.clientSecret,
-    allowConsentASecretFallback: false,
     pluginDataDir: opts.pluginDataDir,
     fetchImpl: opts.fetchImpl,
-    scopes: CONSENT_S,
-    storeFile: STORE_FILE.gscWrite,
-    laneLabel: "Consent S (GSC writes)",
   });
 }
 
@@ -473,13 +446,13 @@ USAGE
   dgtl-connector-mcp --help       Show this help and exit 0
   dgtl-connector-mcp --version    Print version
   dgtl-connector-mcp doctor           Human checklist (no secrets); also: auth doctor
-  dgtl-connector-mcp auth login       Installed-app PKCE (Consent A)
+  dgtl-connector-mcp auth login       Installed-app PKCE (Free Google: read + manage GA4/GSC/GTM)
   dgtl-connector-mcp auth login-ads   Consent C Ads PKCE (separate client; adwords)
   dgtl-connector-mcp auth login-mc    Consent MC Merchant Center PKCE (separate client; content)
   dgtl-connector-mcp auth login-gbp   Consent B GBP PKCE (separate client; business.manage)
-  dgtl-connector-mcp auth login-write Consent W GTM write PKCE (separate client; never Consent A)
-  dgtl-connector-mcp auth login-ga4-admin Consent G GA4 Admin PKCE (analytics.edit; never Consent A)
-  dgtl-connector-mcp auth login-gsc-write Consent S GSC write PKCE (webmasters write; never Consent A)
+  dgtl-connector-mcp auth login-write Alias of auth login (legacy name)
+  dgtl-connector-mcp auth login-ga4-admin Alias of auth login (legacy name)
+  dgtl-connector-mcp auth login-gsc-write Alias of auth login (legacy name)
   dgtl-connector-mcp auth login-meta --code <grant>  Redeem hosted Meta Login code
   dgtl-connector-mcp auth redeem --code|--checkout-id  Redeem Polar license → license.jwt
   dgtl-connector-mcp auth status      Show whether token sources are configured
@@ -495,38 +468,28 @@ USAGE
 AUTH (stdio is Manual — there is no Gmail-style Connect card)
   1. Host-injected: set GOOGLE_ACCESS_TOKEN (and optional GOOGLE_GRANTED_SCOPES)
   2. PKCE fallback: set GOOGLE_OAUTH_CLIENT_ID (public Desktop client, no secret)
-     then run auth login. Tokens stay in PLUGIN_DATA/google-oauth.json (Consent A).
+     then run auth login. Tokens stay in PLUGIN_DATA/google-oauth.json (Free Google).
 
-Consent W (writes), Consent G (GA4 Admin), Consent S (GSC writes), Consent C
-  (Ads/Meta), Consent MC, and Consent B (GBP) use separate stores:
-  GOOGLE_WRITE_ACCESS_TOKEN / google-oauth-write.json  (or auth login-write)
-  GOOGLE_GA4_ADMIN_ACCESS_TOKEN / google-oauth-ga4-admin.json  (or auth login-ga4-admin)
-  GOOGLE_GSC_WRITE_ACCESS_TOKEN / google-oauth-gsc-write.json  (or auth login-gsc-write)
+Free Google is one Connect for GA4 / Search Console / Tag Manager read and
+  manage. Mutates still need DGTL_WRITES_ENABLED (default off) plus confirms.
+  login-write / login-ga4-admin / login-gsc-write alias to auth login and write
+  the same store. Legacy google-oauth-write.json / google-oauth-ga4-admin.json /
+  google-oauth-gsc-write.json and GOOGLE_WRITE_* / GOOGLE_GA4_ADMIN_* /
+  GOOGLE_GSC_WRITE_* tokens are still accepted if present.
+
+Do not add adwords, content, or business.manage to Free Google. Those stay
+  on separate stores (Ads / Merchant Center / GBP). Meta and TikTok are Pro.
+  Never reuse GOOGLE_OAUTH_CLIENT_SECRET for Ads/MC/GBP.
+
   GOOGLE_ADS_ACCESS_TOKEN / google-oauth-ads.json  (or auth login-ads)
   GOOGLE_MC_ACCESS_TOKEN / google-oauth-mc.json    (or auth login-mc)
   GOOGLE_GBP_ACCESS_TOKEN / google-oauth-gbp.json  (or auth login-gbp)
   META_ACCESS_TOKEN / meta-oauth.json              (or auth login-meta --code)
   TIKTOK_ACCESS_TOKEN / tiktok-oauth.json          (host-injected; app secret on Worker)
-  They never reuse Consent A AuthPort. Do not add adwords, content,
-  business.manage, analytics.edit, or webmasters (write) to Consent A.
 
-Consent W: set GOOGLE_OAUTH_WRITE_CLIENT_ID (separate Desktop client; or put
-  GOOGLE_OAUTH_WRITE_CLIENT_ID/SECRET in gitignored .env.write.local) then
-  auth login-write → PLUGIN_DATA/google-oauth-write.json with CONSENT_W_GTM
-  (tagmanager.edit.containers + tagmanager.publish). Never reuse
-  GOOGLE_OAUTH_CLIENT_SECRET / Consent A. Does not turn on DGTL_WRITES_ENABLED.
-
-Consent G (GA4 Admin writes, later tools): set GOOGLE_OAUTH_GA4_ADMIN_CLIENT_ID
-  (separate Desktop client; or gitignored .env.ga4-admin.local) then
-  auth login-ga4-admin → PLUGIN_DATA/google-oauth-ga4-admin.json with CONSENT_G
-  (analytics.edit only). Never reuse GOOGLE_OAUTH_CLIENT_SECRET / Consent A.
-  Does not turn on DGTL_WRITES_ENABLED. No Admin write tools in this wave.
-
-Consent S (GSC writes, later tools): set GOOGLE_OAUTH_GSC_WRITE_CLIENT_ID
-  (separate Desktop client; or gitignored .env.gsc-write.local) then
-  auth login-gsc-write → PLUGIN_DATA/google-oauth-gsc-write.json with CONSENT_S
-  (webmasters write). Never reuse GOOGLE_OAUTH_CLIENT_SECRET / Consent A.
-  Does not turn on DGTL_WRITES_ENABLED. No GSC mutate tools in this wave.
+Does not turn on DGTL_WRITES_ENABLED.
+  Legacy write-lane env files (.env.write.local, .env.ga4-admin.local,
+  .env.gsc-write.local) still fill dedicated tokens if present.
 
 Consent C Ads: set GOOGLE_OAUTH_ADS_CLIENT_ID (separate Desktop client) then
   auth login-ads. Fail-closed without that client id. Paid tools still need

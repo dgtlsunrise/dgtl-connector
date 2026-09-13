@@ -6,11 +6,8 @@ import {
   parseRedeemArgs,
   runAuthLogin,
   runAuthLoginAds,
-  runAuthLoginGa4Admin,
   runAuthLoginGbp,
-  runAuthLoginGscWrite,
   runAuthLoginMc,
-  runAuthLoginWrite,
   runAuthLoginMeta,
   runAuthRedeem,
 } from "./auth/login-cli.js";
@@ -70,34 +67,19 @@ async function main(argv: string[]): Promise<void> {
 
   if (args[0] === "auth") {
     const sub = args[1];
-    if (sub === "login") {
+    if (sub === "login" || sub === "login-write" || sub === "login-ga4-admin" || sub === "login-gsc-write") {
       const clientId = ctx.env.GOOGLE_OAUTH_CLIENT_ID;
       if (!clientId) {
         process.stderr.write(
-          "Set GOOGLE_OAUTH_CLIENT_ID (public Desktop OAuth client). Do not set a client secret in git.\n",
+          sub === "login"
+            ? "Set GOOGLE_OAUTH_CLIENT_ID (public Desktop OAuth client). Do not set a client secret in git.\n"
+            : `${sub} aliases to Free Google (\`auth login\`). Set GOOGLE_OAUTH_CLIENT_ID. Legacy google-oauth-write.json / google-oauth-ga4-admin.json / google-oauth-gsc-write.json stores are still accepted if present. This does not enable DGTL_WRITES_ENABLED.\n`,
         );
         process.exitCode = 1;
         return;
       }
       process.exitCode = await runAuthLogin({
         clientId,
-        pluginDataDir: ctx.pluginDataDir,
-        fetchImpl: ctx.fetchImpl,
-      });
-      return;
-    }
-    if (sub === "login-write") {
-      const clientId = ctx.env.GOOGLE_OAUTH_WRITE_CLIENT_ID?.trim();
-      if (!clientId) {
-        process.stderr.write(
-          "Set GOOGLE_OAUTH_WRITE_CLIENT_ID (env or gitignored .env.write.local). Separate Consent W Desktop client — do not add write scopes to Consent A. Never commit GOOGLE_OAUTH_WRITE_CLIENT_SECRET. login-write does not enable DGTL_WRITES_ENABLED.\n",
-        );
-        process.exitCode = 1;
-        return;
-      }
-      process.exitCode = await runAuthLoginWrite({
-        clientId,
-        clientSecret: ctx.env.GOOGLE_OAUTH_WRITE_CLIENT_SECRET,
         pluginDataDir: ctx.pluginDataDir,
         fetchImpl: ctx.fetchImpl,
       });
@@ -149,40 +131,6 @@ async function main(argv: string[]): Promise<void> {
       process.exitCode = await runAuthLoginGbp({
         clientId,
         clientSecret: ctx.env.GOOGLE_OAUTH_GBP_CLIENT_SECRET,
-        pluginDataDir: ctx.pluginDataDir,
-        fetchImpl: ctx.fetchImpl,
-      });
-      return;
-    }
-    if (sub === "login-ga4-admin") {
-      const clientId = ctx.env.GOOGLE_OAUTH_GA4_ADMIN_CLIENT_ID?.trim();
-      if (!clientId) {
-        process.stderr.write(
-          "Set GOOGLE_OAUTH_GA4_ADMIN_CLIENT_ID (env or gitignored .env.ga4-admin.local). Separate Consent G Desktop client — do not add analytics.edit to Consent A. Never commit GOOGLE_OAUTH_GA4_ADMIN_CLIENT_SECRET. login-ga4-admin does not enable DGTL_WRITES_ENABLED.\n",
-        );
-        process.exitCode = 1;
-        return;
-      }
-      process.exitCode = await runAuthLoginGa4Admin({
-        clientId,
-        clientSecret: ctx.env.GOOGLE_OAUTH_GA4_ADMIN_CLIENT_SECRET,
-        pluginDataDir: ctx.pluginDataDir,
-        fetchImpl: ctx.fetchImpl,
-      });
-      return;
-    }
-    if (sub === "login-gsc-write") {
-      const clientId = ctx.env.GOOGLE_OAUTH_GSC_WRITE_CLIENT_ID?.trim();
-      if (!clientId) {
-        process.stderr.write(
-          "Set GOOGLE_OAUTH_GSC_WRITE_CLIENT_ID (env or gitignored .env.gsc-write.local). Separate Consent S Desktop client — do not add webmasters write to Consent A. Never commit GOOGLE_OAUTH_GSC_WRITE_CLIENT_SECRET. login-gsc-write does not enable DGTL_WRITES_ENABLED.\n",
-        );
-        process.exitCode = 1;
-        return;
-      }
-      process.exitCode = await runAuthLoginGscWrite({
-        clientId,
-        clientSecret: ctx.env.GOOGLE_OAUTH_GSC_WRITE_CLIENT_SECRET,
         pluginDataDir: ctx.pluginDataDir,
         fetchImpl: ctx.fetchImpl,
       });

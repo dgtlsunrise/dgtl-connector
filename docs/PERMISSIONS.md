@@ -1,20 +1,24 @@
 # Permissions
 
-Least privilege is a product feature. v1 asks Google for **read** access to Analytics, Search Console, and Tag Manager — nothing else.
+Least privilege is a product feature. Free Google is **one** Connect for Analytics, Search Console, and Tag Manager **read and manage**. Ads, Merchant Center, and GBP stay off that screen. Mutates still need `DGTL_WRITES_ENABLED` plus confirms.
 
 ## Exact OAuth scopes
 
-### Product scopes (required, one consent)
+### Free Google (required, one consent)
 
-Request **all three** on a **single** Google consent screen. Do not run sequential per-product OAuth.
+Request **all of these** on a **single** Google consent screen. Do not run sequential per-product OAuth.
 
 | Scope | API surface | User-visible meaning |
 | --- | --- | --- |
 | `https://www.googleapis.com/auth/analytics.readonly` | GA4 Admin API v1beta, GA4 Data API v1beta | See and download Google Analytics data |
 | `https://www.googleapis.com/auth/webmasters.readonly` | Search Console API (sites, searchanalytics, sitemaps, URL Inspection) | View Search Console data for verified sites |
 | `https://www.googleapis.com/auth/tagmanager.readonly` | Tag Manager API v2 | View Google Tag Manager accounts, containers, workspaces, tags/triggers/variables, **clients**, **environments**, and live versions |
+| `https://www.googleapis.com/auth/analytics.edit` | GA4 Admin writes | Manage GA4 properties, streams, key events, custom defs (flag + confirm) |
+| `https://www.googleapis.com/auth/tagmanager.edit.containers` | Tag Manager writes | Create/update tags, triggers, variables, clients, containers, environments (flag + confirm) |
+| `https://www.googleapis.com/auth/tagmanager.publish` | Tag Manager publish | Publish a container version (flag + confirm) |
+| `https://www.googleapis.com/auth/webmasters` | Search Console writes | Submit/delete sitemaps (flag + confirm). No Indexing API. |
 
-These strings are the source of truth. Do not substitute `analytics`, `analytics.edit`, `webmasters`, `tagmanager.edit.containers`, or `tagmanager.publish`.
+These strings are the source of truth in `src/google/scopes.ts` (`CONSENT_A`). Do not add `adwords`, `content`, or `business.manage`. Do not request blanket `analytics`.
 
 ### Identity scopes (same consent, not a fourth product)
 
@@ -29,24 +33,20 @@ Do **not** request `https://www.googleapis.com/auth/userinfo.profile` unless a l
 
 ### Explicitly never requested on Consent A (free listing / verification client)
 
-These scopes are **never** on the marketplace Consent A Desktop client. Separate write / paid clients are documented below — they are not listing promises.
+These scopes are **never** on Free Google. Paid / GBP / MC stay on separate grants.
 
 | Scope | Reason |
 | --- | --- |
-| `https://www.googleapis.com/auth/adwords` | Google Ads — Consent C (separate client) |
-| `https://www.googleapis.com/auth/content` | Merchant Center / Merchant API — Consent MC (separate client; Wave 4 reads + Wave 14 ProductInput writes). Never on Consent A. |
-| `https://www.googleapis.com/auth/analytics` | Read/write Analytics — never on Consent A |
-| `https://www.googleapis.com/auth/analytics.edit` | Never on Consent A. Consent G is a separate Desktop client (Wave 11 Admin writes). |
-| `https://www.googleapis.com/auth/webmasters` | Never on Consent A. Consent S is a separate Desktop client (Wave 12 sitemap writes). |
-| `https://www.googleapis.com/auth/tagmanager.edit.containers` | Never on Consent A. Consent W is a separate Desktop client (GTM writes). |
-| `https://www.googleapis.com/auth/tagmanager.publish` | Never on Consent A. Consent W publish only. |
+| `https://www.googleapis.com/auth/adwords` | Google Ads — Consent C (separate client). Pro + stamp. |
+| `https://www.googleapis.com/auth/content` | Merchant Center / Merchant API — Consent MC (separate client). Never on Consent A. |
+| `https://www.googleapis.com/auth/analytics` | Blanket Analytics read/write — never request this. Use `.readonly` + `.edit`. |
 | `https://www.googleapis.com/auth/tagmanager.delete.containers` | Delete containers — not registered |
 | `https://www.googleapis.com/auth/tagmanager.manage.users` | Manage GTM users — not registered |
 | `https://www.googleapis.com/auth/gmail.*` | Restricted; not marketing reporting |
 | `https://www.googleapis.com/auth/drive*` | Restricted; not in product |
-| `https://www.googleapis.com/auth/business.manage` | Never on Consent A. Consent B + `DGTL_GBP_ENABLED` (GET-only tools). |
+| `https://www.googleapis.com/auth/business.manage` | Never on Consent A. Consent B + `DGTL_GBP_ENABLED` (GET-only tools) until Basic Access. |
 
-Google verification rejects “future enhancement” scopes. Do not pre-declare Ads, write, or GBP scopes on the Consent A OAuth client.
+Google Cloud **Data Access** for Consent A is a Noel-only change. This repo requests the Free Google set; do not flip Cloud Console from an agent PR.
 
 ## Google Cloud APIs to Enable
 
@@ -80,33 +80,27 @@ Readonly scopes see **everything that Google user can already see** in the Googl
 
 If an agency needs employees to see only one client, that is a **Google permissions** problem (don't share the agency owner login). Support may explain that. DGTL does not collect a list of client properties into a vault in v1.
 
-## Consent W (writes) — separate from free Consent A
+## Consent W / G / S (writes) — on Free Google, still flag-gated
 
-Free Consent A stays **readonly** forever for the Desktop client used in demos and verification. Write/publish tools use a **separate** OAuth client (Consent W). Candidate scopes live in `src/google/scopes.ts` as `CONSENT_W` / `CONSENT_W_GTM` and are **never** merged into `CONSENT_A`.
+Free Google (`CONSENT_A`) now includes the W / G / S manage scopes. `auth login` writes `PLUGIN_DATA/google-oauth.json`. `login-write` / `login-ga4-admin` / `login-gsc-write` alias to that login. Legacy stores are still accepted if present.
 
 | Env / flag | Meaning |
 | --- | --- |
-| `GOOGLE_OAUTH_WRITE_CLIENT_ID` / `GOOGLE_OAUTH_WRITE_CLIENT_SECRET` | Consent W client (gitignored `.env` only; placeholders in `.env.example`) |
-| `DGTL_WRITES_ENABLED` | Default `false` (marketplace / `.env.example`). When off, GTM write tools return `WRITE_NOT_ENABLED`. Never ship `true` as the package default. |
-| When flag on but Consent W missing | Tools return `CONSENT_W_REQUIRED` |
-| Live mutate | `GoogleWriteHttp` only; `dry_run` default true; `confirm_phrase` must include resolved `GTM-XXXX` (or container/account path on Wave 13 create tools) or `INVALID_ARGUMENT` |
+| `GOOGLE_OAUTH_CLIENT_ID` | Free Google Desktop client |
+| Legacy `GOOGLE_WRITE_*` / `GOOGLE_GA4_ADMIN_*` / `GOOGLE_GSC_WRITE_*` | Still accepted when present |
+| `DGTL_WRITES_ENABLED` | Default `false` (marketplace / `.env.example`). When off, mutate tools return `WRITE_NOT_ENABLED`. Never ship `true` as the package default. |
+| When flag on but write scopes missing | `CONSENT_W_REQUIRED` / `CONSENT_G_REQUIRED` / `CONSENT_S_REQUIRED` |
+| Live mutate | Dedicated write HTTP clients; `dry_run` default true; `confirm_phrase` must include the resource id |
 
-Wave 13: `gtm_list_clients` / `gtm_list_environments` use Consent A `tagmanager.readonly` (official list scopes). `gtm_create_client` / `gtm_update_client` / `gtm_create_container` / `gtm_create_environment` use Consent W `tagmanager.edit.containers` + `DGTL_WRITES_ENABLED`. Never add write scopes to Consent A. Publish stays `gtm_publish_container`.
-
-Product rules: explicit tools only; publish requires confirmation (`dry_run` / `confirm_phrase`); property/container named in the call. Full lock: [ops/FULL-STACK-ACCELERATE.md](ops/FULL-STACK-ACCELERATE.md).
-
-## Consent G (GA4 Admin writes) and Consent S (GSC writes) — separate from Consent A
-
-Consent A stays **readonly forever**. Wave 11 registers named GA4 Admin tools. Writes use Consent G (`analytics.edit`) + `DGTL_WRITES_ENABLED`. Admin GET `googleAdsLinks.list` and v1alpha `getAttributionSettings` stay on Consent A HTTP. Wave 12 registers `gsc_submit_sitemap` / `gsc_delete_sitemap` on Consent S (`webmasters` write) + the same writes flag. GSC reads stay on Consent A. No write scopes on the free Desktop client. No Indexing API.
+Wave 13: `gtm_list_clients` / `gtm_list_environments` use `tagmanager.readonly`. Create/update/publish tools need the matching write scopes + `DGTL_WRITES_ENABLED`.
 
 | Lane | Scopes | Login | Store (mode 0600) | Fail |
 | --- | --- | --- | --- | --- |
-| **G** | `CONSENT_G` = `analytics.edit` only (never blanket `analytics`) | `auth login-ga4-admin` | `PLUGIN_DATA/google-oauth-ga4-admin.json` | `CONSENT_G_REQUIRED` |
-| **S** | `CONSENT_S` = `webmasters` (write, not `.readonly`) | `auth login-gsc-write` | `PLUGIN_DATA/google-oauth-gsc-write.json` | `CONSENT_S_REQUIRED` |
+| **W** | `CONSENT_W_GTM` = GTM edit + publish | `auth login` (alias `login-write`) | Primary `google-oauth.json`; legacy `google-oauth-write.json` | `CONSENT_W_REQUIRED` |
+| **G** | `CONSENT_G` = `analytics.edit` only (never blanket `analytics`) | `auth login` (alias `login-ga4-admin`) | Primary `google-oauth.json`; legacy `google-oauth-ga4-admin.json` | `CONSENT_G_REQUIRED` |
+| **S** | `CONSENT_S` = `webmasters` (write, not `.readonly`) | `auth login` (alias `login-gsc-write`) | Primary `google-oauth.json`; legacy `google-oauth-gsc-write.json` | `CONSENT_S_REQUIRED` |
 
-Env: `GOOGLE_OAUTH_GA4_ADMIN_CLIENT_ID` / `SECRET` (gitignored `.env.ga4-admin.local`) and `GOOGLE_OAUTH_GSC_WRITE_CLIENT_ID` / `SECRET` (`.env.gsc-write.local`). If those separate clients are set, **never** reuse `GOOGLE_OAUTH_CLIENT_SECRET` (Consent A). Login does **not** set `DGTL_WRITES_ENABLED`.
-
-`CONSENT_G` / `CONSENT_S` are **never** merged into `CONSENT_A`. Intersection tests lock `A ∩ G = ∅` and `A ∩ S = ∅`.
+Login does **not** set `DGTL_WRITES_ENABLED`. Intersection tests lock `adwords` / `content` / `business.manage` off Free Google (`A ∩ {adwords, content, business.manage} = ∅`). `CONSENT_W` / `CONSENT_G` / `CONSENT_S` are subsets of `CONSENT_A`.
 
 ## Consent C (Ads / Meta user OAuth) — separate from Consent A
 

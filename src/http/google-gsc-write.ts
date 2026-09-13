@@ -16,9 +16,10 @@ export type GscWriteRequest = {
 };
 
 /**
- * Consent S HTTP client — searchconsole.googleapis.com only.
+ * GSC write HTTP client — searchconsole.googleapis.com only.
  * Closed allowlist: sitemaps.submit (PUT) and sitemaps.delete (DELETE).
- * Never uses Consent A AuthPort / ctx.auth. No Indexing API. No sites.add/delete.
+ * Uses authGscWrite (legacy S store, then Free Google when webmasters write is present).
+ * No Indexing API. No sites.add/delete.
  */
 const ALLOWED: Array<{ method: GscWriteMethod; pattern: RegExp }> = [
   { method: "PUT", pattern: /^\/webmasters\/v3\/sites\/[^/]+\/sitemaps\/[^/]+$/ },

@@ -16,9 +16,9 @@ import { loadLicenseToken, verifyLicenseJwt, type LicenseStatus } from "./licens
 export type AppContext = {
   pluginRoot: string;
   pluginDataDir: string;
-  /** Consent A only. W/C tools must not read this. */
+  /** Free Google (CONSENT_A). Ads/MC/GBP/Meta/TikTok must not read this. */
   auth: AccessTokenSource;
-  /** Consent W — GOOGLE_WRITE_ACCESS_TOKEN / google-oauth-write.json */
+  /** GTM writes — legacy W store, then Free Google when GTM write scopes are present. */
   authWrite: AccessTokenSource;
   /** Consent C Google Ads — GOOGLE_ADS_ACCESS_TOKEN / google-oauth-ads.json */
   authAds: AccessTokenSource;
@@ -30,16 +30,16 @@ export type AppContext = {
   authMeta: AccessTokenSource;
   /** TikTok user — TIKTOK_ACCESS_TOKEN / tiktok-oauth.json */
   authTiktok: AccessTokenSource;
-  /** Consent G — GOOGLE_GA4_ADMIN_ACCESS_TOKEN / google-oauth-ga4-admin.json */
+  /** GA4 Admin writes — legacy G store, then Free Google when analytics.edit is present. */
   authGa4Admin: AccessTokenSource;
-  /** Consent S — GOOGLE_GSC_WRITE_ACCESS_TOKEN / google-oauth-gsc-write.json */
+  /** GSC writes — legacy S store, then Free Google when webmasters write is present. */
   authGscWrite: AccessTokenSource;
   http: GoogleHttp;
-  /** Consent W mutate client — never wired to ctx.auth. */
+  /** GTM mutate client — authWrite, not Ads/MC/GBP. */
   httpWrite: GoogleWriteHttp;
-  /** Consent G Analytics Admin mutate client — never wired to ctx.auth. */
+  /** GA4 Admin mutate client — authGa4Admin. */
   httpGa4Admin: GoogleGa4AdminHttp;
-  /** Consent S Search Console sitemap mutate client — never wired to ctx.auth. */
+  /** GSC sitemap mutate client — authGscWrite. */
   httpGscWrite: GoogleGscWriteHttp;
   /** Consent MC Merchant API read client — never wired to ctx.auth / Consent A. GET-only. */
   httpMc: GoogleHttp;

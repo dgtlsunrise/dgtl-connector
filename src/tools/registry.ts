@@ -328,7 +328,7 @@ export const TOOLS: ToolSpec[] = [
     family: "ga4_write",
     title: "GA4 create Google Ads link (Consent G)",
     description:
-      "Create a Google Ads link on a property. Consent G (analytics.edit), not Consent A. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+      "Create a Google Ads link on a property. Needs analytics.edit on Free Google. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
     inputSchema: S.ga4CreateGoogleAdsLink,
     annotations: ANN_WRITE,
     handler: (ctx, args) => ga4Write.ga4CreateGoogleAdsLink(ctx, args),
@@ -438,7 +438,7 @@ export const TOOLS: ToolSpec[] = [
     family: "ga4_write",
     title: "GA4 list Measurement Protocol secrets (Consent G)",
     description:
-      "List MP secrets for a data stream. Consent G (not A). secretValue is redacted in the envelope and never written to logs. Writes flag is not required for this read.",
+      "List MP secrets for a data stream. Needs analytics.edit on Free Google. secretValue is redacted in the envelope and never written to logs. Writes flag is not required for this read.",
     inputSchema: S.ga4ListMpSecrets,
     annotations: ANN_RO,
     handler: (ctx, args) => ga4Write.ga4ListMpSecrets(ctx, args),
@@ -541,7 +541,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gsc_write",
     title: "GSC submit sitemap (Consent S)",
     description:
-      "PUT sitemaps.submit for an exact site_url + feedpath. Consent S (webmasters write), not Consent A. dry_run default; live needs confirm_phrase containing that site_url. Flagged off by default (WRITE_NOT_ENABLED). No request-indexing tool.",
+      "PUT sitemaps.submit for an exact site_url + feedpath. Needs webmasters write on Free Google. dry_run default; live needs confirm_phrase containing that site_url. Flagged off by default (WRITE_NOT_ENABLED). No request-indexing tool.",
     inputSchema: S.gscSubmitSitemap,
     annotations: ANN_WRITE,
     handler: (ctx, args) => gscWrite.gscSubmitSitemap(ctx, args),
@@ -658,14 +658,14 @@ export const TOOLS: ToolSpec[] = [
     handler: (ctx, args) => gtm.gtmListEnvironments(ctx, args),
   },
 
-  // Consent W — GTM write/publish via GoogleWriteHttp (flagged off by default; never on Consent A)
+  // GTM write/publish via GoogleWriteHttp (flagged off by default; Free Google may hold write scopes)
   {
     name: "gtm_create_tag",
     group: "gtm-write",
     family: "gtm_write",
     title: "GTM create tag (Consent W)",
     description:
-      "Create a workspace tag. Requires Consent W (tagmanager.edit.containers), not free Consent A. Returns WRITE_NOT_ENABLED when DGTL_WRITES_ENABLED is false. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
+      "Create a workspace tag. Needs tagmanager.edit.containers on Free Google. Returns WRITE_NOT_ENABLED when DGTL_WRITES_ENABLED is false. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
     inputSchema: S.gtmCreateTag,
     annotations: ANN_WRITE,
     handler: (ctx, args) => gtmWrite.gtmCreateTag(ctx, args),
@@ -676,7 +676,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gtm_write",
     title: "GTM update tag (Consent W)",
     description:
-      "Update a workspace tag. Consent W only. Returns WRITE_NOT_ENABLED / CONSENT_W_REQUIRED when gated off. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
+      "Update a workspace tag. Needs Free Google GTM write scopes. Returns WRITE_NOT_ENABLED / CONSENT_W_REQUIRED when gated off. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
     inputSchema: S.gtmUpdateTag,
     annotations: ANN_WRITE,
     handler: (ctx, args) => gtmWrite.gtmUpdateTag(ctx, args),
@@ -687,7 +687,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gtm_write",
     title: "GTM create trigger (Consent W)",
     description:
-      "Create a workspace trigger. Consent W only (not free Consent A). Returns WRITE_NOT_ENABLED when DGTL_WRITES_ENABLED is false. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
+      "Create a workspace trigger. Needs Free Google GTM write scopes. Returns WRITE_NOT_ENABLED when DGTL_WRITES_ENABLED is false. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
     inputSchema: S.gtmCreateTrigger,
     annotations: ANN_WRITE,
     handler: (ctx, args) => gtmWrite.gtmCreateTrigger(ctx, args),
@@ -698,7 +698,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gtm_write",
     title: "GTM update trigger (Consent W)",
     description:
-      "Update a workspace trigger. Consent W only. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
+      "Update a workspace trigger. Needs Free Google GTM write scopes. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
     inputSchema: S.gtmUpdateTrigger,
     annotations: ANN_WRITE,
     handler: (ctx, args) => gtmWrite.gtmUpdateTrigger(ctx, args),
@@ -709,7 +709,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gtm_write",
     title: "GTM create variable (Consent W)",
     description:
-      "Create a workspace variable. Consent W only (not free Consent A). Returns WRITE_NOT_ENABLED when DGTL_WRITES_ENABLED is false. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
+      "Create a workspace variable. Needs Free Google GTM write scopes. Returns WRITE_NOT_ENABLED when DGTL_WRITES_ENABLED is false. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
     inputSchema: S.gtmCreateVariable,
     annotations: ANN_WRITE,
     handler: (ctx, args) => gtmWrite.gtmCreateVariable(ctx, args),
@@ -720,7 +720,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gtm_write",
     title: "GTM update variable (Consent W)",
     description:
-      "Update a workspace variable. Consent W only. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
+      "Update a workspace variable. Needs Free Google GTM write scopes. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
     inputSchema: S.gtmUpdateVariable,
     annotations: ANN_WRITE,
     handler: (ctx, args) => gtmWrite.gtmUpdateVariable(ctx, args),
@@ -731,7 +731,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gtm_write",
     title: "GTM publish container (Consent W)",
     description:
-      "Publish a GTM container version. Highest-risk write. Requires Consent W (tagmanager.publish). Prefer dry_run first; live publish requires an explicit confirm that includes the container publicId from the user this turn. Flagged off by default (WRITE_NOT_ENABLED).",
+      "Publish a GTM container version. Highest-risk write. Needs tagmanager.publish on Free Google. Prefer dry_run first; live publish requires an explicit confirm that includes the container publicId from the user this turn. Flagged off by default (WRITE_NOT_ENABLED).",
     inputSchema: S.gtmPublishContainer,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => gtmWrite.gtmPublishContainer(ctx, args),
@@ -742,7 +742,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gtm_write",
     title: "GTM create client (Consent W)",
     description:
-      "Create a workspace sGTM client. Consent W only (tagmanager.edit.containers). Closed type enum (gaawp/googtag/gclidw/flc/ua/mp). Prefer dry_run; live mutate needs confirm_phrase containing the container publicId or accounts/{id}/containers/{id} path. Not stamp ingest.",
+      "Create a workspace sGTM client. Needs tagmanager.edit.containers on Free Google. Closed type enum (gaawp/googtag/gclidw/flc/ua/mp). Prefer dry_run; live mutate needs confirm_phrase containing the container publicId or accounts/{id}/containers/{id} path. Not stamp ingest.",
     inputSchema: S.gtmCreateClient,
     annotations: ANN_WRITE,
     handler: (ctx, args) => gtmWrite.gtmCreateClient(ctx, args),
@@ -753,7 +753,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gtm_write",
     title: "GTM update client (Consent W)",
     description:
-      "Update a workspace sGTM client. Consent W only. Closed type enum. Prefer dry_run; live mutate needs confirm_phrase containing the container publicId or container path.",
+      "Update a workspace sGTM client. Needs Free Google GTM write scopes. Closed type enum. Prefer dry_run; live mutate needs confirm_phrase containing the container publicId or container path.",
     inputSchema: S.gtmUpdateClient,
     annotations: ANN_WRITE,
     handler: (ctx, args) => gtmWrite.gtmUpdateClient(ctx, args),
@@ -764,7 +764,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gtm_write",
     title: "GTM create container (Consent W)",
     description:
-      "Create a GTM container. Consent W only. Closed usage_context enum (server = sGTM; web/android/ios/amp locked). Prefer dry_run; live mutate needs confirm_phrase containing accounts/{account_id}.",
+      "Create a GTM container. Needs Free Google GTM write scopes. Closed usage_context enum (server = sGTM; web/android/ios/amp locked). Prefer dry_run; live mutate needs confirm_phrase containing accounts/{account_id}.",
     inputSchema: S.gtmCreateContainer,
     annotations: ANN_WRITE,
     handler: (ctx, args) => gtmWrite.gtmCreateContainer(ctx, args),
@@ -775,7 +775,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gtm_write",
     title: "GTM create environment (Consent W)",
     description:
-      "Create a USER GTM environment. Consent W only. Prefer dry_run; live mutate needs confirm_phrase containing the container publicId or container path. Does not reauthorize preview.",
+      "Create a USER GTM environment. Needs Free Google GTM write scopes. Prefer dry_run; live mutate needs confirm_phrase containing the container publicId or container path. Does not reauthorize preview.",
     inputSchema: S.gtmCreateEnvironment,
     annotations: ANN_WRITE,
     handler: (ctx, args) => gtmWrite.gtmCreateEnvironment(ctx, args),

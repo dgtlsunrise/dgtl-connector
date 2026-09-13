@@ -4,7 +4,7 @@
 
 That 26 is the **Consent A kernel** (`CONSENT_A_TOOLS` / `FREE_TOOL_NAMES` alias). Shopify and Klaviyo are **local-free** (`LOCAL_FREE_TOOLS` — Shopify merchant token / Klaviyo `pk_`; no Polar — fail `SHOPIFY_NOT_CONNECTED` / `KLAVIYO_NOT_CONNECTED`). Ads/Meta/Merchant Center/TikTok are **license-gated** (`LICENSE_GATED_TOOLS`, Polar Pro — fail `LICENSE_REQUIRED`). TikTok requires JWT feature `tiktok` (not ads/meta). GBP is local-free when the flag is on (Consent B, not Consent A). Flag off → `GBP_NOT_ENABLED`. Flag on without Consent B → `GBP_NOT_CONNECTED`. Do not stuff Shopify or Klaviyo into the 26-tool kernel.
 
-**Marketplace / public listing copy stays Consent A-only.** `plugin.json` / `package.json` / [MARKETPLACE.md](MARKETPLACE.md) describe the free listing as **read-only GA4 + GSC + GTM** (26 tools). Write consents (W / G / S / MC / Shopify / Klaviyo) and Polar-gated families live in this operator doc and [PERMISSIONS.md](PERMISSIONS.md) — they are **not** marketplace promises. Do not publish the site, Worker, or marketplace listing from a docs PR.
+**Marketplace / public listing copy is Free Google read and manage.** `plugin.json` / `package.json` / [MARKETPLACE.md](MARKETPLACE.md) describe local GA4 + GSC + GTM (26-tool kernel) as **read and manage**. Mutates stay flag-gated. Ads / Meta / TikTok are Pro. MC / GBP / Shopify / Klaviyo write details live in this operator doc and [PERMISSIONS.md](PERMISSIONS.md) — they are **not** marketplace unlock promises. Marketplace submit is deferred. Do not publish the site, Worker, or marketplace listing from a docs PR.
 
 If you need a 27th **Consent A** tool, bump a version and update `schemas/v1/catalog.json` in the same change. Do not “just add it.” Quality over dump. Small typed tools, not a mega-query kitchen sink.
 
@@ -565,9 +565,9 @@ Plugin flag **defaults off**. Live also needs Worker `SGTM_INGEST_ENABLED` (heal
 
 ---
 
-## Consent W — GTM write (gated; not free Consent A)
+## Consent W — GTM write (flag-gated; family on Free Google)
 
-Flag `DGTL_WRITES_ENABLED` defaults **false** → `WRITE_NOT_ENABLED` (zero HTTP). When on, tools use **`GoogleWriteHttp`** + Consent W token store (`GOOGLE_WRITE_ACCESS_TOKEN` / `google-oauth-write.json`) — never `ctx.auth` / Consent A. PKCE CLI **`dgtl-connector-mcp auth login-write`** is shipped (separate Desktop client; never Consent A; does **not** flip `DGTL_WRITES_ENABLED`).
+Flag `DGTL_WRITES_ENABLED` defaults **false** → `WRITE_NOT_ENABLED` (zero HTTP). When on, tools use **`GoogleWriteHttp`**. Token order: legacy Consent W store (`GOOGLE_WRITE_ACCESS_TOKEN` / `google-oauth-write.json`), then Free Google when the token lists `tagmanager.edit.containers` + `tagmanager.publish`. `auth login-write` aliases `auth login` and does **not** flip `DGTL_WRITES_ENABLED`.
 
 | Tool | Notes |
 | --- | --- |
@@ -591,7 +591,7 @@ Marketplace / shipped default: `DGTL_WRITES_ENABLED` is **false** (`mcp.json` do
 
 ## Consent G — GA4 Admin writes (Wave 11)
 
-Free Consent A stays readonly forever. Writes use **`GoogleGa4AdminHttp`** + Consent G store (`GOOGLE_GA4_ADMIN_ACCESS_TOKEN` / `google-oauth-ga4-admin.json`) — never `ctx.auth`. PKCE CLI **`dgtl-connector-mcp auth login-ga4-admin`**. Login does **not** flip `DGTL_WRITES_ENABLED`. Named tools only — no mega-mutate / raw Admin dump.
+Writes use **`GoogleGa4AdminHttp`**. Token order: legacy Consent G store (`GOOGLE_GA4_ADMIN_ACCESS_TOKEN` / `google-oauth-ga4-admin.json`), then Free Google when the token lists `analytics.edit`. `auth login-ga4-admin` aliases `auth login`. Login does **not** flip `DGTL_WRITES_ENABLED`. Named tools only — no mega-mutate / raw Admin dump.
 
 Spike: Admin **GET** `googleAdsLinks.list` and v1alpha `getAttributionSettings` accept `analytics.readonly` → those two reads use Consent A HTTP. Measurement Protocol secret list/create stay on Consent G. `secretValue` is never written to call/audit logs; list envelopes redact it.
 
@@ -612,14 +612,14 @@ Not registered: `ga4_update_property`. GSC sitemap submit/delete is Wave 12 (Con
 
 | Lane | CLI | Store | Scopes | Error when missing |
 | --- | --- | --- | --- | --- |
-| **G** (GA4 Admin) | `auth login-ga4-admin` | `google-oauth-ga4-admin.json` (0600) | `analytics.edit` | `CONSENT_G_REQUIRED` |
-| **S** (GSC write) | `auth login-gsc-write` | `google-oauth-gsc-write.json` (0600) | `webmasters` (write) | `CONSENT_S_REQUIRED` |
+| **G** (GA4 Admin) | `auth login` (alias `login-ga4-admin`) | Primary `google-oauth.json`; legacy `google-oauth-ga4-admin.json` | `analytics.edit` | `CONSENT_G_REQUIRED` |
+| **S** (GSC write) | `auth login` (alias `login-gsc-write`) | Primary `google-oauth.json`; legacy `google-oauth-gsc-write.json` | `webmasters` (write) | `CONSENT_S_REQUIRED` |
 
 `google_whoami` may report `consent_g` / `consent_s` connection booleans (never tokens). Doctor / `support_packet` report whether those stores **exist** (boolean only).
 
 ## Consent S — GSC sitemap writes (Wave 12)
 
-Free Consent A stays readonly forever. Sitemap submit/delete use **`GoogleGscWriteHttp`** + Consent S store (`GOOGLE_GSC_WRITE_ACCESS_TOKEN` / `google-oauth-gsc-write.json`) — never `ctx.auth`. PKCE CLI **`dgtl-connector-mcp auth login-gsc-write`**. Login does **not** flip `DGTL_WRITES_ENABLED`. Named tools only — no Indexing API / `gsc_request_indexing`, no add/remove site.
+Sitemap submit/delete use **`GoogleGscWriteHttp`**. Token order: legacy Consent S store (`GOOGLE_GSC_WRITE_ACCESS_TOKEN` / `google-oauth-gsc-write.json`), then Free Google when the token lists `webmasters` (write). `auth login-gsc-write` aliases `auth login`. Login does **not** flip `DGTL_WRITES_ENABLED`. Named tools only — no Indexing API / `gsc_request_indexing`, no add/remove site.
 
 Reads (`gsc_list_sitemaps`, `gsc_get_sitemap`, inspect, search analytics) stay on Consent A (`webmasters.readonly`).
 

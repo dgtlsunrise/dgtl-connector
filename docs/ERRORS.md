@@ -88,7 +88,7 @@ Plugin denylist (GA4 `searchQuery` / `query` / `searchTerm` / `keyword`).
 Write/publish/index request on a surface that has **no** registered write tool (or Consent A cannot do it).
 
 **User-visible:**  
-“This Consent A tool cannot publish Tag Manager containers, create tags, submit sitemaps, request indexing, or create GA4–Search Console links (`analytics.readonly` cannot create those links). Use the Google UI. GTM write stubs exist behind Consent W (`WRITE_NOT_ENABLED` until flagged on). Ads/Meta mutates are separate Pro tools — not all tools are read.”
+“This read tool cannot publish Tag Manager containers, create tags, submit sitemaps, request indexing, or create GA4–Search Console links (`analytics.readonly` cannot create those links). Named write tools exist on Free Google and stay `WRITE_NOT_ENABLED` until flagged on. Ads/Meta mutates are separate Pro tools.”
 
 ### `QUOTA_EXCEEDED` / `RATE_LIMITED`
 
@@ -164,18 +164,18 @@ License **and** gateway are ok, but the second OAuth (Ads `adwords` / Meta `ads_
 
 ### `CONSENT_G_REQUIRED` / `CONSENT_S_REQUIRED`
 
-GA4 Admin writes (Consent G) and Search Console writes (Consent S) use **separate** OAuth clients and token stores. They are **never** granted on free Consent A.
+GA4 Admin writes and Search Console writes use Free Google manage scopes (`analytics.edit` / `webmasters`). Legacy G/S stores are still accepted.
 
-- `CONSENT_G_REQUIRED` — GA4 Admin writes (and MP secret list) need `analytics.edit` via `auth login-ga4-admin` → `PLUGIN_DATA/google-oauth-ga4-admin.json` (or `GOOGLE_GA4_ADMIN_ACCESS_TOKEN`). Do not add `analytics.edit` to the Desktop readonly client.
-- `CONSENT_S_REQUIRED` — GSC sitemap submit/delete need `webmasters` (write) via `auth login-gsc-write` → `PLUGIN_DATA/google-oauth-gsc-write.json` (or `GOOGLE_GSC_WRITE_ACCESS_TOKEN`). Do not add `webmasters` write to Consent A.
+- `CONSENT_G_REQUIRED` — GA4 Admin writes (and MP secret list) need `analytics.edit` via `auth login` (alias `login-ga4-admin`) or legacy `PLUGIN_DATA/google-oauth-ga4-admin.json` / `GOOGLE_GA4_ADMIN_ACCESS_TOKEN`.
+- `CONSENT_S_REQUIRED` — GSC sitemap submit/delete need `webmasters` (write) via `auth login` (alias `login-gsc-write`) or legacy `PLUGIN_DATA/google-oauth-gsc-write.json` / `GOOGLE_GSC_WRITE_ACCESS_TOKEN`.
 
 Wave 11 ships named Admin tools. Wave 12 ships `gsc_submit_sitemap` / `gsc_delete_sitemap`. Writes still require `DGTL_WRITES_ENABLED` (login does **not** flip it). Live GSC confirm must include the exact `site_url`. Measurement Protocol `secretValue` is never written to logs.
 
 **User-visible (G):**  
-“This GA4 Admin write path needs Consent G (separate OAuth client with analytics.edit). It is not part of free Consent A. Do not add analytics.edit to the Desktop readonly client. Run `dgtl-connector-mcp auth login-ga4-admin`.”
+“This GA4 Admin write path needs analytics.edit on the Free Google (Consent A) token (`auth login`, or the login-ga4-admin alias) or a legacy google-oauth-ga4-admin.json / GOOGLE_GA4_ADMIN_ACCESS_TOKEN. Then set DGTL_WRITES_ENABLED=true for mutate tools.”
 
 **User-visible (S):**  
-“This Search Console write path needs Consent S (separate OAuth client with webmasters write). It is not part of free Consent A. Do not add webmasters (write) to the Desktop readonly client. Run `dgtl-connector-mcp auth login-gsc-write`.”
+“This Search Console write path needs webmasters (write) on the Free Google (Consent A) token (`auth login`, or the login-gsc-write alias) or a legacy google-oauth-gsc-write.json / GOOGLE_GSC_WRITE_ACCESS_TOKEN. Then set DGTL_WRITES_ENABLED=true for gsc_submit_sitemap / gsc_delete_sitemap.”
 
 ### `GOOGLE_UNAVAILABLE`
 
@@ -242,7 +242,7 @@ Use `REAUTH_REQUIRED`. After reconnect, call `google_whoami` and confirm email *
 
 ## “Publish this tag” scenario (copy)
 
-On Consent A / flag off: refuse (`UNSUPPORTED_OPERATION` or `WRITE_NOT_ENABLED`). Add: “I can show the live container and the workspace draft so you can see the diff. Publishing needs Consent W (separate OAuth client) when that path is enabled — not the free readonly consent. Trigger/variable create uses the same flag + publicId confirm; publish last.”
+On flag off: refuse (`WRITE_NOT_ENABLED`). Add: “I can show the live container and the workspace draft so you can see the diff. Publishing needs `DGTL_WRITES_ENABLED` plus a confirm that includes the container publicId. Trigger/variable create uses the same flag + publicId confirm; publish last.”
 
 ## “Search queries in GA4” scenario (copy)
 

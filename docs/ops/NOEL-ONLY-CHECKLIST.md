@@ -81,17 +81,22 @@ A2. Create Pro product (hosted checkout). Do not price as a $5–10 GA4 gate.
 A3. Create webhook endpoint later when Worker URL exists; store signing secret in Worker env only.
 A4. Complete one sandbox purchase yourself; confirm portal / `POST /v1/license` redeem (not email bearer).
 
-### Consent W (writes — separate from free Desktop client)
-B1. In GCP project `dgtl-marketing-oauth-20260903` **or** a sibling project, create a **second** OAuth client for writes (do not add write scopes to Consent A client).
-B2. Consent screen / Data Access: add only scopes we ship tools for (start GTM edit; publish last and gated). Never bolt these onto the free readonly client used for tomorrow's demo.
-B3. Put Consent W Client ID (+ secret if Desktop) in gitignored env vars distinct from Consent A (`GOOGLE_OAUTH_WRITE_CLIENT_ID` etc.).
+### Consent A Data Access (Noel RED — not an agent PR)
 
-### Consent G / Consent S (GA4 Admin + GSC writes — never Consent A)
-G1. **Do not** add `analytics.edit` or `webmasters` (write) to the free Consent A Desktop client used for verification.
-G2. When live Admin/GSC writes are needed: create **separate** Desktop clients for Consent G and Consent S (or deliberately extend Consent W — never A).
-G3. Consent G Data Access: `https://www.googleapis.com/auth/analytics.edit` only (never blanket `analytics`).
-G4. Consent S Data Access: `https://www.googleapis.com/auth/webmasters` (write, not `.readonly`).
-G5. Put client id/secret in gitignored `.env.ga4-admin.local` / `.env.gsc-write.local` (`GOOGLE_OAUTH_GA4_ADMIN_*` / `GOOGLE_OAUTH_GSC_WRITE_*`). Never reuse Consent A `GOOGLE_OAUTH_CLIENT_SECRET`.
+The plugin now requests Free Google manage scopes on `auth login`. **Do not** change Google Cloud Data Access from an agent or this PR.
+
+N1. In Cloud Console → Consent A Desktop client → Data Access, add (same screen, not a second client):
+    - `https://www.googleapis.com/auth/analytics.edit`
+    - `https://www.googleapis.com/auth/tagmanager.edit.containers`
+    - `https://www.googleapis.com/auth/tagmanager.publish`
+    - `https://www.googleapis.com/auth/webmasters`
+N2. Do **not** add `adwords`, `content`, or `business.manage` to Consent A. GBP stays off until Basic Access.
+N3. Do **not** publish Worker / site / marketplace from the code PR.
+
+### Legacy write-lane clients (optional compatibility)
+
+B1. Existing Consent W / G / S Desktop clients and `google-oauth-write.json` / `google-oauth-ga4-admin.json` / `google-oauth-gsc-write.json` stay accepted. New logins write Free Google (`google-oauth.json`).
+B2. No new write-only OAuth client is required for free manage.
 
 ### Ads + Meta (hosted gateway)
 C1. Google Ads API developer token (Reporting / conversion use as applicable) — DGTL MCC, not Axos.

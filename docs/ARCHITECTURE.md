@@ -24,7 +24,7 @@ Agent Plugins 1.0 **defines no portable OAuth fields**. Authentication is **clie
  User
    │  install plugin (git / marketplace)
    │  AuthPort: host-injected token  OR  Desktop PKCE (auth login)
-   │  Google consent = Consent A (one screen, three readonly product scopes)
+   │  Google consent = Free Google (one screen, GA4/GSC/GTM read and manage)
    v
  Token store (host-injected  OR  PLUGIN_DATA/google-oauth.json mode 0600)
    │  refresh token  — user-owned, never DGTL, never git

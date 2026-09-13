@@ -23,23 +23,18 @@ const WRITE_TOOLS = [
   "gtm_create_environment",
 ] as const;
 
-describe("Consent W scaffold — Consent A stays readonly", () => {
+describe("Consent W scaffold — writes stay flag-gated on Free Google", () => {
   let restore: () => void;
   before(() => {
     restore = installNetworkGuard();
   });
   after(() => restore());
 
-  it("CONSENT_A builders never include write scopes", () => {
-    for (const s of CONSENT_A) {
-      assert.ok(!s.includes("edit"), s);
-      assert.ok(!s.includes("publish"), s);
-      assert.ok(s === "openid" || s.endsWith(".readonly") || s.includes("userinfo.email"), s);
-    }
-    assert.ok(!CONSENT_A.includes(SCOPE.tagmanagerEditContainers as (typeof CONSENT_A)[number]));
-    assert.ok(!CONSENT_A.includes(SCOPE.tagmanagerPublish as (typeof CONSENT_A)[number]));
-    assert.ok(!CONSENT_A.includes(SCOPE.webmastersWrite as (typeof CONSENT_A)[number]));
-    assert.ok(!CONSENT_A.includes(SCOPE.analyticsEdit as (typeof CONSENT_A)[number]));
+  it("CONSENT_A includes Free Google manage scopes and never Pro/GBP/MC", () => {
+    assert.ok(CONSENT_A.includes(SCOPE.tagmanagerEditContainers as (typeof CONSENT_A)[number]));
+    assert.ok(CONSENT_A.includes(SCOPE.tagmanagerPublish as (typeof CONSENT_A)[number]));
+    assert.ok(CONSENT_A.includes(SCOPE.webmastersWrite as (typeof CONSENT_A)[number]));
+    assert.ok(CONSENT_A.includes(SCOPE.analyticsEdit as (typeof CONSENT_A)[number]));
     assert.ok(!CONSENT_A.includes(SCOPE.adwords as (typeof CONSENT_A)[number]));
     assert.ok(!CONSENT_A.includes(SCOPE.content as (typeof CONSENT_A)[number]));
     assert.ok(!CONSENT_A.includes(SCOPE.business as (typeof CONSENT_A)[number]));
@@ -53,36 +48,36 @@ describe("Consent W scaffold — Consent A stays readonly", () => {
     });
     const granted = new URL(url).searchParams.get("scope")?.split(/\s+/) ?? [];
     assert.deepEqual(granted, [...CONSENT_A]);
-    for (const bad of CONSENT_W) {
-      assert.ok(!granted.includes(bad), bad);
+    for (const needed of CONSENT_W) {
+      assert.ok(granted.includes(needed), needed);
     }
+    assert.ok(!granted.includes(SCOPE.adwords));
   });
 
   it("CONSENT_W is exported separately and includes GTM edit/publish", () => {
     assert.ok(CONSENT_W.includes(SCOPE.tagmanagerEditContainers));
     assert.ok(CONSENT_W.includes(SCOPE.tagmanagerPublish));
     assert.deepEqual([...CONSENT_W_GTM], [SCOPE.tagmanagerEditContainers, SCOPE.tagmanagerPublish]);
-    for (const s of CONSENT_A) {
-      assert.ok(!(CONSENT_W as readonly string[]).includes(s), `CONSENT_W must not duplicate Consent A scope ${s}`);
+    for (const s of CONSENT_W) {
+      assert.ok((CONSENT_A as readonly string[]).includes(s), `CONSENT_W must sit on Free Google: ${s}`);
     }
   });
 
-  it("W0.5: CONSENT_A ∩ CONSENT_W = ∅ (readonly never intersects GTM/GSC/GA write)", () => {
+  it("Free Google contains CONSENT_W and never adwords/content/business.manage", () => {
     const a = new Set<string>(CONSENT_A);
     const write = new Set<string>(CONSENT_W);
     const gtmWrite = new Set<string>(CONSENT_W_GTM);
     const intersection = [...a].filter((s) => write.has(s));
     const gtmIntersection = [...a].filter((s) => gtmWrite.has(s));
-    assert.deepEqual(intersection, [], `CONSENT_A ∩ CONSENT_W must be empty, got ${intersection.join(",")}`);
-    assert.deepEqual(gtmIntersection, [], `CONSENT_A ∩ CONSENT_W_GTM must be empty, got ${gtmIntersection.join(",")}`);
-    assert.equal(intersection.length, 0);
+    assert.deepEqual(intersection.sort(), [...CONSENT_W].sort());
+    assert.deepEqual(gtmIntersection.sort(), [...CONSENT_W_GTM].sort());
     assert.ok(write.size > 0);
     assert.ok(gtmWrite.has(SCOPE.tagmanagerEditContainers));
     assert.ok(gtmWrite.has(SCOPE.tagmanagerPublish));
-    assert.ok(!a.has(SCOPE.tagmanagerEditContainers));
-    assert.ok(!a.has(SCOPE.tagmanagerPublish));
-    assert.ok(!a.has(SCOPE.webmastersWrite));
-    assert.ok(!a.has(SCOPE.analyticsEdit));
+    assert.ok(a.has(SCOPE.tagmanagerEditContainers));
+    assert.ok(a.has(SCOPE.tagmanagerPublish));
+    assert.ok(a.has(SCOPE.webmastersWrite));
+    assert.ok(a.has(SCOPE.analyticsEdit));
     assert.ok(!a.has(SCOPE.adwords));
     assert.ok(!a.has(SCOPE.content));
     assert.ok(!a.has(SCOPE.business));
@@ -247,7 +242,7 @@ describe("Consent W token store separate from AuthPort A", () => {
     }
   });
 
-  it("AuthPort A ignores GOOGLE_WRITE_ACCESS_TOKEN; write port ignores GOOGLE_ACCESS_TOKEN", async () => {
+  it("AuthPort A ignores GOOGLE_WRITE_ACCESS_TOKEN; write port ignores readonly GOOGLE_ACCESS_TOKEN", async () => {
     const { AuthPort } = await import("../src/auth/port.js");
     const { mkdtempSync, rmSync } = await import("node:fs");
     const { tmpdir } = await import("node:os");
@@ -374,7 +369,7 @@ describe("Consent W token store separate from AuthPort A", () => {
     assert.ok(TOOLS.some((t) => t.name === "ga4_create_data_stream"));
   });
 
-  it("default scopes URL builders never request CONSENT_W", () => {
+  it("default scopes URL builders never request adwords/content/business.manage", () => {
     const pkce = generatePkce();
     const url = buildGoogleAuthUrl({
       clientId: "example-public-client-id.apps.googleusercontent.com",
@@ -382,8 +377,15 @@ describe("Consent W token store separate from AuthPort A", () => {
       challenge: pkce.challenge,
       state: pkce.state,
     });
-    for (const bad of CONSENT_W) {
-      assert.ok(!url.includes(bad), bad);
+    assert.ok(!url.includes("adwords"));
+    assert.ok(!url.includes("auth/content"));
+    assert.ok(!url.includes("business.manage"));
+    const granted = new URL(url).searchParams.get("scope")?.split(/\s+/) ?? [];
+    for (const needed of CONSENT_W) {
+      assert.ok(granted.includes(needed), needed);
     }
+    assert.ok(!granted.includes(SCOPE.adwords));
+    assert.ok(!granted.includes(SCOPE.content));
+    assert.ok(!granted.includes(SCOPE.business));
   });
 });

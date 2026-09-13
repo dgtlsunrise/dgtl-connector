@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "dgtl-connector",
   "version": "0.1.0",
-  "description": "Read-only GA4, Search Console, and Tag Manager on your computer. You authorize your Google account. DGTL does not see report bytes. stdio auth is manual (host-injected token or installed-app PKCE), not a Gmail Connect card.",
+  "description": "Local GA4, Search Console, and Tag Manager on your computer (read and manage). Mutates stay flag-gated. Google Ads, Meta, and TikTok are Pro. You authorize your Google account. DGTL does not see report bytes. stdio auth is manual (host-injected token or installed-app PKCE), not a Gmail Connect card.",
   "author": {
     "name": "DGTL Sunrise",
     "email": "noel@dgtlsunrise.com"
@@ -26,7 +26,11 @@
       "consentA": [
         "https://www.googleapis.com/auth/analytics.readonly",
         "https://www.googleapis.com/auth/webmasters.readonly",
-        "https://www.googleapis.com/auth/tagmanager.readonly"
+        "https://www.googleapis.com/auth/tagmanager.readonly",
+        "https://www.googleapis.com/auth/analytics.edit",
+        "https://www.googleapis.com/auth/tagmanager.edit.containers",
+        "https://www.googleapis.com/auth/tagmanager.publish",
+        "https://www.googleapis.com/auth/webmasters"
       ],
       "identityScopesSameConsent": [
         "openid",

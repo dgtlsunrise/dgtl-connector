@@ -53,11 +53,12 @@ describe("packaging and secrets", () => {
     assert.ok(url.includes("code_challenge_method=S256"));
     assert.ok(!url.includes("client_secret"));
     assert.ok(url.includes("analytics.readonly"));
+    assert.ok(url.includes("analytics.edit"));
+    assert.ok(url.includes("tagmanager.edit.containers"));
+    assert.ok(url.includes("tagmanager.publish"));
     assert.ok(!url.includes("adwords"));
     assert.ok(!url.includes("auth/content"));
     assert.ok(!url.includes("business.manage"));
-    assert.ok(!url.includes("tagmanager.edit.containers"));
-    assert.ok(!url.includes("tagmanager.publish"));
   });
 
   it("no secrets or developer-token in fixtures", () => {

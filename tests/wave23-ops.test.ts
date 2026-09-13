@@ -39,9 +39,14 @@ describe("Wave 23 ops honesty (support / marketplace / kernel)", () => {
       "https://www.googleapis.com/auth/analytics.readonly",
       "https://www.googleapis.com/auth/webmasters.readonly",
       "https://www.googleapis.com/auth/tagmanager.readonly",
+      "https://www.googleapis.com/auth/analytics.edit",
+      "https://www.googleapis.com/auth/tagmanager.edit.containers",
+      "https://www.googleapis.com/auth/tagmanager.publish",
+      "https://www.googleapis.com/auth/webmasters",
     ]);
     assert.ok(CONSENT_A.includes("https://www.googleapis.com/auth/analytics.readonly"));
-    assert.ok(!CONSENT_A.includes("https://www.googleapis.com/auth/analytics.edit"));
+    assert.ok(CONSENT_A.includes("https://www.googleapis.com/auth/analytics.edit"));
+    assert.ok(!(CONSENT_A as readonly string[]).includes("https://www.googleapis.com/auth/adwords"));
     const kernel = new Set(catalog.tools.map((t) => t.name));
     for (const banned of [
       "gtm_create_tag",
@@ -55,10 +60,12 @@ describe("Wave 23 ops honesty (support / marketplace / kernel)", () => {
       assert.ok(!kernel.has(banned), banned);
       assert.ok(!CONSENT_A_TOOLS.includes(banned), banned);
     }
-    assert.match(plugin.description, /read-only/i);
-    assert.match(pkg.description, /read-only/i);
-    assert.doesNotMatch(plugin.description, /\b(write|publish|mutate)\b/i);
-    assert.doesNotMatch(pkg.description, /\b(write|publish|mutate)\b/i);
+    assert.match(plugin.description, /read and manage/i);
+    assert.match(pkg.description, /read and manage/i);
+    assert.match(plugin.description, /flag-gated/i);
+    assert.match(pkg.description, /flag-gated/i);
+    assert.doesNotMatch(plugin.description, /read-only/i);
+    assert.doesNotMatch(pkg.description, /read-only/i);
     assert.ok(TOOLS.some((t) => t.name === "support_packet"));
     assert.ok(TOOLS.some((t) => t.name === "conversion_fabric_status"));
   });
@@ -149,11 +156,11 @@ describe("Wave 23 ops honesty (support / marketplace / kernel)", () => {
     const perms = readFileSync(join(ROOT, "docs/PERMISSIONS.md"), "utf8");
     const agency = readFileSync(join(ROOT, "skills/agency-property-isolation/SKILL.md"), "utf8");
     const runbooks = readFileSync(join(ROOT, "docs/ops/RUNBOOKS.md"), "utf8");
-    assert.match(market, /Consent A readonly/i);
+    assert.match(market, /read and manage/i);
     assert.match(market, /Listing copy vs operator docs/);
-    assert.match(tools, /Marketplace \/ public listing copy stays Consent A-only/);
+    assert.match(tools, /Marketplace \/ public listing copy is Free Google read and manage/);
     assert.match(perms, /never requested on Consent A/i);
-    assert.match(perms, /Consent G is a separate Desktop client/);
+    assert.match(perms, /subsets of `CONSENT_A`/);
     assert.match(agency, /Shopify/);
     assert.match(agency, /Klaviyo/);
     assert.match(agency, /merchant_id/);

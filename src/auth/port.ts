@@ -1,5 +1,6 @@
 import type { AccessToken, AccessTokenSource } from "./types.js";
 import { STORE_FILE } from "./types.js";
+import { CONSENT_G, CONSENT_S, CONSENT_W_GTM } from "../google/scopes.js";
 import {
   HostInjectedAdsTokenSource,
   HostInjectedGa4AdminTokenSource,
@@ -13,10 +14,37 @@ import {
 } from "./host-injected.js";
 import { FileTokenSource, PkceTokenSource } from "./store.js";
 
+export function tokenHasScopes(token: AccessToken | null, needed: readonly string[]): token is AccessToken {
+  if (!token?.accessToken || !token.scopes?.length) return false;
+  return needed.every((s) => token.scopes!.includes(s));
+}
+
+/** Use an inner source only when the token lists every required scope. */
+export class ScopedTokenSource implements AccessTokenSource {
+  readonly name: string;
+
+  constructor(
+    private readonly inner: AccessTokenSource,
+    private readonly requiredScopes: readonly string[],
+    name?: string,
+  ) {
+    this.name = name ?? `${inner.name}-scoped`;
+  }
+
+  async getAccessToken(): Promise<AccessToken | null> {
+    const tok = await this.inner.getAccessToken();
+    return tokenHasScopes(tok, this.requiredScopes) ? tok : null;
+  }
+
+  invalidateAccessToken(): void {
+    this.inner.invalidateAccessToken?.();
+  }
+}
+
 /**
  * AuthPort: host-injected token first, installed-app PKCE fallback.
- * Consent A only — never reads WRITE / ADS / META envs or stores.
- * Never a confidential client secret.
+ * Free Google (A) never reads Ads / MC / GBP / Meta / TikTok envs.
+ * Write ports try legacy W/G/S first, then A when write scopes are present.
  */
 export class AuthPort implements AccessTokenSource {
   readonly name: string;
@@ -27,7 +55,7 @@ export class AuthPort implements AccessTokenSource {
     this.name = name;
   }
 
-  /** Consent A — GOOGLE_ACCESS_TOKEN / google-oauth.json */
+  /** Free Google — GOOGLE_ACCESS_TOKEN / google-oauth.json */
   static fromEnv(opts: {
     env?: NodeJS.ProcessEnv;
     pluginDataDir: string;
@@ -46,7 +74,7 @@ export class AuthPort implements AccessTokenSource {
     );
   }
 
-  /** Consent W — GOOGLE_WRITE_ACCESS_TOKEN / google-oauth-write.json */
+  /** GTM writes — legacy W store, then free Google when GTM write scopes are present. */
   static writeFromEnv(opts: {
     env?: NodeJS.ProcessEnv;
     pluginDataDir: string;
@@ -60,6 +88,7 @@ export class AuthPort implements AccessTokenSource {
           storeFile: STORE_FILE.w,
           clientSecret: env.GOOGLE_OAUTH_WRITE_CLIENT_SECRET,
         }),
+        ...AuthPort.freeGoogleWhenScoped(opts, env, CONSENT_W_GTM, "w"),
       ],
       "authport-w",
     );
@@ -122,7 +151,7 @@ export class AuthPort implements AccessTokenSource {
     );
   }
 
-  /** Consent G — GOOGLE_GA4_ADMIN_ACCESS_TOKEN / google-oauth-ga4-admin.json */
+  /** GA4 Admin writes — legacy G store, then free Google when analytics.edit is present. */
   static ga4AdminFromEnv(opts: {
     env?: NodeJS.ProcessEnv;
     pluginDataDir: string;
@@ -136,12 +165,13 @@ export class AuthPort implements AccessTokenSource {
           storeFile: STORE_FILE.ga4Admin,
           clientSecret: env.GOOGLE_OAUTH_GA4_ADMIN_CLIENT_SECRET,
         }),
+        ...AuthPort.freeGoogleWhenScoped(opts, env, CONSENT_G, "g"),
       ],
       "authport-ga4-admin",
     );
   }
 
-  /** Consent S — GOOGLE_GSC_WRITE_ACCESS_TOKEN / google-oauth-gsc-write.json */
+  /** GSC writes — legacy S store, then free Google when webmasters write is present. */
   static gscWriteFromEnv(opts: {
     env?: NodeJS.ProcessEnv;
     pluginDataDir: string;
@@ -155,9 +185,29 @@ export class AuthPort implements AccessTokenSource {
           storeFile: STORE_FILE.gscWrite,
           clientSecret: env.GOOGLE_OAUTH_GSC_WRITE_CLIENT_SECRET,
         }),
+        ...AuthPort.freeGoogleWhenScoped(opts, env, CONSENT_S, "s"),
       ],
       "authport-gsc-write",
     );
+  }
+
+  private static freeGoogleWhenScoped(
+    opts: { pluginDataDir: string; fetchImpl: typeof fetch },
+    env: NodeJS.ProcessEnv,
+    requiredScopes: readonly string[],
+    lane: "w" | "g" | "s",
+  ): AccessTokenSource[] {
+    return [
+      new ScopedTokenSource(new HostInjectedTokenSource(env), requiredScopes, `host-injected-a-${lane}`),
+      new ScopedTokenSource(
+        new PkceTokenSource(opts.pluginDataDir, env.GOOGLE_OAUTH_CLIENT_ID, opts.fetchImpl, {
+          storeFile: STORE_FILE.a,
+          clientSecret: env.GOOGLE_OAUTH_CLIENT_SECRET,
+        }),
+        requiredScopes,
+        `pkce-a-${lane}`,
+      ),
+    ];
   }
 
   /** Meta user — META_ACCESS_TOKEN / meta-oauth.json (no Google refresh). */

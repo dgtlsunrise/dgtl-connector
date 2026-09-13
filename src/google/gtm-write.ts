@@ -13,10 +13,10 @@ import {
 import { APIS, SCOPE } from "./scopes.js";
 
 const HINT_FLAG =
-  "Set DGTL_WRITES_ENABLED=true only after a separate Consent W OAuth client exists. Free Consent A (analytics/webmasters/tagmanager.readonly) must stay readonly — see docs/ops/FULL-STACK-ACCELERATE.md.";
+  "Set DGTL_WRITES_ENABLED=true to allow local GTM mutates. Free Google can already hold tagmanager.edit.containers / tagmanager.publish. Ads/Meta/TikTok stay Pro.";
 
 const HINT_CONSENT =
-  "Use GOOGLE_WRITE_ACCESS_TOKEN or PLUGIN_DATA/google-oauth-write.json (Consent W). Do not reuse GOOGLE_ACCESS_TOKEN / google-oauth.json (Consent A). Do not add tagmanager.edit.containers or tagmanager.publish to the free Desktop Consent A client.";
+  "Use Free Google (`auth login` / GOOGLE_ACCESS_TOKEN with GTM write scopes) or a legacy GOOGLE_WRITE_ACCESS_TOKEN / google-oauth-write.json. Do not add adwords, content, or business.manage to Free Google.";
 
 const HOST = APIS.tagmanager;
 type Rec = Record<string, unknown>;
@@ -47,7 +47,6 @@ async function gateWrites(tool: string, ctx: AppContext): Promise<Envelope | nul
       api: HOST,
     });
   }
-  // Consent W only — never fall back to ctx.auth / GOOGLE_ACCESS_TOKEN.
   const writeTok = await ctx.authWrite.getAccessToken();
   if (!writeTok?.accessToken) {
     return failEnvelope(tool, "CONSENT_W_REQUIRED", MSG.CONSENT_W_REQUIRED, {

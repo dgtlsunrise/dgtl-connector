@@ -35,32 +35,22 @@ describe("Consent C token stores separate from AuthPort A (fail closed)", () => 
     assert.deepEqual(granted, [...CONSENT_A]);
   });
 
-  it("W0.5: CONSENT_A ∩ (CONSENT_W ∪ CONSENT_C ∪ CONSENT_MC ∪ CONSENT_B ∪ adwords ∪ content ∪ business.manage ∪ Meta ads_management) = ∅", () => {
+  it("Free Google never includes Ads/MC/GBP/Meta; CONSENT_W is on Free Google", () => {
     const a = new Set<string>(CONSENT_A);
     const adsWrite = new Set<string>(CONSENT_C_GOOGLE);
     const gtmWrite = new Set<string>(CONSENT_W);
     const mc = new Set<string>(CONSENT_MC);
     const gbp = new Set<string>(CONSENT_B);
     const metaWrite = new Set<string>([ADS_MANAGEMENT]);
-    const write = new Set<string>([
-      ...gtmWrite,
-      ...adsWrite,
-      ...mc,
-      ...gbp,
-      ...metaWrite,
-      SCOPE.adwords,
-      SCOPE.content,
-      SCOPE.business,
-    ]);
-    const intersection = [...a].filter((s) => write.has(s));
+    const proOff = new Set<string>([...adsWrite, ...mc, ...gbp, ...metaWrite, SCOPE.adwords, SCOPE.content, SCOPE.business]);
+    const intersection = [...a].filter((s) => proOff.has(s));
     assert.deepEqual(
       intersection,
       [],
-      `CONSENT_A ∩ write must be empty, got ${intersection.join(",")}`,
+      `CONSENT_A ∩ Pro/GBP/MC must be empty, got ${intersection.join(",")}`,
     );
-    assert.equal(intersection.length, 0);
     assert.deepEqual([...a].filter((s) => adsWrite.has(s)), []);
-    assert.deepEqual([...a].filter((s) => gtmWrite.has(s)), []);
+    assert.deepEqual([...a].filter((s) => gtmWrite.has(s)).sort(), [...CONSENT_W].sort());
     assert.deepEqual([...a].filter((s) => metaWrite.has(s)), []);
     assert.ok(!a.has(SCOPE.adwords));
     assert.ok(!a.has(SCOPE.content));
@@ -70,10 +60,6 @@ describe("Consent C token stores separate from AuthPort A (fail closed)", () => 
     assert.deepEqual([...a].filter((s) => gbp.has(s)), []);
     assert.equal(ADS_MANAGEMENT, "ads_management");
     assert.ok(adsWrite.has(SCOPE.adwords));
-    assert.ok(write.has(SCOPE.tagmanagerEditContainers));
-    assert.ok(write.has(SCOPE.tagmanagerPublish));
-    assert.ok(write.has(SCOPE.webmastersWrite));
-    assert.ok(write.has(SCOPE.analyticsEdit));
 
     const pkce = generatePkce();
     const url = buildGoogleAuthUrl({
@@ -84,16 +70,16 @@ describe("Consent C token stores separate from AuthPort A (fail closed)", () => 
     });
     const granted = new URL(url).searchParams.get("scope")?.split(/\s+/) ?? [];
     assert.deepEqual(
-      granted.filter((s) => write.has(s)),
+      granted.filter((s) => proOff.has(s)),
       [],
-      "default Consent A PKCE URL must not request write scopes",
+      "default Free Google PKCE URL must not request Ads/MC/GBP/Meta",
     );
     assert.ok(!url.includes("adwords"));
     assert.ok(!url.includes("auth/content"));
     assert.ok(!url.includes("business.manage"));
     assert.ok(!url.includes(ADS_MANAGEMENT));
-    for (const bad of write) {
-      assert.ok(!granted.includes(bad), bad);
+    for (const needed of CONSENT_W) {
+      assert.ok(granted.includes(needed), needed);
     }
   });
 
