@@ -19,7 +19,7 @@ You are the picker. Tools will not guess. You must not guess either.
 2. Identify the product they need (GA4 / GSC / GTM). You may need all three; pick **each** ID.
 3. **GA4:** Prefer `ga4_list_account_summaries` (one call, nested properties). Otherwise `ga4_list_accounts` → if more than one account, ask which → `ga4_list_properties` with that `account_id`. Show `displayName` + canonical `properties/{id}` + timezone. Never take index 0.
 4. **GSC:** `gsc_list_sites`. Show exact `siteUrl` + `permissionLevel`. Do not coerce URL-prefix vs `sc-domain:`.
-5. **GTM:** `gtm_list_accounts` → `gtm_list_containers` → `gtm_list_workspaces`. Show `publicId` (`GTM-XXXX`). If Tag Manager 403 `accessNotConfigured`, stop and follow `google-marketing-support`.
+5. **GTM:** `gtm_list_accounts` → `gtm_list_containers` → `gtm_list_workspaces`. Show `publicId` (`GTM-XXXX`) and `usageContext` (server = sGTM). For sGTM clients: `gtm_list_clients`. For preview/live envs: `gtm_list_environments` (container-level). If Tag Manager 403 `accessNotConfigured`, stop and follow `google-marketing-support`.
 6. If a list length is **0**: say so (permissions / empty), do not invent a demo property.
 7. If a list length is **1**: name it and ask for a one-line confirm unless they already pasted that ID.
 8. If a list length is **>1**: list them. **Stop.** Wait for a name or ID. Never `properties[0]`.

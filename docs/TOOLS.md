@@ -1,14 +1,14 @@
 # Tools (v1, closed)
 
-**Closed free tool count: 24.** (the original 22 plus `ga4_list_account_summaries` plus `gsc_describe_schema`)
+**Closed free tool count: 26.** (the original 22 plus `ga4_list_account_summaries` plus `gsc_describe_schema` plus Wave 13 `gtm_list_clients` plus `gtm_list_environments`)
 
-That 24 is the **Consent A kernel** (`CONSENT_A_TOOLS` / `FREE_TOOL_NAMES` alias). Shopify is **local-free** (`LOCAL_FREE_TOOLS`, merchant token, no Polar — fail `SHOPIFY_NOT_CONNECTED`). Ads/Meta/Merchant Center/TikTok are **license-gated** (`LICENSE_GATED_TOOLS`, Polar Pro — fail `LICENSE_REQUIRED`). TikTok requires JWT feature `tiktok` (not ads/meta). GBP is local-free when the flag is on (Consent B, not Consent A). Flag off → `GBP_NOT_ENABLED`. Flag on without Consent B → `GBP_NOT_CONNECTED`. Do not stuff Shopify into the 24-tool kernel.
+That 26 is the **Consent A kernel** (`CONSENT_A_TOOLS` / `FREE_TOOL_NAMES` alias). Shopify is **local-free** (`LOCAL_FREE_TOOLS`, merchant token, no Polar — fail `SHOPIFY_NOT_CONNECTED`). Ads/Meta/Merchant Center/TikTok are **license-gated** (`LICENSE_GATED_TOOLS`, Polar Pro — fail `LICENSE_REQUIRED`). TikTok requires JWT feature `tiktok` (not ads/meta). GBP is local-free when the flag is on (Consent B, not Consent A). Flag off → `GBP_NOT_ENABLED`. Flag on without Consent B → `GBP_NOT_CONNECTED`. Do not stuff Shopify into the 26-tool kernel.
 
-If you need a 25th **Consent A** tool, bump a version and update `schemas/v1/catalog.json` in the same change. Do not “just add it.” Quality over dump. Small typed tools, not a mega-query kitchen sink.
+If you need a 27th **Consent A** tool, bump a version and update `schemas/v1/catalog.json` in the same change. Do not “just add it.” Quality over dump. Small typed tools, not a mega-query kitchen sink.
 
 Machine-readable list: [`schemas/v1/catalog.json`](../schemas/v1/catalog.json). Parameter schema: [`schemas/v1/tools.schema.json`](../schemas/v1/tools.schema.json). Error envelope: [`schemas/v1/error.schema.json`](../schemas/v1/error.schema.json).
 
-**Not all tools are read.** Consent A GA4 / GSC / GTM, Shopify products/orders/inventory/locations, and GBP (when enabled) are read (or fail-closed). GTM write (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`), `shopify_adjust_inventory`, and Ads / Meta mutate + create tools are registered **writes**. Repeating a **read** call is safe (**idempotent** as HTTP GET/list/query). Write tools are **not** idempotent. Read results are **not bit-stable** (GA4 processing, GSC data_state, GTM workspace edits).
+**Not all tools are read.** Consent A GA4 / GSC / GTM, Shopify products/orders/inventory/locations, and GBP (when enabled) are read (or fail-closed). GTM write (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`, `gtm_create_client`, `gtm_update_client`, `gtm_create_container`, `gtm_create_environment`), `shopify_adjust_inventory`, and Ads / Meta mutate + create tools are registered **writes**. Repeating a **read** call is safe (**idempotent** as HTTP GET/list/query). Write tools are **not** idempotent. Read results are **not bit-stable** (GA4 processing, GSC data_state, GTM workspace edits).
 
 ## Mutate honesty (Wave 0)
 
@@ -350,7 +350,7 @@ Proven: `sitemaps.list`.
 
 ---
 
-## Tag Manager v2 (8)
+## Tag Manager v2 (10)
 
 GTM is **in v1**. Do not defer.
 
@@ -448,6 +448,28 @@ Included because marketing audits need “where does this GA4 ID live,” not on
 
 This is what you cite for “what is on the site.”
 
+### 22b. `gtm_list_clients`
+
+| | |
+| --- | --- |
+| Google | `workspaces.clients.list` |
+| Scope | `tagmanager.readonly` (Consent A — official list also accepts `tagmanager.edit.containers`; we use A) |
+| Params | **`account_id`**, **`container_id`**, **`workspace_id`** all required |
+| Idempotent | yes |
+
+**Returns:** workspace draft clients (`source=workspace`). sGTM adapters on **server** containers. Web containers are often empty. Not stamp ingest (Wave 20). Spike: [GTM-CLIENTS-SPIKE.md](ops/GTM-CLIENTS-SPIKE.md).
+
+### 22c. `gtm_list_environments`
+
+| | |
+| --- | --- |
+| Google | `accounts.containers.environments.list` |
+| Scope | `tagmanager.readonly` (Consent A) |
+| Params | **`account_id` required**, **`container_id` required** |
+| Idempotent | yes |
+
+**Returns:** container environments (`user` / `live` / `latest` / `workspace`). Not workspace-scoped.
+
 ---
 
 ## License (1)
@@ -522,6 +544,10 @@ Flag `DGTL_WRITES_ENABLED` defaults **false** → `WRITE_NOT_ENABLED` (zero HTTP
 | `gtm_create_variable` | Workspace variable create. Optional closed `parameter` `{type,key,value}`. Same dry-run / publicId confirm. |
 | `gtm_update_variable` | Workspace variable update. Same dry-run / publicId confirm rules. |
 | `gtm_publish_container` | Highest risk: `create_version` then `:publish`. **Publish last.** Same dry-run / publicId confirm. No hosted Approval. **No live publish in CI** (fixtures only). |
+| `gtm_create_client` | Workspace sGTM client create. Closed `type` enum: `gaawp`, `googtag`, `gclidw`, `flc`, `ua`, `mp`. Live confirm = `publicId` **or** `accounts/{id}/containers/{id}`. Ingest-key parameter keys refused. |
+| `gtm_update_client` | Workspace sGTM client update. Same closed type + confirm rules. |
+| `gtm_create_container` | Account-level container create. Closed `usage_context`: `server` (sGTM) plus locked `web` / `android` / `ios` / `amp`. Live confirm = `accounts/{account_id}`. |
+| `gtm_create_environment` | USER environment create. Live confirm = `publicId` or container path. No reauthorize. |
 
 Marketplace / shipped default: `DGTL_WRITES_ENABLED` is **false** (`mcp.json` does not set it; `.env.example` is `false`). Flag on is **local only**. Do **not** put the expected confirm phrase or an example `GTM-XXXX` value in the tool description. Skill: live mutate only after a **user** message this turn containing that publicId (list-tool output ≠ user message).
 
@@ -583,7 +609,7 @@ Wrong `site_url` (trailing slash / `sc-domain:` mismatch, or confirm that names 
 
 ## Gated Ads / Meta DX (paid; not free kernel)
 
-Free count stays **24**. These are Polar-gated; local describe tools need license only (no gateway/token). Live list/report tools still use stamp gateway + Consent C / Meta token.
+Consent A kernel stays **26**. These are Polar-gated; local describe tools need license only (no gateway/token). Live list/report tools still use stamp gateway + Consent C / Meta token.
 
 | Tool | Notes |
 | --- | --- |
@@ -690,13 +716,14 @@ No posts, replies, Q&A, or location mutate in this wave.
 | Google Ads / Meta (live HTTP) | Tools are registered; fail closed: `LICENSE_REQUIRED` → `GATEWAY_UNAVAILABLE` → `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`. Consent C via `auth login-ads` / `auth login-meta --code` or host-injected tokens. No developer-token in this plugin. |
 | GBP write (posts / replies) | No tool. Scope is write-capable; Wave 5 tools are GET-only. |
 | GA4 realtime, funnel, pivot, batch | No tool |
-| GTM clients (server-side), users, environments | No tool |
+| GTM users / folders / built-in variables / environment reauthorize | No tool (Wave 14+) |
+| Stamp conversion ingest / CAPI sinks | No plugin tool (Wave 20). Never put ingest keys in GTM clients or web variables. |
 | Gmail / Drive | No tool |
 | Mega `run_any_google_json` | Forbidden |
 
 ## Count check
 
-Identity 1 + GA4 8 + GSC 7 + GTM 8 = **24**.
+Identity 1 + GA4 8 + GSC 7 + GTM 10 = **26**.
 
 | Group | Tools |
 | --- | --- |
@@ -704,12 +731,12 @@ Identity 1 + GA4 8 + GSC 7 + GTM 8 = **24**.
 | ga4-admin | `ga4_list_accounts`, `ga4_list_account_summaries`, `ga4_list_properties`, `ga4_get_property`, `ga4_list_data_streams`, `ga4_list_key_events` |
 | ga4-data | `ga4_get_metadata` (optional query/kind), `ga4_run_report` |
 | gsc | `gsc_list_sites`, `gsc_describe_schema`, `gsc_get_site`, `gsc_query_search_analytics`, `gsc_inspect_url`, `gsc_list_sitemaps`, `gsc_get_sitemap` |
-| gtm | `gtm_list_accounts`, `gtm_list_containers`, `gtm_get_container`, `gtm_list_workspaces`, `gtm_list_tags`, `gtm_list_triggers`, `gtm_list_variables`, `gtm_get_live_container_version` |
+| gtm | `gtm_list_accounts`, `gtm_list_containers`, `gtm_get_container`, `gtm_list_workspaces`, `gtm_list_tags`, `gtm_list_triggers`, `gtm_list_variables`, `gtm_get_live_container_version`, `gtm_list_clients`, `gtm_list_environments` |
 
 
 ## Shopify — products/orders/inventory read + confirm-gated inventory write (local; not Consent A)
 
-Merchant-held Admin API credentials on the Bot computer. **No Polar. No stamp hop. No multi-store vault.** Fail closed `SHOPIFY_NOT_CONNECTED` without `SHOPIFY_STORE` + `SHOPIFY_ACCESS_TOKEN` (or `PLUGIN_DATA/shopify-oauth.json`). Admin GraphQL API version **2026-04**. Closed free Google count stays **24**.
+Merchant-held Admin API credentials on the Bot computer. **No Polar. No stamp hop. No multi-store vault.** Fail closed `SHOPIFY_NOT_CONNECTED` without `SHOPIFY_STORE` + `SHOPIFY_ACCESS_TOKEN` (or `PLUGIN_DATA/shopify-oauth.json`). Admin GraphQL API version **2026-04**. Closed free Google count stays **26**.
 
 **Consent decision:** Shopify is not Google OAuth. Reads stay **LOCAL_FREE** with `read_products` + `read_orders` + `read_inventory` + `read_locations`. Writes use the **same** merchant token after an explicit custom-app `write_inventory` expansion **and** `DGTL_WRITES_ENABLED` (default **false**). There is no second Shopify OAuth family and no Worker vault.
 

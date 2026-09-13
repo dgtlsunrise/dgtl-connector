@@ -61,6 +61,26 @@ const ALLOWED: Array<{ method: GoogleWriteMethod; pattern: RegExp }> = [
     method: "PUT",
     pattern: /^\/tagmanager\/v2\/accounts\/[^/]+\/containers\/[^/]+\/workspaces\/[^/]+\/variables\/[^/]+$/,
   },
+  // Create sGTM client
+  {
+    method: "POST",
+    pattern: /^\/tagmanager\/v2\/accounts\/[^/]+\/containers\/[^/]+\/workspaces\/[^/]+\/clients$/,
+  },
+  // Update sGTM client
+  {
+    method: "PUT",
+    pattern: /^\/tagmanager\/v2\/accounts\/[^/]+\/containers\/[^/]+\/workspaces\/[^/]+\/clients\/[^/]+$/,
+  },
+  // Create container (sGTM usageContext=server)
+  {
+    method: "POST",
+    pattern: /^\/tagmanager\/v2\/accounts\/[^/]+\/containers$/,
+  },
+  // Create environment (USER)
+  {
+    method: "POST",
+    pattern: /^\/tagmanager\/v2\/accounts\/[^/]+\/containers\/[^/]+\/environments$/,
+  },
   // Create container version from workspace
   {
     method: "POST",

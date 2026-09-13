@@ -13,3 +13,5 @@ Names are `Example Brand`, `sc-domain:example.com`, `properties/111111111`. No l
 `ga4/googleAdsLinks.*`, `attributionSettings.*`, `dataStreams.create.json`, `dataStreams.patch.json`, `keyEvents.create.json`, `keyEvents.patch.json`, `customDimensions.create.json`, `customMetrics.create.json`, `measurementProtocolSecrets.*`, and `properties.create.json` are Wave 11 Consent G Admin shapes. Measurement Protocol `secretValue` strings are synthetic and must never appear in call logs. No live customer properties.
 
 `gsc/sitemaps.submit.json` and `gsc/sitemaps.delete.json` are Wave 12 Consent S sitemap mutate shapes. Unknown `site_url` values replay `errors/sitemaps.notFound.json`. No live customer sites.
+
+`gtm/clients.list.json`, `clients.create.json`, `clients.update.json`, `environments.list.json`, `environments.create.json`, and `containers.create.json` are Wave 13 sGTM client / environment / server-container shapes. No live container data. No stamp ingest keys.

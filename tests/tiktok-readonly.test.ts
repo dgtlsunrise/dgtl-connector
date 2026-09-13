@@ -39,7 +39,7 @@ describe("Wave 8 TikTok read tools (stamp hop, Polar tiktok)", () => {
       assert.ok(!CONSENT_A_TOOLS.includes(name), name);
       assert.ok(!LOCAL_FREE_TOOLS.includes(name), name);
     }
-    assert.equal(CONSENT_A_TOOLS.length, 24);
+    assert.equal(CONSENT_A_TOOLS.length, 26);
   });
 
   it("ads+meta JWT is not enough — LICENSE_REQUIRED, zero HTTP", async () => {

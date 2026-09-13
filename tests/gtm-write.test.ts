@@ -116,6 +116,15 @@ describe("GoogleWriteHttp GTM mutate (PR-8)", () => {
       googleWritePathAllowed("POST", "/tagmanager/v2/accounts/1/containers/2/workspaces/3/folders"),
       false,
     );
+    assert.equal(
+      googleWritePathAllowed("POST", "/tagmanager/v2/accounts/1/containers/2/workspaces/3/clients"),
+      true,
+    );
+    assert.equal(googleWritePathAllowed("POST", "/tagmanager/v2/accounts/1/containers"), true);
+    assert.equal(
+      googleWritePathAllowed("POST", "/tagmanager/v2/accounts/1/containers/2/environments"),
+      true,
+    );
   });
 
   it("dry_run create returns proposed body + publicId with zero mutate HTTP", async () => {

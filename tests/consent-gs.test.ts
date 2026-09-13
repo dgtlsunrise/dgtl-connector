@@ -30,6 +30,10 @@ const WRITE_TOOLS = [
   "gtm_create_variable",
   "gtm_update_variable",
   "gtm_publish_container",
+  "gtm_create_client",
+  "gtm_update_client",
+  "gtm_create_container",
+  "gtm_create_environment",
 ] as const;
 
 function intersect(a: readonly string[], b: readonly string[]): string[] {
@@ -122,7 +126,7 @@ describe("Wave 10 Consent G / Consent S plumbing", () => {
 
   it("write tools stay absent from CONSENT_A_TOOLS / FREE_TOOL_NAMES", () => {
     assert.equal(CONSENT_A_TOOLS, FREE_TOOL_NAMES);
-    assert.equal(CONSENT_A_TOOLS.length, 24);
+    assert.equal(CONSENT_A_TOOLS.length, 26);
     for (const name of WRITE_TOOLS) {
       assert.ok(!CONSENT_A_TOOLS.includes(name), name);
     }

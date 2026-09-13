@@ -1,0 +1,27 @@
+{
+  "client": [
+    {
+      "path": "accounts/444444/containers/555555/workspaces/6/clients/1",
+      "accountId": "444444",
+      "containerId": "555555",
+      "workspaceId": "6",
+      "clientId": "1",
+      "name": "GA4",
+      "type": "gaawp",
+      "parameter": [
+        { "type": "boolean", "key": "activateDefaultPaths", "value": "true" }
+      ],
+      "priority": 0
+    },
+    {
+      "path": "accounts/444444/containers/555555/workspaces/6/clients/2",
+      "accountId": "444444",
+      "containerId": "555555",
+      "workspaceId": "6",
+      "clientId": "2",
+      "name": "Conversion Linker",
+      "type": "gclidw",
+      "priority": 0
+    }
+  ]
+}

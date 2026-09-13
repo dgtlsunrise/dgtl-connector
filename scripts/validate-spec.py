@@ -152,8 +152,8 @@ def check_catalog_and_tools() -> None:
         err("catalog.json: tools must be an array")
         return
     count = catalog.get("count")
-    if count != 24 or len(tools) != 24:
-        err(f"closed tool count must be 24 (count={count}, len={len(tools)})")
+    if count != 26 or len(tools) != 26:
+        err(f"closed tool count must be 26 (count={count}, len={len(tools)})")
     names = [t.get("name") for t in tools if isinstance(t, dict)]
     if len(names) != len(set(names)):
         err("catalog.json: duplicate tool names")
@@ -164,9 +164,13 @@ def check_catalog_and_tools() -> None:
         err("catalog.json missing ga4_list_account_summaries")
     if "gsc_describe_schema" not in names:
         err("catalog.json missing gsc_describe_schema")
+    if "gtm_list_clients" not in names:
+        err("catalog.json missing gtm_list_clients")
+    if "gtm_list_environments" not in names:
+        err("catalog.json missing gtm_list_environments")
     tools_md = read(ROOT / "docs/TOOLS.md")
-    if "Closed free tool count: 24" not in tools_md and "Closed v1 tool count: 24" not in tools_md:
-        err("docs/TOOLS.md must state closed free count 24")
+    if "Closed free tool count: 26" not in tools_md and "Closed v1 tool count: 26" not in tools_md:
+        err("docs/TOOLS.md must state closed free count 26")
     schema = load_json("schemas/v1/tools.schema.json")
     defs = schema.get("$defs") if isinstance(schema, dict) else None
     for name in names:
@@ -179,8 +183,8 @@ def check_catalog_and_tools() -> None:
     plugin = load_json("plugin.json")
     if isinstance(plugin, dict):
         ext = (plugin.get("extensions") or {}).get("com.dgtlsunrise") or {}
-        if ext.get("closedToolCount") != 24:
-            err(f"plugin.json extensions closedToolCount must be 24, got {ext.get('closedToolCount')}")
+        if ext.get("closedToolCount") != 26:
+            err(f"plugin.json extensions closedToolCount must be 26, got {ext.get('closedToolCount')}")
     gated = catalog.get("gated_tools")
     if not isinstance(gated, list):
         err("catalog.json: gated_tools must be an array")
@@ -194,6 +198,10 @@ def check_catalog_and_tools() -> None:
             "gtm_create_variable",
             "gtm_update_variable",
             "gtm_publish_container",
+            "gtm_create_client",
+            "gtm_update_client",
+            "gtm_create_container",
+            "gtm_create_environment",
             "gsc_submit_sitemap",
             "gsc_delete_sitemap",
         ):

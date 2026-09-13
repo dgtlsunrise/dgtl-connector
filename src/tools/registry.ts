@@ -586,6 +586,26 @@ export const TOOLS: ToolSpec[] = [
     annotations: ANN_RO,
     handler: (ctx, args) => gtm.gtmGetLiveContainerVersion(ctx, args),
   },
+  {
+    name: "gtm_list_clients",
+    group: "gtm",
+    family: "gtm",
+    title: "GTM list clients",
+    description: `${RO} Workspace draft sGTM clients (source=workspace). Consent A tagmanager.readonly. Server containers expose clients; web containers are often empty. Not stamp ingest.`,
+    inputSchema: S.gtmWorkspaceList,
+    annotations: ANN_RO,
+    handler: (ctx, args) => gtm.gtmListClients(ctx, args),
+  },
+  {
+    name: "gtm_list_environments",
+    group: "gtm",
+    family: "gtm",
+    title: "GTM list environments",
+    description: `${RO} Container environments (USER / live / latest / workspace). Consent A tagmanager.readonly. Not workspace-scoped.`,
+    inputSchema: S.gtmContainer,
+    annotations: ANN_RO,
+    handler: (ctx, args) => gtm.gtmListEnvironments(ctx, args),
+  },
 
   // Consent W — GTM write/publish via GoogleWriteHttp (flagged off by default; never on Consent A)
   {
@@ -664,6 +684,50 @@ export const TOOLS: ToolSpec[] = [
     inputSchema: S.gtmPublishContainer,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => gtmWrite.gtmPublishContainer(ctx, args),
+  },
+  {
+    name: "gtm_create_client",
+    group: "gtm-write",
+    family: "gtm_write",
+    title: "GTM create client (Consent W)",
+    description:
+      "Create a workspace sGTM client. Consent W only (tagmanager.edit.containers). Closed type enum (gaawp/googtag/gclidw/flc/ua/mp). Prefer dry_run; live mutate needs confirm_phrase containing the container publicId or accounts/{id}/containers/{id} path. Not stamp ingest.",
+    inputSchema: S.gtmCreateClient,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => gtmWrite.gtmCreateClient(ctx, args),
+  },
+  {
+    name: "gtm_update_client",
+    group: "gtm-write",
+    family: "gtm_write",
+    title: "GTM update client (Consent W)",
+    description:
+      "Update a workspace sGTM client. Consent W only. Closed type enum. Prefer dry_run; live mutate needs confirm_phrase containing the container publicId or container path.",
+    inputSchema: S.gtmUpdateClient,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => gtmWrite.gtmUpdateClient(ctx, args),
+  },
+  {
+    name: "gtm_create_container",
+    group: "gtm-write",
+    family: "gtm_write",
+    title: "GTM create container (Consent W)",
+    description:
+      "Create a GTM container. Consent W only. Closed usage_context enum (server = sGTM; web/android/ios/amp locked). Prefer dry_run; live mutate needs confirm_phrase containing accounts/{account_id}.",
+    inputSchema: S.gtmCreateContainer,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => gtmWrite.gtmCreateContainer(ctx, args),
+  },
+  {
+    name: "gtm_create_environment",
+    group: "gtm-write",
+    family: "gtm_write",
+    title: "GTM create environment (Consent W)",
+    description:
+      "Create a USER GTM environment. Consent W only. Prefer dry_run; live mutate needs confirm_phrase containing the container publicId or container path. Does not reauthorize preview.",
+    inputSchema: S.gtmCreateEnvironment,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => gtmWrite.gtmCreateEnvironment(ctx, args),
   },
   // GBP — Consent B GET-only. Flag default off. Never Consent A / stamp.
   {
@@ -1665,17 +1729,20 @@ export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 
 /**
  * Consent A readonly kernel (identity + GA4 + GSC + GTM list/get).
- * This is the 24-tool Google fixture loop in contract.test.ts.
+ * Wave 13 added gtm_list_clients + gtm_list_environments (honest count 26).
  * Do not add Shopify, GBP, Consent W writes, Consent G/S writes, Ads, Meta, MC, or diagnostics.
  */
 export const CONSENT_A_TOOLS = TOOLS.filter(
   (t) => t.family === "identity" || t.family === "ga4" || t.family === "gsc" || t.family === "gtm",
 ).map((t) => t.name);
 
-/** Consent G Admin tools (reads that stay on A HTTP still use this family so the 24-tool kernel is unchanged). */
+/** Honest Consent A kernel size (contract / catalog / plugin.json). */
+export const CONSENT_A_KERNEL_COUNT = 26;
+
+/** Consent G Admin tools (reads that stay on A HTTP still use this family so they stay out of the kernel). */
 export const GA4_WRITE_TOOL_NAMES = TOOLS.filter((t) => t.family === "ga4_write").map((t) => t.name);
 
-/** Consent S sitemap submit/delete — never in the 24-tool Consent A kernel. */
+/** Consent S sitemap submit/delete — never in the Consent A kernel. */
 export const GSC_WRITE_TOOL_NAMES = TOOLS.filter((t) => t.family === "gsc_write").map((t) => t.name);
 
 /**

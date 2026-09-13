@@ -1,8 +1,8 @@
 {
-  "$comment": "Closed Consent A kernel is 24 (vendored 22 + ga4_list_account_summaries + gsc_describe_schema). Shopify is local-free (not Polar, not this kernel). Ads/Meta/MC are LICENSE_REQUIRED. MC is direct Merchant API (not stamp, not Consent A). Other gated families are registered but fail closed.",
+  "$comment": "Closed Consent A kernel is 26 (vendored 22 + ga4_list_account_summaries + gsc_describe_schema + Wave 13 gtm_list_clients + gtm_list_environments). Shopify is local-free (not Polar, not this kernel). Ads/Meta/MC are LICENSE_REQUIRED. MC is direct Merchant API (not stamp, not Consent A). Other gated families are registered but fail closed.",
   "version": "0.1.0",
   "closed": true,
-  "count": 24,
+  "count": 26,
   "tools": [
     {
       "name": "google_whoami",
@@ -170,6 +170,20 @@
       "google": [
         "tagmanager.googleapis.com/tagmanager/v2/accounts.containers.versions.live"
       ]
+    },
+    {
+      "name": "gtm_list_clients",
+      "group": "gtm",
+      "google": [
+        "tagmanager.googleapis.com/tagmanager/v2/accounts.containers.workspaces.clients.list"
+      ]
+    },
+    {
+      "name": "gtm_list_environments",
+      "group": "gtm",
+      "google": [
+        "tagmanager.googleapis.com/tagmanager/v2/accounts.containers.environments.list"
+      ]
     }
   ],
   "gated_tools": [
@@ -211,6 +225,30 @@
     },
     {
       "name": "gtm_publish_container",
+      "group": "gtm-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED"
+    },
+    {
+      "name": "gtm_create_client",
+      "group": "gtm-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED"
+    },
+    {
+      "name": "gtm_update_client",
+      "group": "gtm-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED"
+    },
+    {
+      "name": "gtm_create_container",
+      "group": "gtm-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED"
+    },
+    {
+      "name": "gtm_create_environment",
       "group": "gtm-write",
       "flag": "writes.enabled",
       "fail": "WRITE_NOT_ENABLED"

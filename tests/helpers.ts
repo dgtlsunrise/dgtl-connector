@@ -223,8 +223,18 @@ function route(method: string, url: URL, opts: FixtureOpts): unknown {
       return opts.emptyList ? { account: [] } : loadFixture("gtm/accounts.list.json");
     }
     if (/\/containers\/[^/]+$/.test(p) && method === "GET") return loadFixture("gtm/containers.get.json");
+    if (p.endsWith("/containers") && method === "POST") return loadFixture("gtm/containers.create.json");
     if (p.endsWith("/containers")) {
       return opts.emptyList ? { container: [] } : loadFixture("gtm/containers.list.json");
+    }
+    if (p.endsWith("/clients") && method === "POST") return loadFixture("gtm/clients.create.json");
+    if (/\/clients\/[^/]+$/.test(p) && method === "PUT") return loadFixture("gtm/clients.update.json");
+    if (p.endsWith("/clients")) {
+      return opts.emptyList ? { client: [] } : loadFixture("gtm/clients.list.json");
+    }
+    if (p.endsWith("/environments") && method === "POST") return loadFixture("gtm/environments.create.json");
+    if (p.endsWith("/environments")) {
+      return opts.emptyList ? { environment: [] } : loadFixture("gtm/environments.list.json");
     }
     if (/\/workspaces\/[^/]+$/.test(p) && method === "GET") return loadFixture("gtm/workspaces.get.json");
     if (p.endsWith("/workspaces")) {

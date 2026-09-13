@@ -1,0 +1,11 @@
+{
+  "path": "accounts/444444/containers/555555/environments/9",
+  "accountId": "444444",
+  "containerId": "555555",
+  "environmentId": "9",
+  "type": "user",
+  "name": "Example Preview",
+  "description": "Synthetic USER environment",
+  "enableDebug": true,
+  "url": "https://example.com/"
+}

@@ -73,11 +73,11 @@ describe("packaging and secrets", () => {
     }
   });
 
-  it("catalog count 24 matches Consent A kernel; Shopify is local-free not LICENSE_REQUIRED", () => {
+  it("catalog count 26 matches Consent A kernel; Shopify is local-free not LICENSE_REQUIRED", () => {
     const catalog = JSON.parse(readFileSync(join(ROOT, "schemas/v1/catalog.json"), "utf8"));
-    assert.equal(catalog.count, 24);
-    assert.equal(catalog.tools.length, 24);
-    assert.equal(CONSENT_A_TOOLS.length, 24);
+    assert.equal(catalog.count, 26);
+    assert.equal(catalog.tools.length, 26);
+    assert.equal(CONSENT_A_TOOLS.length, 26);
     const catalogNames = catalog.tools.map((t: { name: string }) => t.name).sort();
     assert.deepEqual(catalogNames, [...CONSENT_A_TOOLS].sort());
     const schema = JSON.parse(readFileSync(join(ROOT, "schemas/v1/tools.schema.json"), "utf8"));
@@ -88,7 +88,7 @@ describe("packaging and secrets", () => {
     }
     const plugin = JSON.parse(readFileSync(join(ROOT, "plugin.json"), "utf8"));
     assert.equal(plugin.name, "dgtl-connector");
-    assert.equal(plugin.extensions["com.dgtlsunrise"].closedToolCount, 24);
+    assert.equal(plugin.extensions["com.dgtlsunrise"].closedToolCount, 26);
     assert.equal(plugin.license, "Apache-2.0");
     assert.equal(plugin.author.name, "DGTL Sunrise");
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
@@ -103,6 +103,10 @@ describe("packaging and secrets", () => {
       "gtm_create_variable",
       "gtm_update_variable",
       "gtm_publish_container",
+      "gtm_create_client",
+      "gtm_update_client",
+      "gtm_create_container",
+      "gtm_create_environment",
     ]) {
       const g = catalog.gated_tools.find((x: { name: string }) => x.name === name);
       assert.ok(g, name);

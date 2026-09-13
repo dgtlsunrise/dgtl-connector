@@ -17,6 +17,10 @@ const WRITE_TOOLS = [
   "gtm_create_variable",
   "gtm_update_variable",
   "gtm_publish_container",
+  "gtm_create_client",
+  "gtm_update_client",
+  "gtm_create_container",
+  "gtm_create_environment",
 ] as const;
 
 describe("Consent W scaffold — Consent A stays readonly", () => {
@@ -103,6 +107,8 @@ describe("Consent W scaffold — Consent A stays readonly", () => {
         confirm_phrase: "PUBLISH",
         name: "Example",
         type: "html",
+        usage_context: "server",
+        client_id: "1",
         tag_id: "1",
         trigger_id: "1",
         variable_id: "1",
@@ -127,8 +133,8 @@ describe("Consent W scaffold — Consent A stays readonly", () => {
     assert.equal(ctx.calls.length, 0);
   });
 
-  it("Consent A kernel stays 24 readonly tools; write tools are separate family", () => {
-    assert.equal(CONSENT_A_TOOLS.length, 24);
+  it("Consent A kernel stays 26 readonly tools; write tools are separate family", () => {
+    assert.equal(CONSENT_A_TOOLS.length, 26);
     for (const name of WRITE_TOOLS) {
       assert.ok(!CONSENT_A_TOOLS.includes(name), name);
       assert.ok(!LICENSE_GATED_TOOLS.includes(name), name);
@@ -151,6 +157,10 @@ describe("Consent W scaffold — Consent A stays readonly", () => {
       "gtm_update_trigger",
       "gtm_create_variable",
       "gtm_update_variable",
+      "gtm_create_client",
+      "gtm_update_client",
+      "gtm_create_container",
+      "gtm_create_environment",
     ] as const) {
       const spec = TOOLS.find((t) => t.name === name);
       assert.ok(spec, name);

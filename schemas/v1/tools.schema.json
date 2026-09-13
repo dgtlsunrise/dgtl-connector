@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://dgtlsunrise.local/spec/dgtl-connector/v1/tools.schema.json",
-  "title": "dgtl-connector v1 tool parameters (closed, 24 Consent A tools + gated families)",
+  "title": "dgtl-connector v1 tool parameters (closed, 26 Consent A tools + gated families)",
   "$comment": "Implementers map each $defs key to an MCP tool inputSchema. Resource IDs are required; never default. dimension_filter is a closed FilterExpression subset.",
   "$defs": {
     "page_size": {
@@ -728,6 +728,239 @@
         },
         "container_id": {
           "$ref": "#/$defs/container_id"
+        }
+      }
+    },
+    "gtm_list_clients": {
+      "$ref": "#/$defs/gtm_list_tags"
+    },
+    "gtm_list_environments": {
+      "$ref": "#/$defs/gtm_get_container"
+    },
+    "gtm_create_client": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "account_id",
+        "container_id",
+        "workspace_id",
+        "name",
+        "type"
+      ],
+      "properties": {
+        "account_id": {
+          "$ref": "#/$defs/account_id"
+        },
+        "container_id": {
+          "$ref": "#/$defs/container_id"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/workspace_id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "gaawp",
+            "googtag",
+            "gclidw",
+            "flc",
+            "ua",
+            "mp"
+          ]
+        },
+        "parameter": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "minLength": 1
+              },
+              "key": {
+                "type": "string",
+                "minLength": 1
+              },
+              "value": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "priority": {
+          "type": "integer"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": {
+          "type": "string"
+        }
+      }
+    },
+    "gtm_update_client": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "account_id",
+        "container_id",
+        "workspace_id",
+        "client_id",
+        "name",
+        "type"
+      ],
+      "properties": {
+        "account_id": {
+          "$ref": "#/$defs/account_id"
+        },
+        "container_id": {
+          "$ref": "#/$defs/container_id"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/workspace_id"
+        },
+        "client_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "gaawp",
+            "googtag",
+            "gclidw",
+            "flc",
+            "ua",
+            "mp"
+          ]
+        },
+        "parameter": {
+          "type": "array",
+          "maxItems": 20
+        },
+        "priority": {
+          "type": "integer"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": {
+          "type": "string"
+        }
+      }
+    },
+    "gtm_create_container": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "account_id",
+        "name",
+        "usage_context"
+      ],
+      "properties": {
+        "account_id": {
+          "$ref": "#/$defs/account_id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "usage_context": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "web",
+                "android",
+                "ios",
+                "amp",
+                "server"
+              ]
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 4,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "web",
+                  "android",
+                  "ios",
+                  "amp",
+                  "server"
+                ]
+              }
+            }
+          ]
+        },
+        "notes": {
+          "type": "string"
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": {
+          "type": "string"
+        }
+      }
+    },
+    "gtm_create_environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "account_id",
+        "container_id",
+        "name"
+      ],
+      "properties": {
+        "account_id": {
+          "$ref": "#/$defs/account_id"
+        },
+        "container_id": {
+          "$ref": "#/$defs/container_id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "enable_debug": {
+          "type": "boolean"
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": {
+          "type": "string"
         }
       }
     },

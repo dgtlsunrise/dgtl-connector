@@ -218,7 +218,9 @@ Zero rows with `ok: true` after `ga4_get_property` succeeded means no events in 
 
 ### 6. Workspace ≠ live in GTM
 
-Listing tags in a workspace can show unpublished drafts. Production is `gtm_get_live_container_version`. Users who say “GTM is wrong” may be looking at the draft.
+Listing tags (or sGTM **clients**) in a workspace can show unpublished drafts. Production is `gtm_get_live_container_version`. Users who say “GTM is wrong” may be looking at the draft. Clients exist on **server** containers; an empty `gtm_list_clients` on a web container is not an auth failure.
+
+Unknown `gtm_create_client` `type` (for example a tag type like `html`) is `INVALID_ARGUMENT` with the closed enum listed — zero HTTP. Flag off write tools stay `WRITE_NOT_ENABLED` (zero HTTP).
 
 ### 7. GSC site URL is exact
 

@@ -43,6 +43,8 @@ describe("empty-state hints on ok list/report tools", () => {
       ["gtm_list_accounts", {}],
       ["gtm_list_containers", { account_id: "444444" }],
       ["gtm_list_workspaces", { account_id: "444444", container_id: "555555" }],
+      ["gtm_list_clients", { account_id: "444444", container_id: "555555", workspace_id: "6" }],
+      ["gtm_list_environments", { account_id: "444444", container_id: "555555" }],
     ];
     for (const [name, args] of cases) {
       const env = await dispatch(ctx, name, args);

@@ -225,12 +225,12 @@ describe("feedback_prepare / feedback_send", () => {
     assert.equal(captures.length, 0);
   });
 
-  it("diagnostics stay out of the 24 Consent A tools", () => {
+  it("diagnostics stay out of the 26 Consent A tools", () => {
     for (const name of ["support_packet", "feedback_prepare", "feedback_send"] as const) {
       assert.ok(TOOLS.some((t) => t.name === name), name);
       assert.ok(!CONSENT_A_TOOLS.includes(name), name);
     }
-    assert.equal(CONSENT_A_TOOLS.length, 24);
+    assert.equal(CONSENT_A_TOOLS.length, 26);
     const send = TOOLS.find((t) => t.name === "feedback_send");
     assert.equal(send?.annotations.readOnlyHint, false);
     const prep = TOOLS.find((t) => t.name === "feedback_prepare");

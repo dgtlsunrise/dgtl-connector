@@ -195,10 +195,12 @@ describe("session proofs", () => {
     assert.ok(!String(env.message).toLowerCase().includes("connect card") || String(env.message).includes("no Gmail"));
   });
 
-  it("closed Consent A kernel is 24 tools including ga4_list_account_summaries and gsc_describe_schema", () => {
-    assert.equal(CONSENT_A_TOOLS.length, 24);
+  it("closed Consent A kernel is 26 tools including Wave 13 gtm_list_clients", () => {
+    assert.equal(CONSENT_A_TOOLS.length, 26);
     assert.equal(FREE_TOOL_NAMES, CONSENT_A_TOOLS);
-    assert.equal(FREE_TOOL_NAMES.length, 24);
+    assert.equal(FREE_TOOL_NAMES.length, 26);
+    assert.ok(CONSENT_A_TOOLS.includes("gtm_list_clients"));
+    assert.ok(CONSENT_A_TOOLS.includes("gtm_list_environments"));
     assert.ok(CONSENT_A_TOOLS.includes("gsc_describe_schema"));
     assert.ok(CONSENT_A_TOOLS.includes("ga4_list_account_summaries"));
     assert.ok(CONSENT_A_TOOLS.includes("ga4_run_report"));

@@ -56,8 +56,8 @@ describe("Meta + Google MCP DX pass 2 (no live Ads/Meta)", () => {
   });
   after(() => restore());
 
-  it("Consent A kernel stays 24 (describe tools are license-gated)", () => {
-    assert.equal(CONSENT_A_TOOLS.length, 24);
+  it("Consent A kernel stays 26 (describe tools are license-gated)", () => {
+    assert.equal(CONSENT_A_TOOLS.length, 26);
     assert.ok(!CONSENT_A_TOOLS.includes("meta_describe_insights_schema"));
     assert.ok(!CONSENT_A_TOOLS.includes("gads_describe_recipes"));
     assert.ok(LICENSE_GATED_TOOLS.includes("meta_describe_insights_schema"));

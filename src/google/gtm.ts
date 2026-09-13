@@ -147,6 +147,61 @@ export function gtmListVariables(ctx: AppContext, args: Rec): Promise<Envelope> 
   return listWorkspaceChild(ctx, args, "variables", "gtm_list_variables", "variable");
 }
 
+/** Consent A — official clients.list allows tagmanager.readonly (see GTM-CLIENTS-SPIKE.md). */
+export async function gtmListClients(ctx: AppContext, args: Rec): Promise<Envelope> {
+  const a = acc(args);
+  const c = ctr(args);
+  const w = requireId(args.workspace_id, "workspace_id");
+  const raw = (await ctx.http.get(
+    HOST,
+    `/tagmanager/v2/accounts/${a}/containers/${c}/workspaces/${w}/clients`,
+    undefined,
+    meta("gtm_list_clients"),
+  )) as Rec;
+  const all = Array.isArray(raw.client) ? raw.client : [];
+  const pageSize = asInt(args.page_size, 50, 1, 200);
+  const { items, next, total } = slicePage(all, pageSize, typeof args.page_token === "string" ? args.page_token : undefined);
+  const annotated = items.map((item) => {
+    if (item && typeof item === "object") {
+      return { ...(item as Rec), source: "workspace" };
+    }
+    return item;
+  });
+  return okEnvelope("gtm_list_clients", {
+    resource: gtmResource(a, c),
+    data: { client: annotated, source: "workspace", workspace_id: w },
+    page: pageFromList(annotated, total, next),
+    hint:
+      total === 0
+        ? HINT_EMPTY_LIST
+        : `${HINT_GTM_WORKSPACE_DRAFT} Clients are sGTM adapters (server containers). This is not stamp ingest (Wave 20).`,
+  });
+}
+
+/** Consent A — official environments.list allows tagmanager.readonly. */
+export async function gtmListEnvironments(ctx: AppContext, args: Rec): Promise<Envelope> {
+  const a = acc(args);
+  const c = ctr(args);
+  const raw = (await ctx.http.get(
+    HOST,
+    `/tagmanager/v2/accounts/${a}/containers/${c}/environments`,
+    undefined,
+    meta("gtm_list_environments"),
+  )) as Rec;
+  const all = Array.isArray(raw.environment) ? raw.environment : [];
+  const pageSize = asInt(args.page_size, 50, 1, 200);
+  const { items, next, total } = slicePage(all, pageSize, typeof args.page_token === "string" ? args.page_token : undefined);
+  return okEnvelope("gtm_list_environments", {
+    resource: gtmResource(a, c),
+    data: { environment: items },
+    page: pageFromList(items, total, next),
+    hint:
+      total === 0
+        ? HINT_EMPTY_LIST
+        : "Environments are container-level (not workspace). USER envs are createable; live/latest/workspace are system-managed.",
+  });
+}
+
 export async function gtmGetLiveContainerVersion(ctx: AppContext, args: Rec): Promise<Envelope> {
   const a = acc(args);
   const c = ctr(args);

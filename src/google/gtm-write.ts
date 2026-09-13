@@ -2,6 +2,14 @@ import type { AppContext } from "../context.js";
 import { failEnvelope, okEnvelope, type Envelope } from "../envelope.js";
 import { MSG, ToolError } from "../errors.js";
 import { normalizeGtmAccount, normalizeGtmContainer, requireId } from "../ids.js";
+import {
+  gtmClientTypeError,
+  gtmUsageContextError,
+  isDeniedGtmIngestParamKey,
+  isGtmClientType,
+  isGtmUsageContext,
+  type GtmUsageContext,
+} from "./gtm-types.js";
 import { APIS, SCOPE } from "./scopes.js";
 
 const HINT_FLAG =
@@ -107,16 +115,80 @@ async function resolveWorkspaceName(
 }
 
 function assertConfirmContainsPublicId(confirmPhrase: unknown, publicId: string): void {
+  assertConfirmContainsPublicIdOrPath(confirmPhrase, publicId);
+}
+
+function assertConfirmContainsPublicIdOrPath(
+  confirmPhrase: unknown,
+  publicId: string,
+  containerPath?: string,
+): void {
   const phrase = typeof confirmPhrase === "string" ? confirmPhrase : "";
-  if (!phrase.includes(publicId)) {
+  const pathOk = containerPath ? phrase.includes(containerPath) : false;
+  if (!phrase.includes(publicId) && !pathOk) {
     throw new ToolError(
       "INVALID_ARGUMENT",
-      "Live mutate requires confirm_phrase that includes the container publicId resolved for this container_id. Constant phrases without the publicId are not accepted.",
+      containerPath
+        ? "Live mutate requires confirm_phrase that includes the container publicId or container path (accounts/{id}/containers/{id}) resolved for this container_id. Constant phrases without that target are not accepted."
+        : "Live mutate requires confirm_phrase that includes the container publicId resolved for this container_id. Constant phrases without the publicId are not accepted.",
       {
         api: HOST,
-        hint: "Prefer dry_run first. Live mutate only after a user message this turn that contains the container publicId — list-tool output is not the user message.",
+        hint: "Prefer dry_run first. Live mutate only after a user message this turn that contains the container publicId or path — list-tool output is not the user message.",
       },
     );
+  }
+}
+
+function assertConfirmContains(confirmPhrase: unknown, needle: string, label: string): void {
+  const phrase = typeof confirmPhrase === "string" ? confirmPhrase : "";
+  if (!phrase.includes(needle)) {
+    throw new ToolError(
+      "INVALID_ARGUMENT",
+      `Live mutate requires confirm_phrase that includes ${label} (${needle}). Constant phrases without that target are not accepted.`,
+      {
+        api: HOST,
+        hint: "Prefer dry_run first. Live mutate only after a user message this turn that contains that path — list-tool output is not the user message.",
+      },
+    );
+  }
+}
+
+function assertClientType(type: string): void {
+  if (!isGtmClientType(type)) {
+    throw new ToolError("INVALID_ARGUMENT", gtmClientTypeError(type), { api: HOST });
+  }
+}
+
+function normalizeUsageContexts(raw: unknown): GtmUsageContext[] {
+  const values = Array.isArray(raw) ? raw : raw === undefined || raw === null ? [] : [raw];
+  if (values.length === 0) {
+    throw new ToolError(
+      "INVALID_ARGUMENT",
+      "usage_context is required (closed enum: web, android, ios, amp, server). Use server for sGTM.",
+      { api: HOST },
+    );
+  }
+  const out: GtmUsageContext[] = [];
+  for (const v of values) {
+    if (!isGtmUsageContext(v)) {
+      throw new ToolError("INVALID_ARGUMENT", gtmUsageContextError(v), { api: HOST });
+    }
+    if (!out.includes(v)) out.push(v);
+  }
+  return out;
+}
+
+function assertNoIngestParamKeys(parameter: Rec[] | undefined): void {
+  if (!parameter) return;
+  for (const p of parameter) {
+    const key = typeof p.key === "string" ? p.key : "";
+    if (key && isDeniedGtmIngestParamKey(key)) {
+      throw new ToolError(
+        "INVALID_ARGUMENT",
+        `Client parameter key ${JSON.stringify(key)} looks like a stamp ingest secret. Do not put stamp ingest keys in GTM clients or web GTM variables (Wave 20).`,
+        { api: HOST },
+      );
+    }
   }
 }
 
@@ -354,6 +426,189 @@ export async function gtmUpdateVariable(ctx: AppContext, args: Rec): Promise<Env
     method: "PUT",
     childId: variableId,
     proposed,
+  });
+}
+
+async function mutateWorkspaceClient(
+  ctx: AppContext,
+  opts: {
+    tool: string;
+    args: Rec;
+    method: "POST" | "PUT";
+    clientId?: string;
+    proposed: Rec;
+  },
+): Promise<Envelope> {
+  const gated = await gateWrites(opts.tool, ctx);
+  if (gated) return gated;
+
+  assertClientType(requireId(opts.proposed.type, "type"));
+  assertNoIngestParamKeys(Array.isArray(opts.proposed.parameter) ? (opts.proposed.parameter as Rec[]) : undefined);
+
+  const { accountId, containerId, workspaceId } = ids(opts.args);
+  const dryRun = dryRunDefault(opts.args);
+  const { publicId } = await resolveContainerPublicId(ctx, opts.tool, accountId, containerId);
+  const workspaceName = await resolveWorkspaceName(ctx, opts.tool, accountId, containerId, workspaceId);
+  const containerPathStr = `accounts/${accountId}/containers/${containerId}`;
+
+  if (dryRun) {
+    return okEnvelope(opts.tool, {
+      resource: gtmResource(accountId, containerId, publicId),
+      data: {
+        dry_run: true,
+        publicId,
+        container_path: containerPathStr,
+        workspace_id: workspaceId,
+        workspace_name: workspaceName,
+        proposed: opts.proposed,
+        note: "No Google mutate. Pass dry_run=false with confirm_phrase containing this publicId or container_path only after a user message this turn that includes it.",
+      },
+    });
+  }
+
+  assertConfirmContainsPublicIdOrPath(opts.args.confirm_phrase, publicId, containerPathStr);
+
+  const base = `${workspacePath(accountId, containerId, workspaceId)}/clients`;
+  const path = opts.clientId ? `${base}/${opts.clientId}` : base;
+  const body = { ...opts.proposed };
+  delete body.clientId;
+
+  const result =
+    opts.method === "POST"
+      ? await ctx.httpWrite.post(path, body, {
+          tool: opts.tool,
+          requiredScope: SCOPE.tagmanagerEditContainers,
+        })
+      : await ctx.httpWrite.put(path, body, {
+          tool: opts.tool,
+          requiredScope: SCOPE.tagmanagerEditContainers,
+        });
+
+  return okEnvelope(opts.tool, {
+    resource: gtmResource(accountId, containerId, publicId),
+    data: { dry_run: false, publicId, container_path: containerPathStr, client: result },
+  });
+}
+
+export async function gtmCreateClient(ctx: AppContext, args: Rec): Promise<Envelope> {
+  const name = requireId(args.name, "name");
+  const type = requireId(args.type, "type");
+  const proposed: Rec = { name, type };
+  const parameter = gtmParameters(args.parameter);
+  if (parameter) proposed.parameter = parameter;
+  if (typeof args.priority === "number" && Number.isFinite(args.priority)) {
+    proposed.priority = Math.trunc(args.priority);
+  }
+  if (typeof args.notes === "string" && args.notes) proposed.notes = args.notes;
+  return mutateWorkspaceClient(ctx, {
+    tool: "gtm_create_client",
+    args,
+    method: "POST",
+    proposed,
+  });
+}
+
+export async function gtmUpdateClient(ctx: AppContext, args: Rec): Promise<Envelope> {
+  const clientId = requireId(args.client_id, "client_id");
+  const name = requireId(args.name, "name");
+  const type = requireId(args.type, "type");
+  const proposed: Rec = { name, type, clientId };
+  const parameter = gtmParameters(args.parameter);
+  if (parameter) proposed.parameter = parameter;
+  if (typeof args.priority === "number" && Number.isFinite(args.priority)) {
+    proposed.priority = Math.trunc(args.priority);
+  }
+  if (typeof args.notes === "string" && args.notes) proposed.notes = args.notes;
+  return mutateWorkspaceClient(ctx, {
+    tool: "gtm_update_client",
+    args,
+    method: "PUT",
+    clientId,
+    proposed,
+  });
+}
+
+export async function gtmCreateContainer(ctx: AppContext, args: Rec): Promise<Envelope> {
+  const tool = "gtm_create_container";
+  const gated = await gateWrites(tool, ctx);
+  if (gated) return gated;
+
+  const accountId = normalizeGtmAccount(requireId(args.account_id, "account_id"));
+  const name = requireId(args.name, "name");
+  const usageContext = normalizeUsageContexts(args.usage_context);
+  const dryRun = dryRunDefault(args);
+  const accountPath = `accounts/${accountId}`;
+  const proposed: Rec = { name, usageContext };
+  if (typeof args.notes === "string" && args.notes) proposed.notes = args.notes;
+
+  if (dryRun) {
+    return okEnvelope(tool, {
+      resource: { type: "gtm_account", id: accountPath, display_name: accountPath },
+      data: {
+        dry_run: true,
+        account_path: accountPath,
+        proposed,
+        note: "No Google mutate. Pass dry_run=false with confirm_phrase containing this account_path only after a user message this turn that includes it. Prefer usageContext=server for sGTM.",
+      },
+    });
+  }
+
+  assertConfirmContains(args.confirm_phrase, accountPath, "account path");
+
+  const created = await ctx.httpWrite.post(`/tagmanager/v2/accounts/${accountId}/containers`, proposed, {
+    tool,
+    requiredScope: SCOPE.tagmanagerEditContainers,
+  });
+
+  return okEnvelope(tool, {
+    resource: { type: "gtm_account", id: accountPath, display_name: accountPath },
+    data: { dry_run: false, account_path: accountPath, container: created },
+  });
+}
+
+export async function gtmCreateEnvironment(ctx: AppContext, args: Rec): Promise<Envelope> {
+  const tool = "gtm_create_environment";
+  const gated = await gateWrites(tool, ctx);
+  if (gated) return gated;
+
+  const accountId = normalizeGtmAccount(requireId(args.account_id, "account_id"));
+  const containerId = normalizeGtmContainer(requireId(args.container_id, "container_id"));
+  const name = requireId(args.name, "name");
+  const dryRun = dryRunDefault(args);
+  const { publicId } = await resolveContainerPublicId(ctx, tool, accountId, containerId);
+  const containerPathStr = `accounts/${accountId}/containers/${containerId}`;
+  const proposed: Rec = { name };
+  if (typeof args.description === "string" && args.description) proposed.description = args.description;
+  if (typeof args.url === "string" && args.url) proposed.url = args.url;
+  if (typeof args.enable_debug === "boolean") proposed.enableDebug = args.enable_debug;
+
+  if (dryRun) {
+    return okEnvelope(tool, {
+      resource: gtmResource(accountId, containerId, publicId),
+      data: {
+        dry_run: true,
+        publicId,
+        container_path: containerPathStr,
+        proposed,
+        note: "No Google mutate. Creates a USER environment. Pass dry_run=false with confirm_phrase containing this publicId or container_path only after a user message this turn that includes it.",
+      },
+    });
+  }
+
+  assertConfirmContainsPublicIdOrPath(args.confirm_phrase, publicId, containerPathStr);
+
+  const created = await ctx.httpWrite.post(
+    `${containerPath(accountId, containerId)}/environments`,
+    proposed,
+    {
+      tool,
+      requiredScope: SCOPE.tagmanagerEditContainers,
+    },
+  );
+
+  return okEnvelope(tool, {
+    resource: gtmResource(accountId, containerId, publicId),
+    data: { dry_run: false, publicId, container_path: containerPathStr, environment: created },
   });
 }
 

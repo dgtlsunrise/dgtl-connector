@@ -1,0 +1,31 @@
+{
+  "environment": [
+    {
+      "path": "accounts/444444/containers/555555/environments/1",
+      "accountId": "444444",
+      "containerId": "555555",
+      "environmentId": "1",
+      "type": "live",
+      "name": "Live"
+    },
+    {
+      "path": "accounts/444444/containers/555555/environments/2",
+      "accountId": "444444",
+      "containerId": "555555",
+      "environmentId": "2",
+      "type": "latest",
+      "name": "Latest"
+    },
+    {
+      "path": "accounts/444444/containers/555555/environments/3",
+      "accountId": "444444",
+      "containerId": "555555",
+      "environmentId": "3",
+      "type": "user",
+      "name": "Example Staging",
+      "description": "Synthetic USER environment",
+      "enableDebug": false,
+      "url": "https://example.com/"
+    }
+  ]
+}

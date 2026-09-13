@@ -87,7 +87,7 @@ describe("Wave 9 generate allowlists + tools/list freeze", () => {
     }
     assert.ok(!live.includes("gads_mutate"));
     assert.ok(!live.includes("meta_mutate"));
-    assert.equal(CONSENT_A_SIZE(), 24);
+    assert.equal(CONSENT_A_SIZE(), 26);
   });
 
   it("stable error codes remain and have runbooks for support_packet", () => {

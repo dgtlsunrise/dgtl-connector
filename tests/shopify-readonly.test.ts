@@ -163,7 +163,7 @@ describe("Shopify read-only slice (local merchant credentials)", () => {
   });
 
   it("W0.4: Shopify is LOCAL_FREE, not Consent A kernel, not Polar license-gated", () => {
-    assert.equal(CONSENT_A_TOOLS.length, 24);
+    assert.equal(CONSENT_A_TOOLS.length, 26);
     for (const name of SHOPIFY_READ_TOOLS) {
       assert.ok(LOCAL_FREE_TOOLS.includes(name), name);
       assert.ok(!CONSENT_A_TOOLS.includes(name), name);

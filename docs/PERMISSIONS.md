@@ -12,7 +12,7 @@ Request **all three** on a **single** Google consent screen. Do not run sequenti
 | --- | --- | --- |
 | `https://www.googleapis.com/auth/analytics.readonly` | GA4 Admin API v1beta, GA4 Data API v1beta | See and download Google Analytics data |
 | `https://www.googleapis.com/auth/webmasters.readonly` | Search Console API (sites, searchanalytics, sitemaps, URL Inspection) | View Search Console data for verified sites |
-| `https://www.googleapis.com/auth/tagmanager.readonly` | Tag Manager API v2 | View Google Tag Manager accounts, containers, and subcomponents |
+| `https://www.googleapis.com/auth/tagmanager.readonly` | Tag Manager API v2 | View Google Tag Manager accounts, containers, workspaces, tags/triggers/variables, **clients**, **environments**, and live versions |
 
 These strings are the source of truth. Do not substitute `analytics`, `analytics.edit`, `webmasters`, `tagmanager.edit.containers`, or `tagmanager.publish`.
 
@@ -87,7 +87,9 @@ Free Consent A stays **readonly** forever for the Desktop client used in demos a
 | `GOOGLE_OAUTH_WRITE_CLIENT_ID` / `GOOGLE_OAUTH_WRITE_CLIENT_SECRET` | Consent W client (gitignored `.env` only; placeholders in `.env.example`) |
 | `DGTL_WRITES_ENABLED` | Default `false` (marketplace / `.env.example`). When off, GTM write tools return `WRITE_NOT_ENABLED`. Never ship `true` as the package default. |
 | When flag on but Consent W missing | Tools return `CONSENT_W_REQUIRED` |
-| Live mutate | `GoogleWriteHttp` only; `dry_run` default true; `confirm_phrase` must include resolved `GTM-XXXX` or `INVALID_ARGUMENT` |
+| Live mutate | `GoogleWriteHttp` only; `dry_run` default true; `confirm_phrase` must include resolved `GTM-XXXX` (or container/account path on Wave 13 create tools) or `INVALID_ARGUMENT` |
+
+Wave 13: `gtm_list_clients` / `gtm_list_environments` use Consent A `tagmanager.readonly` (official list scopes). `gtm_create_client` / `gtm_update_client` / `gtm_create_container` / `gtm_create_environment` use Consent W `tagmanager.edit.containers` + `DGTL_WRITES_ENABLED`. Never add write scopes to Consent A. Publish stays `gtm_publish_container`.
 
 Product rules: explicit tools only; publish requires confirmation (`dry_run` / `confirm_phrase`); property/container named in the call. Full lock: [ops/FULL-STACK-ACCELERATE.md](ops/FULL-STACK-ACCELERATE.md).
 

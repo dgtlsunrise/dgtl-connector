@@ -1,0 +1,10 @@
+{
+  "path": "accounts/444444/containers/555555/workspaces/6/clients/3",
+  "accountId": "444444",
+  "containerId": "555555",
+  "workspaceId": "6",
+  "clientId": "3",
+  "name": "Example GA4 Client",
+  "type": "gaawp",
+  "priority": 0
+}

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { GTM_CLIENT_TYPES, GTM_USAGE_CONTEXTS } from "../google/gtm-types.js";
 
 const pageSize = z.number().int().min(1).max(200).optional();
 const pageToken = z.string().optional();
@@ -412,6 +413,68 @@ export const gtmPublishContainer = z
     confirm_phrase: z.string().optional(),
     version_name: str,
     version_notes: str,
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+const gtmClientType = z.enum(GTM_CLIENT_TYPES);
+const gtmUsageContext = z.enum(GTM_USAGE_CONTEXTS);
+
+export const gtmCreateClient = z
+  .object({
+    account_id: str,
+    container_id: str,
+    workspace_id: str,
+    name: str,
+    type: gtmClientType,
+    parameter: z.array(gtmParameter).max(20).optional(),
+    priority: z.number().int().optional(),
+    notes: z.string().optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gtmUpdateClient = z
+  .object({
+    account_id: str,
+    container_id: str,
+    workspace_id: str,
+    client_id: str,
+    name: str,
+    type: gtmClientType,
+    parameter: z.array(gtmParameter).max(20).optional(),
+    priority: z.number().int().optional(),
+    notes: z.string().optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gtmCreateContainer = z
+  .object({
+    account_id: str,
+    name: str,
+    usage_context: z.union([gtmUsageContext, z.array(gtmUsageContext).min(1).max(4)]),
+    notes: z.string().optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gtmCreateEnvironment = z
+  .object({
+    account_id: str,
+    container_id: str,
+    name: str,
+    description: z.string().optional(),
+    url: z.string().optional(),
+    enable_debug: z.boolean().optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
   })
   .strict()
   .superRefine(requireConfirmWhenLive);

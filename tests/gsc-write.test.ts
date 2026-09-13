@@ -36,7 +36,7 @@ describe("Wave 12 GSC sitemap writes (Consent S)", () => {
   after(() => restore());
 
   it("write tools are registered, not in CONSENT_A_TOOLS, family gsc_write", () => {
-    assert.equal(CONSENT_A_TOOLS.length, 24);
+    assert.equal(CONSENT_A_TOOLS.length, 26);
     assert.deepEqual([...GSC_WRITE_TOOL_NAMES].sort(), [...WRITE_TOOLS].sort());
     for (const name of WRITE_TOOLS) {
       assert.ok(!CONSENT_A_TOOLS.includes(name), name);

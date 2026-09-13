@@ -48,7 +48,7 @@ describe("Wave 11 GA4 Admin (Consent G)", () => {
   after(() => restore());
 
   it("write tools are registered, not in CONSENT_A_TOOLS, family ga4_write", () => {
-    assert.equal(CONSENT_A_TOOLS.length, 24);
+    assert.equal(CONSENT_A_TOOLS.length, 26);
     assert.ok(GA4_WRITE_TOOL_NAMES.length >= 14);
     for (const name of WRITE_TOOLS) {
       assert.ok(!CONSENT_A_TOOLS.includes(name), name);

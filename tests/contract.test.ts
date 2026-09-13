@@ -38,6 +38,8 @@ const ARGS: Record<string, Record<string, unknown>> = {
   gtm_list_triggers: { account_id: "444444", container_id: "555555", workspace_id: "6" },
   gtm_list_variables: { account_id: "444444", container_id: "555555", workspace_id: "6" },
   gtm_get_live_container_version: { account_id: "444444", container_id: "555555" },
+  gtm_list_clients: { account_id: "444444", container_id: "555555", workspace_id: "6" },
+  gtm_list_environments: { account_id: "444444", container_id: "555555" },
 };
 
 describe("free tool contracts against fixtures", () => {
@@ -61,7 +63,12 @@ describe("free tool contracts against fixtures", () => {
         assert.ok(env.quota);
         assert.ok(env.page);
       }
-      if (name.startsWith("gtm_list_tags") || name.startsWith("gtm_list_triggers") || name.startsWith("gtm_list_variables")) {
+      if (
+        name.startsWith("gtm_list_tags") ||
+        name.startsWith("gtm_list_triggers") ||
+        name.startsWith("gtm_list_variables") ||
+        name === "gtm_list_clients"
+      ) {
         const data = env.data as { source?: string };
         assert.equal(data.source, "workspace");
       }
@@ -71,8 +78,8 @@ describe("free tool contracts against fixtures", () => {
     });
   }
 
-  it("Consent A kernel is 24 Google tools; Shopify is not in this fixture loop", () => {
-    assert.equal(CONSENT_A_TOOLS.length, 24);
+  it("Consent A kernel is 26 Google tools; Shopify is not in this fixture loop", () => {
+    assert.equal(CONSENT_A_TOOLS.length, 26);
     for (const name of CONSENT_A_TOOLS) {
       assert.ok(ARGS[name], `missing ARGS for kernel tool ${name}`);
       assert.ok(!name.startsWith("shopify_"), name);

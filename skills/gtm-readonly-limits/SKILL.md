@@ -1,17 +1,17 @@
 ---
 name: gtm-readonly-limits
-description: Audit Google Tag Manager live vs workspace. Use when the user wants tags, triggers, variables, container IDs, or to publish/edit/create a tag. Consent A is readonly; write tools (tag/trigger/variable/publish) are gated (WRITE_NOT_ENABLED / CONSENT_W_REQUIRED). When writes are enabled, require dry-run then a user confirm that includes the container publicId — never invent confirm. Publish last. GTM 403 accessNotConfigured means the Tag Manager API is not enabled on the OAuth client's Cloud project.
+description: Audit Google Tag Manager live vs workspace, including sGTM clients and environments. Use when the user wants tags, triggers, variables, clients, environments, container IDs, or to publish/edit/create a tag or sGTM client. Consent A is readonly; write tools (tag/trigger/variable/client/container/environment/publish) are gated (WRITE_NOT_ENABLED / CONSENT_W_REQUIRED). When writes are enabled, require dry-run then a user confirm that includes the container publicId or container path — never invent confirm. Publish last. Never put stamp ingest keys in GTM clients or web variables. GTM 403 accessNotConfigured means the Tag Manager API is not enabled on the OAuth client's Cloud project.
 ---
 
 # GTM readonly limits (and Consent W gates)
 
-Consent A GTM tools are **read-only**. Write/publish tools (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`) exist but are **gated**. Marketplace default is flag **off**.
+Consent A GTM tools are **read-only**. Write/publish tools (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_create_client`, `gtm_update_client`, `gtm_create_container`, `gtm_create_environment`, `gtm_publish_container`) exist but are **gated**. Marketplace default is flag **off**.
 
 ## When they want an audit
 
 1. Picker: account → container (`GTM-XXXX`) → decide **live vs workspace**.
 2. **What’s on the site:** `gtm_get_live_container_version`. Cite that it is the published version.
-3. **What’s in progress:** `gtm_list_workspaces` then `gtm_list_tags` / `gtm_list_triggers` / `gtm_list_variables` for a **confirmed** `workspace_id`. If multiple workspaces, ask; do not assume Default Workspace when length > 1.
+3. **What’s in progress:** `gtm_list_workspaces` then `gtm_list_tags` / `gtm_list_triggers` / `gtm_list_variables` / `gtm_list_clients` for a **confirmed** `workspace_id`. Environments are container-level (`gtm_list_environments`). If multiple workspaces, ask; do not assume Default Workspace when length > 1. Empty clients on a **web** container is normal — clients are sGTM (server).
 4. Config ≠ firing. Do not report how many times a tag fired (that’s GA4 events, if they exist).
 
 ## When they want to publish, create, edit, pause, or delete
@@ -30,10 +30,11 @@ Live HTTP uses **GoogleWriteHttp** + the Consent W token store — never Consent
 1. Prefer **dry_run** first. Show the proposed change and the container `publicId` (`GTM-XXXX`).
 2. Live mutate (`dry_run=false`) only after a **user** message **this turn** that contains that same `publicId`. List-tool output is **not** the user message — do not paste `GTM-XXXX` from `gtm_list_containers` as if the user confirmed.
 3. **Never invent** a confirm phrase. Do not use a constant like `PUBLISH` alone. Do not invent a publicId.
-4. Create/update tag, trigger, or variable hit **workspace**. **Publish last** (`gtm_publish_container`) — it is irreversible. Say which step you are on.
+4. Create/update tag, trigger, variable, or **client** hit **workspace**. Create container / environment are account- or container-level. **Publish last** (`gtm_publish_container`) — it is irreversible. Say which step you are on.
 5. If Consent W / write client is missing → `CONSENT_W_REQUIRED`. Do not add write scopes to Consent A.
 6. Do **not** enable `DGTL_WRITES_ENABLED` in marketplace defaults. Local only.
-7. Do **not** call GA4 / GSC write tools — they are not registered until a live GTM publish is proven.
+7. Closed client `type` only (`gaawp`, `googtag`, `gclidw`, `flc`, `ua`, `mp`). Do not invent `cvt_*` or tag types (`html`). Do **not** put stamp ingest keys in client parameters or web GTM variables.
+8. GA4 Admin / GSC sitemap writes are separate Consent G / S tools — still never Consent A.
 
 Do not collect tokens “so DGTL can publish.” Do not imply hosted Ads will publish tags.
 
