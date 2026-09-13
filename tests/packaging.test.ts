@@ -112,7 +112,7 @@ describe("packaging and secrets", () => {
       assert.ok(g, name);
       assert.equal(g.fail, "WRITE_NOT_ENABLED", name);
     }
-    for (const name of ["support_packet", "feedback_prepare", "feedback_send"]) {
+    for (const name of ["support_packet", "feedback_prepare", "feedback_send", "conversion_fabric_status"]) {
       const g = catalog.gated_tools.find((x: { name: string }) => x.name === name);
       assert.ok(g, name);
       assert.equal(g.fail, null, name);

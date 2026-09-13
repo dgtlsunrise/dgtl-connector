@@ -33,6 +33,31 @@ for (const name of catalog.plugin_local_describe) {
   }
 }
 
+const fabric = catalog.conversion_fabric;
+if (!fabric || typeof fabric !== "object") {
+  throw new Error("hop-catalog.json missing conversion_fabric (Wave 20)");
+}
+if (fabric.replaces_product_story !== "NoNetworkUploadSink") {
+  throw new Error("conversion_fabric.replaces_product_story must be NoNetworkUploadSink");
+}
+if (fabric.stamp_interface !== "FundedUploadSink") {
+  throw new Error("conversion_fabric.stamp_interface must be FundedUploadSink");
+}
+if (!fabric.polar_sgtm || fabric.polar_sgtm.feature !== "sgtm" || fabric.polar_sgtm.default !== "off" || fabric.polar_sgtm.mint !== false) {
+  throw new Error("conversion_fabric.polar_sgtm must be { feature: sgtm, default: off, mint: false }");
+}
+const sinkIds = Array.isArray(fabric.sinks) ? fabric.sinks.map((s) => s.id) : [];
+if (JSON.stringify(sinkIds) !== JSON.stringify(["ads_data_manager", "meta_capi", "tiktok_events"])) {
+  throw new Error("conversion_fabric.sinks must be ads_data_manager, meta_capi, tiktok_events");
+}
+const adsSink = fabric.sinks[0];
+if (adsSink.rpc !== "IngestEvents" || adsSink.not !== "UploadClickConversions" || adsSink.plugin_send_tool !== null) {
+  throw new Error("ads_data_manager sink must be IngestEvents (not UploadClickConversions) with no plugin send tool");
+}
+if (!fabric.ingest || fabric.ingest.funded_never_in_web_gtm !== true || fabric.ingest.plugin_test_tool !== "sgtm_ingest_test") {
+  throw new Error("conversion_fabric.ingest must forbid funded keys in web GTM and name sgtm_ingest_test");
+}
+
 function namesOf(family, kind) {
   return tools.filter((t) => t.family === family && t.kind === kind).map((t) => t.name);
 }
@@ -68,6 +93,8 @@ export const PATH_ONLY_URL_ADJACENT = ${JSON.stringify(catalog.path_only_url_adj
 export const GATEWAY_PARAM_ALLOW_KEYS = ${JSON.stringify(catalog.gateway_param_allow, null, 2)} as const;
 
 export const HOP_TOOLS = ${JSON.stringify(catalog.tools, null, 2)} as const;
+
+export const CONVERSION_FABRIC = ${JSON.stringify(catalog.conversion_fabric, null, 2)} as const;
 
 export type HopTool = (typeof HOP_TOOLS)[number];
 export type HopFamily = HopTool["family"];

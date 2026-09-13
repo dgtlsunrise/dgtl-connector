@@ -779,6 +779,68 @@ export const HOP_TOOLS = [
   }
 ] as const;
 
+export const CONVERSION_FABRIC = {
+  "wave": 20,
+  "replaces_product_story": "NoNetworkUploadSink",
+  "stamp_interface": "FundedUploadSink",
+  "polar_sgtm": {
+    "feature": "sgtm",
+    "default": "off",
+    "mint": false
+  },
+  "sinks": [
+    {
+      "id": "ads_data_manager",
+      "stamp_sink": "AdsDataManagerIngestEventsSink",
+      "stamp_hop": "ads_data_manager_ingest_events",
+      "kind": "stamp_internal",
+      "method": "POST",
+      "host": "datamanager.googleapis.com",
+      "path_template": "/v1/events:ingest",
+      "rpc": "IngestEvents",
+      "not": "UploadClickConversions",
+      "plugin_send_tool": null,
+      "worker_flag": "ADS_DATA_MANAGER_ENABLED",
+      "health_key": "ads_data_manager_enabled",
+      "auth_scope": "https://www.googleapis.com/auth/datamanager"
+    },
+    {
+      "id": "meta_capi",
+      "stamp_sink": "MetaCapiEventsSink",
+      "stamp_hop": "meta_send_capi_events",
+      "kind": "plugin_reuse",
+      "method": "POST",
+      "path_template": "/{GRAPH_API_VERSION}/{pixel_id}/events",
+      "plugin_send_tool": "meta_send_capi_events",
+      "worker_flag": "META_CAPI_ENABLED",
+      "health_key": "meta_capi_enabled"
+    },
+    {
+      "id": "tiktok_events",
+      "stamp_sink": "TikTokEventsSink",
+      "stamp_hop": "tiktok_track_events",
+      "kind": "plugin_reuse",
+      "method": "POST",
+      "path_template": "/open_api/{TIKTOK_API_VERSION}/event/track/",
+      "plugin_send_tool": "tiktok_track_events",
+      "worker_flag": "TIKTOK_EVENTS_ENABLED",
+      "health_key": "tiktok_events_enabled"
+    }
+  ],
+  "ingest": {
+    "path": "/v1/sgtm/ingest",
+    "apply_header": "X-DGTL-Apply-Key",
+    "funded_header": "X-DGTL-Ingest-Key",
+    "funded_never_in_web_gtm": true,
+    "plugin_test_tool": "sgtm_ingest_test",
+    "closed_event_name": [
+      "apply"
+    ],
+    "worker_flag": "SGTM_INGEST_ENABLED",
+    "health_key": "sgtm_ingest_enabled"
+  }
+} as const;
+
 export type HopTool = (typeof HOP_TOOLS)[number];
 export type HopFamily = HopTool["family"];
 export type HopKind = HopTool["kind"];

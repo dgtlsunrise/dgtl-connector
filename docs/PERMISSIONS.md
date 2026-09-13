@@ -250,6 +250,8 @@ Fail closed: `LICENSE_REQUIRED` without `tiktok`; `TIKTOK_NOT_CONNECTED` without
 
 Wave 17 catalog writes and campaign create reuse plugin/Worker **`TIKTOK_MUTATE_ENABLED`** (Worker fail-closed). Events API uses a **separate** Worker `TIKTOK_EVENTS_ENABLED` (fail-closed, **not** status mutate). Plugin `DGTL_TIKTOK_EVENTS_ENABLED` defaults on; live hop requires health `tiktok_events_enabled===true`. `content_id` must match catalog `sku_id`. Never Axos. Never unhashed PII in logs.
 
+Wave 20 conversion fabric: plugin exposes `conversion_fabric_status` (never keys) and optional apply-only `sgtm_ingest_test`. Stamp implements `FundedUploadSink` — Ads Data Manager `IngestEvents` (`AdsDataManagerIngestEventsSink` / `ads_data_manager_ingest_events`), not deprecated `UploadClickConversions`. Meta CAPI / TikTok Events reuse Wave 16–17 named tools. Polar `sgtm` is reserved, default-off, **do not mint**. Funded ingest key (`X-DGTL-Ingest-Key`) and apply key never belong in **web** GTM variables. Never log `user_data` plaintext.
+
 Live developer app + Marketing API access are **Noel gates**.
 
 ## Klaviyo (not Google Consent A)

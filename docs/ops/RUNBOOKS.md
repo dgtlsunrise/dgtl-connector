@@ -24,6 +24,14 @@ Plugin default on; Worker `TIKTOK_MUTATE_ENABLED` fail-closed. Catalog create/up
 
 Plugin `DGTL_TIKTOK_EVENTS_ENABLED` defaults on; Worker `TIKTOK_EVENTS_ENABLED` is fail-closed and **separate** from `TIKTOK_MUTATE_ENABLED`. Polar `tiktok` bit. App secret stays on the Worker. Never collect unhashed PII. `content_id` must match catalog `sku_id`. Stamp hop `POST /open_api/{TIKTOK_API_VERSION}/event/track/`.
 
+## `SGTM_NOT_ENABLED`
+
+Plugin `DGTL_SGTM_INGEST_TEST_ENABLED` defaults **off**. Live apply ingest needs that flag on **and** Worker `SGTM_INGEST_ENABLED=true` (fail-closed, health `sgtm_ingest_enabled`). Polar `sgtm` is reserved, default-off — **do not mint**. Never put funded or apply keys in web GTM. HTTP path is `POST /v1/sgtm/ingest` (not a hop-catalog MCP hop).
+
+## `SGTM_APPLY_KEY_MISSING`
+
+Set `DGTL_SGTM_APPLY_KEY` (or `DGTL_APPLY_KEY`) on the plugin host only. Header is `X-DGTL-Apply-Key`. Never send `X-DGTL-Ingest-Key` from this plugin. Never put apply or funded keys in web GTM variables.
+
 ## `LICENSE_REQUIRED`
 
 Redeem Polar Pro ($19/mo). Paste JWT via `DGTL_LICENSE_JWT` or `PLUGIN_DATA/license.jwt`. Ads/Meta need `features: ["ads","meta"]`. TikTok needs a separate `tiktok` bit. Never a Google Ads developer-token.

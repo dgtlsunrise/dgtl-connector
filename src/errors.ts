@@ -42,6 +42,8 @@ export const ERROR_CODES = [
   "TIKTOK_SCOPE_MISSING",
   "KLAVIYO_NOT_CONNECTED",
   "KLAVIYO_SCOPE_MISSING",
+  "SGTM_NOT_ENABLED",
+  "SGTM_APPLY_KEY_MISSING",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -140,6 +142,10 @@ export const MSG = {
     "Klaviyo is not connected. Set KLAVIYO_API_KEY (private pk_ key) or PLUGIN_DATA/klaviyo.json. Local-free — no Polar license, no stamp hop, not Consent A. Support never collects Klaviyo keys. Never log the key.",
   KLAVIYO_SCOPE_MISSING:
     "This Klaviyo private key is missing a required API scope (accounts, profiles, lists, segments, flows, campaigns, metrics, or events). Generate a new pk_ with those scopes. Not Polar OAuth. Not Consent A.",
+  SGTM_NOT_ENABLED:
+    "sGTM apply ingest test is opted out or the Worker SGTM_INGEST_ENABLED flag is off. Plugin DGTL_SGTM_INGEST_TEST_ENABLED defaults off. Live POST needs the plugin flag on AND Worker SGTM_INGEST_ENABLED=true (fail-closed). Polar sgtm is reserved, default-off, and not minted. Apply-path only — never a funded ingest key, never web GTM variables.",
+  SGTM_APPLY_KEY_MISSING:
+    "sGTM apply ingest test is live but DGTL_SGTM_APPLY_KEY (or DGTL_APPLY_KEY) is unset on this plugin host. Set the apply key in server env only. Never put apply or funded ingest keys in web GTM variables. No ingest HTTP was sent.",
   INVALID_ARGUMENT:
     "Google rejected the request (INVALID_ARGUMENT). Check dates (YYYY-MM-DD), GA4 limits (≤9 dimensions, ≤10 metrics), and names from ga4_get_metadata. I will not invent a replacement metric.",
   NOT_FOUND:

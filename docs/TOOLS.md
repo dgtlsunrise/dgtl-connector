@@ -43,6 +43,8 @@ Live Ads / Meta / TikTok mutate requires **plugin AND Worker**. Plugin Ads / Met
 | Meta CAPI (`DGTL_META_CAPI_ENABLED` / `META_CAPI_ENABLED`) | **on** | fail-closed (`meta_capi_enabled`, **not** `META_MUTATE_ENABLED`) | both true |
 | TikTok mutate (`DGTL_TIKTOK_MUTATE_ENABLED` / `TIKTOK_MUTATE_ENABLED`) | **on** | fail-closed (`tiktok_mutate_enabled`) | both true |
 | TikTok Events (`DGTL_TIKTOK_EVENTS_ENABLED` / `TIKTOK_EVENTS_ENABLED`) | **on** | fail-closed (`tiktok_events_enabled`, **not** `TIKTOK_MUTATE_ENABLED`) | both true |
+| Ads Data Manager (`DGTL_ADS_DATA_MANAGER_ENABLED` / `ADS_DATA_MANAGER_ENABLED`) | **on** (status / dual-gate only; **no** plugin send tool) | fail-closed (`ads_data_manager_enabled`) | stamp `FundedUploadSink` + Worker |
+| sGTM apply ingest test (`DGTL_SGTM_INGEST_TEST_ENABLED` / `SGTM_INGEST_TEST_ENABLED`) | **off** | fail-closed (`sgtm_ingest_enabled`) | both true + host `DGTL_SGTM_APPLY_KEY` |
 | Consent W writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `GoogleWriteHttp`) | flag on + Consent W token |
 | Shopify writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `ShopifyHttp` mutation) | flag on + merchant `write_inventory` / `write_products` + shop-domain confirm |
 | Klaviyo writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `KlaviyoHttp` POST) | flag on + local `pk_` + confirm_phrase containing the Klaviyo account id |
@@ -532,6 +534,33 @@ Named MCP tools are permanent. Wave 9 generates stamp allowlists from `src/gatew
 
 JSON body includes `to` (`support@dgtlsunrise.com`), `reply_to`, `kind`, `message`, `draft_id`, `draft_text`, and the support-packet fields. No Authorization header, no Google tokens, no license JWT. Unset gateway → `GATEWAY_UNAVAILABLE` pointing at `DGTL_FEEDBACK_URL` / `DGTL_GATEWAY_URL`. Missing `confirm: true` → `INVALID_ARGUMENT` (no HTTP).
 
+### `conversion_fabric_status`
+
+**Why:** Operators need sink / flag health for Wave 20 conversion fabric without key material. Replaces the product story of `NoNetworkUploadSink`. Stamp implements `FundedUploadSink`.
+
+| | |
+| --- | --- |
+| Google | none (optional `GET /v1/health` when `DGTL_GATEWAY_URL` is set) |
+| Scope | none |
+| Params | none |
+| Idempotent | yes |
+
+**Returns (never keys / never JWT / never `user_data`):** `wave: 20`, `replaces_product_story`, `stamp_interface`, Polar `sgtm` `{reserved, default:"off", mint:false, present}`, `gateway` host only, plugin/worker flags, dual-gate lanes for CAPI / TikTok Events / Ads Data Manager / sGTM ingest, sink rows from `conversion_fabric` (exact `stamp_sink` / `stamp_hop` names), ingest contract, `send_tools` (`meta_send_capi_events`, `tiktok_track_events`, Ads Data Manager `null`). Prefer Google Data Manager `IngestEvents` — not deprecated `UploadClickConversions`. Reuse Wave 16–17 send tools; do not duplicate CAPI/Events from the browser with secrets.
+
+### `sgtm_ingest_test`
+
+**Why:** Thin apply-path HTTP ingest test against stamp `POST /v1/sgtm/ingest`. Not a hop-catalog MCP hop. Not a funded upload.
+
+| | |
+| --- | --- |
+| Google | none |
+| Scope | none |
+| Endpoint | `POST ${DGTL_GATEWAY_URL}/v1/sgtm/ingest` |
+| Params | `event_name` (`apply` only), `event_id`, `application_id`, `client_id`; `dry_run` default **true**; live needs `confirm: true` |
+| Header | `X-DGTL-Apply-Key` from host env `DGTL_SGTM_APPLY_KEY` / `DGTL_APPLY_KEY` |
+
+Plugin flag **defaults off**. Live also needs Worker `SGTM_INGEST_ENABLED` (health `sgtm_ingest_enabled===true`, fail-closed). Never send `X-DGTL-Ingest-Key`. Never `Authorization`. Never `user_data`. Never put apply or funded keys in **web** GTM variables. Polar `sgtm` is reserved, default-off, **not minted**. Flag off / missing apply key / worker off → `SGTM_NOT_ENABLED` / `SGTM_APPLY_KEY_MISSING` / `GATEWAY_UNAVAILABLE` with **zero** ingest POST.
+
 ---
 
 ## Consent W — GTM write (gated; not free Consent A)
@@ -731,7 +760,7 @@ No posts, replies, Q&A, or location mutate in this wave.
 | GTM users / folders / built-in variables / environment reauthorize | No tool (Wave 16+) |
 | MC data-source delete/patch, promotions, reviews | No tool (Wave 16+) |
 | Meta catalog / CAPI | Wave 16 named tools (`meta_catalog_items_batch`, `meta_get_batch_status`, `meta_create_catalog`, `meta_send_capi_events`). No open Graph proxy. |
-| Stamp conversion ingest / CAPI sinks | No plugin tool (Wave 20). Never put ingest keys in GTM clients or web variables. |
+| Stamp conversion ingest / CAPI sinks | Wave 20: `conversion_fabric_status` + apply-only `sgtm_ingest_test`. Ads Data Manager `IngestEvents` is stamp-internal (`AdsDataManagerIngestEventsSink` / `ads_data_manager_ingest_events`). Reuse `meta_send_capi_events` / `tiktok_track_events`. Never put funded or apply keys in web GTM. |
 | Gmail / Drive | No tool |
 | Mega `run_any_google_json` | Forbidden |
 
@@ -828,7 +857,7 @@ Merchant-held **private** API key on the Bot computer. **No Polar. No stamp hop.
 
 Fail order for writes: `WRITE_NOT_ENABLED` → `KLAVIYO_NOT_CONNECTED` → dry-run (GET account, zero mutate POST) → live needs account id in `confirm_phrase`.
 
-**Out of this wave:** campaign send jobs (Wave 22), Polar `klaviyo` OAuth (Wave 19b), stamp hop, Consent A kernel membership, Wave 20 conversion fabric.
+**Out of this wave:** campaign send jobs (Wave 22), Polar `klaviyo` OAuth (Wave 19b), stamp hop, Consent A kernel membership. Wave 20 conversion fabric is a separate diagnostic (`conversion_fabric_status` / `sgtm_ingest_test`) — not a Klaviyo tool.
 
 Skills: `klaviyo-readonly`, `catalog-fan-out` (Shopify → MC / Meta / TikTok / Klaviyo; Google payload omits missing GTIN / missing image; refuse unnamed `merchant_id`).
 

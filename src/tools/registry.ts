@@ -145,6 +145,7 @@ import {
 } from "../klaviyo/klaviyo-write.js";
 import { supportPacket } from "../support/packet.js";
 import { feedbackPrepare, feedbackSend } from "../support/feedback.js";
+import { conversionFabricStatus, sgtmIngestTest } from "../conversion/fabric.js";
 import * as S from "./schemas.js";
 
 export type ToolFamily =
@@ -1303,6 +1304,28 @@ export const TOOLS: ToolSpec[] = [
     inputSchema: S.feedbackSend,
     annotations: ANN_WRITE,
     handler: (ctx, args) => feedbackSend(ctx, args),
+  },
+  {
+    name: "conversion_fabric_status",
+    group: "conversion-fabric",
+    family: "license",
+    title: "Conversion fabric status",
+    description:
+      "Wave 20. Local + optional GET /v1/health: sink/flag health for Ads Data Manager IngestEvents, Meta CAPI, TikTok Events, and sGTM apply ingest. Never keys, JWT, or user_data. Polar sgtm is reserved default-off (not minted). Ads upload stays on stamp FundedUploadSink.",
+    inputSchema: S.conversionFabricStatus,
+    annotations: ANN_RO,
+    handler: async (ctx) => conversionFabricStatus(ctx),
+  },
+  {
+    name: "sgtm_ingest_test",
+    group: "conversion-fabric",
+    family: "license",
+    title: "sGTM apply ingest test",
+    description:
+      "Wave 20. Thin HTTP POST {gateway}/v1/sgtm/ingest on the apply path only (X-DGTL-Apply-Key). Closed event_name=apply. dry_run default true; live needs confirm:true. Plugin flag default off. Never funded ingest keys, never web GTM variables, never user_data. Not a hop-catalog MCP hop.",
+    inputSchema: S.sgtmIngestTest,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => sgtmIngestTest(ctx, args),
   },
   // Paid Meta — ads_read insights DX; writes/catalogs/lift deferred
   {

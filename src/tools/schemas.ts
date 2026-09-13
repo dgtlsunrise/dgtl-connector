@@ -27,6 +27,20 @@ export const feedbackPrepare = z
   })
   .strict();
 
+export const conversionFabricStatus = emptyInput;
+
+/** Wave 20 — apply-path sGTM ingest test. Never funded / ingest keys / user_data. */
+export const sgtmIngestTest = z
+  .object({
+    event_name: z.literal("apply"),
+    event_id: z.string().min(1).max(128),
+    application_id: z.string().min(1).max(128),
+    client_id: z.string().min(1).max(256),
+    dry_run: z.boolean().optional(),
+    confirm: z.boolean().optional(),
+  })
+  .strict();
+
 export const feedbackSend = z
   .object({
     /** Exact true after the user approves the draft. Missing/false refuses send. */

@@ -1,6 +1,6 @@
 {
   "comment": "Wave 9 tools/list freeze. Additive named tools are allowed. Deleting a name fails CI. No gads_mutate / meta_mutate.",
-  "count": 159,
+  "count": 161,
   "names": [
     "google_whoami",
     "ga4_list_accounts",
@@ -160,6 +160,8 @@
     "klaviyo_list_catalog_variants",
     "klaviyo_upsert_catalog_items",
     "klaviyo_list_reviews",
-    "klaviyo_get_review"
+    "klaviyo_get_review",
+    "conversion_fabric_status",
+    "sgtm_ingest_test"
   ]
 }

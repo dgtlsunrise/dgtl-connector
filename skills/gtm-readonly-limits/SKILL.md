@@ -1,6 +1,6 @@
 ---
 name: gtm-readonly-limits
-description: Audit Google Tag Manager live vs workspace, including sGTM clients and environments. Use when the user wants tags, triggers, variables, clients, environments, container IDs, or to publish/edit/create a tag or sGTM client. Consent A is readonly; write tools (tag/trigger/variable/client/container/environment/publish) are gated (WRITE_NOT_ENABLED / CONSENT_W_REQUIRED). When writes are enabled, require dry-run then a user confirm that includes the container publicId or container path — never invent confirm. Publish last. Never put stamp ingest keys in GTM clients or web variables. GTM 403 accessNotConfigured means the Tag Manager API is not enabled on the OAuth client's Cloud project.
+description: Audit Google Tag Manager live vs workspace, including sGTM clients and environments. Use when the user wants tags, triggers, variables, clients, environments, container IDs, or to publish/edit/create a tag or sGTM client. Consent A is readonly; write tools (tag/trigger/variable/client/container/environment/publish) are gated (WRITE_NOT_ENABLED / CONSENT_W_REQUIRED). When writes are enabled, require dry-run then a user confirm that includes the container publicId or container path — never invent confirm. Publish last. Never put stamp ingest keys, apply keys, or funded keys in GTM clients or web variables. Use `conversion_fabric_status` / `sgtm_ingest_test` (apply-path only). GTM 403 accessNotConfigured means the Tag Manager API is not enabled on the OAuth client's Cloud project.
 ---
 
 # GTM readonly limits (and Consent W gates)
@@ -33,7 +33,7 @@ Live HTTP uses **GoogleWriteHttp** + the Consent W token store — never Consent
 4. Create/update tag, trigger, variable, or **client** hit **workspace**. Create container / environment are account- or container-level. **Publish last** (`gtm_publish_container`) — it is irreversible. Say which step you are on.
 5. If Consent W / write client is missing → `CONSENT_W_REQUIRED`. Do not add write scopes to Consent A.
 6. Do **not** enable `DGTL_WRITES_ENABLED` in marketplace defaults. Local only.
-7. Closed client `type` only (`gaawp`, `googtag`, `gclidw`, `flc`, `ua`, `mp`). Do not invent `cvt_*` or tag types (`html`). Do **not** put stamp ingest keys in client parameters or web GTM variables.
+7. Closed client `type` only (`gaawp`, `googtag`, `gclidw`, `flc`, `ua`, `mp`). Do not invent `cvt_*` or tag types (`html`). Do **not** put stamp ingest keys, apply keys, or funded keys in client parameters or **web** GTM variables. Funded ingest keys stay on server sGTM env / the customer backend only. Polar `sgtm` is reserved, default-off, and not minted. Closed plugin ingest event is `apply` only (`sgtm_ingest_test`). For sink health use `conversion_fabric_status`.
 8. GA4 Admin / GSC sitemap writes are separate Consent G / S tools — still never Consent A.
 
 Do not collect tokens “so DGTL can publish.” Do not imply hosted Ads will publish tags.

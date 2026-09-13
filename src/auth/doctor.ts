@@ -9,6 +9,7 @@ import {
   gatewayHostname,
   pluginFlagBooleans,
   safeLicenseFeatures,
+  workerFlagBooleans,
   type ConsentStorePresence,
   type DualGateMatrix,
   type PluginFlagBooleans,
@@ -61,6 +62,8 @@ export const DOCTOR_ENV_NAMES = [
   "DGTL_META_CAPI_ENABLED",
   "DGTL_TIKTOK_MUTATE_ENABLED",
   "DGTL_TIKTOK_EVENTS_ENABLED",
+  "DGTL_ADS_DATA_MANAGER_ENABLED",
+  "DGTL_SGTM_INGEST_TEST_ENABLED",
   "DGTL_GBP_ENABLED",
   "DGTL_SKIP_UPDATE_CHECK",
   "DGTL_AUDIT_LOCAL",
@@ -117,6 +120,8 @@ export type DoctorReport = {
     ads: boolean;
     meta: boolean;
     tiktok: boolean;
+    /** Polar `sgtm` presence only — reserved, default-off, not minted, not an expected feature. */
+    sgtm: boolean;
     /** Present only when locally verifiable; never the JWT or payload body. */
     missing_features?: string[];
   };
@@ -185,13 +190,7 @@ export async function collectDoctor(opts: DoctorOpts): Promise<DoctorReport> {
   const plugin = pluginFlagBooleans(flagsLoaded);
   const fetchImpl = opts.fetchImpl ?? fetch;
   const probe = await probeGatewayReachable({ env, fetchImpl, flags: flagsLoaded });
-  const worker: WorkerFlagBooleans = {
-    adsMutateEnabled: probe.reachable ? (probe.ads_mutate_enabled ?? null) : null,
-    metaMutateEnabled: probe.reachable ? (probe.meta_mutate_enabled ?? null) : null,
-    tiktokMutateEnabled: probe.reachable ? (probe.tiktok_mutate_enabled ?? null) : null,
-    metaCapiEnabled: probe.reachable ? (probe.meta_capi_enabled ?? null) : null,
-    tiktokEventsEnabled: probe.reachable ? (probe.tiktok_events_enabled ?? null) : null,
-  };
+  const worker = workerFlagBooleans(probe);
 
   const hostInjected = envSet(env, "GOOGLE_ACCESS_TOKEN") || envSet(env, "DGTL_GOOGLE_ACCESS_TOKEN");
   const oauthClientId = envSet(env, "GOOGLE_OAUTH_CLIENT_ID");
@@ -238,6 +237,7 @@ export async function collectDoctor(opts: DoctorOpts): Promise<DoctorReport> {
       ads: features.includes("ads"),
       meta: features.includes("meta"),
       tiktok: features.includes("tiktok"),
+      sgtm: features.includes("sgtm"),
       ...(present && status === "valid" && missing_features.length > 0 ? { missing_features } : {}),
     },
     auth: {
@@ -280,12 +280,14 @@ export function formatDoctorReport(report: DoctorReport): string {
     `  klaviyo.json: ${report.plugin_data.klaviyo_json ? "present" : "absent"}`,
     `  license.jwt: ${report.plugin_data.license_jwt ? "present" : "absent"}`,
     "",
-    "plugin flags (ads/meta/tiktok mutate + CAPI/Events default ON; writes/gbp default OFF):",
+    "plugin flags (ads/meta/tiktok mutate + CAPI/Events/Ads Data Manager default ON; sGTM ingest test / writes/gbp default OFF):",
     `  adsMutateEnabled: ${report.flags.plugin.adsMutateEnabled}`,
     `  metaMutateEnabled: ${report.flags.plugin.metaMutateEnabled}`,
     `  tiktokMutateEnabled: ${report.flags.plugin.tiktokMutateEnabled}`,
     `  metaCapiEnabled: ${report.flags.plugin.metaCapiEnabled}`,
     `  tiktokEventsEnabled: ${report.flags.plugin.tiktokEventsEnabled}`,
+    `  adsDataManagerEnabled: ${report.flags.plugin.adsDataManagerEnabled}`,
+    `  sgtmIngestTestEnabled: ${report.flags.plugin.sgtmIngestTestEnabled}`,
     `  writesEnabled: ${report.flags.plugin.writesEnabled}`,
     `  gbpEnabled: ${report.flags.plugin.gbpEnabled}`,
     "",
@@ -297,6 +299,8 @@ export function formatDoctorReport(report: DoctorReport): string {
     `  tiktokMutateEnabled: ${workerFlagLine(report.flags.worker.tiktokMutateEnabled)}`,
     `  metaCapiEnabled: ${workerFlagLine(report.flags.worker.metaCapiEnabled)}`,
     `  tiktokEventsEnabled: ${workerFlagLine(report.flags.worker.tiktokEventsEnabled)}`,
+    `  adsDataManagerEnabled: ${workerFlagLine(report.flags.worker.adsDataManagerEnabled)}`,
+    `  sgtmIngestEnabled: ${workerFlagLine(report.flags.worker.sgtmIngestEnabled)}`,
     "",
     "dual-gate (live mutate = plugin AND worker; booleans only):",
     `  ads: plugin=${report.dual_gate.ads.plugin_mutate_enabled} worker=${report.dual_gate.ads.worker_mutate_enabled} worker_known=${report.dual_gate.ads.worker_flag_known} live=${report.dual_gate.ads.live_mutate_possible}`,
@@ -304,6 +308,8 @@ export function formatDoctorReport(report: DoctorReport): string {
     `  tiktok: plugin=${report.dual_gate.tiktok.plugin_mutate_enabled} worker=${report.dual_gate.tiktok.worker_mutate_enabled} worker_known=${report.dual_gate.tiktok.worker_flag_known} live=${report.dual_gate.tiktok.live_mutate_possible}`,
     `  capi: plugin=${report.dual_gate.capi.plugin_mutate_enabled} worker=${report.dual_gate.capi.worker_mutate_enabled} worker_known=${report.dual_gate.capi.worker_flag_known} live=${report.dual_gate.capi.live_mutate_possible}`,
     `  tiktok_events: plugin=${report.dual_gate.tiktok_events.plugin_mutate_enabled} worker=${report.dual_gate.tiktok_events.worker_mutate_enabled} worker_known=${report.dual_gate.tiktok_events.worker_flag_known} live=${report.dual_gate.tiktok_events.live_mutate_possible}`,
+    `  ads_data_manager: plugin=${report.dual_gate.ads_data_manager.plugin_mutate_enabled} worker=${report.dual_gate.ads_data_manager.worker_mutate_enabled} worker_known=${report.dual_gate.ads_data_manager.worker_flag_known} live=${report.dual_gate.ads_data_manager.live_mutate_possible}`,
+    `  sgtm_ingest: plugin=${report.dual_gate.sgtm_ingest.plugin_mutate_enabled} worker=${report.dual_gate.sgtm_ingest.worker_mutate_enabled} worker_known=${report.dual_gate.sgtm_ingest.worker_flag_known} live=${report.dual_gate.sgtm_ingest.live_mutate_possible}`,
     "",
     `license: ${licenseLine(report)}`,
     `auth: host_injected=${report.auth.host_injected} pkce_store=${report.auth.pkce_store} GOOGLE_OAUTH_CLIENT_ID=${report.auth.oauth_client_id}`,

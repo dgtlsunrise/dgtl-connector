@@ -1,0 +1,8 @@
+{
+  "comment": "Wave 20 sgtm_ingest_test apply-path fixture. Never funded keys or user_data.",
+  "event_name": "apply",
+  "event_id": "evt_apply_wave20_001",
+  "application_id": "app_wave20_fixture",
+  "client_id": "client.wave20.fixture.1",
+  "dry_run": true
+}

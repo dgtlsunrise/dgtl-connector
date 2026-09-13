@@ -2,7 +2,7 @@
 
 Skills are Agent Skills (`skills/<name>/SKILL.md`). They are how the plugin behaves in conversation. Tools are dumb and typed; skills carry the product judgment.
 
-This index is closed for v1 spec plus Waves 4–19. **19 skills.** Each directory below must exist.
+This index is closed for v1 spec plus Waves 4–20. **19 skills.** Each directory below must exist. Wave 20 adds tools, not a 20th skill.
 
 | Skill | Directory | Job |
 | --- | --- | --- |
@@ -12,7 +12,7 @@ This index is closed for v1 spec plus Waves 4–19. **19 skills.** Each director
 | GA4 report recipes | `skills/ga4-report-recipes/` | Standard reports with real metrics from `ga4_run_report`. |
 | No hallucinated metrics | `skills/no-hallucinated-metrics/` | Numbers only from tool `data`. Refuse invented metrics. |
 | GSC vs GA4 search | `skills/gsc-vs-ga4-search/` | Queries live in Search Console. GA4 has no `searchQuery`. |
-| GTM readonly limits | `skills/gtm-readonly-limits/` | Audit live vs workspace. Consent W gates for write/publish. |
+| GTM readonly limits | `skills/gtm-readonly-limits/` | Audit live vs workspace. Consent W gates for write/publish. Never funded/apply keys in web GTM. Point operators at `conversion_fabric_status` / `sgtm_ingest_test`. |
 | Shopify readonly | `skills/shopify-readonly/` | Local merchant products/orders/locations/inventory/publications/feeds; SHOPIFY_NOT_CONNECTED without token. |
 | Shopify ↔ Ads/MC join | `skills/shopify-ads-mc-join/` | Join Shopify SKU/handle/inventory/publications to MC offerId and Ads listing groups. Never invent SKUs. |
 | Shopping ↔ MC readiness | `skills/shopping-mc-readiness/` | Merchant API products/status/issues then Shopping campaign create. Consent MC, not Consent A. |
@@ -72,7 +72,7 @@ This index is closed for v1 spec plus Waves 4–19. **19 skills.** Each director
 | ga4-report-recipes | `ga4_get_property`, `ga4_get_metadata`, `ga4_list_key_events`, `ga4_run_report` | GSC query dimensions inside GA4 |
 | no-hallucinated-metrics | `ga4_get_metadata`, then the tool that produced the number | — |
 | gsc-vs-ga4-search | `gsc_query_search_analytics`, `gsc_list_sites`, `ga4_run_report` only for landing-page **sessions** | `ga4_run_report` with `searchQuery` |
-| gtm-readonly-limits | All readonly `gtm_*` | Live mutate without Consent W + user confirm; inventing confirm phrases |
+| gtm-readonly-limits | All readonly `gtm_*`; `conversion_fabric_status`; `sgtm_ingest_test` (apply-path only) | Live mutate without Consent W + user confirm; inventing confirm phrases; funded/apply keys in web GTM variables |
 | shopify-readonly | `shopify_get_shop`, `shopify_list_*`, `shopify_get_*` | Calling Admin API without credentials; inventing ids; live writes without flag+confirm; silent scope expand |
 | klaviyo-readonly | `klaviyo_get_account`, `klaviyo_list_*`, `klaviyo_get_*` | Calling Klaviyo without a `pk_`; dumping full profile/review PII; campaign send jobs; Polar OAuth; inventing `$shopify:::` ids; logging the key |
 | catalog-fan-out | `shopify_list_products`, `shopify_get_product`, `mc_list_accounts`, `mc_upsert_product_input`, `meta_list_catalogs`, `meta_catalog_items_batch`, `tiktok_list_catalogs`, `tiktok_upload_catalog_products`, `klaviyo_get_account`, `klaviyo_list_catalog_*`, `klaviyo_upsert_catalog_items` | Mega upsert-all; unnamed `merchant_id`; inventing `$shopify:::$default:::` / GTIN / SKU; live write without that destination’s grant |

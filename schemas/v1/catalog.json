@@ -442,6 +442,19 @@
       "fail": null
     },
     {
+      "name": "conversion_fabric_status",
+      "group": "conversion-fabric",
+      "fail": null,
+      "note": "Wave 20; sink/flag health; never keys"
+    },
+    {
+      "name": "sgtm_ingest_test",
+      "group": "conversion-fabric",
+      "flag": "sgtm.ingest.test.enabled",
+      "fail": "SGTM_NOT_ENABLED",
+      "note": "Wave 20; apply-path HTTP ingest test; funded key never in web GTM"
+    },
+    {
       "name": "meta_list_ad_accounts",
       "group": "meta",
       "fail": "LICENSE_REQUIRED"

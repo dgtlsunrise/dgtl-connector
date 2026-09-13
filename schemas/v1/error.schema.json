@@ -60,7 +60,9 @@
         "TIKTOK_EVENTS_NOT_ENABLED",
         "TIKTOK_SCOPE_MISSING",
         "KLAVIYO_NOT_CONNECTED",
-        "KLAVIYO_SCOPE_MISSING"
+        "KLAVIYO_SCOPE_MISSING",
+        "SGTM_NOT_ENABLED",
+        "SGTM_APPLY_KEY_MISSING"
       ]
     },
     "message": {

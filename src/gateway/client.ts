@@ -287,6 +287,10 @@ export type GatewayReachable = {
   meta_capi_enabled?: boolean | null;
   /** Worker TIKTOK_EVENTS_ENABLED — boolean from health, else null. Never the env string. Fail-closed. */
   tiktok_events_enabled?: boolean | null;
+  /** Worker ADS_DATA_MANAGER_ENABLED — boolean from health, else null. Stamp-internal IngestEvents. */
+  ads_data_manager_enabled?: boolean | null;
+  /** Worker SGTM_INGEST_ENABLED — boolean from health, else null. Fail-closed apply ingest. */
+  sgtm_ingest_enabled?: boolean | null;
 };
 
 function healthBool(value: unknown): boolean | null {
@@ -338,6 +342,8 @@ export async function probeGatewayReachable(
       tiktok_mutate_enabled?: unknown;
       meta_capi_enabled?: unknown;
       tiktok_events_enabled?: unknown;
+      ads_data_manager_enabled?: unknown;
+      sgtm_ingest_enabled?: unknown;
     } = {};
     try {
       body = (await res.json()) as typeof body;
@@ -354,6 +360,8 @@ export async function probeGatewayReachable(
       tiktok_mutate_enabled: healthBool(body.tiktok_mutate_enabled),
       meta_capi_enabled: healthBool(body.meta_capi_enabled),
       tiktok_events_enabled: healthBool(body.tiktok_events_enabled),
+      ads_data_manager_enabled: healthBool(body.ads_data_manager_enabled),
+      sgtm_ingest_enabled: healthBool(body.sgtm_ingest_enabled),
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -810,6 +818,8 @@ const KNOWN_ERROR_CODES = new Set<string>([
   "TIKTOK_MUTATE_NOT_ENABLED",
   "TIKTOK_EVENTS_NOT_ENABLED",
   "TIKTOK_SCOPE_MISSING",
+  "SGTM_NOT_ENABLED",
+  "SGTM_APPLY_KEY_MISSING",
 ]);
 
 function mapGatewayResponse(tool: string, body: Record<string, unknown>, httpStatus: number): Envelope {

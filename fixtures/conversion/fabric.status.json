@@ -1,0 +1,40 @@
+{
+  "comment": "Wave 20 conversion_fabric_status envelope shape. Never keys, JWT, or user_data.",
+  "wave": 20,
+  "replaces_product_story": "NoNetworkUploadSink",
+  "stamp_interface": "FundedUploadSink",
+  "polar_sgtm": {
+    "feature": "sgtm",
+    "default": "off",
+    "mint": false
+  },
+  "sinks": [
+    {
+      "id": "ads_data_manager",
+      "stamp_sink": "AdsDataManagerIngestEventsSink",
+      "stamp_hop": "ads_data_manager_ingest_events",
+      "rpc": "IngestEvents",
+      "not": "UploadClickConversions",
+      "plugin_send_tool": null
+    },
+    {
+      "id": "meta_capi",
+      "stamp_sink": "MetaCapiEventsSink",
+      "stamp_hop": "meta_send_capi_events",
+      "plugin_send_tool": "meta_send_capi_events"
+    },
+    {
+      "id": "tiktok_events",
+      "stamp_sink": "TikTokEventsSink",
+      "stamp_hop": "tiktok_track_events",
+      "plugin_send_tool": "tiktok_track_events"
+    }
+  ],
+  "ingest": {
+    "path": "/v1/sgtm/ingest",
+    "apply_header": "X-DGTL-Apply-Key",
+    "funded_header": "X-DGTL-Ingest-Key",
+    "plugin_test_tool": "sgtm_ingest_test",
+    "closed_event_name": ["apply"]
+  }
+}

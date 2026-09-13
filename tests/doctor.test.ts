@@ -117,6 +117,7 @@ describe("doctor CLI (no secrets)", () => {
       assert.deepEqual(report.license.features, ["ads"]);
       assert.equal(report.license.ads, true);
       assert.equal(report.license.meta, false);
+      assert.equal(report.license.sgtm, false);
       assert.deepEqual(report.license.missing_features, ["meta"]);
       const text = formatDoctorReport(report);
       assert.ok(text.includes("valid"));
@@ -209,11 +210,15 @@ describe("doctor CLI (no secrets)", () => {
       assert.equal(report.flags.worker.tiktokMutateEnabled, null);
       assert.equal(report.flags.worker.metaCapiEnabled, null);
       assert.equal(report.flags.worker.tiktokEventsEnabled, null);
+      assert.equal(report.flags.worker.adsDataManagerEnabled, null);
+      assert.equal(report.flags.worker.sgtmIngestEnabled, null);
       assert.equal(report.dual_gate.ads.plugin_mutate_enabled, true);
       assert.equal(report.dual_gate.meta.plugin_mutate_enabled, true);
       assert.equal(report.dual_gate.tiktok.plugin_mutate_enabled, true);
       assert.equal(report.dual_gate.capi.plugin_mutate_enabled, true);
       assert.equal(report.dual_gate.tiktok_events.plugin_mutate_enabled, true);
+      assert.equal(report.dual_gate.ads_data_manager.plugin_mutate_enabled, true);
+      assert.equal(report.dual_gate.sgtm_ingest.plugin_mutate_enabled, false);
       assert.equal(report.dual_gate.ads.worker_mutate_enabled, false);
       assert.equal(report.dual_gate.meta.worker_mutate_enabled, false);
       assert.equal(report.dual_gate.ads.worker_flag_known, false);
@@ -232,6 +237,8 @@ describe("doctor CLI (no secrets)", () => {
       assert.ok(text.includes("tiktokMutateEnabled: true"));
       assert.ok(text.includes("metaCapiEnabled: true"));
       assert.ok(text.includes("tiktokEventsEnabled: true"));
+      assert.ok(text.includes("adsDataManagerEnabled: true"));
+      assert.ok(text.includes("sgtmIngestTestEnabled: false"));
       assert.ok(text.includes("writesEnabled: false"));
       assert.ok(text.includes("gbpEnabled: false"));
       assert.ok(!text.includes("host-token-not-printed"));
@@ -241,6 +248,8 @@ describe("doctor CLI (no secrets)", () => {
         assert.ok(k in report.dual_gate.tiktok, k);
         assert.ok(k in report.dual_gate.capi, k);
         assert.ok(k in report.dual_gate.tiktok_events, k);
+        assert.ok(k in report.dual_gate.ads_data_manager, k);
+        assert.ok(k in report.dual_gate.sgtm_ingest, k);
       }
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -337,6 +346,8 @@ describe("doctor CLI (no secrets)", () => {
               tiktok_mutate_enabled: false,
               meta_capi_enabled: false,
               tiktok_events_enabled: false,
+              ads_data_manager_enabled: false,
+              sgtm_ingest_enabled: false,
             }),
             { status: 200, headers: { "content-type": "application/json" } },
           );
@@ -350,11 +361,15 @@ describe("doctor CLI (no secrets)", () => {
       assert.equal(report.flags.worker.tiktokMutateEnabled, false);
       assert.equal(report.flags.worker.metaCapiEnabled, false);
       assert.equal(report.flags.worker.tiktokEventsEnabled, false);
+      assert.equal(report.flags.worker.adsDataManagerEnabled, false);
+      assert.equal(report.flags.worker.sgtmIngestEnabled, false);
       assert.equal(report.dual_gate.ads.live_mutate_possible, true);
       assert.equal(report.dual_gate.meta.live_mutate_possible, false);
       assert.equal(report.dual_gate.tiktok.live_mutate_possible, false);
       assert.equal(report.dual_gate.capi.live_mutate_possible, false);
       assert.equal(report.dual_gate.tiktok_events.live_mutate_possible, false);
+      assert.equal(report.dual_gate.ads_data_manager.live_mutate_possible, false);
+      assert.equal(report.dual_gate.sgtm_ingest.live_mutate_possible, false);
       assert.equal(report.dual_gate.ads.worker_flag_known, true);
       const text = formatDoctorReport(report);
       assert.ok(text.includes("host=stamp.example.test"));

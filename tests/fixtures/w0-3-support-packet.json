@@ -13,8 +13,8 @@
     "runbook",
     "next_human_step"
   ],
-  "plugin_flag_keys": ["adsMutateEnabled", "metaMutateEnabled", "tiktokMutateEnabled", "metaCapiEnabled", "tiktokEventsEnabled", "writesEnabled", "gbpEnabled"],
-  "worker_flag_keys": ["adsMutateEnabled", "metaMutateEnabled", "tiktokMutateEnabled", "metaCapiEnabled", "tiktokEventsEnabled"],
+  "plugin_flag_keys": ["adsMutateEnabled", "metaMutateEnabled", "tiktokMutateEnabled", "metaCapiEnabled", "tiktokEventsEnabled", "adsDataManagerEnabled", "sgtmIngestTestEnabled", "writesEnabled", "gbpEnabled"],
+  "worker_flag_keys": ["adsMutateEnabled", "metaMutateEnabled", "tiktokMutateEnabled", "metaCapiEnabled", "tiktokEventsEnabled", "adsDataManagerEnabled", "sgtmIngestEnabled"],
   "dual_gate_lane_keys": [
     "plugin_mutate_enabled",
     "worker_mutate_enabled",
@@ -28,6 +28,8 @@
     "tiktokMutateEnabled": true,
     "metaCapiEnabled": true,
     "tiktokEventsEnabled": true,
+    "adsDataManagerEnabled": true,
+    "sgtmIngestTestEnabled": false,
     "writesEnabled": false,
     "gbpEnabled": false
   },
@@ -36,7 +38,9 @@
     "metaMutateEnabled": false,
     "tiktokMutateEnabled": false,
     "metaCapiEnabled": false,
-    "tiktokEventsEnabled": false
+    "tiktokEventsEnabled": false,
+    "adsDataManagerEnabled": false,
+    "sgtmIngestEnabled": false
   },
   "doctor_env_names": [
     "DGTL_ADS_MUTATE_ENABLED",
@@ -44,6 +48,8 @@
     "DGTL_META_CAPI_ENABLED",
     "DGTL_TIKTOK_MUTATE_ENABLED",
     "DGTL_TIKTOK_EVENTS_ENABLED",
+    "DGTL_ADS_DATA_MANAGER_ENABLED",
+    "DGTL_SGTM_INGEST_TEST_ENABLED",
     "DGTL_GBP_ENABLED"
   ]
 }

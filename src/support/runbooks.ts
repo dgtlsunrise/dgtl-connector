@@ -38,6 +38,16 @@ export const ERROR_RUNBOOKS: Partial<Record<ErrorCode, RunbookHint>> = {
     next_human_step:
       "Check plugin DGTL_TIKTOK_EVENTS_ENABLED (default on) AND Worker TIKTOK_EVENTS_ENABLED (fail-closed, separate from TIKTOK_MUTATE_ENABLED). Polar tiktok bit. App secret stays on the Worker. Never collect unhashed PII. content_id must match catalog sku_id.",
   },
+  SGTM_NOT_ENABLED: {
+    runbook: `${RUNBOOK_INDEX}#sgtm_not_enabled`,
+    next_human_step:
+      "Plugin DGTL_SGTM_INGEST_TEST_ENABLED defaults off. Live apply ingest needs that flag on AND Worker SGTM_INGEST_ENABLED=true (fail-closed). Polar sgtm is reserved default-off — do not mint. Never put funded or apply keys in web GTM.",
+  },
+  SGTM_APPLY_KEY_MISSING: {
+    runbook: `${RUNBOOK_INDEX}#sgtm_apply_key_missing`,
+    next_human_step:
+      "Set DGTL_SGTM_APPLY_KEY (or DGTL_APPLY_KEY) on the plugin host only. Never send X-DGTL-Ingest-Key from this plugin. Never put apply or funded keys in web GTM variables.",
+  },
   LICENSE_REQUIRED: {
     runbook: `${RUNBOOK_INDEX}#license_required`,
     next_human_step:

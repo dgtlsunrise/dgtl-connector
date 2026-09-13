@@ -110,6 +110,8 @@ describe("Wave 9 generate allowlists + tools/list freeze", () => {
       "META_CAPI_NOT_ENABLED",
       "GBP_NOT_CONNECTED",
       "GATEWAY_UNAVAILABLE",
+      "SGTM_NOT_ENABLED",
+      "SGTM_APPLY_KEY_MISSING",
     ];
     for (const code of required) {
       assert.ok((ERROR_CODES as readonly string[]).includes(code), code);

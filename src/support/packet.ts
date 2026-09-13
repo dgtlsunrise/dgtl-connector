@@ -9,6 +9,7 @@ import {
   gatewayHostname,
   pluginFlagBooleans,
   safeLicenseFeatures,
+  workerFlagBooleans,
   type ConsentStorePresence,
   type DualGateMatrix,
   type PluginFlagBooleans,
@@ -93,13 +94,7 @@ export async function collectSupportPacket(
   const intake = collectSupportFields(ctx, args);
   const plugin = pluginFlagBooleans(ctx.flags);
   const probe = await probeGatewayReachable(ctx);
-  const worker: WorkerFlagBooleans = {
-    adsMutateEnabled: probe.reachable ? (probe.ads_mutate_enabled ?? null) : null,
-    metaMutateEnabled: probe.reachable ? (probe.meta_mutate_enabled ?? null) : null,
-    tiktokMutateEnabled: probe.reachable ? (probe.tiktok_mutate_enabled ?? null) : null,
-    metaCapiEnabled: probe.reachable ? (probe.meta_capi_enabled ?? null) : null,
-    tiktokEventsEnabled: probe.reachable ? (probe.tiktok_events_enabled ?? null) : null,
-  };
+  const worker = workerFlagBooleans(probe);
   const features = safeLicenseFeatures(ctx.license.features);
   const book = runbookForError(intake.error_code);
   return {

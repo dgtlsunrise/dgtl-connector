@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { STORE_FILE } from "../auth/types.js";
 import type { Flags } from "../flags.js";
+import type { GatewayReachable } from "../gateway/client.js";
 import { KLAVIYO_STORE_FILE } from "../klaviyo/auth.js";
 import { SHOPIFY_STORE_FILE } from "../shopify/auth.js";
 
@@ -12,6 +13,8 @@ export type PluginFlagBooleans = {
   tiktokMutateEnabled: boolean;
   metaCapiEnabled: boolean;
   tiktokEventsEnabled: boolean;
+  adsDataManagerEnabled: boolean;
+  sgtmIngestTestEnabled: boolean;
   writesEnabled: boolean;
   gbpEnabled: boolean;
 };
@@ -23,6 +26,8 @@ export type WorkerFlagBooleans = {
   tiktokMutateEnabled: boolean | null;
   metaCapiEnabled: boolean | null;
   tiktokEventsEnabled: boolean | null;
+  adsDataManagerEnabled: boolean | null;
+  sgtmIngestEnabled: boolean | null;
 };
 
 /** Dual-gate lane: live mutate requires plugin AND Worker both true. All booleans. */
@@ -39,6 +44,8 @@ export type DualGateMatrix = {
   tiktok: DualGateLane;
   capi: DualGateLane;
   tiktok_events: DualGateLane;
+  ads_data_manager: DualGateLane;
+  sgtm_ingest: DualGateLane;
 };
 
 export type ConsentStorePresence = {
@@ -62,8 +69,23 @@ export function pluginFlagBooleans(flags: Flags): PluginFlagBooleans {
     tiktokMutateEnabled: flags.tiktokMutateEnabled,
     metaCapiEnabled: flags.metaCapiEnabled,
     tiktokEventsEnabled: flags.tiktokEventsEnabled,
+    adsDataManagerEnabled: flags.adsDataManagerEnabled,
+    sgtmIngestTestEnabled: flags.sgtmIngestTestEnabled,
     writesEnabled: flags.writesEnabled,
     gbpEnabled: flags.gbpEnabled,
+  };
+}
+
+/** Worker booleans from health. Unreachable / missing keys stay null (fail-closed). */
+export function workerFlagBooleans(probe: GatewayReachable): WorkerFlagBooleans {
+  return {
+    adsMutateEnabled: probe.reachable ? (probe.ads_mutate_enabled ?? null) : null,
+    metaMutateEnabled: probe.reachable ? (probe.meta_mutate_enabled ?? null) : null,
+    tiktokMutateEnabled: probe.reachable ? (probe.tiktok_mutate_enabled ?? null) : null,
+    metaCapiEnabled: probe.reachable ? (probe.meta_capi_enabled ?? null) : null,
+    tiktokEventsEnabled: probe.reachable ? (probe.tiktok_events_enabled ?? null) : null,
+    adsDataManagerEnabled: probe.reachable ? (probe.ads_data_manager_enabled ?? null) : null,
+    sgtmIngestEnabled: probe.reachable ? (probe.sgtm_ingest_enabled ?? null) : null,
   };
 }
 
@@ -85,6 +107,8 @@ export function dualGateMatrix(plugin: PluginFlagBooleans, worker: WorkerFlagBoo
     tiktok: lane(plugin.tiktokMutateEnabled, worker.tiktokMutateEnabled),
     capi: lane(plugin.metaCapiEnabled, worker.metaCapiEnabled),
     tiktok_events: lane(plugin.tiktokEventsEnabled, worker.tiktokEventsEnabled),
+    ads_data_manager: lane(plugin.adsDataManagerEnabled, worker.adsDataManagerEnabled),
+    sgtm_ingest: lane(plugin.sgtmIngestTestEnabled, worker.sgtmIngestEnabled),
   };
 }
 

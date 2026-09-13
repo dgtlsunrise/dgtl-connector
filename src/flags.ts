@@ -32,6 +32,19 @@ export type Flags = {
    * Live hop dual-gates Worker TIKTOK_EVENTS_ENABLED (fail-closed). App secret stays on Worker.
    */
   tiktokEventsEnabled: boolean;
+  /**
+   * Ads Data Manager IngestEvents status/dual-gate only. No plugin send tool.
+   * Plugin defaults on; opt out with DGTL_ADS_DATA_MANAGER_ENABLED / ADS_DATA_MANAGER_ENABLED=false.
+   * Stamp FundedUploadSink dual-gates Worker ADS_DATA_MANAGER_ENABLED (fail-closed).
+   */
+  adsDataManagerEnabled: boolean;
+  /**
+   * Thin sGTM apply-path ingest test (sgtm_ingest_test). Default OFF.
+   * Opt in with DGTL_SGTM_INGEST_TEST_ENABLED / SGTM_INGEST_TEST_ENABLED=true.
+   * Live POST dual-gates Worker SGTM_INGEST_ENABLED (fail-closed). Apply key is plugin-host env only.
+   * Funded ingest key is never in this plugin or web GTM.
+   */
+  sgtmIngestTestEnabled: boolean;
   /** Append redacted tool audit lines to PLUGIN_DATA/audit.jsonl. Default off. */
   auditLocal: boolean;
   /**
@@ -73,6 +86,8 @@ export function loadFlags(env: NodeJS.ProcessEnv = process.env): Flags {
     tiktokMutateEnabled: envFlag(env.DGTL_TIKTOK_MUTATE_ENABLED, env.TIKTOK_MUTATE_ENABLED, true),
     metaCapiEnabled: envFlag(env.DGTL_META_CAPI_ENABLED, env.META_CAPI_ENABLED, true),
     tiktokEventsEnabled: envFlag(env.DGTL_TIKTOK_EVENTS_ENABLED, env.TIKTOK_EVENTS_ENABLED, true),
+    adsDataManagerEnabled: envFlag(env.DGTL_ADS_DATA_MANAGER_ENABLED, env.ADS_DATA_MANAGER_ENABLED, true),
+    sgtmIngestTestEnabled: envFlag(env.DGTL_SGTM_INGEST_TEST_ENABLED, env.SGTM_INGEST_TEST_ENABLED, false),
     auditLocal: truthy(env.DGTL_AUDIT_LOCAL),
     gatewayUrl: raw ? raw.replace(/\/+$/, "") : undefined,
     feedbackUrl: feedbackRaw ? feedbackRaw.replace(/\/+$/, "") : undefined,
