@@ -49,4 +49,4 @@ Stamp does **not** proxy Shopify. Multi-store vault is out of this wave.
 - Guessing `merchant_id`, `offerId`, or Shopify ids.
 - TikTok. Publishing the Worker. Stamp Shopify hop / multi-store vault.
 - Treating Shopify handle as a Google Ads asset.
-- Meta catalog / CAPI. Raw GraphQL. Customers dump. Axos.
+- Meta catalog / CAPI. Raw GraphQL. Customers dump.

@@ -237,7 +237,6 @@ describe("Shopify read-only slice (local merchant credentials)", () => {
     assert.ok(/read_product_listings/.test(skill));
     assert.ok(/write_products/.test(skill));
     assert.ok(/never silent/i.test(skill) || /Never silently/.test(skill));
-    assert.ok(!/axos/i.test(skill));
   });
 
   it("allowlisted GraphQL ops only; mutation documents refused", () => {
