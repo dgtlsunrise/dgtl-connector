@@ -6,6 +6,7 @@ import type { AccessTokenSource } from "./auth/types.js";
 import { loadFlags, type Flags } from "./flags.js";
 import { GBP_HOSTS } from "./google/scopes.js";
 import { GoogleHttp } from "./http/google.js";
+import { GoogleGa4AdminHttp } from "./http/google-ga4-admin.js";
 import { GoogleWriteHttp } from "./http/google-write.js";
 import type { HttpCall } from "./http/calls.js";
 import { loadLicenseToken, verifyLicenseJwt, type LicenseStatus } from "./license/verify.js";
@@ -34,6 +35,8 @@ export type AppContext = {
   http: GoogleHttp;
   /** Consent W mutate client — never wired to ctx.auth. */
   httpWrite: GoogleWriteHttp;
+  /** Consent G Analytics Admin mutate client — never wired to ctx.auth. */
+  httpGa4Admin: GoogleGa4AdminHttp;
   /** Consent MC Merchant API client — never wired to ctx.auth / Consent A. */
   httpMc: GoogleHttp;
   /** Consent B GBP client — never wired to ctx.auth / Consent A. GET-only hosts. */
@@ -91,6 +94,7 @@ export function createAppContext(opts: {
   const authGscWrite = opts.authGscWrite ?? AuthPort.gscWriteFromEnv({ env, pluginDataDir, fetchImpl });
   const http = new GoogleHttp({ tokenSource: auth, fetchImpl, calls });
   const httpWrite = new GoogleWriteHttp({ tokenSource: authWrite, fetchImpl, calls });
+  const httpGa4Admin = new GoogleGa4AdminHttp({ tokenSource: authGa4Admin, fetchImpl, calls });
   const httpMc = new GoogleHttp({
     tokenSource: authMc,
     fetchImpl,
@@ -118,6 +122,7 @@ export function createAppContext(opts: {
     authGscWrite,
     http,
     httpWrite,
+    httpGa4Admin,
     httpMc,
     httpGbp,
     fetchImpl,

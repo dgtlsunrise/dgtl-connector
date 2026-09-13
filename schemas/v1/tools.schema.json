@@ -262,6 +262,27 @@
         },
         "allow_long_range": {
           "type": "boolean"
+        },
+        "recipe": {
+          "type": "string",
+          "enum": [
+            "ads_mta_campaign_ids",
+            "ads_mta_adgroup_ids",
+            "ads_mta_creative_ids",
+            "ads_mta_customer_ids",
+            "ads_mta_ids",
+            "ads_mta_keyword_ids"
+          ],
+          "description": "Closed Ads-id MTA recipes. v1beta has no conversionSpec."
+        },
+        "key_event_names": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Expanded to keyEvents:{name} metrics. conversionSpec is v1alpha-only."
         }
       }
     },

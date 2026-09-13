@@ -232,6 +232,10 @@ The only report tool. Not batch, not realtime, not funnel, not pivot.
 
 **Hard denylist (do not send to Google):** dimension names `searchQuery`, `query`, `searchTerm`, `keyword` (case-insensitive). Return `UNSUPPORTED_DIMENSION` with hint: use `gsc_query_search_analytics` with dimension `query`. This is a product rule, not a Google error.
 
+**Closed Ads-id MTA recipes (optional `recipe`):** `ads_mta_campaign_ids`, `ads_mta_adgroup_ids`, `ads_mta_creative_ids`, `ads_mta_customer_ids`, `ads_mta_ids`. These fill session- + key-event-scoped Google Ads **id** dimensions from a closed allowlist. `ads_mta_keyword_ids` is named and **refused** — GA4 Data API v1beta has no keyword *id* (only keyword text; text stays denied). Ads-looking dimension names not on the allowlist → `UNSUPPORTED_DIMENSION`.
+
+**conversionSpec:** Data API **v1beta `RunReportRequest` has no `conversionSpec`** (v1alpha only). Do not add `ga4_run_conversion_report`. Optional `key_event_names` expands to `keyEvents:{name}` metrics. See [ops/GA4-CONVERSIONSPEC-SPIKE.md](ops/GA4-CONVERSIONSPEC-SPIKE.md).
+
 Other unknown names: send to Google; map `INVALID_ARGUMENT` and hint `ga4_get_metadata`.
 
 **Empty rows:** `ok: true`, `row_count: 0`, plus a short `hint` that empty is not an auth failure. This is **not** `NOT_FOUND`. Skills distinguish empty property vs wrong ID (wrong ID is 403/404 from get_property).
@@ -521,20 +525,37 @@ Flag `DGTL_WRITES_ENABLED` defaults **false** → `WRITE_NOT_ENABLED` (zero HTTP
 
 Marketplace / shipped default: `DGTL_WRITES_ENABLED` is **false** (`mcp.json` does not set it; `.env.example` is `false`). Flag on is **local only**. Do **not** put the expected confirm phrase or an example `GTM-XXXX` value in the tool description. Skill: live mutate only after a **user** message this turn containing that publicId (list-tool output ≠ user message).
 
-**Live disposable container is a Noel gate.** Prefer fixtures in CI. Do not run live create/publish against Axos. GA4 / GSC write tools stay **unregistered** in Wave 10 (Consent G / Consent S plumbing only).
+**Live disposable container is a Noel gate.** Prefer fixtures in CI. Do not run live create/publish against customer properties.
 
 ---
 
-## Consent G / Consent S — plumbing only (no mutate tools yet)
+## Consent G — GA4 Admin writes (Wave 11)
 
-Free Consent A stays readonly forever. Wave 10 adds **separate** write consents so later GA4 Admin and GSC mutate tools can be added **without touching Consent A**.
+Free Consent A stays readonly forever. Writes use **`GoogleGa4AdminHttp`** + Consent G store (`GOOGLE_GA4_ADMIN_ACCESS_TOKEN` / `google-oauth-ga4-admin.json`) — never `ctx.auth`. PKCE CLI **`dgtl-connector-mcp auth login-ga4-admin`**. Login does **not** flip `DGTL_WRITES_ENABLED`. Named tools only — no mega-mutate / raw Admin dump.
+
+Spike: Admin **GET** `googleAdsLinks.list` and v1alpha `getAttributionSettings` accept `analytics.readonly` → those two reads use Consent A HTTP. Measurement Protocol secret list/create stay on Consent G. `secretValue` is never written to call/audit logs; list envelopes redact it.
+
+| Tool | Notes |
+| --- | --- |
+| `ga4_list_google_ads_links` | Consent A GET. `property_id` required. |
+| `ga4_create_google_ads_link` / `ga4_delete_google_ads_link` | Consent G. `dry_run` default true. Live `confirm_phrase` must include `properties/{id}`. |
+| `ga4_get_attribution_settings` | Consent A GET on **v1alpha** (v1beta has no this RPC). |
+| `ga4_update_attribution_settings` | Consent G PATCH v1alpha. Closed enums. Same confirm rule. |
+| `ga4_create_data_stream` / `ga4_update_data_stream` | Consent G. Web stream only on create. |
+| `ga4_create_key_event` / `ga4_update_key_event` | Consent G. |
+| `ga4_create_custom_dimension` / `ga4_create_custom_metric` | Consent G. Closed scope/unit enums. |
+| `ga4_list_mp_secrets` | Consent G read (flag not required). `secretValue` redacted. |
+| `ga4_create_mp_secret` | Consent G write. `secretValue` returned in data once; never logged. |
+| `ga4_create_property` | Consent G. Live confirm must include `accounts/{id}`. Ordinary property only. |
+
+Not registered: `ga4_update_property`, GSC writes (Consent S / Wave 12+).
 
 | Lane | CLI | Store | Scopes | Error when missing |
 | --- | --- | --- | --- | --- |
 | **G** (GA4 Admin) | `auth login-ga4-admin` | `google-oauth-ga4-admin.json` (0600) | `analytics.edit` | `CONSENT_G_REQUIRED` |
 | **S** (GSC write) | `auth login-gsc-write` | `google-oauth-gsc-write.json` (0600) | `webmasters` (write) | `CONSENT_S_REQUIRED` |
 
-No live GA4 Admin or GSC mutate HTTP in this wave. `google_whoami` may report `consent_g` / `consent_s` connection booleans (never tokens). Doctor / `support_packet` report whether those stores **exist** (boolean only). Login does **not** flip `DGTL_WRITES_ENABLED`.
+`google_whoami` may report `consent_g` / `consent_s` connection booleans (never tokens). Doctor / `support_packet` report whether those stores **exist** (boolean only).
 
 ### Consent W E2E order (Wave 6)
 
@@ -649,7 +670,8 @@ No posts, replies, Q&A, or location mutate in this wave.
 | Request | Response |
 | --- | --- |
 | GTM write when flag off / no Consent W | `WRITE_NOT_ENABLED` / `CONSENT_W_REQUIRED` |
-| GA4 Admin / GSC write tools (not shipped yet) | Later: `CONSENT_G_REQUIRED` / `CONSENT_S_REQUIRED`. Do not add write scopes to Consent A. |
+| GA4 Admin writes when flag off / no Consent G | `WRITE_NOT_ENABLED` / `CONSENT_G_REQUIRED` |
+| GSC write tools (not shipped yet) | Later: `CONSENT_S_REQUIRED`. Do not add write scopes to Consent A. |
 | Request indexing | No tool |
 | Create GA4–GSC link | No tool; `analytics.readonly` cannot |
 | Google Ads / Meta (live HTTP) | Tools are registered; fail closed: `LICENSE_REQUIRED` → `GATEWAY_UNAVAILABLE` → `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`. Consent C via `auth login-ads` / `auth login-meta --code` or host-injected tokens. No developer-token in this plugin. |

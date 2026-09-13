@@ -109,6 +109,14 @@ export class GoogleHttp {
         { api: req.api },
       );
     }
+    // Consent A is GET-only on Analytics Admin. Mutates go through GoogleGa4AdminHttp + Consent G.
+    if (url.hostname === "analyticsadmin.googleapis.com" && req.method !== "GET") {
+      throw new ToolError(
+        "UNSUPPORTED_OPERATION",
+        "Consent A GoogleHttp cannot POST/PATCH/DELETE Analytics Admin. Use GoogleGa4AdminHttp with Consent G.",
+        { api: req.api },
+      );
+    }
     if (GET_ONLY_HOSTS.has(url.hostname) && req.method !== "GET") {
       throw new ToolError(
         "UNSUPPORTED_OPERATION",

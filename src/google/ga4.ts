@@ -2,6 +2,14 @@ import type { AppContext } from "../context.js";
 import { HINT_EMPTY_LIST, HINT_EMPTY_ROWS, okEnvelope, pageFromList, type Envelope } from "../envelope.js";
 import { MSG, ToolError } from "../errors.js";
 import { asInt, normalizeGa4Account, normalizeGa4Property, requireId } from "../ids.js";
+import {
+  assertGa4AdsIdDimensionsAllowed,
+  denyGa4AdsTextDimensions,
+  dimensionsForAdsIdRecipe,
+  GA4_ADS_ID_RECIPE_METRICS,
+  type Ga4AdsIdRecipe,
+  GA4_ADS_ID_RECIPES,
+} from "./ga4-ads-id.js";
 import { denySearchQueryDimensions } from "../tools/denylist.js";
 import { capDateRange } from "../tools/dates.js";
 import { compileFilterExpression, compileOrderBys } from "../tools/filters.js";
@@ -189,23 +197,58 @@ export async function ga4GetMetadata(ctx: AppContext, args: Rec): Promise<Envelo
   });
 }
 
+function parseAdsIdRecipe(raw: unknown): Ga4AdsIdRecipe | undefined {
+  if (raw === undefined || raw === null || raw === "") return undefined;
+  const value = String(raw);
+  if ((GA4_ADS_ID_RECIPES as readonly string[]).includes(value)) {
+    return value as Ga4AdsIdRecipe;
+  }
+  throw new ToolError(
+    "INVALID_ARGUMENT",
+    `recipe must be one of: ${GA4_ADS_ID_RECIPES.join(", ")}`,
+  );
+}
+
 export async function ga4RunReport(ctx: AppContext, args: Rec): Promise<Envelope> {
   const prop = normalizeGa4Property(requireId(args.property_id, "property_id"));
   const dateRanges = args.date_ranges;
   if (!Array.isArray(dateRanges) || dateRanges.length < 1 || dateRanges.length > 2) {
     throw new ToolError("INVALID_ARGUMENT", "date_ranges must have 1 or 2 {start_date, end_date} objects");
   }
-  const metrics = args.metrics;
-  if (!Array.isArray(metrics) || metrics.length < 1 || metrics.length > 10) {
-    throw new ToolError("INVALID_ARGUMENT", "metrics must be 1–10 API names");
+  const recipe = parseAdsIdRecipe(args.recipe);
+  const recipeDims = recipe ? dimensionsForAdsIdRecipe(recipe) : [];
+  let metrics = Array.isArray(args.metrics) ? args.metrics.map((n) => String(n)) : [];
+  if (Array.isArray(args.key_event_names)) {
+    for (const raw of args.key_event_names) {
+      const ev = String(raw).trim();
+      if (!ev) continue;
+      const metric = `keyEvents:${ev}`;
+      if (!metrics.includes(metric)) metrics.push(metric);
+    }
   }
-  const dimensions = Array.isArray(args.dimensions) ? args.dimensions : [];
+  if (metrics.length === 0 && recipe) {
+    metrics = [...GA4_ADS_ID_RECIPE_METRICS];
+  }
+  if (metrics.length < 1 || metrics.length > 10) {
+    throw new ToolError("INVALID_ARGUMENT", "metrics must be 1–10 API names (or omit when recipe is set)");
+  }
+  const dimensions = Array.isArray(args.dimensions)
+    ? args.dimensions.map((n) => String(n))
+    : recipe
+      ? recipeDims
+      : [];
+  if (recipe && Array.isArray(args.dimensions) && args.dimensions.length > 0) {
+    // Caller may add extra dims; Ads-looking names must stay on the id allowlist.
+  }
   if (dimensions.length > 9) {
     throw new ToolError("INVALID_ARGUMENT", "dimensions max is 9");
   }
 
   denySearchQueryDimensions(dimensions);
   denySearchQueryDimensions(metrics);
+  denyGa4AdsTextDimensions(dimensions);
+  denyGa4AdsTextDimensions(metrics);
+  assertGa4AdsIdDimensionsAllowed(dimensions);
 
   const allowLong = Boolean(args.allow_long_range);
   const now = ctx.now();
@@ -269,6 +312,7 @@ export async function ga4RunReport(ctx: AppContext, args: Rec): Promise<Envelope
         date_ranges: compiledRanges,
         metrics: metrics.map((n) => String(n)),
         dimensions: dimensions.map((n) => String(n)),
+        recipe: recipe ?? null,
         limit,
         offset,
       },

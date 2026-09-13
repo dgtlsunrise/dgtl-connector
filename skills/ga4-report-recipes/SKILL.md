@@ -37,6 +37,9 @@ Use API names exactly.
 | Device | `deviceCategory` | `sessions` |
 | Country | `country` | `sessions` |
 | Compare two ranges | same as above | pass **two** `date_ranges` |
+| Ads MTA (ids only) | `ga4_run_report` `recipe=ads_mta_ids` (or campaign/adgroup/creative/customer) | defaults `sessions`, `keyEvents` |
+
+Ads-id recipes use a **closed allowlist** (`sessionGoogleAdsCampaignId`, `googleAdsAdGroupId`, `googleAdsCreativeId`, `googleAdsCustomerId`, …). There is **no** GA4 keyword *id* (`ads_mta_keyword_ids` refuses). Do not send `sessionGoogleAdsKeyword` / `googleAdsKeyword` text. v1beta has **no** `conversionSpec` — pass `key_event_names` (expands to `keyEvents:{name}`) instead of inventing a conversion report tool.
 
 Do **not** use UA names (`ga:sessions`, `bounceRate` as if it were UA). If they ask bounce rate: check metadata for `bounceRate` in GA4; if missing, explain engagement-based metrics instead of fabricating bounce.
 

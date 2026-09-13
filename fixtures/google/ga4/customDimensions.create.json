@@ -1,0 +1,7 @@
+{
+  "name": "properties/111111111/customDimensions/customEvent:subscription_name",
+  "parameterName": "subscription_name",
+  "displayName": "Subscription Name",
+  "description": "Plan name on subscribe",
+  "scope": "EVENT"
+}

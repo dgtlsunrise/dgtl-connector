@@ -9,6 +9,7 @@ import {
   gbpSearchKeywords,
 } from "../google/gbp.js";
 import * as ga4 from "../google/ga4.js";
+import * as ga4Write from "../google/ga4-write.js";
 import * as gsc from "../google/gsc.js";
 import * as gtm from "../google/gtm.js";
 import * as gtmWrite from "../google/gtm-write.js";
@@ -102,6 +103,7 @@ import * as S from "./schemas.js";
 export type ToolFamily =
   | "identity"
   | "ga4"
+  | "ga4_write"
   | "gsc"
   | "gtm"
   | "gtm_write"
@@ -251,10 +253,164 @@ export const TOOLS: ToolSpec[] = [
     group: "ga4-data",
     family: "ga4",
     title: "GA4 run report",
-    description: `${RO} The only GA4 report tool. Denylists searchQuery/query/searchTerm/keyword with no Google call. property_id, date_ranges, metrics required. Cap 1000 rows. Echoes propertyQuota. Response data.cited repeats property_id + dates — cite them; do not invent apiNames (use ga4_get_metadata).`,
+    description: `${RO} The only GA4 report tool. Denylists searchQuery/query/searchTerm/keyword with no Google call. Optional closed Ads-id MTA recipes (campaign/ad group/creative/customer ids). v1beta has no conversionSpec — use keyEvents:{name} or key_event_names. property_id and date_ranges required. Cap 1000 rows. Echoes propertyQuota. Cite data.cited; do not invent apiNames (use ga4_get_metadata).`,
     inputSchema: S.ga4RunReport,
     annotations: ANN_RO,
     handler: (ctx, args) => ga4.ga4RunReport(ctx, args),
+  },
+  {
+    name: "ga4_list_google_ads_links",
+    group: "ga4-write",
+    family: "ga4_write",
+    title: "GA4 list Google Ads links",
+    description:
+      "List Google Ads links on a property. Admin GET accepts analytics.readonly (Consent A). Not in the 24-tool Consent A kernel. property_id required.",
+    inputSchema: S.ga4ListGoogleAdsLinks,
+    annotations: ANN_RO,
+    handler: (ctx, args) => ga4Write.ga4ListGoogleAdsLinks(ctx, args),
+  },
+  {
+    name: "ga4_create_google_ads_link",
+    group: "ga4-write",
+    family: "ga4_write",
+    title: "GA4 create Google Ads link (Consent G)",
+    description:
+      "Create a Google Ads link on a property. Consent G (analytics.edit), not Consent A. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+    inputSchema: S.ga4CreateGoogleAdsLink,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => ga4Write.ga4CreateGoogleAdsLink(ctx, args),
+  },
+  {
+    name: "ga4_delete_google_ads_link",
+    group: "ga4-write",
+    family: "ga4_write",
+    title: "GA4 delete Google Ads link (Consent G)",
+    description:
+      "Delete a Google Ads link. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+    inputSchema: S.ga4DeleteGoogleAdsLink,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => ga4Write.ga4DeleteGoogleAdsLink(ctx, args),
+  },
+  {
+    name: "ga4_get_attribution_settings",
+    group: "ga4-write",
+    family: "ga4_write",
+    title: "GA4 get attribution settings",
+    description:
+      "Get property attributionSettings. v1beta has no this RPC — uses Admin v1alpha GET, which accepts analytics.readonly (Consent A). property_id required.",
+    inputSchema: S.ga4GetAttributionSettings,
+    annotations: ANN_RO,
+    handler: (ctx, args) => ga4Write.ga4GetAttributionSettings(ctx, args),
+  },
+  {
+    name: "ga4_update_attribution_settings",
+    group: "ga4-write",
+    family: "ga4_write",
+    title: "GA4 update attribution settings (Consent G)",
+    description:
+      "Patch attributionSettings (v1alpha). Consent G. Closed enums only. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+    inputSchema: S.ga4UpdateAttributionSettings,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => ga4Write.ga4UpdateAttributionSettings(ctx, args),
+  },
+  {
+    name: "ga4_create_data_stream",
+    group: "ga4-write",
+    family: "ga4_write",
+    title: "GA4 create web data stream (Consent G)",
+    description:
+      "Create a WEB_DATA_STREAM. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+    inputSchema: S.ga4CreateDataStream,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => ga4Write.ga4CreateDataStream(ctx, args),
+  },
+  {
+    name: "ga4_update_data_stream",
+    group: "ga4-write",
+    family: "ga4_write",
+    title: "GA4 update data stream (Consent G)",
+    description:
+      "Patch a data stream display name and/or default URI. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+    inputSchema: S.ga4UpdateDataStream,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => ga4Write.ga4UpdateDataStream(ctx, args),
+  },
+  {
+    name: "ga4_create_key_event",
+    group: "ga4-write",
+    family: "ga4_write",
+    title: "GA4 create key event (Consent G)",
+    description:
+      "Create a key event / conversion. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+    inputSchema: S.ga4CreateKeyEvent,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => ga4Write.ga4CreateKeyEvent(ctx, args),
+  },
+  {
+    name: "ga4_update_key_event",
+    group: "ga4-write",
+    family: "ga4_write",
+    title: "GA4 update key event (Consent G)",
+    description:
+      "Patch a key event counting method. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+    inputSchema: S.ga4UpdateKeyEvent,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => ga4Write.ga4UpdateKeyEvent(ctx, args),
+  },
+  {
+    name: "ga4_create_custom_dimension",
+    group: "ga4-write",
+    family: "ga4_write",
+    title: "GA4 create custom dimension (Consent G)",
+    description:
+      "Create a custom dimension (EVENT/USER/ITEM). Consent G. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+    inputSchema: S.ga4CreateCustomDimension,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => ga4Write.ga4CreateCustomDimension(ctx, args),
+  },
+  {
+    name: "ga4_create_custom_metric",
+    group: "ga4-write",
+    family: "ga4_write",
+    title: "GA4 create custom metric (Consent G)",
+    description:
+      "Create an EVENT-scoped custom metric. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+    inputSchema: S.ga4CreateCustomMetric,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => ga4Write.ga4CreateCustomMetric(ctx, args),
+  },
+  {
+    name: "ga4_list_mp_secrets",
+    group: "ga4-write",
+    family: "ga4_write",
+    title: "GA4 list Measurement Protocol secrets (Consent G)",
+    description:
+      "List MP secrets for a data stream. Consent G (not A). secretValue is redacted in the envelope and never written to logs. Writes flag is not required for this read.",
+    inputSchema: S.ga4ListMpSecrets,
+    annotations: ANN_RO,
+    handler: (ctx, args) => ga4Write.ga4ListMpSecrets(ctx, args),
+  },
+  {
+    name: "ga4_create_mp_secret",
+    group: "ga4-write",
+    family: "ga4_write",
+    title: "GA4 create Measurement Protocol secret (Consent G)",
+    description:
+      "Create an MP secret. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}. secretValue is never written to logs. Flagged off by default (WRITE_NOT_ENABLED).",
+    inputSchema: S.ga4CreateMpSecret,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => ga4Write.ga4CreateMpSecret(ctx, args),
+  },
+  {
+    name: "ga4_create_property",
+    group: "ga4-write",
+    family: "ga4_write",
+    title: "GA4 create property (Consent G)",
+    description:
+      "Create an ordinary GA4 property under an account. Consent G. dry_run default; live needs confirm_phrase containing accounts/{id}. Flagged off by default (WRITE_NOT_ENABLED). Disposable DGTL property only.",
+    inputSchema: S.ga4CreateProperty,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => ga4Write.ga4CreateProperty(ctx, args),
   },
   {
     name: "gsc_list_sites",
@@ -1491,6 +1647,9 @@ export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 export const CONSENT_A_TOOLS = TOOLS.filter(
   (t) => t.family === "identity" || t.family === "ga4" || t.family === "gsc" || t.family === "gtm",
 ).map((t) => t.name);
+
+/** Consent G Admin tools (reads that stay on A HTTP still use this family so the 24-tool kernel is unchanged). */
+export const GA4_WRITE_TOOL_NAMES = TOOLS.filter((t) => t.family === "ga4_write").map((t) => t.name);
 
 /**
  * Alias of CONSENT_A_TOOLS (W0.4). Not the commercial free set.

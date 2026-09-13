@@ -347,11 +347,9 @@ describe("Consent W token store separate from AuthPort A", () => {
     assert.ok(!JSON.stringify(plugin).includes("DGTL_WRITES_ENABLED=true"));
   });
 
-  it("GA4 / GSC write tools are not registered (wait until GTM publish is proven live)", () => {
+  it("GSC write tools and ga4_update_property stay unregistered (Wave 12+)", () => {
     const banned = [
-      "ga4_create_property",
       "ga4_update_property",
-      "ga4_create_data_stream",
       "gsc_submit_sitemap",
       "gsc_delete_sitemap",
       "gsc_inspect_url_index",
@@ -360,6 +358,8 @@ describe("Consent W token store separate from AuthPort A", () => {
     for (const name of banned) {
       assert.ok(!TOOLS.some((t) => t.name === name), name);
     }
+    assert.ok(TOOLS.some((t) => t.name === "ga4_create_property"));
+    assert.ok(TOOLS.some((t) => t.name === "ga4_create_data_stream"));
   });
 
   it("default scopes URL builders never request CONSENT_W", () => {

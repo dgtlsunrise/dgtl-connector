@@ -76,6 +76,19 @@ export const ga4RunReport = z
     property_id: str,
     date_ranges: z.array(dateRange).min(1).max(2).optional(),
     metrics: z.array(z.string().min(1)).min(1).max(10).optional(),
+    /** Closed Ads-id MTA recipes. conversionSpec is v1alpha-only — see docs/ops/GA4-CONVERSIONSPEC-SPIKE.md */
+    recipe: z
+      .enum([
+        "ads_mta_campaign_ids",
+        "ads_mta_adgroup_ids",
+        "ads_mta_creative_ids",
+        "ads_mta_customer_ids",
+        "ads_mta_ids",
+        "ads_mta_keyword_ids",
+      ])
+      .optional(),
+    /** Expand to keyEvents:{name} metrics (v1beta has no conversionSpec). */
+    key_event_names: z.array(z.string().min(1)).max(10).optional(),
     dimensions: z.array(z.string().min(1)).max(9).optional(),
     dimension_filter: z.unknown().optional(),
     metric_filter: z.unknown().optional(),
@@ -1655,6 +1668,182 @@ export const tiktokUpdateCampaign = z
     advertiser_id: z.string().min(1),
     campaign_id: z.string().min(1),
     status: z.enum(["ENABLE", "DISABLE", "ACTIVE", "PAUSED"]),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+/** Consent G / Consent A GA4 Admin Wave 11 — dry_run defaults true on writes. */
+export const ga4ListGoogleAdsLinks = propertyPage;
+
+export const ga4CreateGoogleAdsLink = z
+  .object({
+    property_id: str,
+    customer_id: str,
+    ads_personalization_enabled: z.boolean().optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const ga4DeleteGoogleAdsLink = z
+  .object({
+    property_id: str,
+    ads_link_id: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const ga4GetAttributionSettings = propertyId;
+
+export const ga4UpdateAttributionSettings = z
+  .object({
+    property_id: str,
+    reporting_attribution_model: z
+      .enum([
+        "PAID_AND_ORGANIC_CHANNELS_DATA_DRIVEN",
+        "PAID_AND_ORGANIC_CHANNELS_LAST_CLICK",
+        "GOOGLE_PAID_CHANNELS_LAST_CLICK",
+      ])
+      .optional(),
+    acquisition_lookback: z
+      .enum([
+        "ACQUISITION_CONVERSION_EVENT_LOOKBACK_WINDOW_7_DAYS",
+        "ACQUISITION_CONVERSION_EVENT_LOOKBACK_WINDOW_30_DAYS",
+        "ACQUISITION_CONVERSION_EVENT_LOOKBACK_WINDOW_90_DAYS",
+      ])
+      .optional(),
+    other_lookback: z
+      .enum([
+        "OTHER_CONVERSION_EVENT_LOOKBACK_WINDOW_30_DAYS",
+        "OTHER_CONVERSION_EVENT_LOOKBACK_WINDOW_60_DAYS",
+        "OTHER_CONVERSION_EVENT_LOOKBACK_WINDOW_90_DAYS",
+      ])
+      .optional(),
+    ads_web_conversion_data_export_scope: z
+      .enum(["NOT_SELECTED_YET", "PAID_AND_ORGANIC_CHANNELS", "GOOGLE_PAID_CHANNELS"])
+      .optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const ga4CreateDataStream = z
+  .object({
+    property_id: str,
+    display_name: str,
+    default_uri: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const ga4UpdateDataStream = z
+  .object({
+    property_id: str,
+    stream_id: str,
+    display_name: str,
+    default_uri: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const ga4CreateKeyEvent = z
+  .object({
+    property_id: str,
+    event_name: str,
+    counting_method: z.enum(["ONCE_PER_EVENT", "ONCE_PER_SESSION"]).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const ga4UpdateKeyEvent = z
+  .object({
+    property_id: str,
+    key_event_id: str,
+    counting_method: z.enum(["ONCE_PER_EVENT", "ONCE_PER_SESSION"]),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const ga4CreateCustomDimension = z
+  .object({
+    property_id: str,
+    parameter_name: str,
+    display_name: str,
+    scope: z.enum(["EVENT", "USER", "ITEM"]),
+    description: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const ga4CreateCustomMetric = z
+  .object({
+    property_id: str,
+    parameter_name: str,
+    display_name: str,
+    measurement_unit: z
+      .enum([
+        "STANDARD",
+        "CURRENCY",
+        "FEET",
+        "METERS",
+        "KILOMETERS",
+        "MILES",
+        "MILLISECONDS",
+        "SECONDS",
+        "MINUTES",
+        "HOURS",
+      ])
+      .optional(),
+    description: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const ga4ListMpSecrets = z
+  .object({
+    property_id: str,
+    stream_id: str,
+    page_size: pageSize,
+    page_token: pageToken,
+  })
+  .strict();
+
+export const ga4CreateMpSecret = z
+  .object({
+    property_id: str,
+    stream_id: str,
+    display_name: str,
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const ga4CreateProperty = z
+  .object({
+    account_id: str,
+    display_name: str,
+    time_zone: str,
+    currency_code: str,
+    industry_category: str,
     dry_run: z.boolean().default(true),
     confirm_phrase: z.string().optional(),
   })

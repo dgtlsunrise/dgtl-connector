@@ -126,16 +126,60 @@ function route(method: string, url: URL, opts: FixtureOpts): unknown {
     if (p.endsWith("/accountSummaries")) {
       return opts.emptyList ? { accountSummaries: [] } : loadFixture("ga4/accountSummaries.list.json");
     }
+    if (p.endsWith("/googleAdsLinks") && method === "GET") {
+      return opts.emptyList ? { googleAdsLinks: [] } : loadFixture("ga4/googleAdsLinks.list.json");
+    }
+    if (p.endsWith("/googleAdsLinks") && method === "POST") {
+      return loadFixture("ga4/googleAdsLinks.create.json");
+    }
+    if (/\/googleAdsLinks\/[^/]+$/.test(p) && method === "DELETE") {
+      return {};
+    }
+    if (p.endsWith("/attributionSettings") && method === "GET") {
+      return loadFixture("ga4/attributionSettings.get.json");
+    }
+    if (p.endsWith("/attributionSettings") && method === "PATCH") {
+      return loadFixture("ga4/attributionSettings.patch.json");
+    }
+    if (p.endsWith("/measurementProtocolSecrets") && method === "GET") {
+      return opts.emptyList
+        ? { measurementProtocolSecrets: [] }
+        : loadFixture("ga4/measurementProtocolSecrets.list.json");
+    }
+    if (p.endsWith("/measurementProtocolSecrets") && method === "POST") {
+      return loadFixture("ga4/measurementProtocolSecrets.create.json");
+    }
+    if (p.endsWith("/customDimensions") && method === "POST") {
+      return loadFixture("ga4/customDimensions.create.json");
+    }
+    if (p.endsWith("/customMetrics") && method === "POST") {
+      return loadFixture("ga4/customMetrics.create.json");
+    }
+    if (p.endsWith("/dataStreams") && method === "POST") {
+      return loadFixture("ga4/dataStreams.create.json");
+    }
+    if (/\/dataStreams\/[^/]+$/.test(p) && method === "PATCH") {
+      return loadFixture("ga4/dataStreams.patch.json");
+    }
+    if (p.endsWith("/dataStreams") && method === "GET") {
+      return opts.emptyList ? { dataStreams: [] } : loadFixture("ga4/dataStreams.list.json");
+    }
+    if (p.endsWith("/keyEvents") && method === "POST") {
+      return loadFixture("ga4/keyEvents.create.json");
+    }
+    if (/\/keyEvents\/[^/]+$/.test(p) && method === "PATCH") {
+      return loadFixture("ga4/keyEvents.patch.json");
+    }
+    if (p.endsWith("/keyEvents") && method === "GET") {
+      return opts.emptyList ? { keyEvents: [] } : loadFixture("ga4/keyEvents.list.json");
+    }
+    if (p.endsWith("/properties") && method === "POST") {
+      return loadFixture("ga4/properties.create.json");
+    }
     if (/\/properties\/\d+$/.test(p) && method === "GET") {
       const id = p.split("/").pop();
       const base = loadFixture("ga4/properties.get.json") as Record<string, unknown>;
       return { ...base, name: `properties/${id}` };
-    }
-    if (p.endsWith("/dataStreams")) {
-      return opts.emptyList ? { dataStreams: [] } : loadFixture("ga4/dataStreams.list.json");
-    }
-    if (p.endsWith("/keyEvents")) {
-      return opts.emptyList ? { keyEvents: [] } : loadFixture("ga4/keyEvents.list.json");
     }
     if (p.endsWith("/properties") && method === "GET") {
       return opts.emptyList ? { properties: [] } : loadFixture("ga4/properties.list.json");

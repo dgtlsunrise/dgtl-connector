@@ -1,0 +1,7 @@
+{
+  "name": "properties/111111111/attributionSettings",
+  "acquisitionConversionEventLookbackWindow": "ACQUISITION_CONVERSION_EVENT_LOOKBACK_WINDOW_30_DAYS",
+  "otherConversionEventLookbackWindow": "OTHER_CONVERSION_EVENT_LOOKBACK_WINDOW_90_DAYS",
+  "reportingAttributionModel": "PAID_AND_ORGANIC_CHANNELS_DATA_DRIVEN",
+  "adsWebConversionDataExportScope": "PAID_AND_ORGANIC_CHANNELS"
+}

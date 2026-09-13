@@ -93,7 +93,7 @@ Product rules: explicit tools only; publish requires confirmation (`dry_run` / `
 
 ## Consent G (GA4 Admin writes) and Consent S (GSC writes) — separate from Consent A
 
-Consent A stays **readonly forever**. GA4 Admin mutations and Search Console writes are later tools on **their own** consents. Wave 10 is plumbing only (scopes, login CLIs, stores, error codes). No Admin/GSC mutate tools in `tools/list` yet.
+Consent A stays **readonly forever**. Wave 11 registers named GA4 Admin tools. Writes use Consent G (`analytics.edit`) + `DGTL_WRITES_ENABLED`. Admin GET `googleAdsLinks.list` and v1alpha `getAttributionSettings` stay on Consent A HTTP. Search Console writes remain later (Consent S). No write scopes on the free Desktop client.
 
 | Lane | Scopes | Login | Store (mode 0600) | Fail |
 | --- | --- | --- | --- | --- |

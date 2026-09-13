@@ -1,0 +1,7 @@
+{
+  "name": "properties/111111111/customMetrics/customEvent:item_value",
+  "parameterName": "item_value",
+  "displayName": "Item Value",
+  "measurementUnit": "CURRENCY",
+  "scope": "EVENT"
+}

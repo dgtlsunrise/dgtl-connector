@@ -216,6 +216,90 @@
       "fail": "WRITE_NOT_ENABLED"
     },
     {
+      "name": "ga4_list_google_ads_links",
+      "group": "ga4-write",
+      "flag": null,
+      "fail": null
+    },
+    {
+      "name": "ga4_get_attribution_settings",
+      "group": "ga4-write",
+      "flag": null,
+      "fail": null
+    },
+    {
+      "name": "ga4_list_mp_secrets",
+      "group": "ga4-write",
+      "flag": null,
+      "fail": "CONSENT_G_REQUIRED"
+    },
+    {
+      "name": "ga4_create_google_ads_link",
+      "group": "ga4-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED"
+    },
+    {
+      "name": "ga4_delete_google_ads_link",
+      "group": "ga4-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED"
+    },
+    {
+      "name": "ga4_update_attribution_settings",
+      "group": "ga4-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED"
+    },
+    {
+      "name": "ga4_create_data_stream",
+      "group": "ga4-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED"
+    },
+    {
+      "name": "ga4_update_data_stream",
+      "group": "ga4-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED"
+    },
+    {
+      "name": "ga4_create_key_event",
+      "group": "ga4-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED"
+    },
+    {
+      "name": "ga4_update_key_event",
+      "group": "ga4-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED"
+    },
+    {
+      "name": "ga4_create_custom_dimension",
+      "group": "ga4-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED"
+    },
+    {
+      "name": "ga4_create_custom_metric",
+      "group": "ga4-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED"
+    },
+    {
+      "name": "ga4_create_mp_secret",
+      "group": "ga4-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED"
+    },
+    {
+      "name": "ga4_create_property",
+      "group": "ga4-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED"
+    },
+    {
       "name": "gbp_list_accounts",
       "group": "gbp",
       "flag": "gbp.enabled",

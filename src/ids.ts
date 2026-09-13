@@ -45,6 +45,19 @@ export function optionalId(value: unknown, field: string): string | undefined {
   return requireId(value, field);
 }
 
+/** Numeric ids this plugin must never target (live customer lock). */
+const LOCKED_GA4_NUMERIC_IDS = new Set(["2859537899"]);
+
+export function assertGa4NumericIdAllowed(id: string, field: string): void {
+  if (LOCKED_GA4_NUMERIC_IDS.has(id)) {
+    throw new ToolError(
+      "INVALID_ARGUMENT",
+      `${field} is not allowed for this plugin. Use a disposable DGTL property (fixtures preferred).`,
+      { resource_id: field },
+    );
+  }
+}
+
 export function normalizeGa4Account(raw: string): { id: string; name: string } {
   const trimmed = raw.trim();
   const id = trimmed.startsWith("accounts/")
@@ -55,6 +68,7 @@ export function normalizeGa4Account(raw: string): { id: string; name: string } {
       resource_id: trimmed,
     });
   }
+  assertGa4NumericIdAllowed(id, "account_id");
   return { id, name: `accounts/${id}` };
 }
 
@@ -144,7 +158,26 @@ export function normalizeGa4Property(raw: string): { id: string; name: string } 
       { resource_id: trimmed },
     );
   }
+  assertGa4NumericIdAllowed(id, "property_id");
   return { id, name: `properties/${id}` };
+}
+
+/** Child under a GA4 property: ads link, data stream, key event, or MP secret. */
+export function normalizeGa4ChildId(
+  raw: string,
+  field: string,
+  collection: "googleAdsLinks" | "dataStreams" | "keyEvents" | "measurementProtocolSecrets",
+  propertyName: string,
+): { id: string; name: string } {
+  const trimmed = raw.trim();
+  const prefix = `${propertyName}/${collection}/`;
+  const id = trimmed.startsWith(prefix) ? trimmed.slice(prefix.length) : trimmed;
+  if (!id || FORBIDDEN.has(id.toLowerCase()) || id.includes("/") || id.includes("..")) {
+    throw new ToolError("INVALID_ARGUMENT", `${field} must be the child id or ${prefix}{id}.`, {
+      resource_id: trimmed,
+    });
+  }
+  return { id, name: `${prefix}${id}` };
 }
 
 export function normalizeGtmAccount(raw: string): string {

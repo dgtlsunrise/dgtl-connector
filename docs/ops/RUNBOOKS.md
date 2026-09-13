@@ -58,7 +58,7 @@ Reinstall the merchant custom app with the missing Admin scope. `write_inventory
 
 ## `CONSENT_G_REQUIRED`
 
-`auth login-ga4-admin` with the Consent G Desktop client (`analytics.edit`). Never add edit to Consent A. Wave 10 is plumbing only — no Admin mutate tools yet.
+`auth login-ga4-admin` with the Consent G Desktop client (`analytics.edit`). Never add edit to Consent A. Then set `DGTL_WRITES_ENABLED=true` for mutate tools. Prefer `dry_run`. Live confirm must include `properties/{id}` (or `accounts/{id}` on create property).
 
 ## `CONSENT_S_REQUIRED`
 

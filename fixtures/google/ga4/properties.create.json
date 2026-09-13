@@ -1,0 +1,8 @@
+{
+  "name": "properties/999000111",
+  "parent": "accounts/111111",
+  "displayName": "DGTL disposable fixture",
+  "propertyType": "PROPERTY_TYPE_ORDINARY",
+  "timeZone": "America/Los_Angeles",
+  "currencyCode": "USD"
+}
