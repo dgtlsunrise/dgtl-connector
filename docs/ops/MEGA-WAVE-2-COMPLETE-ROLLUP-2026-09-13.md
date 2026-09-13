@@ -35,6 +35,7 @@ SPEC OK  tools=26 (Consent A kernel)  local_free=36  skills=21
 - Local-free: Shopify + Klaviyo reads/writes (writes fail `WRITE_NOT_ENABLED`) + GBP GET-only when flagged.
 - Skills: 21 (Wave 23 added none).
 - `tools/list` freeze: **164** (Wave 22). Wave 23 added **zero** MCP tools.
+- Local tests at Wave 23 tip: **572** pass, `0` fail.
 
 ## What operators can do in-repo (not listing copy)
 
