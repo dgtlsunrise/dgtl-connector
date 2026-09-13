@@ -1,6 +1,6 @@
 ---
 name: license-and-reconnect
-description: Map LICENSE_REQUIRED, GATEWAY_UNAVAILABLE, REAUTH_REQUIRED, CONSENT_MISSING, GBP_NOT_ENABLED, GBP_NOT_CONNECTED, GBP_SCOPE_MISSING, WRITE_NOT_ENABLED, CONSENT_W_REQUIRED, CONSENT_G_REQUIRED, CONSENT_S_REQUIRED, ADS_MUTATE_NOT_ENABLED, META_MUTATE_NOT_ENABLED, META_SCOPE_MISSING, SPEND_CAP_EXCEEDED, ADS_SCOPE_MISSING, META_NOT_CONNECTED. Use when a paid tool failed, Google access expired, a scope was unchecked, writes are gated, gateway is down, or the user asks about Ads/Meta unlock. Free GA4/GSC/GTM keep working without a license.
+description: Map LICENSE_REQUIRED, GATEWAY_UNAVAILABLE, REAUTH_REQUIRED, CONSENT_MISSING, GBP_NOT_ENABLED, GBP_NOT_CONNECTED, GBP_SCOPE_MISSING, WRITE_NOT_ENABLED, CONSENT_W_REQUIRED, CONSENT_G_REQUIRED, CONSENT_S_REQUIRED, ADS_MUTATE_NOT_ENABLED, META_MUTATE_NOT_ENABLED, META_CAPI_NOT_ENABLED, META_SCOPE_MISSING, SPEND_CAP_EXCEEDED, ADS_SCOPE_MISSING, META_NOT_CONNECTED. Use when a paid tool failed, Google access expired, a scope was unchecked, writes are gated, gateway is down, or the user asks about Ads/Meta unlock. Free GA4/GSC/GTM keep working without a license.
 ---
 
 # License and reconnect
