@@ -1980,6 +1980,121 @@
         "confirm_phrase": { "type": "string" },
         "confirm": { "type": "string" }
       }
+    },
+    "shopify_list_publications": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "page_size": { "$ref": "#/$defs/page_size" },
+        "page_token": { "$ref": "#/$defs/page_token" },
+        "catalog_type": {
+          "type": "string",
+          "enum": ["APP", "COMPANY_LOCATION", "MARKET", "NONE"]
+        }
+      }
+    },
+    "shopify_list_catalogs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "page_size": { "$ref": "#/$defs/page_size" },
+        "page_token": { "$ref": "#/$defs/page_token" },
+        "catalog_type": {
+          "type": "string",
+          "enum": ["APP", "COMPANY_LOCATION", "MARKET", "NONE"]
+        },
+        "type": {
+          "type": "string",
+          "enum": ["APP", "COMPANY_LOCATION", "MARKET", "NONE"]
+        }
+      }
+    },
+    "shopify_list_product_feeds": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "page_size": { "$ref": "#/$defs/page_size" },
+        "page_token": { "$ref": "#/$defs/page_token" }
+      }
+    },
+    "shopify_product_set": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "product_id": { "type": "string", "minLength": 1 },
+        "handle": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "status": {
+          "type": "string",
+          "enum": ["ACTIVE", "DRAFT", "ARCHIVED"]
+        },
+        "description_html": { "type": "string" },
+        "vendor": { "type": "string" },
+        "product_type": { "type": "string" },
+        "tags": {
+          "type": "array",
+          "maxItems": 50,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "product_options": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "values"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "values": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        },
+        "variants": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["option_values"],
+            "properties": {
+              "variant_id": { "type": "string" },
+              "sku": { "type": "string" },
+              "price": {
+                "oneOf": [{ "type": "string" }, { "type": "number" }]
+              },
+              "compare_at_price": {
+                "oneOf": [{ "type": "string" }, { "type": "number" }]
+              },
+              "barcode": { "type": "string" },
+              "option_values": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["option_name", "name"],
+                  "properties": {
+                    "option_name": { "type": "string", "minLength": 1 },
+                    "name": { "type": "string", "minLength": 1 }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "synchronous": { "type": "boolean" },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": { "type": "string" },
+        "confirm": { "type": "string" }
+      }
     }
   }
 }

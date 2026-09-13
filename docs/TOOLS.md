@@ -8,7 +8,7 @@ If you need a 27th **Consent A** tool, bump a version and update `schemas/v1/cat
 
 Machine-readable list: [`schemas/v1/catalog.json`](../schemas/v1/catalog.json). Parameter schema: [`schemas/v1/tools.schema.json`](../schemas/v1/tools.schema.json). Error envelope: [`schemas/v1/error.schema.json`](../schemas/v1/error.schema.json).
 
-**Not all tools are read.** Consent A GA4 / GSC / GTM, Shopify products/orders/inventory/locations, and GBP (when enabled) are read (or fail-closed). GTM write (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`, `gtm_create_client`, `gtm_update_client`, `gtm_create_container`, `gtm_create_environment`), `shopify_adjust_inventory`, Merchant Center ProductInput writes (`mc_create_data_source`, `mc_upsert_product_input`, `mc_delete_product_input`, `mc_fetch_data_source`), and Ads / Meta mutate + create tools are registered **writes**. Repeating a **read** call is safe (**idempotent** as HTTP GET/list/query). Write tools are **not** idempotent. Read results are **not bit-stable** (GA4 processing, GSC data_state, GTM workspace edits).
+**Not all tools are read.** Consent A GA4 / GSC / GTM, Shopify products/orders/inventory/locations/publications/catalogs/feeds, and GBP (when enabled) are read (or fail-closed). GTM write (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`, `gtm_create_client`, `gtm_update_client`, `gtm_create_container`, `gtm_create_environment`), `shopify_adjust_inventory`, `shopify_product_set`, Merchant Center ProductInput writes (`mc_create_data_source`, `mc_upsert_product_input`, `mc_delete_product_input`, `mc_fetch_data_source`), and Ads / Meta mutate + create tools are registered **writes**. Repeating a **read** call is safe (**idempotent** as HTTP GET/list/query). Write tools are **not** idempotent. Read results are **not bit-stable** (GA4 processing, GSC data_state, GTM workspace edits).
 
 ## Mutate honesty (Wave 0)
 
@@ -42,7 +42,7 @@ Live Ads / Meta / TikTok mutate requires **plugin AND Worker**. Plugin Ads / Met
 | Meta mutate (`DGTL_META_MUTATE_ENABLED` / `META_MUTATE_ENABLED`) | **on** | fail-closed | both true |
 | TikTok mutate (`DGTL_TIKTOK_MUTATE_ENABLED` / `TIKTOK_MUTATE_ENABLED`) | **on** | fail-closed (`tiktok_mutate_enabled`) | both true |
 | Consent W writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `GoogleWriteHttp`) | flag on + Consent W token |
-| Shopify writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `ShopifyHttp` mutation) | flag on + merchant `write_inventory` + shop-domain confirm |
+| Shopify writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `ShopifyHttp` mutation) | flag on + merchant `write_inventory` / `write_products` + shop-domain confirm |
 | GBP (`DGTL_GBP_ENABLED`) | **off** | n/a | flag on + Consent B token → GET hop (no stamp) |
 
 `support_packet` / `doctor` print this matrix (booleans only; never tokens).
@@ -721,8 +721,9 @@ No posts, replies, Q&A, or location mutate in this wave.
 | Google Ads / Meta (live HTTP) | Tools are registered; fail closed: `LICENSE_REQUIRED` → `GATEWAY_UNAVAILABLE` → `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`. Consent C via `auth login-ads` / `auth login-meta --code` or host-injected tokens. No developer-token in this plugin. |
 | GBP write (posts / replies) | No tool. Scope is write-capable; Wave 5 tools are GET-only. |
 | GA4 realtime, funnel, pivot, batch | No tool |
-| GTM users / folders / built-in variables / environment reauthorize | No tool (Wave 15+) |
-| MC data-source delete/patch, promotions, reviews | No tool (Wave 15+) |
+| GTM users / folders / built-in variables / environment reauthorize | No tool (Wave 16+) |
+| MC data-source delete/patch, promotions, reviews | No tool (Wave 16+) |
+| Meta catalog / CAPI | No tool (Wave 16+) |
 | Stamp conversion ingest / CAPI sinks | No plugin tool (Wave 20). Never put ingest keys in GTM clients or web variables. |
 | Gmail / Drive | No tool |
 | Mega `run_any_google_json` | Forbidden |
@@ -740,11 +741,11 @@ Identity 1 + GA4 8 + GSC 7 + GTM 10 = **26**.
 | gtm | `gtm_list_accounts`, `gtm_list_containers`, `gtm_get_container`, `gtm_list_workspaces`, `gtm_list_tags`, `gtm_list_triggers`, `gtm_list_variables`, `gtm_get_live_container_version`, `gtm_list_clients`, `gtm_list_environments` |
 
 
-## Shopify — products/orders/inventory read + confirm-gated inventory write (local; not Consent A)
+## Shopify — products/orders/inventory + publications/feeds read + confirm-gated inventory / productSet write (local; not Consent A)
 
-Merchant-held Admin API credentials on the Bot computer. **No Polar. No stamp hop. No multi-store vault.** Fail closed `SHOPIFY_NOT_CONNECTED` without `SHOPIFY_STORE` + `SHOPIFY_ACCESS_TOKEN` (or `PLUGIN_DATA/shopify-oauth.json`). Admin GraphQL API version **2026-04**. Closed free Google count stays **26**.
+Merchant-held Admin API credentials on the Bot computer. **No Polar. No stamp hop. No multi-store vault.** Fail closed `SHOPIFY_NOT_CONNECTED` without `SHOPIFY_STORE` + `SHOPIFY_ACCESS_TOKEN` (or `PLUGIN_DATA/shopify-oauth.json`). Admin GraphQL API version **2026-04** (not bumped). Closed free Google count stays **26**.
 
-**Consent decision:** Shopify is not Google OAuth. Reads stay **LOCAL_FREE** with `read_products` + `read_orders` + `read_inventory` + `read_locations`. Writes use the **same** merchant token after an explicit custom-app `write_inventory` expansion **and** `DGTL_WRITES_ENABLED` (default **false**). There is no second Shopify OAuth family and no Worker vault.
+**Consent decision:** Shopify is not Google OAuth. Default reads stay **LOCAL_FREE** with `read_products` + `read_orders` + `read_inventory` + `read_locations`. **Explicit expand** (reinstall; never silent on an existing app): `read_publications`, `read_product_listings`, `write_inventory`, `write_products`. Writes use the **same** merchant token after the matching write scope **and** `DGTL_WRITES_ENABLED` (default **false**). There is no second Shopify OAuth family and no Worker vault.
 
 | Tool | Notes |
 | --- | --- |
@@ -755,13 +756,17 @@ Merchant-held Admin API credentials on the Bot computer. **No Polar. No stamp ho
 | `shopify_get_order` | Requires `order_id` (gid or numeric); line items. |
 | `shopify_list_locations` | Paginated locations. `read_locations`. |
 | `shopify_list_inventory_levels` | Requires `location_id`. `read_inventory`. |
+| `shopify_list_publications` | Paginated publications. **`read_publications`** (explicit expand). Optional `catalog_type` APP\|COMPANY_LOCATION\|MARKET\|NONE. |
+| `shopify_list_catalogs` | Paginated Shopify catalogs. Existing **`read_products`**. Optional `catalog_type`. Not Meta catalog. |
+| `shopify_list_product_feeds` | Paginated product feeds. **`read_product_listings`** (explicit expand). |
 | `shopify_adjust_inventory` | Write. `inventoryAdjustQuantities` delta. `dry_run` default true. Live: `confirm_phrase` must contain the shop domain. Flag off → `WRITE_NOT_ENABLED` (zero HTTP). Missing `write_inventory` → `SHOPIFY_SCOPE_MISSING`. |
+| `shopify_product_set` | Write. Allowlisted `productSet` GraphQL only (title/handle/status/description_html/vendor/product_type/tags/product_options/variants). `dry_run` default true. Live: `confirm_phrase` or `confirm` must contain the shop domain. `DGTL_WRITES_ENABLED` + **`write_products`**. Variants/tags **replace** omitted entries. No raw GraphQL. No customers. |
 
-Fail order for writes: `WRITE_NOT_ENABLED` → `SHOPIFY_NOT_CONNECTED` → `SHOPIFY_SCOPE_MISSING` → dry-run (shop domain, zero mutation HTTP) → live needs shop domain in `confirm_phrase`.
+Fail order for writes: `WRITE_NOT_ENABLED` → `SHOPIFY_NOT_CONNECTED` → `SHOPIFY_SCOPE_MISSING` → dry-run (shop domain, zero mutation HTTP) → live needs shop domain in `confirm_phrase` / `confirm`.
 
-**Out of this wave:** customers dump, ShopifyQL, raw GraphQL, themes, Multipass, stamp multi-store vault, draft orders, price writes.
+**Out of this wave:** customers dump, ShopifyQL, raw GraphQL, themes, Multipass, stamp multi-store vault, draft orders, collections/metafields/files on productSet, Meta catalog/CAPI (Wave 16+).
 
-Skill: `shopify-ads-mc-join` joins Shopify SKU → MC `offerId` → Ads listing groups. `shopify-readonly` covers list/get.
+Skill: `shopify-ads-mc-join` joins Shopify SKU → MC `offerId` → Ads listing groups (and publications/feeds for catalog source of truth). `shopify-readonly` covers list/get.
 
 ## TikTok Ads (Polar `tiktok` + stamp hop)
 

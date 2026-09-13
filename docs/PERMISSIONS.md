@@ -229,8 +229,9 @@ Local merchant custom app / Dev Dashboard credentials:
 - `SHOPIFY_STORE` (`*.myshopify.com`)
 - `SHOPIFY_ACCESS_TOKEN` (`shpat_…`) and/or `SHOPIFY_CLIENT_ID` + `SHOPIFY_CLIENT_SECRET` (client_credentials)
 - Default scopes on the **merchant app**: `read_products`, `read_orders`, `read_inventory`, `read_locations`
-- `write_inventory` is an **explicit merchant-app expansion** (same token, not a second OAuth family, not stamp vault). Reads stay LOCAL_FREE without it.
-- Writes also need `DGTL_WRITES_ENABLED=true` (marketplace default **false**) + `confirm_phrase` containing the shop domain
+- **Explicit expand** (reinstall / request; **never silent** on an existing app): `read_publications`, `read_product_listings`, `write_inventory`, `write_products`. Same token, not a second OAuth family, not stamp vault. Missing detectable scope → `SHOPIFY_SCOPE_MISSING`.
+- Catalogs list uses existing `read_products`. Publications need `read_publications`. Product feeds need `read_product_listings`. `shopify_adjust_inventory` needs `write_inventory`. `shopify_product_set` needs `write_products`.
+- Writes also need `DGTL_WRITES_ENABLED=true` (marketplace default **false**) + `confirm_phrase` / `confirm` containing the shop domain
 - Store under `PLUGIN_DATA/shopify-oauth.json` mode 0600; never git
 
 Fail closed: `SHOPIFY_NOT_CONNECTED`. Free local lane (do not require Polar Pro). Support never collects Shopify tokens. Not part of Consent A verification / marketplace Google consent screen.

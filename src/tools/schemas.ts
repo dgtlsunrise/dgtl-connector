@@ -1846,6 +1846,96 @@ export const shopifyAdjustInventory = z
   .strict()
   .superRefine(requireConfirmWhenLive);
 
+const shopifyCatalogType = z.enum(["APP", "COMPANY_LOCATION", "MARKET", "NONE"]).optional();
+
+export const shopifyListPublications = z
+  .object({
+    page_size: pageSize,
+    page_token: pageToken,
+    catalog_type: shopifyCatalogType,
+  })
+  .strict();
+
+export const shopifyListCatalogs = z
+  .object({
+    page_size: pageSize,
+    page_token: pageToken,
+    catalog_type: shopifyCatalogType,
+    type: shopifyCatalogType,
+  })
+  .strict();
+
+export const shopifyListProductFeeds = z
+  .object({
+    page_size: pageSize,
+    page_token: pageToken,
+  })
+  .strict();
+
+const shopifyProductSetOptionValue = z
+  .object({
+    option_name: z.string().min(1).max(255),
+    name: z.string().min(1).max(255),
+  })
+  .strict();
+
+const shopifyProductSetVariant = z
+  .object({
+    variant_id: z.string().min(1).optional(),
+    sku: z.string().min(1).max(255).optional(),
+    price: z.union([z.string().min(1), z.number()]).optional(),
+    compare_at_price: z.union([z.string().min(1), z.number()]).optional(),
+    barcode: z.string().min(1).max(255).optional(),
+    option_values: z.array(shopifyProductSetOptionValue).min(1).max(3),
+  })
+  .strict();
+
+const shopifyProductSetOption = z
+  .object({
+    name: z.string().min(1).max(255),
+    values: z.array(z.string().min(1).max(255)).min(1).max(50),
+  })
+  .strict();
+
+/** Allowlisted productSet — dry_run default true; live confirm must include shop domain. */
+export const shopifyProductSet = z
+  .object({
+    product_id: z.string().min(1).optional(),
+    handle: z.string().min(1).max(255).optional(),
+    title: z.string().min(1).max(255).optional(),
+    status: z.enum(["ACTIVE", "DRAFT", "ARCHIVED"]).optional(),
+    description_html: z.string().min(1).max(20_000).optional(),
+    vendor: z.string().min(1).max(255).optional(),
+    product_type: z.string().min(1).max(255).optional(),
+    tags: z.array(z.string().min(1).max(255)).max(50).optional(),
+    product_options: z.array(shopifyProductSetOption).max(3).optional(),
+    variants: z.array(shopifyProductSetVariant).min(1).max(50).optional(),
+    synchronous: z.boolean().optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+    confirm: z.string().optional(),
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    if (val.dry_run === false) {
+      const phrase = (val.confirm_phrase ?? val.confirm ?? "").trim();
+      if (!phrase) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "confirm_phrase (or confirm) is required when dry_run is false",
+          path: ["confirm_phrase"],
+        });
+      }
+    }
+    if (!val.product_id && !val.handle && !val.title) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "title (create) or product_id / handle (update) is required",
+        path: ["title"],
+      });
+    }
+  });
+
 /** TikTok Ads — Polar `tiktok` + stamp hop. App secret never in this plugin. */
 export const tiktokListAdvertisers = emptyInput;
 

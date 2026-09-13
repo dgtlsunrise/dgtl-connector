@@ -220,6 +220,9 @@ def check_catalog_and_tools() -> None:
             "shopify_get_order",
             "shopify_list_locations",
             "shopify_list_inventory_levels",
+            "shopify_list_publications",
+            "shopify_list_catalogs",
+            "shopify_list_product_feeds",
         ):
             g = by_name.get(sname)
             if not g:
@@ -230,15 +233,16 @@ def check_catalog_and_tools() -> None:
                 err(f"catalog.json {sname} fail must be SHOPIFY_NOT_CONNECTED, got {g.get('fail')!r}")
             elif sname in names:
                 err(f"catalog.json: Shopify tool {sname} must not be in Consent A tools[]")
-        gwrite = by_name.get("shopify_adjust_inventory")
-        if not gwrite:
-            err("catalog.json gated_tools missing shopify_adjust_inventory")
-        elif gwrite.get("fail") != "WRITE_NOT_ENABLED":
-            err(
-                f"catalog.json shopify_adjust_inventory fail must be WRITE_NOT_ENABLED, got {gwrite.get('fail')!r}"
-            )
-        elif "shopify_adjust_inventory" in names:
-            err("catalog.json: Shopify write tool must not be in Consent A tools[]")
+        for wname in ("shopify_adjust_inventory", "shopify_product_set"):
+            gwrite = by_name.get(wname)
+            if not gwrite:
+                err(f"catalog.json gated_tools missing {wname}")
+            elif gwrite.get("fail") != "WRITE_NOT_ENABLED":
+                err(
+                    f"catalog.json {wname} fail must be WRITE_NOT_ENABLED, got {gwrite.get('fail')!r}"
+                )
+            elif wname in names:
+                err(f"catalog.json: Shopify write tool {wname} must not be in Consent A tools[]")
         for paid in ("gads_search", "meta_insights", "mc_list_products", "tiktok_list_advertisers", "tiktok_insights"):
             g = by_name.get(paid)
             if not g:

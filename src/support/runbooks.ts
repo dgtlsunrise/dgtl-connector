@@ -96,7 +96,7 @@ export const ERROR_RUNBOOKS: Partial<Record<ErrorCode, RunbookHint>> = {
   SHOPIFY_SCOPE_MISSING: {
     runbook: `${RUNBOOK_INDEX}#shopify_scope_missing`,
     next_human_step:
-      "Reinstall the merchant custom app with the missing Admin scope. write_inventory is an explicit expansion, not Polar.",
+      "Reinstall the merchant custom app with the missing Admin scope. read_publications / read_product_listings / write_inventory / write_products are explicit expansions, not Polar. Never silently expand existing apps.",
   },
   CONSENT_W_REQUIRED: {
     runbook: `${RUNBOOK_INDEX}#consent_w_required`,

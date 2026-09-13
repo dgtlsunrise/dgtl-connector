@@ -1,0 +1,16 @@
+{
+  "data": {
+    "productFeeds": {
+      "pageInfo": { "hasNextPage": false, "endCursor": null },
+      "nodes": [
+        {
+          "id": "gid://shopify/ProductFeed/1001",
+          "channelId": "gid://shopify/Channel/9001",
+          "country": "US",
+          "language": "EN",
+          "status": "ACTIVE"
+        }
+      ]
+    }
+  }
+}

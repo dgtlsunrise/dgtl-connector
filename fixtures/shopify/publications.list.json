@@ -1,0 +1,27 @@
+{
+  "data": {
+    "publications": {
+      "pageInfo": { "hasNextPage": false, "endCursor": null },
+      "nodes": [
+        {
+          "id": "gid://shopify/Publication/224761294",
+          "autoPublish": true,
+          "supportsFuturePublishing": false,
+          "catalog": {
+            "id": "gid://shopify/MarketCatalog/1068177679",
+            "title": "NA Market",
+            "status": "ACTIVE"
+          },
+          "includedProductsCount": { "count": 2 }
+        },
+        {
+          "id": "gid://shopify/Publication/244171671",
+          "autoPublish": false,
+          "supportsFuturePublishing": true,
+          "catalog": null,
+          "includedProductsCount": { "count": 1 }
+        }
+      ]
+    }
+  }
+}

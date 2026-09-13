@@ -150,10 +150,10 @@ The same code is used when `feedback_send` has no hosted endpoint (`DGTL_FEEDBAC
 Shopify tools are **local merchant credentials** (not Polar, not stamp).
 
 - Missing `SHOPIFY_STORE` / `SHOPIFY_ACCESS_TOKEN` / `shopify-oauth.json` → `SHOPIFY_NOT_CONNECTED` (zero Admin HTTP).
-- Detectable or GraphQL-denied missing `read_products` / `read_orders` / `read_inventory` / `read_locations` / `write_inventory` → `SHOPIFY_SCOPE_MISSING`.
+- Detectable or GraphQL-denied missing `read_products` / `read_orders` / `read_inventory` / `read_locations` / `read_publications` / `read_product_listings` / `write_inventory` / `write_products` → `SHOPIFY_SCOPE_MISSING`.
 - Shopify writes with flag off → `WRITE_NOT_ENABLED` (zero HTTP) **before** connected/scope checks.
-- Live `shopify_adjust_inventory` without the shop domain in `confirm_phrase` → `INVALID_ARGUMENT` (no mutation HTTP).
-- Support never collects Shopify tokens. Default install is read_*; `write_inventory` is an explicit merchant-app expansion (not Polar, not stamp vault).
+- Live `shopify_adjust_inventory` / `shopify_product_set` without the shop domain in `confirm_phrase` (or `confirm`) → `INVALID_ARGUMENT` (no mutation HTTP).
+- Support never collects Shopify tokens. Default install is the original read_* set. `read_publications`, `read_product_listings`, `write_inventory`, and `write_products` are **explicit** merchant-app expansions (not Polar, not stamp vault). Never silently expand scopes on an existing app.
 
 ### `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`
 

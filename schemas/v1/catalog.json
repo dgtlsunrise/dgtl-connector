@@ -841,6 +841,31 @@
       "note": "Local write; dry_run default; confirm shop domain; write_inventory; not stamp vault"
     },
     {
+      "name": "shopify_list_publications",
+      "group": "shopify",
+      "fail": "SHOPIFY_NOT_CONNECTED",
+      "note": "Wave 15; read_publications explicit expand; Admin API 2026-04"
+    },
+    {
+      "name": "shopify_list_catalogs",
+      "group": "shopify",
+      "fail": "SHOPIFY_NOT_CONNECTED",
+      "note": "Wave 15; existing read_products; not Meta catalog"
+    },
+    {
+      "name": "shopify_list_product_feeds",
+      "group": "shopify",
+      "fail": "SHOPIFY_NOT_CONNECTED",
+      "note": "Wave 15; read_product_listings explicit expand"
+    },
+    {
+      "name": "shopify_product_set",
+      "group": "shopify-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED",
+      "note": "Wave 15; allowlisted productSet; dry_run default; confirm shop domain; write_products"
+    },
+    {
       "name": "tiktok_list_advertisers",
       "group": "tiktok",
       "fail": "LICENSE_REQUIRED",

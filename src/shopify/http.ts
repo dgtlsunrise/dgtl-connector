@@ -36,7 +36,7 @@ export function assertReadOnlyDocument(operation: string, document: string): voi
   if (/\bmutation\b/i.test(stripped)) {
     throw new ToolError(
       "UNSUPPORTED_OPERATION",
-      "Shopify read client refuses mutations; use the write path after DGTL_WRITES_ENABLED + write_inventory + shop-domain confirm",
+      "Shopify read client refuses mutations; use the write path after DGTL_WRITES_ENABLED + write_inventory / write_products + shop-domain confirm",
       { api: "shopify-admin-graphql" },
     );
   }
@@ -197,7 +197,7 @@ export class ShopifyHttp {
       throw new ToolError("SHOPIFY_SCOPE_MISSING", MSG.SHOPIFY_SCOPE_MISSING, {
         google_status: 403,
         api: "shopify-admin-graphql",
-        hint: "Merchant custom app needs the matching Admin scope (read_products / read_orders / read_inventory / read_locations, or write_inventory for writes). write_* is opt-in — not the default install.",
+        hint: "Merchant custom app needs the matching Admin scope (default read_products / read_orders / read_inventory / read_locations; explicit expand read_publications / read_product_listings / write_inventory / write_products). write_* is opt-in — never silently expand existing apps.",
       });
     }
     if (lastStatus === 429) {

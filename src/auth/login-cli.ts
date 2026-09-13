@@ -565,9 +565,11 @@ License: after Polar checkout, run auth redeem --code <code> or
   https://stamp.dgtlsunrise.com (backup: https://dgtl-stamp.noel-4ea.workers.dev)
 
 Shopify (free local): set SHOPIFY_STORE + SHOPIFY_ACCESS_TOKEN (merchant custom
-  app; read_products + read_orders + read_inventory + read_locations) or
+  app; default read_products + read_orders + read_inventory + read_locations) or
   PLUGIN_DATA/shopify-oauth.json. Fail closed SHOPIFY_NOT_CONNECTED. No Polar /
-  stamp / vault. write_inventory is opt-in + DGTL_WRITES_ENABLED (default off).
+  stamp / vault. Explicit expand (never silent): read_publications,
+  read_product_listings, write_inventory, write_products. Writes also need
+  DGTL_WRITES_ENABLED (default off).
 
 Paid Google Ads / Meta tools are listed and return LICENSE_REQUIRED until a
 DGTL license JWT is present. This binary never ships a developer-token.

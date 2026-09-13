@@ -46,11 +46,11 @@ Re-authorize Consent B so the grant includes `business.manage`. Tools stay GET-o
 
 ## `SHOPIFY_SCOPE_MISSING`
 
-Reinstall the merchant custom app with the missing Admin scope. `write_inventory` is an explicit expansion.
+Reinstall the merchant custom app with the missing Admin scope. Default install is `read_products` + `read_orders` + `read_inventory` + `read_locations`. Explicit expand (never silent): `read_publications`, `read_product_listings`, `write_inventory`, `write_products`.
 
 ## `WRITE_NOT_ENABLED`
 
-`DGTL_WRITES_ENABLED=false` (marketplace default). Required for Consent W GTM writes, Consent G/S writes, Shopify inventory adjust, and live Merchant Center ProductInput writes. Consent A stays readonly. Prefer `dry_run` first; MC live confirm must include `merchant_id`.
+`DGTL_WRITES_ENABLED=false` (marketplace default). Required for Consent W GTM writes, Consent G/S writes, Shopify inventory adjust / productSet, and live Merchant Center ProductInput writes. Consent A stays readonly. Prefer `dry_run` first; Shopify live confirm must include the shop domain; MC live confirm must include `merchant_id`.
 
 ## `CONSENT_W_REQUIRED`
 

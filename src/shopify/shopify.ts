@@ -11,12 +11,15 @@ import {
 } from "./auth.js";
 import { ShopifyHttp } from "./http.js";
 import {
+  OP_CATALOGS,
   OP_INVENTORY_LEVELS,
   OP_LOCATIONS,
   OP_ORDER,
   OP_ORDERS,
   OP_PRODUCT,
+  OP_PRODUCT_FEEDS,
   OP_PRODUCTS,
+  OP_PUBLICATIONS,
   OP_SHOP,
 } from "./queries.js";
 
@@ -25,7 +28,10 @@ export type ShopifyNeededScope =
   | "read_orders"
   | "read_inventory"
   | "read_locations"
+  | "read_publications"
+  | "read_product_listings"
   | "write_inventory"
+  | "write_products"
   | null;
 
 const FINANCIAL = new Set([
@@ -51,7 +57,7 @@ const FULFILLMENT = new Set([
 
 export function normalizeGid(
   raw: string,
-  resource: "Product" | "Order" | "Location" | "InventoryItem",
+  resource: "Product" | "Order" | "Location" | "InventoryItem" | "ProductVariant",
 ): string {
   const trimmed = raw.trim();
   if (trimmed.startsWith("gid://shopify/")) return trimmed;
@@ -76,14 +82,14 @@ export async function withShopify(
   });
   if (!creds) {
     return failEnvelope(tool, "SHOPIFY_NOT_CONNECTED", MSG.SHOPIFY_NOT_CONNECTED, {
-      hint: "Set SHOPIFY_STORE + SHOPIFY_ACCESS_TOKEN (merchant custom app) or PLUGIN_DATA/shopify-oauth.json. Reads: read_products + read_orders + read_inventory + read_locations. Writes: write_inventory + DGTL_WRITES_ENABLED (local only). Free local — no Polar / stamp. Support never collects Shopify tokens.",
+      hint: "Set SHOPIFY_STORE + SHOPIFY_ACCESS_TOKEN (merchant custom app) or PLUGIN_DATA/shopify-oauth.json. Default reads: read_products + read_orders + read_inventory + read_locations. Explicit expand (reinstall; never silent): read_publications + read_product_listings + write_inventory + write_products. Writes also need DGTL_WRITES_ENABLED (local only). Free local — no Polar / stamp. Support never collects Shopify tokens.",
       api: "shopify-admin-graphql",
     });
   }
   if (neededScope && missingShopifyScope(creds.scopes, neededScope)) {
     return failEnvelope(tool, "SHOPIFY_SCOPE_MISSING", MSG.SHOPIFY_SCOPE_MISSING, {
       missing_scope: neededScope,
-      hint: `Detectable scopes omit ${neededScope}. Reinstall the merchant custom app. Default install is read_* only; write_inventory is an explicit scope expansion (not a stamp vault, not Polar).`,
+      hint: `Detectable scopes omit ${neededScope}. Reinstall the merchant custom app. Default install is the original read_* set only; read_publications / read_product_listings / write_inventory / write_products are explicit expansions (not a stamp vault, not Polar). Never silently expand scopes on an existing app.`,
       api: "shopify-admin-graphql",
     });
   }
@@ -446,4 +452,175 @@ export async function shopifyListInventoryLevels(
           : "Join item.sku to Merchant Center offerId. inventoryItem id is required for shopify_adjust_inventory.",
     });
   });
+}
+
+const CATALOG_TYPES = new Set(["APP", "COMPANY_LOCATION", "MARKET", "NONE"]);
+
+function parseCatalogType(raw: unknown, field: string): string | undefined {
+  if (raw === undefined || raw === null || raw === "") return undefined;
+  if (typeof raw !== "string") {
+    throw new ToolError("INVALID_ARGUMENT", MSG.INVALID_ARGUMENT, {
+      hint: `${field} must be APP|COMPANY_LOCATION|MARKET|NONE`,
+      api: "shopify-admin-graphql",
+    });
+  }
+  const v = raw.trim().toUpperCase();
+  if (!CATALOG_TYPES.has(v)) {
+    throw new ToolError("INVALID_ARGUMENT", MSG.INVALID_ARGUMENT, {
+      hint: `${field} must be APP|COMPANY_LOCATION|MARKET|NONE`,
+      api: "shopify-admin-graphql",
+    });
+  }
+  return v;
+}
+
+function connectionNodes(raw: unknown): {
+  nodes: unknown[];
+  next: string | undefined;
+} {
+  const conn = raw as
+    | {
+        pageInfo?: { hasNextPage?: boolean; endCursor?: string | null };
+        nodes?: unknown[];
+      }
+    | undefined;
+  const nodes = Array.isArray(conn?.nodes) ? conn!.nodes! : [];
+  const next =
+    conn?.pageInfo?.hasNextPage && conn.pageInfo.endCursor
+      ? String(conn.pageInfo.endCursor)
+      : undefined;
+  return { nodes, next };
+}
+
+export async function shopifyListPublications(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  return withShopify(ctx, "shopify_list_publications", "read_publications", async (http, creds) => {
+    let catalogType: string | undefined;
+    try {
+      catalogType = parseCatalogType(args.catalog_type, "catalog_type");
+    } catch (err) {
+      if (err instanceof ToolError) {
+        return failEnvelope("shopify_list_publications", err.error_code, err.message, err.extra);
+      }
+      throw err;
+    }
+    const first = asInt(args.page_size, 25, 1, 50);
+    const after =
+      typeof args.page_token === "string" && args.page_token.trim()
+        ? args.page_token.trim()
+        : undefined;
+    const data = await http.graphql({
+      operation: OP_PUBLICATIONS,
+      variables: { first, after: after ?? null, catalogType: catalogType ?? null },
+      tool: "shopify_list_publications",
+    });
+    const { nodes, next } = connectionNodes(data.publications);
+    return okEnvelope("shopify_list_publications", {
+      data: {
+        publications: nodes,
+        cited: {
+          store: creds.storeHost,
+          catalog_type: catalogType ?? null,
+          api_version: SHOPIFY_API_VERSION,
+        },
+      },
+      page: {
+        row_count: nodes.length,
+        truncated: Boolean(next),
+        next_page_token: next,
+      },
+      hint:
+        nodes.length === 0
+          ? HINT_EMPTY_LIST
+          : "Join publication.catalog.id to shopify_list_catalogs. Feeds are shopify_list_product_feeds (read_product_listings).",
+    });
+  });
+}
+
+export async function shopifyListCatalogs(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  return withShopify(ctx, "shopify_list_catalogs", "read_products", async (http, creds) => {
+    let type: string | undefined;
+    try {
+      type = parseCatalogType(args.catalog_type ?? args.type, "catalog_type");
+    } catch (err) {
+      if (err instanceof ToolError) {
+        return failEnvelope("shopify_list_catalogs", err.error_code, err.message, err.extra);
+      }
+      throw err;
+    }
+    const first = asInt(args.page_size, 25, 1, 50);
+    const after =
+      typeof args.page_token === "string" && args.page_token.trim()
+        ? args.page_token.trim()
+        : undefined;
+    const data = await http.graphql({
+      operation: OP_CATALOGS,
+      variables: { first, after: after ?? null, type: type ?? null },
+      tool: "shopify_list_catalogs",
+    });
+    const { nodes, next } = connectionNodes(data.catalogs);
+    return okEnvelope("shopify_list_catalogs", {
+      data: {
+        catalogs: nodes,
+        cited: {
+          store: creds.storeHost,
+          catalog_type: type ?? null,
+          api_version: SHOPIFY_API_VERSION,
+        },
+      },
+      page: {
+        row_count: nodes.length,
+        truncated: Boolean(next),
+        next_page_token: next,
+      },
+      hint:
+        nodes.length === 0
+          ? HINT_EMPTY_LIST
+          : "Catalogs use existing read_products. Join id to shopify_list_publications.catalog.id. Not Meta catalog/CAPI.",
+    });
+  });
+}
+
+export async function shopifyListProductFeeds(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  return withShopify(
+    ctx,
+    "shopify_list_product_feeds",
+    "read_product_listings",
+    async (http, creds) => {
+      const first = asInt(args.page_size, 25, 1, 50);
+      const after =
+        typeof args.page_token === "string" && args.page_token.trim()
+          ? args.page_token.trim()
+          : undefined;
+      const data = await http.graphql({
+        operation: OP_PRODUCT_FEEDS,
+        variables: { first, after: after ?? null },
+        tool: "shopify_list_product_feeds",
+      });
+      const { nodes, next } = connectionNodes(data.productFeeds);
+      return okEnvelope("shopify_list_product_feeds", {
+        data: {
+          product_feeds: nodes,
+          cited: { store: creds.storeHost, api_version: SHOPIFY_API_VERSION },
+        },
+        page: {
+          row_count: nodes.length,
+          truncated: Boolean(next),
+          next_page_token: next,
+        },
+        hint:
+          nodes.length === 0
+            ? HINT_EMPTY_LIST
+            : "Shopify product feeds (read_product_listings). Not Meta catalog. Join channelId to publications.",
+      });
+    },
+  );
 }

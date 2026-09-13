@@ -1,0 +1,21 @@
+{
+  "data": {
+    "catalogs": {
+      "pageInfo": { "hasNextPage": false, "endCursor": null },
+      "nodes": [
+        {
+          "id": "gid://shopify/MarketCatalog/1068177679",
+          "title": "NA Market",
+          "status": "ACTIVE",
+          "priceList": { "id": "gid://shopify/PriceList/294167858", "currency": "USD" }
+        },
+        {
+          "id": "gid://shopify/CompanyLocationCatalog/1068177680",
+          "title": "B2B Example 1",
+          "status": "DRAFT",
+          "priceList": null
+        }
+      ]
+    }
+  }
+}

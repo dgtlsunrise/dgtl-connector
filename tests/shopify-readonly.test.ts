@@ -83,7 +83,7 @@ function createShopifyFetch(): {
 
     const parsed = body ? (JSON.parse(body) as { operationName?: string; query?: string }) : {};
     const op = parsed.operationName ?? "";
-    if (/\bmutation\b/i.test(parsed.query ?? "") && op !== "InventoryAdjust") {
+    if (/\bmutation\b/i.test(parsed.query ?? "") && op !== "InventoryAdjust" && op !== "ProductSet") {
       return new Response(JSON.stringify({ errors: [{ message: "mutation refused by fixture" }] }), {
         status: 200,
         headers: { "content-type": "application/json" },
@@ -116,6 +116,18 @@ function createShopifyFetch(): {
       case "InventoryAdjust":
         fixture = loadShopFixture("inventory.adjust.json");
         break;
+      case "Publications":
+        fixture = loadShopFixture("publications.list.json");
+        break;
+      case "Catalogs":
+        fixture = loadShopFixture("catalogs.list.json");
+        break;
+      case "ProductFeeds":
+        fixture = loadShopFixture("product-feeds.list.json");
+        break;
+      case "ProductSet":
+        fixture = loadShopFixture("product.set.json");
+        break;
       default:
         return new Response(JSON.stringify({ errors: [{ message: `unknown op ${op}` }] }), {
           status: 200,
@@ -138,6 +150,9 @@ const SHOPIFY_READ_TOOLS = [
   "shopify_get_order",
   "shopify_list_locations",
   "shopify_list_inventory_levels",
+  "shopify_list_publications",
+  "shopify_list_catalogs",
+  "shopify_list_product_feeds",
 ] as const;
 
 describe("Shopify read-only slice (local merchant credentials)", () => {
@@ -156,10 +171,14 @@ describe("Shopify read-only slice (local merchant credentials)", () => {
       assert.equal(t!.annotations.destructiveHint, false);
     }
     const writes = TOOLS.filter((t) => t.name.startsWith("shopify_") && !t.annotations.readOnlyHint);
-    assert.equal(writes.length, 1);
-    assert.equal(writes[0]!.name, "shopify_adjust_inventory");
-    assert.equal(writes[0]!.family, "shopify_write");
+    assert.equal(writes.length, 2);
+    assert.deepEqual(
+      writes.map((t) => t.name).sort(),
+      ["shopify_adjust_inventory", "shopify_product_set"],
+    );
+    assert.ok(writes.every((t) => t.family === "shopify_write"));
     assert.ok(ALLOWED_MUTATIONS.has("InventoryAdjust"));
+    assert.ok(ALLOWED_MUTATIONS.has("ProductSet"));
   });
 
   it("W0.4: Shopify is LOCAL_FREE, not Consent A kernel, not Polar license-gated", () => {
@@ -172,6 +191,12 @@ describe("Shopify read-only slice (local merchant credentials)", () => {
     assert.ok(LOCAL_FREE_TOOLS.includes("shopify_adjust_inventory"));
     assert.ok(!CONSENT_A_TOOLS.includes("shopify_adjust_inventory"));
     assert.ok(!LICENSE_GATED_TOOLS.includes("shopify_adjust_inventory"));
+    assert.ok(LOCAL_FREE_TOOLS.includes("shopify_product_set"));
+    assert.ok(!CONSENT_A_TOOLS.includes("shopify_product_set"));
+    assert.ok(!LICENSE_GATED_TOOLS.includes("shopify_product_set"));
+    assert.ok(LOCAL_FREE_TOOLS.includes("shopify_list_publications"));
+    assert.ok(LOCAL_FREE_TOOLS.includes("shopify_list_catalogs"));
+    assert.ok(LOCAL_FREE_TOOLS.includes("shopify_list_product_feeds"));
     assert.ok(!LOCAL_FREE_TOOLS.includes("gads_search"));
     assert.ok(!LOCAL_FREE_TOOLS.includes("meta_insights"));
     assert.ok(LICENSE_GATED_TOOLS.includes("gads_search"));
@@ -189,12 +214,30 @@ describe("Shopify read-only slice (local merchant credentials)", () => {
       false,
     );
     assert.equal(S.shopifyListOrders.safeParse({ status: "open", financial_status: "paid" }).success, true);
+    assert.equal(S.shopifyListPublications.safeParse({ catalog_type: "MARKET" }).success, true);
+    assert.equal(S.shopifyListPublications.safeParse({ catalog_type: "bogus" }).success, false);
+    assert.equal(S.shopifyListCatalogs.safeParse({}).success, true);
+    assert.equal(S.shopifyListProductFeeds.safeParse({}).success, true);
   });
 
   it("normalizeShopifyStore accepts short name and full host", () => {
     assert.equal(normalizeShopifyStore("Fixture-Store"), "fixture-store.myshopify.com");
     assert.equal(normalizeShopifyStore("https://Fixture-Store.myshopify.com/admin"), "fixture-store.myshopify.com");
     assert.throws(() => normalizeShopifyStore("evil.com"));
+  });
+
+  it("readonly skill documents Wave 15 publications/feeds and explicit scope expand", () => {
+    const skill = readFileSync(join(ROOT, "skills/shopify-readonly/SKILL.md"), "utf8");
+    assert.ok(skill.includes("name: shopify-readonly"));
+    assert.ok(/shopify_list_publications/.test(skill));
+    assert.ok(/shopify_list_catalogs/.test(skill));
+    assert.ok(/shopify_list_product_feeds/.test(skill));
+    assert.ok(/shopify_product_set/.test(skill));
+    assert.ok(/read_publications/.test(skill));
+    assert.ok(/read_product_listings/.test(skill));
+    assert.ok(/write_products/.test(skill));
+    assert.ok(/never silent/i.test(skill) || /Never silently/.test(skill));
+    assert.ok(!/axos/i.test(skill));
   });
 
   it("allowlisted GraphQL ops only; mutation documents refused", () => {
@@ -287,6 +330,54 @@ describe("Shopify read-only slice (local merchant credentials)", () => {
     }
     // No Polar / gateway required
     assert.equal(ctx.license.ok, false);
+  });
+
+  it("Wave 15 publications/catalogs/feeds fixtures; expand scopes required", async () => {
+    const { fetchImpl, calls } = createShopifyFetch();
+    const ctx = shopifyCtx(
+      testEnv({
+        SHOPIFY_STORE: "fixture-store.myshopify.com",
+        SHOPIFY_ACCESS_TOKEN: "shpat_x",
+        SHOPIFY_GRANTED_SCOPES:
+          "read_products,read_orders,read_inventory,read_locations,read_publications,read_product_listings",
+      }),
+      fetchImpl,
+    );
+
+    const publications = await dispatch(ctx, "shopify_list_publications", {});
+    assert.equal(publications.ok, true, JSON.stringify(publications));
+    assert.equal(publications.page?.row_count, 2);
+    const pubData = publications.data as { publications: Array<{ id?: string }> };
+    assert.equal(pubData.publications[0]?.id, "gid://shopify/Publication/224761294");
+
+    const catalogs = await dispatch(ctx, "shopify_list_catalogs", { catalog_type: "MARKET" });
+    assert.equal(catalogs.ok, true, JSON.stringify(catalogs));
+    assert.equal(catalogs.page?.row_count, 2);
+
+    const feeds = await dispatch(ctx, "shopify_list_product_feeds", {});
+    assert.equal(feeds.ok, true, JSON.stringify(feeds));
+    assert.equal(feeds.page?.row_count, 1);
+    assert.ok(calls.some((c) => c.path.includes("/admin/api/2026-04/graphql.json")));
+    assert.equal(ctx.license.ok, false);
+  });
+
+  it("SHOPIFY_SCOPE_MISSING when detectable scopes omit read_publications / read_product_listings", async () => {
+    const { fetchImpl, calls } = createShopifyFetch();
+    const ctx = shopifyCtx(
+      testEnv({
+        SHOPIFY_STORE: "fixture-store",
+        SHOPIFY_ACCESS_TOKEN: "shpat_x",
+        SHOPIFY_GRANTED_SCOPES: "read_products,read_orders,read_inventory,read_locations",
+      }),
+      fetchImpl,
+    );
+    const pubs = await dispatch(ctx, "shopify_list_publications", {});
+    assert.equal(pubs.ok, false);
+    assert.equal(pubs.error_code, "SHOPIFY_SCOPE_MISSING");
+    const feeds = await dispatch(ctx, "shopify_list_product_feeds", {});
+    assert.equal(feeds.ok, false);
+    assert.equal(feeds.error_code, "SHOPIFY_SCOPE_MISSING");
+    assert.equal(calls.length, 0);
   });
 
   it("SHOPIFY_SCOPE_MISSING when detectable scopes omit read_locations", async () => {

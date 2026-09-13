@@ -10,6 +10,7 @@ export const SHOPIFY_STORE_FILE = "shopify-oauth.json";
 /** Admin API version pin — document in TOOLS.md / skill. */
 export const SHOPIFY_API_VERSION = "2026-04";
 
+/** Default custom-app install. Do not silently add Wave 15 expands to existing apps. */
 export const SHOPIFY_READ_SCOPES = [
   "read_products",
   "read_orders",
@@ -17,7 +18,18 @@ export const SHOPIFY_READ_SCOPES = [
   "read_locations",
 ] as const;
 
-export const SHOPIFY_WRITE_SCOPES = ["write_inventory"] as const;
+/**
+ * Explicit merchant-app expansions (reinstall / scope request). Never assume an
+ * existing app already has these — missing → SHOPIFY_SCOPE_MISSING.
+ */
+export const SHOPIFY_EXPAND_SCOPES = [
+  "read_publications",
+  "read_product_listings",
+  "write_inventory",
+  "write_products",
+] as const;
+
+export const SHOPIFY_WRITE_SCOPES = ["write_inventory", "write_products"] as const;
 
 export type ShopifyCredentials = {
   /** Normalized host e.g. example.myshopify.com (no scheme/path). */

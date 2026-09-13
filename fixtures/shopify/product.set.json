@@ -1,0 +1,29 @@
+{
+  "data": {
+    "productSet": {
+      "userErrors": [],
+      "product": {
+        "id": "gid://shopify/Product/1001",
+        "title": "Blue Widget",
+        "handle": "blue-widget",
+        "status": "ACTIVE",
+        "vendor": "Fixture Co",
+        "productType": "Widgets",
+        "tags": ["fixture"],
+        "updatedAt": "2026-09-13T15:00:00Z",
+        "variants": {
+          "nodes": [
+            {
+              "id": "gid://shopify/ProductVariant/2001",
+              "title": "Default Title",
+              "sku": "BW-1",
+              "price": "19.00",
+              "inventoryItem": { "id": "gid://shopify/InventoryItem/3001", "sku": "BW-1" }
+            }
+          ]
+        }
+      },
+      "productSetOperation": null
+    }
+  }
+}

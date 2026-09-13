@@ -99,8 +99,11 @@ import {
   shopifyGetOrder,
   shopifyListLocations,
   shopifyListInventoryLevels,
+  shopifyListPublications,
+  shopifyListCatalogs,
+  shopifyListProductFeeds,
 } from "../shopify/shopify.js";
-import { shopifyAdjustInventory } from "../shopify/shopify-write.js";
+import { shopifyAdjustInventory, shopifyProductSet } from "../shopify/shopify-write.js";
 import { tiktokDisabled } from "../tiktok/tiktok.js";
 import { tiktokUpdateCampaign } from "../tiktok/tiktok-write.js";
 import { supportPacket } from "../support/packet.js";
@@ -1728,6 +1731,47 @@ export const TOOLS: ToolSpec[] = [
     inputSchema: S.shopifyAdjustInventory,
     annotations: ANN_WRITE,
     handler: (ctx, args) => shopifyAdjustInventory(ctx, args),
+  },
+  {
+    name: "shopify_list_publications",
+    group: "shopify",
+    family: "shopify",
+    title: "Shopify list publications",
+    description: `${RO} Paginated publications (id, autoPublish, catalog id/title). Merchant token with read_publications (explicit expand; not default install). SHOPIFY_NOT_CONNECTED without credentials. No Polar / stamp. Admin API 2026-04.`,
+    inputSchema: S.shopifyListPublications,
+    annotations: ANN_RO,
+    handler: (ctx, args) => shopifyListPublications(ctx, args),
+  },
+  {
+    name: "shopify_list_catalogs",
+    group: "shopify",
+    family: "shopify",
+    title: "Shopify list catalogs",
+    description: `${RO} Paginated Shopify catalogs (id, title, status, priceList). Existing read_products. Optional catalog_type APP|COMPANY_LOCATION|MARKET|NONE. Not Meta catalog. No Polar.`,
+    inputSchema: S.shopifyListCatalogs,
+    annotations: ANN_RO,
+    handler: (ctx, args) => shopifyListCatalogs(ctx, args),
+  },
+  {
+    name: "shopify_list_product_feeds",
+    group: "shopify",
+    family: "shopify",
+    title: "Shopify list product feeds",
+    description: `${RO} Paginated Shopify product feeds (id, channelId, country, language, status). read_product_listings (explicit expand). Not Meta catalog/CAPI. No Polar.`,
+    inputSchema: S.shopifyListProductFeeds,
+    annotations: ANN_RO,
+    handler: (ctx, args) => shopifyListProductFeeds(ctx, args),
+  },
+  {
+    name: "shopify_product_set",
+    group: "shopify-write",
+    family: "shopify_write",
+    title: "Shopify productSet",
+    description:
+      "Write. Allowlisted productSet GraphQL only (title/handle/status/variants). dry_run defaults true. Live needs confirm_phrase containing the shop domain plus DGTL_WRITES_ENABLED and write_products. List fields replace omitted variants/tags. No raw GraphQL. No customers. Local — no Polar, no stamp vault. Not Meta CAPI.",
+    inputSchema: S.shopifyProductSet,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => shopifyProductSet(ctx, args),
   },
   {
     name: "tiktok_list_advertisers",

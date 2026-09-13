@@ -12,6 +12,10 @@ export const OP_ORDER = "Order";
 export const OP_LOCATIONS = "Locations";
 export const OP_INVENTORY_LEVELS = "InventoryLevels";
 export const OP_INVENTORY_ADJUST = "InventoryAdjust";
+export const OP_PUBLICATIONS = "Publications";
+export const OP_CATALOGS = "Catalogs";
+export const OP_PRODUCT_FEEDS = "ProductFeeds";
+export const OP_PRODUCT_SET = "ProductSet";
 
 export const ALLOWED_OPERATIONS = new Set([
   OP_SHOP,
@@ -21,9 +25,12 @@ export const ALLOWED_OPERATIONS = new Set([
   OP_ORDER,
   OP_LOCATIONS,
   OP_INVENTORY_LEVELS,
+  OP_PUBLICATIONS,
+  OP_CATALOGS,
+  OP_PRODUCT_FEEDS,
 ]);
 
-export const ALLOWED_MUTATIONS = new Set([OP_INVENTORY_ADJUST]);
+export const ALLOWED_MUTATIONS = new Set([OP_INVENTORY_ADJUST, OP_PRODUCT_SET]);
 
 export const Q_SHOP = `query Shop {
   shop {
@@ -176,6 +183,78 @@ export const M_INVENTORY_ADJUST = `mutation InventoryAdjust($input: InventoryAdj
   }
 }`;
 
+export const Q_PUBLICATIONS = `query Publications($first: Int!, $after: String, $catalogType: CatalogType) {
+  publications(first: $first, after: $after, catalogType: $catalogType) {
+    pageInfo { hasNextPage endCursor }
+    nodes {
+      id
+      autoPublish
+      supportsFuturePublishing
+      catalog {
+        id
+        title
+        status
+      }
+      includedProductsCount { count }
+    }
+  }
+}`;
+
+export const Q_CATALOGS = `query Catalogs($first: Int!, $after: String, $type: CatalogType) {
+  catalogs(first: $first, after: $after, type: $type) {
+    pageInfo { hasNextPage endCursor }
+    nodes {
+      id
+      title
+      status
+      priceList { id currency }
+    }
+  }
+}`;
+
+export const Q_PRODUCT_FEEDS = `query ProductFeeds($first: Int!, $after: String) {
+  productFeeds(first: $first, after: $after) {
+    pageInfo { hasNextPage endCursor }
+    nodes {
+      id
+      channelId
+      country
+      language
+      status
+    }
+  }
+}`;
+
+/** Allowlisted productSet only — no raw GraphQL, no customers, no collections/metafields/files. */
+export const M_PRODUCT_SET = `mutation ProductSet($input: ProductSetInput!, $identifier: ProductSetIdentifiers, $synchronous: Boolean) {
+  productSet(input: $input, identifier: $identifier, synchronous: $synchronous) {
+    userErrors { field message code }
+    product {
+      id
+      title
+      handle
+      status
+      vendor
+      productType
+      tags
+      updatedAt
+      variants(first: 50) {
+        nodes {
+          id
+          title
+          sku
+          price
+          inventoryItem { id sku }
+        }
+      }
+    }
+    productSetOperation {
+      id
+      status
+    }
+  }
+}`;
+
 export const DOC_BY_OP: Record<string, string> = {
   [OP_SHOP]: Q_SHOP,
   [OP_PRODUCTS]: Q_PRODUCTS,
@@ -184,8 +263,12 @@ export const DOC_BY_OP: Record<string, string> = {
   [OP_ORDER]: Q_ORDER,
   [OP_LOCATIONS]: Q_LOCATIONS,
   [OP_INVENTORY_LEVELS]: Q_INVENTORY_LEVELS,
+  [OP_PUBLICATIONS]: Q_PUBLICATIONS,
+  [OP_CATALOGS]: Q_CATALOGS,
+  [OP_PRODUCT_FEEDS]: Q_PRODUCT_FEEDS,
 };
 
 export const MUTATION_DOC_BY_OP: Record<string, string> = {
   [OP_INVENTORY_ADJUST]: M_INVENTORY_ADJUST,
+  [OP_PRODUCT_SET]: M_PRODUCT_SET,
 };
