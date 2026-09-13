@@ -6,14 +6,16 @@ import {
   parseRedeemArgs,
   runAuthLogin,
   runAuthLoginAds,
+  runAuthLoginGa4Admin,
   runAuthLoginGbp,
+  runAuthLoginGscWrite,
   runAuthLoginMc,
   runAuthLoginWrite,
   runAuthLoginMeta,
   runAuthRedeem,
 } from "./auth/login-cli.js";
 import { clearStore, readStore, STORE_FILE } from "./auth/store.js";
-import { applyWriteEnvLocal } from "./auth/write-env-local.js";
+import { applyWriteLaneEnvLocals } from "./auth/write-env-local.js";
 import { serveStdio } from "./server.js";
 import { PLUGIN_VERSION } from "./version.js";
 
@@ -30,14 +32,24 @@ async function main(argv: string[]): Promise<void> {
     return;
   }
 
-  // Consent W: fill unset GOOGLE_OAUTH_WRITE_* from gitignored .env.write.local (never Consent A).
-  const envWithWriteLocal = applyWriteEnvLocal(pluginRoot, process.env);
+  // Consent W/G/S: fill unset lane keys from gitignored .env.*.local (never Consent A).
+  const envWithWriteLocal = applyWriteLaneEnvLocals(pluginRoot, process.env);
   for (const k of [
     "GOOGLE_OAUTH_WRITE_CLIENT_ID",
     "GOOGLE_OAUTH_WRITE_CLIENT_SECRET",
     "GOOGLE_WRITE_ACCESS_TOKEN",
     "GOOGLE_WRITE_GRANTED_SCOPES",
     "GOOGLE_WRITE_ACCOUNT_EMAIL",
+    "GOOGLE_OAUTH_GA4_ADMIN_CLIENT_ID",
+    "GOOGLE_OAUTH_GA4_ADMIN_CLIENT_SECRET",
+    "GOOGLE_GA4_ADMIN_ACCESS_TOKEN",
+    "GOOGLE_GA4_ADMIN_GRANTED_SCOPES",
+    "GOOGLE_GA4_ADMIN_ACCOUNT_EMAIL",
+    "GOOGLE_OAUTH_GSC_WRITE_CLIENT_ID",
+    "GOOGLE_OAUTH_GSC_WRITE_CLIENT_SECRET",
+    "GOOGLE_GSC_WRITE_ACCESS_TOKEN",
+    "GOOGLE_GSC_WRITE_GRANTED_SCOPES",
+    "GOOGLE_GSC_WRITE_ACCOUNT_EMAIL",
   ]) {
     if (envWithWriteLocal[k] && !process.env[k]?.trim()) {
       process.env[k] = envWithWriteLocal[k];
@@ -142,6 +154,40 @@ async function main(argv: string[]): Promise<void> {
       });
       return;
     }
+    if (sub === "login-ga4-admin") {
+      const clientId = ctx.env.GOOGLE_OAUTH_GA4_ADMIN_CLIENT_ID?.trim();
+      if (!clientId) {
+        process.stderr.write(
+          "Set GOOGLE_OAUTH_GA4_ADMIN_CLIENT_ID (env or gitignored .env.ga4-admin.local). Separate Consent G Desktop client — do not add analytics.edit to Consent A. Never commit GOOGLE_OAUTH_GA4_ADMIN_CLIENT_SECRET. login-ga4-admin does not enable DGTL_WRITES_ENABLED.\n",
+        );
+        process.exitCode = 1;
+        return;
+      }
+      process.exitCode = await runAuthLoginGa4Admin({
+        clientId,
+        clientSecret: ctx.env.GOOGLE_OAUTH_GA4_ADMIN_CLIENT_SECRET,
+        pluginDataDir: ctx.pluginDataDir,
+        fetchImpl: ctx.fetchImpl,
+      });
+      return;
+    }
+    if (sub === "login-gsc-write") {
+      const clientId = ctx.env.GOOGLE_OAUTH_GSC_WRITE_CLIENT_ID?.trim();
+      if (!clientId) {
+        process.stderr.write(
+          "Set GOOGLE_OAUTH_GSC_WRITE_CLIENT_ID (env or gitignored .env.gsc-write.local). Separate Consent S Desktop client — do not add webmasters write to Consent A. Never commit GOOGLE_OAUTH_GSC_WRITE_CLIENT_SECRET. login-gsc-write does not enable DGTL_WRITES_ENABLED.\n",
+        );
+        process.exitCode = 1;
+        return;
+      }
+      process.exitCode = await runAuthLoginGscWrite({
+        clientId,
+        clientSecret: ctx.env.GOOGLE_OAUTH_GSC_WRITE_CLIENT_SECRET,
+        pluginDataDir: ctx.pluginDataDir,
+        fetchImpl: ctx.fetchImpl,
+      });
+      return;
+    }
     if (sub === "login-meta") {
       const code = parseLoginMetaCode(args.slice(2));
       if (!code) {
@@ -205,6 +251,16 @@ async function main(argv: string[]): Promise<void> {
       process.stderr.write("Cleared PLUGIN_DATA/google-oauth-gbp.json (Consent B GBP)\n");
       return;
     }
+    if (sub === "logout-ga4-admin") {
+      clearStore(ctx.pluginDataDir, STORE_FILE.ga4Admin);
+      process.stderr.write("Cleared PLUGIN_DATA/google-oauth-ga4-admin.json (Consent G)\n");
+      return;
+    }
+    if (sub === "logout-gsc-write") {
+      clearStore(ctx.pluginDataDir, STORE_FILE.gscWrite);
+      process.stderr.write("Cleared PLUGIN_DATA/google-oauth-gsc-write.json (Consent S)\n");
+      return;
+    }
     if (sub === "logout-meta") {
       clearStore(ctx.pluginDataDir, STORE_FILE.meta);
       process.stderr.write("Cleared PLUGIN_DATA/meta-oauth.json (Meta user)\n");
@@ -217,6 +273,8 @@ async function main(argv: string[]): Promise<void> {
       const adsTok = await ctx.authAds.getAccessToken();
       const mcTok = await ctx.authMc.getAccessToken();
       const gbpTok = await ctx.authGbp.getAccessToken();
+      const ga4AdminTok = await ctx.authGa4Admin.getAccessToken();
+      const gscWriteTok = await ctx.authGscWrite.getAccessToken();
       const metaTok = await ctx.authMeta.getAccessToken();
       process.stdout.write(
         JSON.stringify(
@@ -247,6 +305,16 @@ async function main(argv: string[]): Promise<void> {
               store: Boolean(readStore(ctx.pluginDataDir, STORE_FILE.gbp)?.access_token),
               present: Boolean(gbpTok?.accessToken),
               flag: ctx.flags.gbpEnabled,
+            },
+            consent_g: {
+              host_injected: Boolean(ctx.env.GOOGLE_GA4_ADMIN_ACCESS_TOKEN?.trim()),
+              store: Boolean(readStore(ctx.pluginDataDir, STORE_FILE.ga4Admin)?.access_token),
+              present: Boolean(ga4AdminTok?.accessToken),
+            },
+            consent_s: {
+              host_injected: Boolean(ctx.env.GOOGLE_GSC_WRITE_ACCESS_TOKEN?.trim()),
+              store: Boolean(readStore(ctx.pluginDataDir, STORE_FILE.gscWrite)?.access_token),
+              present: Boolean(gscWriteTok?.accessToken),
             },
             consent_c_meta: {
               host_injected: Boolean(ctx.env.META_ACCESS_TOKEN?.trim()),

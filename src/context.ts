@@ -27,6 +27,10 @@ export type AppContext = {
   authMeta: AccessTokenSource;
   /** TikTok user — TIKTOK_ACCESS_TOKEN / tiktok-oauth.json */
   authTiktok: AccessTokenSource;
+  /** Consent G — GOOGLE_GA4_ADMIN_ACCESS_TOKEN / google-oauth-ga4-admin.json */
+  authGa4Admin: AccessTokenSource;
+  /** Consent S — GOOGLE_GSC_WRITE_ACCESS_TOKEN / google-oauth-gsc-write.json */
+  authGscWrite: AccessTokenSource;
   http: GoogleHttp;
   /** Consent W mutate client — never wired to ctx.auth. */
   httpWrite: GoogleWriteHttp;
@@ -69,6 +73,8 @@ export function createAppContext(opts: {
   authGbp?: AccessTokenSource;
   authMeta?: AccessTokenSource;
   authTiktok?: AccessTokenSource;
+  authGa4Admin?: AccessTokenSource;
+  authGscWrite?: AccessTokenSource;
 }): AppContext {
   const env = opts.env ?? process.env;
   const pluginDataDir = detectPluginData(opts.pluginRoot, env);
@@ -81,6 +87,8 @@ export function createAppContext(opts: {
   const authGbp = opts.authGbp ?? AuthPort.gbpFromEnv({ env, pluginDataDir, fetchImpl });
   const authMeta = opts.authMeta ?? AuthPort.metaFromEnv({ env, pluginDataDir });
   const authTiktok = opts.authTiktok ?? AuthPort.tiktokFromEnv({ env, pluginDataDir });
+  const authGa4Admin = opts.authGa4Admin ?? AuthPort.ga4AdminFromEnv({ env, pluginDataDir, fetchImpl });
+  const authGscWrite = opts.authGscWrite ?? AuthPort.gscWriteFromEnv({ env, pluginDataDir, fetchImpl });
   const http = new GoogleHttp({ tokenSource: auth, fetchImpl, calls });
   const httpWrite = new GoogleWriteHttp({ tokenSource: authWrite, fetchImpl, calls });
   const httpMc = new GoogleHttp({
@@ -106,6 +114,8 @@ export function createAppContext(opts: {
     authGbp,
     authMeta,
     authTiktok,
+    authGa4Admin,
+    authGscWrite,
     http,
     httpWrite,
     httpMc,

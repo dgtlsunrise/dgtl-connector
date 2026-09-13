@@ -21,6 +21,8 @@ export const ERROR_CODES = [
   "GBP_NOT_ENABLED",
   "WRITE_NOT_ENABLED",
   "CONSENT_W_REQUIRED",
+  "CONSENT_G_REQUIRED",
+  "CONSENT_S_REQUIRED",
   "ADS_MUTATE_NOT_ENABLED",
   "META_MUTATE_NOT_ENABLED",
   "META_SCOPE_MISSING",
@@ -92,6 +94,10 @@ export const MSG = {
     "Write/publish tools are flagged off (DGTL_WRITES_ENABLED=false). Free Consent A stays readonly (analytics/webmasters/tagmanager.readonly). Writes use a separate Consent W OAuth client — see docs/ops/FULL-STACK-ACCELERATE.md.",
   CONSENT_W_REQUIRED:
     "This write tool needs Consent W (separate OAuth client with edit/publish scopes). It is not part of free Consent A. Do not add write scopes to the Desktop readonly client.",
+  CONSENT_G_REQUIRED:
+    "This GA4 Admin write path needs Consent G (separate OAuth client with analytics.edit). It is not part of free Consent A. Do not add analytics.edit to the Desktop readonly client. Run `dgtl-connector-mcp auth login-ga4-admin`.",
+  CONSENT_S_REQUIRED:
+    "This Search Console write path needs Consent S (separate OAuth client with webmasters write). It is not part of free Consent A. Do not add webmasters (write) to the Desktop readonly client. Run `dgtl-connector-mcp auth login-gsc-write`.",
   ADS_MUTATE_NOT_ENABLED:
     "Google Ads mutate tools are opted out (DGTL_ADS_MUTATE_ENABLED=false). Plugin defaults on; unset the env or set true to re-enable. Live hop still needs Worker ADS_MUTATE_ENABLED=true. Reads still work with Pro + Consent C — never on Consent A.",
   META_MUTATE_NOT_ENABLED:

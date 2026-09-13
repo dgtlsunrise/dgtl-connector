@@ -38,6 +38,18 @@ export const CONSENT_W = [
 /** GTM edit/publish subset of Consent W (first write tools). */
 export const CONSENT_W_GTM = [SCOPE.tagmanagerEditContainers, SCOPE.tagmanagerPublish] as const;
 
+/**
+ * Consent G — GA4 Admin writes (separate client / store). Edit-only login.
+ * Never merge into CONSENT_A / free Desktop client. Do not request blanket `analytics`.
+ */
+export const CONSENT_G = [SCOPE.analyticsEdit] as const;
+
+/**
+ * Consent S — Search Console writes (separate client / store).
+ * `webmasters` (not `.readonly`). Never merge into CONSENT_A.
+ */
+export const CONSENT_S = [SCOPE.webmastersWrite] as const;
+
 /** Consent C Google Ads — separate client; never merge into CONSENT_A. */
 export const CONSENT_C_GOOGLE = [SCOPE.adwords] as const;
 

@@ -131,6 +131,8 @@ describe("support_packet", () => {
       assert.equal(data.stores?.consent_a, true);
       assert.equal(data.stores?.consent_c, true);
       assert.equal(data.stores?.consent_w, false);
+      assert.equal(data.stores?.consent_g, false);
+      assert.equal(data.stores?.consent_s, false);
       assert.equal(data.stores?.consent_mc, false);
       assert.equal(data.stores?.consent_b, false);
       assert.equal(data.stores?.meta, true);

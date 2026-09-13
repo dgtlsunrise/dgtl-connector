@@ -84,7 +84,11 @@ export class PkceTokenSource implements AccessTokenSource {
             ? "pkce-mc"
             : this.storeFile === STORE_FILE.gbp
               ? "pkce-gbp"
-              : "pkce";
+              : this.storeFile === STORE_FILE.ga4Admin
+                ? "pkce-ga4-admin"
+                : this.storeFile === STORE_FILE.gscWrite
+                  ? "pkce-gsc-write"
+                  : "pkce";
   }
 
   async getAccessToken(): Promise<AccessToken | null> {
@@ -116,7 +120,7 @@ export class PkceTokenSource implements AccessTokenSource {
         clientId: this.clientId,
         refreshToken: stored.refresh_token,
         clientSecret: this.clientSecret,
-        // Consent W/C/MC/B must never reuse GOOGLE_OAUTH_CLIENT_SECRET (Consent A).
+        // Consent W/C/MC/B/G/S must never reuse GOOGLE_OAUTH_CLIENT_SECRET (Consent A).
         allowConsentASecretFallback: this.storeFile === STORE_FILE.a,
       },
       this.fetchImpl,

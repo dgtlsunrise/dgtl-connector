@@ -4,7 +4,7 @@ User-visible copy. Tools return `error_code` from this file. Skills do not inven
 
 Tokens, cookie headers, and HAR files do **not** belong in messages, logs, or support threads.
 
-Ops next-step copy lives in [ops/RUNBOOKS.md](ops/RUNBOOKS.md). `support_packet` returns `runbook` + `next_human_step` for mapped codes. Codes in this file stay stable — do not rename `ADS_MUTATE_NOT_ENABLED`, `MERCHANT_CENTER_REQUIRED`, `META_SCOPE_MISSING`, `GBP_NOT_ENABLED`, `SHOPIFY_NOT_CONNECTED`, `LICENSE_REQUIRED`, `WRITE_NOT_ENABLED`, `MC_*`, `TIKTOK_*`.
+Ops next-step copy lives in [ops/RUNBOOKS.md](ops/RUNBOOKS.md). `support_packet` returns `runbook` + `next_human_step` for mapped codes. Codes in this file stay stable — do not rename `ADS_MUTATE_NOT_ENABLED`, `MERCHANT_CENTER_REQUIRED`, `META_SCOPE_MISSING`, `GBP_NOT_ENABLED`, `SHOPIFY_NOT_CONNECTED`, `LICENSE_REQUIRED`, `WRITE_NOT_ENABLED`, `CONSENT_G_REQUIRED`, `CONSENT_S_REQUIRED`, `MC_*`, `TIKTOK_*`.
 
 ## Envelope
 
@@ -161,6 +161,21 @@ License **and** gateway are ok, but the second OAuth (Ads `adwords` / Meta `ads_
 
 - Ads: set `GOOGLE_ADS_ACCESS_TOKEN` or run `dgtl-connector-mcp auth login-ads` (requires `GOOGLE_OAUTH_ADS_CLIENT_ID` — separate Consent C client; never add `adwords` to Consent A). No developer-token in this plugin.
 - Meta: set `META_ACCESS_TOKEN` or run `dgtl-connector-mcp auth login-meta --code <grant>` (redeems hosted Login via `POST /v1/meta/exchange`; long-lived token returns **to the plugin**; Worker stores nothing). Support never collects Meta tokens.
+
+### `CONSENT_G_REQUIRED` / `CONSENT_S_REQUIRED`
+
+GA4 Admin writes (Consent G) and Search Console writes (Consent S) use **separate** OAuth clients and token stores. They are **never** granted on free Consent A.
+
+- `CONSENT_G_REQUIRED` — later Admin mutate tools need `analytics.edit` via `auth login-ga4-admin` → `PLUGIN_DATA/google-oauth-ga4-admin.json` (or `GOOGLE_GA4_ADMIN_ACCESS_TOKEN`). Do not add `analytics.edit` to the Desktop readonly client.
+- `CONSENT_S_REQUIRED` — later GSC mutate tools need `webmasters` (write) via `auth login-gsc-write` → `PLUGIN_DATA/google-oauth-gsc-write.json` (or `GOOGLE_GSC_WRITE_ACCESS_TOKEN`). Do not add `webmasters` write to Consent A.
+
+Wave 10 ships the codes, login CLIs, and stores only. No live Admin/GSC mutate HTTP in this wave. Login does **not** flip `DGTL_WRITES_ENABLED`.
+
+**User-visible (G):**  
+“This GA4 Admin write path needs Consent G (separate OAuth client with analytics.edit). It is not part of free Consent A. Do not add analytics.edit to the Desktop readonly client. Run `dgtl-connector-mcp auth login-ga4-admin`.”
+
+**User-visible (S):**  
+“This Search Console write path needs Consent S (separate OAuth client with webmasters write). It is not part of free Consent A. Do not add webmasters (write) to the Desktop readonly client. Run `dgtl-connector-mcp auth login-gsc-write`.”
 
 ### `GOOGLE_UNAVAILABLE`
 

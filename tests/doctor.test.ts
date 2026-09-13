@@ -245,6 +245,8 @@ describe("doctor CLI (no secrets)", () => {
       writeFileSync(join(dir, "google-oauth.json"), JSON.stringify({ access_token: "a-secret-must-not-print", refresh_token: "refresh-secret-must-not-print" }));
       writeFileSync(join(dir, "google-oauth-ads.json"), JSON.stringify({ access_token: "ads-secret-must-not-print" }));
       writeFileSync(join(dir, "google-oauth-write.json"), JSON.stringify({ access_token: "write-secret-must-not-print" }));
+      writeFileSync(join(dir, "google-oauth-ga4-admin.json"), JSON.stringify({ access_token: "g-secret-must-not-print" }));
+      writeFileSync(join(dir, "google-oauth-gsc-write.json"), JSON.stringify({ access_token: "s-secret-must-not-print" }));
       writeFileSync(join(dir, "meta-oauth.json"), JSON.stringify({ access_token: "meta-secret-must-not-print" }));
       writeFileSync(join(dir, "tiktok-oauth.json"), JSON.stringify({ access_token: "tiktok-secret-must-not-print" }));
       writeFileSync(join(dir, "google-oauth-mc.json"), JSON.stringify({ access_token: "mc-secret-must-not-print" }));
@@ -258,6 +260,8 @@ describe("doctor CLI (no secrets)", () => {
       assert.equal(report.plugin_data.google_oauth_json, true);
       assert.equal(report.plugin_data.google_oauth_ads_json, true);
       assert.equal(report.plugin_data.google_oauth_write_json, true);
+      assert.equal(report.plugin_data.google_oauth_ga4_admin_json, true);
+      assert.equal(report.plugin_data.google_oauth_gsc_write_json, true);
       assert.equal(report.plugin_data.meta_oauth_json, true);
       assert.equal(report.plugin_data.tiktok_oauth_json, true);
       assert.equal(report.plugin_data.google_oauth_mc_json, true);
@@ -267,6 +271,8 @@ describe("doctor CLI (no secrets)", () => {
         consent_a: true,
         consent_c: true,
         consent_w: true,
+        consent_g: true,
+        consent_s: true,
         consent_mc: true,
         consent_b: true,
         meta: true,
@@ -278,10 +284,14 @@ describe("doctor CLI (no secrets)", () => {
       assert.ok(text.includes("Consent A"));
       assert.ok(text.includes("Consent C"));
       assert.ok(text.includes("Consent W"));
+      assert.ok(text.includes("Consent G"));
+      assert.ok(text.includes("Consent S"));
       assert.ok(!text.includes("a-secret-must-not-print"));
       assert.ok(!text.includes("refresh-secret-must-not-print"));
       assert.ok(!text.includes("ads-secret-must-not-print"));
       assert.ok(!text.includes("write-secret-must-not-print"));
+      assert.ok(!text.includes("g-secret-must-not-print"));
+      assert.ok(!text.includes("s-secret-must-not-print"));
       assert.ok(!text.includes("meta-secret-must-not-print"));
       assert.ok(!text.includes("tiktok-secret-must-not-print"));
       assert.ok(!text.includes("shpat_secret-must-not-print"));

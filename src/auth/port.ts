@@ -2,7 +2,9 @@ import type { AccessToken, AccessTokenSource } from "./types.js";
 import { STORE_FILE } from "./types.js";
 import {
   HostInjectedAdsTokenSource,
+  HostInjectedGa4AdminTokenSource,
   HostInjectedGbpTokenSource,
+  HostInjectedGscWriteTokenSource,
   HostInjectedMcTokenSource,
   HostInjectedMetaTokenSource,
   HostInjectedTikTokTokenSource,
@@ -117,6 +119,44 @@ export class AuthPort implements AccessTokenSource {
         }),
       ],
       "authport-gbp",
+    );
+  }
+
+  /** Consent G — GOOGLE_GA4_ADMIN_ACCESS_TOKEN / google-oauth-ga4-admin.json */
+  static ga4AdminFromEnv(opts: {
+    env?: NodeJS.ProcessEnv;
+    pluginDataDir: string;
+    fetchImpl: typeof fetch;
+  }): AuthPort {
+    const env = opts.env ?? process.env;
+    return new AuthPort(
+      [
+        new HostInjectedGa4AdminTokenSource(env),
+        new PkceTokenSource(opts.pluginDataDir, env.GOOGLE_OAUTH_GA4_ADMIN_CLIENT_ID, opts.fetchImpl, {
+          storeFile: STORE_FILE.ga4Admin,
+          clientSecret: env.GOOGLE_OAUTH_GA4_ADMIN_CLIENT_SECRET,
+        }),
+      ],
+      "authport-ga4-admin",
+    );
+  }
+
+  /** Consent S — GOOGLE_GSC_WRITE_ACCESS_TOKEN / google-oauth-gsc-write.json */
+  static gscWriteFromEnv(opts: {
+    env?: NodeJS.ProcessEnv;
+    pluginDataDir: string;
+    fetchImpl: typeof fetch;
+  }): AuthPort {
+    const env = opts.env ?? process.env;
+    return new AuthPort(
+      [
+        new HostInjectedGscWriteTokenSource(env),
+        new PkceTokenSource(opts.pluginDataDir, env.GOOGLE_OAUTH_GSC_WRITE_CLIENT_ID, opts.fetchImpl, {
+          storeFile: STORE_FILE.gscWrite,
+          clientSecret: env.GOOGLE_OAUTH_GSC_WRITE_CLIENT_SECRET,
+        }),
+      ],
+      "authport-gsc-write",
     );
   }
 

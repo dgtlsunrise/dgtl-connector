@@ -1486,7 +1486,7 @@ export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 /**
  * Consent A readonly kernel (identity + GA4 + GSC + GTM list/get).
  * This is the 24-tool Google fixture loop in contract.test.ts.
- * Do not add Shopify, GBP, Consent W writes, Ads, Meta, MC, or diagnostics.
+ * Do not add Shopify, GBP, Consent W writes, Consent G/S writes, Ads, Meta, MC, or diagnostics.
  */
 export const CONSENT_A_TOOLS = TOOLS.filter(
   (t) => t.family === "identity" || t.family === "ga4" || t.family === "gsc" || t.family === "gtm",

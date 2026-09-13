@@ -51,7 +51,7 @@ function form(body: Record<string, string>): string {
 /**
  * Optional confidential-client secret. Never required; never logged.
  * Consent A may fall back to GOOGLE_OAUTH_CLIENT_SECRET.
- * Consent W/C pass allowConsentASecretFallback: false so A's secret is never reused.
+ * Consent W/C/G/S pass allowConsentASecretFallback: false so A's secret is never reused.
  */
 function resolveClientSecret(
   explicit: string | undefined,
@@ -77,7 +77,7 @@ export async function exchangeAuthorizationCode(
     verifier: string;
     redirectUri: string;
     clientSecret?: string;
-    /** False for Consent W/C — never reuse GOOGLE_OAUTH_CLIENT_SECRET. Default true (A). */
+    /** False for Consent W/C/G/S — never reuse GOOGLE_OAUTH_CLIENT_SECRET. Default true (A). */
     allowConsentASecretFallback?: boolean;
   },
   fetchImpl: typeof fetch,
@@ -110,7 +110,7 @@ export async function refreshAccessToken(
     clientId: string;
     refreshToken: string;
     clientSecret?: string;
-    /** False for Consent W/C — never reuse GOOGLE_OAUTH_CLIENT_SECRET. Default true (A). */
+    /** False for Consent W/C/G/S — never reuse GOOGLE_OAUTH_CLIENT_SECRET. Default true (A). */
     allowConsentASecretFallback?: boolean;
   },
   fetchImpl: typeof fetch,

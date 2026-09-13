@@ -40,6 +40,8 @@ export type ConsentStorePresence = {
   consent_w: boolean;
   consent_mc: boolean;
   consent_b: boolean;
+  consent_g: boolean;
+  consent_s: boolean;
   meta: boolean;
   tiktok: boolean;
   shopify: boolean;
@@ -82,6 +84,8 @@ export function consentStorePresence(pluginDataDir: string): ConsentStorePresenc
     consent_w: existsSync(join(pluginDataDir, STORE_FILE.w)),
     consent_mc: existsSync(join(pluginDataDir, STORE_FILE.mc)),
     consent_b: existsSync(join(pluginDataDir, STORE_FILE.gbp)),
+    consent_g: existsSync(join(pluginDataDir, STORE_FILE.ga4Admin)),
+    consent_s: existsSync(join(pluginDataDir, STORE_FILE.gscWrite)),
     meta: existsSync(join(pluginDataDir, STORE_FILE.meta)),
     tiktok: existsSync(join(pluginDataDir, STORE_FILE.tiktok)),
     shopify: existsSync(join(pluginDataDir, SHOPIFY_STORE_FILE)),

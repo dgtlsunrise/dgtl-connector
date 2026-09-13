@@ -39,6 +39,12 @@ export const DOCTOR_ENV_NAMES = [
   "META_ACCESS_TOKEN",
   "TIKTOK_ACCESS_TOKEN",
   "GOOGLE_OAUTH_WRITE_CLIENT_SECRET",
+  "GOOGLE_OAUTH_GA4_ADMIN_CLIENT_ID",
+  "GOOGLE_OAUTH_GA4_ADMIN_CLIENT_SECRET",
+  "GOOGLE_GA4_ADMIN_ACCESS_TOKEN",
+  "GOOGLE_OAUTH_GSC_WRITE_CLIENT_ID",
+  "GOOGLE_OAUTH_GSC_WRITE_CLIENT_SECRET",
+  "GOOGLE_GSC_WRITE_ACCESS_TOKEN",
   "SHOPIFY_CLIENT_SECRET",
   "SHOPIFY_CLIENT_ID",
   "SHOPIFY_ACCESS_TOKEN",
@@ -79,6 +85,8 @@ export type DoctorReport = {
     google_oauth_json: boolean;
     google_oauth_ads_json: boolean;
     google_oauth_write_json: boolean;
+    google_oauth_ga4_admin_json: boolean;
+    google_oauth_gsc_write_json: boolean;
     google_oauth_mc_json: boolean;
     google_oauth_gbp_json: boolean;
     meta_oauth_json: boolean;
@@ -198,6 +206,8 @@ export async function collectDoctor(opts: DoctorOpts): Promise<DoctorReport> {
       google_oauth_json: googleOauthJson,
       google_oauth_ads_json: stores.consent_c,
       google_oauth_write_json: stores.consent_w,
+      google_oauth_ga4_admin_json: stores.consent_g,
+      google_oauth_gsc_write_json: stores.consent_s,
       google_oauth_mc_json: stores.consent_mc,
       google_oauth_gbp_json: stores.consent_b,
       meta_oauth_json: stores.meta,
@@ -252,6 +262,8 @@ export function formatDoctorReport(report: DoctorReport): string {
     `  google-oauth.json (Consent A): ${report.plugin_data.google_oauth_json ? "present" : "absent"}`,
     `  google-oauth-ads.json (Consent C): ${report.plugin_data.google_oauth_ads_json ? "present" : "absent"}`,
     `  google-oauth-write.json (Consent W): ${report.plugin_data.google_oauth_write_json ? "present" : "absent"}`,
+    `  google-oauth-ga4-admin.json (Consent G): ${report.plugin_data.google_oauth_ga4_admin_json ? "present" : "absent"}`,
+    `  google-oauth-gsc-write.json (Consent S): ${report.plugin_data.google_oauth_gsc_write_json ? "present" : "absent"}`,
     `  google-oauth-mc.json (Consent MC): ${report.plugin_data.google_oauth_mc_json ? "present" : "absent"}`,
     `  google-oauth-gbp.json (Consent B): ${report.plugin_data.google_oauth_gbp_json ? "present" : "absent"}`,
     `  meta-oauth.json: ${report.plugin_data.meta_oauth_json ? "present" : "absent"}`,

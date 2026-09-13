@@ -103,6 +103,16 @@ export const ERROR_RUNBOOKS: Partial<Record<ErrorCode, RunbookHint>> = {
     next_human_step:
       "Run `dgtl-connector-mcp auth login-write` with the Consent W Desktop client. Never add edit/publish scopes to Consent A.",
   },
+  CONSENT_G_REQUIRED: {
+    runbook: `${RUNBOOK_INDEX}#consent_g_required`,
+    next_human_step:
+      "Run `dgtl-connector-mcp auth login-ga4-admin` (analytics.edit). Never add edit to Consent A. Wave 10 is plumbing only — no Admin mutate tools yet.",
+  },
+  CONSENT_S_REQUIRED: {
+    runbook: `${RUNBOOK_INDEX}#consent_s_required`,
+    next_human_step:
+      "Run `dgtl-connector-mcp auth login-gsc-write` (webmasters write). Never add write to Consent A. Wave 10 is plumbing only — no GSC mutate tools yet.",
+  },
 };
 
 export function runbookForError(code: string | null | undefined): {

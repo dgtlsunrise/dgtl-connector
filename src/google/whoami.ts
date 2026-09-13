@@ -40,6 +40,11 @@ export async function googleWhoami(ctx: AppContext): Promise<Envelope> {
 
   const gateway = await probeGatewayReachable(ctx);
 
+  const [ga4AdminTok, gscWriteTok] = await Promise.all([
+    ctx.authGa4Admin.getAccessToken(),
+    ctx.authGscWrite.getAccessToken(),
+  ]);
+
   return okEnvelope("google_whoami", {
     data: {
       email: info.email ?? token.email ?? null,
@@ -55,6 +60,14 @@ export async function googleWhoami(ctx: AppContext): Promise<Envelope> {
           expires_in: token.expiresIn ?? null,
         },
       ],
+      consent_g: {
+        present: Boolean(ga4AdminTok?.accessToken),
+        host_injected: Boolean(ctx.env.GOOGLE_GA4_ADMIN_ACCESS_TOKEN?.trim()),
+      },
+      consent_s: {
+        present: Boolean(gscWriteTok?.accessToken),
+        host_injected: Boolean(ctx.env.GOOGLE_GSC_WRITE_ACCESS_TOKEN?.trim()),
+      },
       license: {
         ok: ctx.license.ok,
         features: ctx.license.features,

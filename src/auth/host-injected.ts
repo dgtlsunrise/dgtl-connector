@@ -131,6 +131,48 @@ export class HostInjectedGbpTokenSource implements AccessTokenSource {
   }
 }
 
+/** Consent G host-injected — GOOGLE_GA4_ADMIN_ACCESS_TOKEN only. */
+export class HostInjectedGa4AdminTokenSource implements AccessTokenSource {
+  readonly name = "host-injected-ga4-admin";
+
+  constructor(private readonly env: NodeJS.ProcessEnv = process.env) {}
+
+  async getAccessToken(): Promise<AccessToken | null> {
+    const accessToken = this.env.GOOGLE_GA4_ADMIN_ACCESS_TOKEN?.trim();
+    if (!accessToken) return null;
+    const expiresRaw = this.env.GOOGLE_GA4_ADMIN_ACCESS_TOKEN_EXPIRES_IN;
+    const expiresIn = expiresRaw ? Number(expiresRaw) : undefined;
+    return {
+      accessToken,
+      expiresIn: Number.isFinite(expiresIn) ? expiresIn : undefined,
+      scopes: parseScopeList(this.env.GOOGLE_GA4_ADMIN_GRANTED_SCOPES),
+      email: this.env.GOOGLE_GA4_ADMIN_ACCOUNT_EMAIL?.trim() || undefined,
+      source: "host-injected",
+    };
+  }
+}
+
+/** Consent S host-injected — GOOGLE_GSC_WRITE_ACCESS_TOKEN only. */
+export class HostInjectedGscWriteTokenSource implements AccessTokenSource {
+  readonly name = "host-injected-gsc-write";
+
+  constructor(private readonly env: NodeJS.ProcessEnv = process.env) {}
+
+  async getAccessToken(): Promise<AccessToken | null> {
+    const accessToken = this.env.GOOGLE_GSC_WRITE_ACCESS_TOKEN?.trim();
+    if (!accessToken) return null;
+    const expiresRaw = this.env.GOOGLE_GSC_WRITE_ACCESS_TOKEN_EXPIRES_IN;
+    const expiresIn = expiresRaw ? Number(expiresRaw) : undefined;
+    return {
+      accessToken,
+      expiresIn: Number.isFinite(expiresIn) ? expiresIn : undefined,
+      scopes: parseScopeList(this.env.GOOGLE_GSC_WRITE_GRANTED_SCOPES),
+      email: this.env.GOOGLE_GSC_WRITE_ACCOUNT_EMAIL?.trim() || undefined,
+      source: "host-injected",
+    };
+  }
+}
+
 /** Meta user host-injected — META_ACCESS_TOKEN only. Never Google A. */
 export class HostInjectedMetaTokenSource implements AccessTokenSource {
   readonly name = "host-injected-meta";

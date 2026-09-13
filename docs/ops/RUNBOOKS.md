@@ -56,6 +56,14 @@ Reinstall the merchant custom app with the missing Admin scope. `write_inventory
 
 `auth login-write` with the Consent W Desktop client. Never add edit/publish to Consent A.
 
+## `CONSENT_G_REQUIRED`
+
+`auth login-ga4-admin` with the Consent G Desktop client (`analytics.edit`). Never add edit to Consent A. Wave 10 is plumbing only — no Admin mutate tools yet.
+
+## `CONSENT_S_REQUIRED`
+
+`auth login-gsc-write` with the Consent S Desktop client (`webmasters` write). Never add write to Consent A. Wave 10 is plumbing only — no GSC mutate tools yet.
+
 ## `MC_NOT_CONNECTED`
 
 `auth login-mc` or `GOOGLE_MC_ACCESS_TOKEN` (Consent MC, scope `content`). Needs Pro. Never reuse Consent A.

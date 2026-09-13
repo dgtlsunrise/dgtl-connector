@@ -79,7 +79,7 @@ Refresh token revoked, password change, or unused-token expiry → tools return 
 
 ### PLUGIN_DATA
 
-Hosts provide `PLUGIN_DATA`. **Allowed:** PKCE token store `google-oauth.json` (mode 0600); later Consent W/C stores; optional `license.jwt`; optional local audit jsonl. **Never-list as sticky defaults:** do not persist “active client = first property” across sessions. Resource IDs are required parameters on every data tool. v1 **may** cache metadata (dimension catalogs) keyed by `properties/{id}` with a short TTL.
+Hosts provide `PLUGIN_DATA`. **Allowed:** PKCE token store `google-oauth.json` (mode 0600); Consent W/C/G/S stores (`google-oauth-write.json`, `google-oauth-ads.json`, `google-oauth-ga4-admin.json`, `google-oauth-gsc-write.json`); optional `license.jwt`; optional local audit jsonl. **Never-list as sticky defaults:** do not persist “active client = first property” across sessions. Resource IDs are required parameters on every data tool. v1 **may** cache metadata (dimension catalogs) keyed by `properties/{id}` with a short TTL.
 
 ## If a host cannot run stdio
 
@@ -120,7 +120,7 @@ Rules:
 - `ga4_run_report` is the only GA4 report tool. No batch, funnel, or realtime in v1 (quota + complexity).
 - Read calls are **retry-safe**. They are not snapshot-stable (processing lag).
 
-Closed Consent A kernel: [TOOLS.md](TOOLS.md). Machine copy: `schemas/v1/catalog.json` (`count`: **24**). Shopify is local-free (not Polar, not the 24 kernel) — reads plus flag-gated `shopify_adjust_inventory` hop **direct** Admin GraphQL (`direct_shopify`). Stamp has **zero** `shopify_*` names; multi-store vault is out of Wave 7. Ads/Meta/Merchant Center are Polar `LICENSE_REQUIRED`. MC hops **direct** to Merchant API (Consent MC) — not stamp. GBP hops **direct** to GBP APIs (Consent B, `DGTL_GBP_ENABLED`) — not stamp, not Consent A. Consent W GTM writes (tag / trigger / variable / publish) hop **direct** via `GoogleWriteHttp` — not stamp. They are gated (`WRITE_NOT_ENABLED` / Consent W; flag default **off**) and are **not** Consent A listing promises.
+Closed Consent A kernel: [TOOLS.md](TOOLS.md). Machine copy: `schemas/v1/catalog.json` (`count`: **24**). Shopify is local-free (not Polar, not the 24 kernel) — reads plus flag-gated `shopify_adjust_inventory` hop **direct** Admin GraphQL (`direct_shopify`). Stamp has **zero** `shopify_*` names; multi-store vault is out of Wave 7. Ads/Meta/Merchant Center are Polar `LICENSE_REQUIRED`. MC hops **direct** to Merchant API (Consent MC) — not stamp. GBP hops **direct** to GBP APIs (Consent B, `DGTL_GBP_ENABLED`) — not stamp, not Consent A. Consent W GTM writes (tag / trigger / variable / publish) hop **direct** via `GoogleWriteHttp` — not stamp. They are gated (`WRITE_NOT_ENABLED` / Consent W; flag default **off**) and are **not** Consent A listing promises. Consent G / Consent S are **separate write consents** (stores + login CLIs in Wave 10); Consent A stays readonly forever. No GA4 Admin / GSC mutate tools in this wave.
 
 ## How paid hosted Ads plugs in without rewriting GA4
 
@@ -144,7 +144,9 @@ Never:
 
 PKCE may write `PLUGIN_DATA/google-oauth.json` (mode 0600). That is the AuthPort fallback store, not a picker default.
 
-`google_whoami` may return email, granted scopes, and `expires_in` seconds.
+Consent G (`google-oauth-ga4-admin.json`) and Consent S (`google-oauth-gsc-write.json`) are **separate** write-consent stores (mode 0600). They are never the Consent A file. Login CLIs `auth login-ga4-admin` / `auth login-gsc-write` do not add write scopes to Consent A and do not enable `DGTL_WRITES_ENABLED`. Doctor and `support_packet` report store **existence** only — never tokens.
+
+`google_whoami` may return email, granted scopes, and `expires_in` seconds. It may also report `consent_g` / `consent_s` `{ present, host_injected }` booleans — never tokens.
 
 ## Extension point for implementers
 

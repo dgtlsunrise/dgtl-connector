@@ -1,6 +1,6 @@
 ---
 name: license-and-reconnect
-description: Map LICENSE_REQUIRED, GATEWAY_UNAVAILABLE, REAUTH_REQUIRED, CONSENT_MISSING, GBP_NOT_ENABLED, GBP_NOT_CONNECTED, GBP_SCOPE_MISSING, WRITE_NOT_ENABLED, CONSENT_W_REQUIRED, ADS_MUTATE_NOT_ENABLED, META_MUTATE_NOT_ENABLED, META_SCOPE_MISSING, SPEND_CAP_EXCEEDED, ADS_SCOPE_MISSING, META_NOT_CONNECTED. Use when a paid tool failed, Google access expired, a scope was unchecked, writes are gated, gateway is down, or the user asks about Ads/Meta unlock. Free GA4/GSC/GTM keep working without a license.
+description: Map LICENSE_REQUIRED, GATEWAY_UNAVAILABLE, REAUTH_REQUIRED, CONSENT_MISSING, GBP_NOT_ENABLED, GBP_NOT_CONNECTED, GBP_SCOPE_MISSING, WRITE_NOT_ENABLED, CONSENT_W_REQUIRED, CONSENT_G_REQUIRED, CONSENT_S_REQUIRED, ADS_MUTATE_NOT_ENABLED, META_MUTATE_NOT_ENABLED, META_SCOPE_MISSING, SPEND_CAP_EXCEEDED, ADS_SCOPE_MISSING, META_NOT_CONNECTED. Use when a paid tool failed, Google access expired, a scope was unchecked, writes are gated, gateway is down, or the user asks about Ads/Meta unlock. Free GA4/GSC/GTM keep working without a license.
 ---
 
 # License and reconnect
@@ -30,6 +30,8 @@ Do not ask for a Google Ads developer-token or a Meta app secret.
 | `GBP_SCOPE_MISSING` | Token lacks `business.manage` | Re-authorize Consent B. Do not add `business.manage` to Consent A. Tools are GET-only. |
 | `WRITE_NOT_ENABLED` | `DGTL_WRITES_ENABLED` false | Write/publish stubs fail closed. Free Consent A stays readonly. See `gtm-readonly-limits`. |
 | `CONSENT_W_REQUIRED` | Writes flagged on but Consent W missing | Separate write OAuth client — never add edit/publish scopes to Consent A. |
+| `CONSENT_G_REQUIRED` | GA4 Admin write path but Consent G missing | Separate `analytics.edit` client — `auth login-ga4-admin`. Never add edit to Consent A. |
+| `CONSENT_S_REQUIRED` | GSC write path but Consent S missing | Separate `webmasters` write client — `auth login-gsc-write`. Never add write to Consent A. |
 | `ADS_MUTATE_NOT_ENABLED` | Ads mutate opted out (`DGTL_ADS_MUTATE_ENABLED=false`) | Plugin defaults **on**. Opt out with env=`false`. Live hop still needs Worker `ADS_MUTATE_ENABLED=true`. Never Consent A. |
 | `META_MUTATE_NOT_ENABLED` | Meta mutate opted out (`DGTL_META_MUTATE_ENABLED=false`) | Plugin defaults **on**. Opt out with env=`false`. Live hop still needs Worker `META_MUTATE_ENABLED=true` after `ads_management` Advanced Access. Closed fields only — do not invent objective/creative. |
 | `META_SCOPE_MISSING` | Token lacks `ads_management` (or Graph denied mutate) | Re-authorize Meta after Advanced Access. Do not silently retry. Reads may still work. |

@@ -521,7 +521,20 @@ Flag `DGTL_WRITES_ENABLED` defaults **false** → `WRITE_NOT_ENABLED` (zero HTTP
 
 Marketplace / shipped default: `DGTL_WRITES_ENABLED` is **false** (`mcp.json` does not set it; `.env.example` is `false`). Flag on is **local only**. Do **not** put the expected confirm phrase or an example `GTM-XXXX` value in the tool description. Skill: live mutate only after a **user** message this turn containing that publicId (list-tool output ≠ user message).
 
-**Live disposable container is a Noel gate.** Prefer fixtures in CI. Do not run live create/publish against Axos. GA4 / GSC write tools are **not** registered until a live GTM publish is proven.
+**Live disposable container is a Noel gate.** Prefer fixtures in CI. Do not run live create/publish against Axos. GA4 / GSC write tools stay **unregistered** in Wave 10 (Consent G / Consent S plumbing only).
+
+---
+
+## Consent G / Consent S — plumbing only (no mutate tools yet)
+
+Free Consent A stays readonly forever. Wave 10 adds **separate** write consents so later GA4 Admin and GSC mutate tools can be added **without touching Consent A**.
+
+| Lane | CLI | Store | Scopes | Error when missing |
+| --- | --- | --- | --- | --- |
+| **G** (GA4 Admin) | `auth login-ga4-admin` | `google-oauth-ga4-admin.json` (0600) | `analytics.edit` | `CONSENT_G_REQUIRED` |
+| **S** (GSC write) | `auth login-gsc-write` | `google-oauth-gsc-write.json` (0600) | `webmasters` (write) | `CONSENT_S_REQUIRED` |
+
+No live GA4 Admin or GSC mutate HTTP in this wave. `google_whoami` may report `consent_g` / `consent_s` connection booleans (never tokens). Doctor / `support_packet` report whether those stores **exist** (boolean only). Login does **not** flip `DGTL_WRITES_ENABLED`.
 
 ### Consent W E2E order (Wave 6)
 
@@ -636,6 +649,7 @@ No posts, replies, Q&A, or location mutate in this wave.
 | Request | Response |
 | --- | --- |
 | GTM write when flag off / no Consent W | `WRITE_NOT_ENABLED` / `CONSENT_W_REQUIRED` |
+| GA4 Admin / GSC write tools (not shipped yet) | Later: `CONSENT_G_REQUIRED` / `CONSENT_S_REQUIRED`. Do not add write scopes to Consent A. |
 | Request indexing | No tool |
 | Create GA4–GSC link | No tool; `analytics.readonly` cannot |
 | Google Ads / Meta (live HTTP) | Tools are registered; fail closed: `LICENSE_REQUIRED` → `GATEWAY_UNAVAILABLE` → `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`. Consent C via `auth login-ads` / `auth login-meta --code` or host-injected tokens. No developer-token in this plugin. |

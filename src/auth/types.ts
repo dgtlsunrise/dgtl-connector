@@ -17,7 +17,7 @@ export interface AccessTokenSource {
   invalidateAccessToken?(): void;
 }
 
-/** PLUGIN_DATA filenames — one file per consent lane. Never share A with W/C/MC/B. */
+/** PLUGIN_DATA filenames — one file per consent lane. Never share A with W/C/MC/B/G/S. */
 export const STORE_FILE = {
   a: "google-oauth.json",
   w: "google-oauth-write.json",
@@ -26,6 +26,8 @@ export const STORE_FILE = {
   tiktok: "tiktok-oauth.json",
   mc: "google-oauth-mc.json",
   gbp: "google-oauth-gbp.json",
+  ga4Admin: "google-oauth-ga4-admin.json",
+  gscWrite: "google-oauth-gsc-write.json",
 } as const;
 
 export type StoreLane = keyof typeof STORE_FILE;

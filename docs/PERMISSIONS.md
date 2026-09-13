@@ -91,6 +91,19 @@ Free Consent A stays **readonly** forever for the Desktop client used in demos a
 
 Product rules: explicit tools only; publish requires confirmation (`dry_run` / `confirm_phrase`); property/container named in the call. Full lock: [ops/FULL-STACK-ACCELERATE.md](ops/FULL-STACK-ACCELERATE.md).
 
+## Consent G (GA4 Admin writes) and Consent S (GSC writes) — separate from Consent A
+
+Consent A stays **readonly forever**. GA4 Admin mutations and Search Console writes are later tools on **their own** consents. Wave 10 is plumbing only (scopes, login CLIs, stores, error codes). No Admin/GSC mutate tools in `tools/list` yet.
+
+| Lane | Scopes | Login | Store (mode 0600) | Fail |
+| --- | --- | --- | --- | --- |
+| **G** | `CONSENT_G` = `analytics.edit` only (never blanket `analytics`) | `auth login-ga4-admin` | `PLUGIN_DATA/google-oauth-ga4-admin.json` | `CONSENT_G_REQUIRED` |
+| **S** | `CONSENT_S` = `webmasters` (write, not `.readonly`) | `auth login-gsc-write` | `PLUGIN_DATA/google-oauth-gsc-write.json` | `CONSENT_S_REQUIRED` |
+
+Env: `GOOGLE_OAUTH_GA4_ADMIN_CLIENT_ID` / `SECRET` (gitignored `.env.ga4-admin.local`) and `GOOGLE_OAUTH_GSC_WRITE_CLIENT_ID` / `SECRET` (`.env.gsc-write.local`). If those separate clients are set, **never** reuse `GOOGLE_OAUTH_CLIENT_SECRET` (Consent A). Login does **not** set `DGTL_WRITES_ENABLED`.
+
+`CONSENT_G` / `CONSENT_S` are **never** merged into `CONSENT_A`. Intersection tests lock `A ∩ G = ∅` and `A ∩ S = ∅`.
+
 ## Consent C (Ads / Meta user OAuth) — separate from Consent A
 
 Paid Ads/Meta **user** grants use a **separate** Google OAuth client (`adwords`) plus Meta Login for Business. They are **never** bolted onto the free Desktop Consent A client.
@@ -147,7 +160,7 @@ Do **not** add `business.manage` to Consent A verification. Account Management /
 
 ## Least privilege in the tools
 
-- Free GA4 / GSC / GTM tools are read/list/get on Consent A. GTM write/publish tools (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`) are registered, flagged off by default (`WRITE_NOT_ENABLED`), and use Consent W + `GoogleWriteHttp` when enabled — they are **not** on the free consent screen. GA4 / GSC write tools are **not** registered until GTM publish is proven live.
+- Free GA4 / GSC / GTM tools are read/list/get on Consent A. GTM write/publish tools (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`) are registered, flagged off by default (`WRITE_NOT_ENABLED`), and use Consent W + `GoogleWriteHttp` when enabled — they are **not** on the free consent screen. GA4 / GSC write tools stay **unregistered** in Wave 10 (Consent G / Consent S plumbing only).
 - `ga4_run_report` defaults to small row limits (see [TOOLS.md](TOOLS.md)) so one prompt cannot burn a property's daily Data API tokens.
 - URL Inspection is read of index state, not request indexing (`webmasters.readonly` cannot submit anyway).
 - Workspace GTM lists may include **unpublished drafts**. Live tags come from `gtm_get_live_container_version`. Skills must not imply a draft tag is in production.
