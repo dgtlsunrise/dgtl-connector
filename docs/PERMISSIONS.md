@@ -261,7 +261,7 @@ Local private API key on the Bot computer:
 - `KLAVIYO_API_KEY` (`pk_…`) and/or `PLUGIN_DATA/klaviyo.json`
 - Revision header `2026-07-15`
 - Reads stay local-free. Writes reuse `DGTL_WRITES_ENABLED` (marketplace default **false**) + `confirm_phrase` containing the account id
-- **No** Polar `klaviyo` feature. **No** stamp hop. **No** campaign send job (Wave 22). Wave 19 adds `catalogs:read` / `catalogs:write` / `reviews:read` on the same local `pk_` (least privilege — only the scopes the merchant enables). Polar `klaviyo` OAuth is Wave 19b, not this plugin.
+- **No** Polar `klaviyo` feature. **No** stamp hop. Campaign send is Wave 22 `klaviyo_create_campaign_send_job` (confirm-gated `SEND` token; **cannot** fire from draft create). Wave 19 adds `catalogs:read` / `catalogs:write` / `reviews:read` on the same local `pk_` (least privilege — only the scopes the merchant enables). Polar `klaviyo` OAuth is Wave 19b, not this plugin.
 
 Fail closed: `KLAVIYO_NOT_CONNECTED`. Support never collects Klaviyo keys. Never log the key. Not part of Consent A verification / marketplace Google consent screen.
 

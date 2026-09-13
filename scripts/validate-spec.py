@@ -62,6 +62,7 @@ SKILLS = [
     "klaviyo-readonly",
     "catalog-fan-out",
     "mta-ltv-budget",
+    "recs-approve-push",
 ]
 
 SCOPES = [
@@ -273,6 +274,7 @@ def check_catalog_and_tools() -> None:
                 err(f"catalog.json: Klaviyo tool {kname} must not be in Consent A tools[]")
         for kwname in (
             "klaviyo_create_campaign",
+            "klaviyo_create_campaign_send_job",
             "klaviyo_upsert_profile",
             "klaviyo_create_event",
             "klaviyo_upsert_catalog_items",

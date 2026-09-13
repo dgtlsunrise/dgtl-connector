@@ -31,6 +31,7 @@
     "gads_create_portfolio_bidding_strategy",
     "gads_create_conversion_action",
     "gads_apply_recommendation",
+    "gads_apply_recommendations",
     "gads_link_merchant_center",
     "gads_unlink_merchant_center",
     "gads_create_experiment"

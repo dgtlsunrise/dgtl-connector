@@ -30,12 +30,12 @@ const WRITE_PATHS = new Set([
   "/api/events",
   "/api/catalog-item-bulk-create-jobs",
   "/api/catalog-item-bulk-update-jobs",
+  "/api/campaign-send-jobs",
 ]);
 
 const ID_PATH = /^\/api\/(profiles|flows|reviews)\/[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
 
 const FORBIDDEN_PATH_NEEDLES = [
-  "campaign-send-jobs",
   "campaign-recipient-estimation",
   "catalog-item-bulk-delete",
   "catalog-variant-bulk-delete",
@@ -63,7 +63,7 @@ export function assertKlaviyoPath(path: string, method: "GET" | "POST"): void {
     if (lower.includes(needle)) {
       throw new ToolError(
         "UNSUPPORTED_OPERATION",
-        "Klaviyo OAuth, campaign send jobs, and catalog delete jobs are out of Wave 19",
+        "Klaviyo OAuth, recipient estimation, and catalog delete jobs are not registered",
         { api: "klaviyo" },
       );
     }

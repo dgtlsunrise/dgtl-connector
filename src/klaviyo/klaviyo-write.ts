@@ -1,20 +1,26 @@
 /**
- * Confirm-gated Klaviyo writes (Wave 18 + Wave 19 catalog items).
+ * Confirm-gated Klaviyo writes (Wave 18 + Wave 19 catalog items + Wave 22 send job).
  * Local pk_ — not Polar, not stamp, not Consent A.
  * Fail order: WRITE_NOT_ENABLED → KLAVIYO_NOT_CONNECTED → dry_run (account id, zero mutate)
  * → live needs confirm_phrase containing the account id.
- * Draft campaign only — never campaign-send-jobs (Wave 22).
+ * Draft campaign never posts campaign-send-jobs. Send is a separate SEND-token tool.
  */
 import type { AppContext } from "../context.js";
 import { failEnvelope, okEnvelope, type Envelope } from "../envelope.js";
 import { ToolError } from "../errors.js";
+import { requireId } from "../ids.js";
 import { assertNotInventedShopifyKlaviyoId, CUSTOM_KLAVIYO_ID_PREFIX } from "../catalog/fan-out.js";
+import {
+  assertDraftCreateCannotSend,
+  assertKlaviyoSendToken,
+  KLAVIYO_SEND_TOKEN,
+} from "../recs/approve-push.js";
 import { KLAVIYO_API_REVISION } from "./auth.js";
 import { assertKlaviyoPath } from "./http.js";
 import { loadAccount, sparsifyProfile, withKlaviyo, type KlaviyoResource } from "./klaviyo.js";
 
 const HINT_FLAG =
-  "Set DGTL_WRITES_ENABLED=true for live Klaviyo draft/upsert/event/catalog writes. Reads stay LOCAL_FREE without this flag. Not Polar. Not Consent A. Marketplace default stays off. Live confirm_phrase must include the Klaviyo account id from klaviyo_get_account.";
+  "Set DGTL_WRITES_ENABLED=true for live Klaviyo draft/upsert/event/catalog/send writes. Reads stay LOCAL_FREE without this flag. Not Polar. Not Consent A. Marketplace default stays off. Live confirm_phrase must include the Klaviyo account id from klaviyo_get_account. Send jobs also need the campaign id and the SEND token.";
 
 function dryRunDefault(args: Record<string, unknown>): boolean {
   return args.dry_run !== false;
@@ -148,13 +154,7 @@ function includedAudienceIds(args: Record<string, unknown>): string[] {
 }
 
 export function buildDraftCampaignBody(args: Record<string, unknown>): Record<string, unknown> {
-  if (args.send_job || args.campaign_send_job || args.send === true) {
-    throw new ToolError(
-      "UNSUPPORTED_OPERATION",
-      "Campaign send jobs are Wave 22. This plugin creates a draft only.",
-      { api: "klaviyo" },
-    );
-  }
+  assertDraftCreateCannotSend(args);
   const name = typeof args.name === "string" ? args.name.trim() : "";
   if (!name || name.length > 128) {
     throw new ToolError("INVALID_ARGUMENT", "name is required (max 128 characters)", { api: "klaviyo" });
@@ -300,7 +300,7 @@ export async function klaviyoCreateCampaign(
         cited: cited(id),
       },
       page: { truncated: false, row_count: campaign ? 1 : 0 },
-      hint: "Draft created. Wave 18 does not POST /api/campaign-send-jobs.",
+      hint: "Draft created. This tool does not POST /api/campaign-send-jobs. Use klaviyo_create_campaign_send_job with SEND.",
     });
   });
 }
@@ -543,6 +543,68 @@ export async function klaviyoUpsertCatalogItems(
       },
       page: { truncated: false, row_count: 1 },
       hint: "Custom catalog job accepted. Klaviyo mints $custom:::$default:::{external_id}. This tool does not invent $shopify::: ids.",
+    });
+  });
+}
+
+export function buildCampaignSendJobBody(campaignId: string): Record<string, unknown> {
+  const id = campaignId.trim();
+  if (!id) {
+    throw new ToolError("RESOURCE_REQUIRED", "campaign_id is required", {
+      api: "klaviyo",
+      resource_id: "campaign_id",
+    });
+  }
+  return { data: { type: "campaign-send-job", id } };
+}
+
+export async function klaviyoCreateCampaignSendJob(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "klaviyo_create_campaign_send_job";
+  const gated = writeGate(tool, ctx);
+  if (gated) return gated;
+  const campaignId = requireId(args.campaign_id, "campaign_id").trim();
+  const proposed = buildCampaignSendJobBody(campaignId);
+  assertKlaviyoPath("/api/campaign-send-jobs", "POST");
+
+  return withKlaviyo(ctx, tool, async (http) => {
+    const { id, display } = await loadAccount(http);
+    const dryRun = dryRunDefault(args);
+    if (dryRun) {
+      return okEnvelope(tool, {
+        resource: { type: "klaviyo_account", id, display_name: display },
+        data: {
+          dry_run: true,
+          account_id: id,
+          campaign_id: campaignId,
+          proposed,
+          send_job: true,
+          send_token_required: KLAVIYO_SEND_TOKEN,
+          cited: cited(id),
+        },
+        page: { truncated: false, row_count: 0 },
+        hint: `Dry-run send job only. Live needs dry_run=false and confirm_phrase containing ${id}, ${campaignId}, and ${KLAVIYO_SEND_TOKEN}. Zero campaign-send-jobs POST. Draft create cannot fire this.`,
+      });
+    }
+    assertKlaviyoSendToken(confirmPhraseOf(args), id, campaignId);
+    const json = await http.post("/api/campaign-send-jobs", proposed);
+    return okEnvelope(tool, {
+      resource: {
+        type: "klaviyo_campaign_send_job",
+        id: String((json.data as KlaviyoResource | undefined)?.id ?? campaignId),
+        display_name: display,
+      },
+      data: {
+        dry_run: false,
+        account_id: id,
+        campaign_id: campaignId,
+        send_job: json.data ?? { type: "campaign-send-job", id: campaignId },
+        cited: cited(id),
+      },
+      page: { truncated: false, row_count: 1 },
+      hint: "Send job accepted. This tool is confirm-gated and cannot run from klaviyo_create_campaign.",
     });
   });
 }

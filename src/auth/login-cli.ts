@@ -575,7 +575,8 @@ Klaviyo (free local pk_): set KLAVIYO_API_KEY or PLUGIN_DATA/klaviyo.json.
   Fail closed KLAVIYO_NOT_CONNECTED. Revision 2026-07-15. No Polar OAuth, no
   stamp, not Consent A. Never log the key. Writes (draft campaign / profile
   upsert / backfill event) need DGTL_WRITES_ENABLED + confirm_phrase with the
-  account id. No campaign send job.
+  account id. Campaign send is a separate SEND-token tool (cannot fire from
+  draft create).
 
 Paid Google Ads / Meta tools are listed and return LICENSE_REQUIRED until a
 DGTL license JWT is present. This binary never ships a developer-token.

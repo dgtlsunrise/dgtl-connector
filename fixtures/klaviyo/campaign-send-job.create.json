@@ -1,0 +1,9 @@
+{
+  "data": {
+    "type": "campaign-send-job",
+    "id": "C2Draft",
+    "attributes": {
+      "status": "queued"
+    }
+  }
+}

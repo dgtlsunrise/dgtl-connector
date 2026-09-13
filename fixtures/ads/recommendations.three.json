@@ -1,0 +1,25 @@
+{
+  "customer_id": "1234567890",
+  "recipe": "recommendations",
+  "note": "Wave 22 three-recs fixture. Confirm one RN → one recommendations:apply hop. No apply-all. ENABLED is not a side effect.",
+  "recommendations": [
+    {
+      "resource_name": "customers/1234567890/recommendations/1001",
+      "recommendation_id": "1001",
+      "type": "CAMPAIGN_BUDGET",
+      "campaign_id": "2223334444"
+    },
+    {
+      "resource_name": "customers/1234567890/recommendations/1002",
+      "recommendation_id": "1002",
+      "type": "KEYWORD",
+      "campaign_id": "2223334444"
+    },
+    {
+      "resource_name": "customers/1234567890/recommendations/1003",
+      "recommendation_id": "1003",
+      "type": "TEXT_AD",
+      "campaign_id": "2223334444"
+    }
+  ]
+}

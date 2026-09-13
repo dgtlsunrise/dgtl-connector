@@ -1193,6 +1193,20 @@ export const gadsApplyRecommendation = z
     ...gadsMutateBase,
     recommendation_resource_name: z.string().min(1).max(256).optional(),
     recommendation_id: str,
+    apply_all: z.boolean().optional(),
+    status: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const gadsApplyRecommendations = z
+  .object({
+    ...gadsMutateBase,
+    recommendation_resource_names: z.array(z.string().min(1).max(256)).min(1).max(20).optional(),
+    recommendation_resource_name: z.string().min(1).max(256).optional(),
+    recommendation_id: str,
+    apply_all: z.boolean().optional(),
+    status: z.string().optional(),
   })
   .strict()
   .superRefine(requireConfirmWhenLive);
@@ -2582,6 +2596,20 @@ export const klaviyoCreateCampaign = z
     from_email: z.string().min(1).max(255),
     from_label: z.string().min(1).max(128),
     preview_text: z.string().min(1).max(255).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+    confirm: z.string().optional(),
+    /** Refused — send is klaviyo_create_campaign_send_job. */
+    send_job: z.boolean().optional(),
+    campaign_send_job: z.boolean().optional(),
+    send: z.boolean().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const klaviyoCreateCampaignSendJob = z
+  .object({
+    campaign_id: z.string().min(1).max(128),
     dry_run: z.boolean().default(true),
     confirm_phrase: z.string().optional(),
     confirm: z.string().optional(),

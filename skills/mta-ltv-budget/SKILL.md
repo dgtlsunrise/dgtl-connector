@@ -50,7 +50,7 @@ Never Consent A for Ads/Meta/TikTok hops. Never Axos.
 - Raw GAQL / invented `metrics.*` / `segments.*`.
 - Confirming two platforms in one turn.
 - Live budget on ACTIVE/ENABLED production campaigns from this skill’s proof path — fixtures first; disposable DGTL/test **PAUSED** campaigns only if Noel names them.
-- Consent A for Ads/Meta/TikTok. Axos. Wave 22 recommendation polish.
+- Consent A for Ads/Meta/TikTok. Axos. Recommendation apply/send polish is `recs-approve-push`.
 
 ## Empty / license
 

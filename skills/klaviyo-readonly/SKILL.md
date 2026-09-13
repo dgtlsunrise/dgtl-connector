@@ -1,6 +1,6 @@
 ---
 name: klaviyo-readonly
-description: Inspect a Klaviyo account with a local private pk_ key (KLAVIYO_API_KEY or PLUGIN_DATA/klaviyo.json). Use when the user wants account, sparse profiles, lists, segments, flows, campaigns, metrics, catalog items, or reviews. Fail closed without a key (KLAVIYO_NOT_CONNECTED). Free local lane — no Polar Pro, no stamp hop, not Consent A. Writes are draft/upsert/backfill/catalog only and flag-gated.
+description: Inspect a Klaviyo account with a local private pk_ key (KLAVIYO_API_KEY or PLUGIN_DATA/klaviyo.json). Use when the user wants account, sparse profiles, lists, segments, flows, campaigns, metrics, catalog items, or reviews. Fail closed without a key (KLAVIYO_NOT_CONNECTED). Free local lane — no Polar Pro, no stamp hop, not Consent A. Writes are draft/upsert/backfill/catalog only and flag-gated. Campaign send jobs belong to recs-approve-push (SEND token).
 ---
 
 # Klaviyo (local pk_ lane)
@@ -31,7 +31,7 @@ Never invent list / flow / campaign / profile / catalog ids. Empty lists are not
 
 ## Refuse
 
-- Campaign **send jobs** (`/api/campaign-send-jobs`) — Wave 22.
+- Campaign **send jobs** (`/api/campaign-send-jobs`) from this skill or from `klaviyo_create_campaign`. Wave 22 send is `klaviyo_create_campaign_send_job` via `recs-approve-push` (account id + campaign id + `SEND`).
 - Polar `klaviyo` OAuth / stamp hop (Wave 19b deferred).
 - Full profile PII dumps or a properties-bag upsert.
 - Inventing `$shopify:::$default:::` catalog ids.

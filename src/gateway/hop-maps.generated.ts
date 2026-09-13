@@ -134,6 +134,7 @@ export const GATEWAY_PARAM_ALLOW_KEYS = [
   "default_value",
   "recommendation_resource_name",
   "recommendation_id",
+  "recommendation_resource_names",
   "product_link_resource_name",
   "product_link_id",
   "experiment_name",
@@ -478,6 +479,13 @@ export const HOP_TOOLS = [
   },
   {
     "name": "gads_apply_recommendation",
+    "family": "gads",
+    "kind": "mutate",
+    "method": "POST",
+    "path_template": "/{ADS_API_VERSION}/customers/{customer_id}/recommendations:apply"
+  },
+  {
+    "name": "gads_apply_recommendations",
     "family": "gads",
     "kind": "mutate",
     "method": "POST",

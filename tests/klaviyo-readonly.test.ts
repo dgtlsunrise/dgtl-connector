@@ -170,9 +170,10 @@ describe("Wave 18 Klaviyo local pk_ lane", () => {
 
   it("registers Klaviyo reads + writes as LOCAL_FREE, not Consent A, not Polar", () => {
     assert.equal(CONSENT_A_TOOLS.length, 26);
-    assert.equal(KLAVIYO_TOOL_NAMES.length, 18);
+    assert.equal(KLAVIYO_TOOL_NAMES.length, 19);
     assert.deepEqual(KLAVIYO_WRITE_TOOL_NAMES.slice().sort(), [
       "klaviyo_create_campaign",
+      "klaviyo_create_campaign_send_job",
       "klaviyo_create_event",
       "klaviyo_upsert_catalog_items",
       "klaviyo_upsert_profile",
@@ -196,7 +197,7 @@ describe("Wave 18 Klaviyo local pk_ lane", () => {
       assert.ok(!CONSENT_A_TOOLS.includes(name), name);
       assert.ok(!LICENSE_GATED_TOOLS.includes(name), name);
     }
-    assert.equal(TOOLS.some((t) => t.name.includes("send_job") || t.name.includes("send-job")), false);
+    assert.ok(TOOLS.some((t) => t.name === "klaviyo_create_campaign_send_job"));
     for (const name of [
       "klaviyo_list_catalog_items",
       "klaviyo_list_catalog_categories",
@@ -252,8 +253,8 @@ describe("Wave 18 Klaviyo local pk_ lane", () => {
     assert.equal(creds, null);
   });
 
-  it("allowlist refuses send jobs; catalog/reviews are Wave 19", () => {
-    assert.throws(() => assertKlaviyoPath("/api/campaign-send-jobs", "POST"));
+  it("allowlist allows send jobs on the named tool path; catalog/reviews are Wave 19", () => {
+    assertKlaviyoPath("/api/campaign-send-jobs", "POST");
     assert.throws(() => assertKlaviyoPath("/api/catalog-item-bulk-delete-jobs", "POST"));
     assertKlaviyoPath("/api/catalog-items", "GET");
     assertKlaviyoPath("/api/catalog-categories", "GET");

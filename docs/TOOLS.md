@@ -691,7 +691,8 @@ Consent A kernel stays **26**. These are Polar-gated; local describe tools need 
 | `gads_set_campaign_bid_strategy` | Closed-enum bidding (MANUAL_CPC, TARGET_CPA, TARGET_ROAS, …) or portfolio RN. |
 | `gads_create_shared_budget` / `gads_create_portfolio_bidding_strategy` | Shared budget (`explicitlyShared`) and portfolio BiddingStrategy (closed enum). |
 | `gads_create_conversion_action` | Conversion action create (tracking, not spend). |
-| `gads_apply_recommendation` | Apply a recommendation RN from `gads_search` recipe=recommendations. Confirm-gated. |
+| `gads_apply_recommendation` | Apply **one** recommendation RN from `gads_search` recipe=recommendations. Confirm-gated. **ENABLED is not a side effect.** No apply-all. |
+| `gads_apply_recommendations` | Wave 22 batch. Explicit `recommendation_resource_names[]` in the call **and** in `confirm_phrase` (plus `customer_id`). One mutate HTTP for that named list. Refuse `apply_all` / `*` / empty list. Never sets `status=ENABLED`. |
 | `gads_link_merchant_center` / `gads_unlink_merchant_center` | ProductLink create/remove (not MCC; not Merchant API). Confirm-gated. |
 | `gads_create_experiment` | Experiment in **SETUP** (not live) with control arm on an existing campaign. |
 
@@ -852,13 +853,14 @@ Merchant-held **private** API key on the Bot computer. **No Polar. No stamp hop.
 | `klaviyo_list_reviews` | Paginated reviews. Sparse — email / author stripped. Optional closed `status`. |
 | `klaviyo_get_review` | Requires `review_id`. Same sparse fieldset. |
 | `klaviyo_create_campaign` | Write. **Draft email only** (`POST /api/campaigns`). `dry_run` default true. Live: `confirm_phrase` must include the account id. **Never** `POST /api/campaign-send-jobs`. |
+| `klaviyo_create_campaign_send_job` | Write. **Send an existing draft** (`POST /api/campaign-send-jobs`). `dry_run` default true. Live: `confirm_phrase` must include the account id, `campaign_id`, and the token **`SEND`**. Cannot fire from draft create. |
 | `klaviyo_upsert_profile` | Write. `POST /api/profile-import`. Closed fields (`email` / `external_id` / `profile_id` + optional names). No properties bag. |
 | `klaviyo_create_event` | Write. `POST /api/events` backfill. `backfill` defaults **true** (flows do not re-fire). Closed flat properties. |
 | `klaviyo_upsert_catalog_items` | Write. Closed bulk create/update jobs (`POST /api/catalog-item-bulk-create-jobs` or `…-update-jobs`). Cap 20. `$custom` / `$default` only. `dry_run` default true. Live: account-id confirm. **Not** a mega upsert-all across MC / Meta / TikTok. |
 
 Fail order for writes: `WRITE_NOT_ENABLED` → `KLAVIYO_NOT_CONNECTED` → dry-run (GET account, zero mutate POST) → live needs account id in `confirm_phrase`.
 
-**Out of this wave:** campaign send jobs (Wave 22), Polar `klaviyo` OAuth (Wave 19b), stamp hop, Consent A kernel membership. Wave 20 conversion fabric is a separate diagnostic (`conversion_fabric_status` / `sgtm_ingest_test`) — not a Klaviyo tool.
+**Out of this wave:** Polar `klaviyo` OAuth (Wave 19b), stamp hop, Consent A kernel membership. Wave 20 conversion fabric is a separate diagnostic (`conversion_fabric_status` / `sgtm_ingest_test`) — not a Klaviyo tool. Wave 22 adds `klaviyo_create_campaign_send_job` (SEND token; never from draft create).
 
-Skills: `klaviyo-readonly`, `catalog-fan-out` (Shopify → MC / Meta / TikTok / Klaviyo; Google payload omits missing GTIN / missing image; refuse unnamed `merchant_id`).
+Skills: `klaviyo-readonly`, `catalog-fan-out` (Shopify → MC / Meta / TikTok / Klaviyo; Google payload omits missing GTIN / missing image; refuse unnamed `merchant_id`), `recs-approve-push` (Ads recs / MC issues / GTM workspace diff / Klaviyo flows / missing GA4 Ads link; one mutate per confirm).
 

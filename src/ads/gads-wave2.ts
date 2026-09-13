@@ -23,6 +23,12 @@ import {
   pmaxImageSlotReady,
   resolvePluginAmountMicros,
 } from "./gads-write.js";
+import {
+  assertApplyDoesNotSetEnabled,
+  assertConfirmContainsRecommendationRns,
+  assertNoApplyAll,
+  parseRecommendationResourceNames,
+} from "../recs/approve-push.js";
 
 function digitsId(raw: unknown, field: string): string {
   return normalizeCustomerId(requireId(raw, field));
@@ -684,6 +690,26 @@ export async function gadsCreateConversionAction(
   );
 }
 
+function applyRecommendationProposed(
+  args: Record<string, unknown>,
+): { customer_id: string; proposed: Record<string, unknown> } {
+  assertNoApplyAll(args);
+  assertApplyDoesNotSetEnabled(args);
+  const customer_id = digitsId(args.customer_id, "customer_id");
+  const rns = parseRecommendationResourceNames(args, customer_id);
+  const proposed: Record<string, unknown> = {
+    customer_id,
+    recommendation_resource_names: rns,
+  };
+  if (rns.length === 1) {
+    proposed.recommendation_resource_name = rns[0];
+    proposed.recommendation_id = rns[0]!.split("/").pop();
+  }
+  const login = optionalLoginCustomerId(args);
+  if (login) proposed.login_customer_id = login;
+  return { customer_id, proposed };
+}
+
 export async function gadsApplyRecommendation(
   ctx: AppContext,
   args: Record<string, unknown>,
@@ -691,22 +717,94 @@ export async function gadsApplyRecommendation(
   const tool = "gads_apply_recommendation";
   const miss = gateMutateOrFail(ctx, tool);
   if (miss) return miss;
-  const customer_id = digitsId(args.customer_id, "customer_id");
-  const proposed: Record<string, unknown> = { customer_id };
-  if (typeof args.recommendation_resource_name === "string") {
-    proposed.recommendation_resource_name = args.recommendation_resource_name.trim();
-  } else {
-    proposed.recommendation_id = requireId(args.recommendation_id, "recommendation_id");
+  let proposed: Record<string, unknown>;
+  let customer_id: string;
+  try {
+    const parsed = applyRecommendationProposed(args);
+    customer_id = parsed.customer_id;
+    proposed = parsed.proposed;
+    if ((proposed.recommendation_resource_names as string[]).length !== 1) {
+      return failEnvelope(
+        tool,
+        "INVALID_ARGUMENT",
+        "gads_apply_recommendation applies one recommendation. Use gads_apply_recommendations for an explicit RN list.",
+        { api: "google_ads" },
+      );
+    }
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope(tool, err.error_code, err.message, { ...err.extra, api: "google_ads" });
+    }
+    throw err;
   }
-  const login = optionalLoginCustomerId(args);
-  if (login) proposed.login_customer_id = login;
+  if (!dryRunDefault(args)) {
+    try {
+      assertConfirmContainsCustomerId(args.confirm_phrase, customer_id);
+      assertConfirmContainsRecommendationRns(args.confirm_phrase, [
+        String(proposed.recommendation_resource_name),
+      ]);
+    } catch (err) {
+      if (err instanceof ToolError) {
+        return failEnvelope(tool, err.error_code, err.message, { ...err.extra, api: "google_ads" });
+      }
+      throw err;
+    }
+  }
   return dryOrHop(
     ctx,
     tool,
     args,
     proposed,
-    "No Ads mutate HTTP. Applies a recommendation from gads_search recipe=recommendations. Confirm-gated.",
+    "No Ads mutate HTTP. Applies one recommendation RN from gads_search recipe=recommendations. Confirm-gated. ENABLED is not a side effect.",
   );
+}
+
+export async function gadsApplyRecommendations(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "gads_apply_recommendations";
+  const miss = gateMutateOrFail(ctx, tool);
+  if (miss) return miss;
+  let proposed: Record<string, unknown>;
+  let customer_id: string;
+  try {
+    const parsed = applyRecommendationProposed(args);
+    customer_id = parsed.customer_id;
+    proposed = parsed.proposed;
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope(tool, err.error_code, err.message, { ...err.extra, api: "google_ads" });
+    }
+    throw err;
+  }
+  const rns = proposed.recommendation_resource_names as string[];
+  if (dryRunDefault(args)) {
+    return okEnvelope(tool, {
+      resource: {
+        type: "gads_customer",
+        id: customer_id,
+        display_name: tool,
+      },
+      data: {
+        dry_run: true,
+        proposed,
+        applied_count: rns.length,
+        enabled: false,
+        note: "No Ads mutate HTTP. Explicit RN list only — no apply-all. ENABLED is not a side effect.",
+      },
+    });
+  }
+  try {
+    assertConfirmContainsCustomerId(args.confirm_phrase, customer_id);
+    assertConfirmContainsRecommendationRns(args.confirm_phrase, rns);
+  } catch (err) {
+    if (err instanceof ToolError) {
+      return failEnvelope(tool, err.error_code, err.message, { ...err.extra, api: "google_ads" });
+    }
+    throw err;
+  }
+  return liveMutateHop(ctx, tool, proposed);
 }
 
 export async function gadsLinkMerchantCenter(

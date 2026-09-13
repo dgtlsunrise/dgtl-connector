@@ -38,6 +38,7 @@ import {
   gadsAddNegativeKeywords,
   gadsAddShoppingListingGroups,
   gadsApplyRecommendation,
+  gadsApplyRecommendations,
   gadsAttachAudience,
   gadsCreateAppCampaign,
   gadsCreateConversionAction,
@@ -139,6 +140,7 @@ import {
 } from "../klaviyo/klaviyo.js";
 import {
   klaviyoCreateCampaign,
+  klaviyoCreateCampaignSendJob,
   klaviyoCreateEvent,
   klaviyoUpsertCatalogItems,
   klaviyoUpsertProfile,
@@ -1224,10 +1226,21 @@ export const TOOLS: ToolSpec[] = [
     family: "gads",
     title: "Google Ads apply recommendation (Consent C)",
     description:
-      "Paid mutate. Apply a recommendation from gads_search recipe=recommendations (resource name or id). Confirm-gated. Prefer dry_run; live confirm_phrase with customer_id.",
+      "Paid mutate. Apply one recommendation from gads_search recipe=recommendations (resource name or id). Confirm-gated. Prefer dry_run; live confirm_phrase with customer_id and that RN. ENABLED is not a side effect. No apply-all.",
     inputSchema: S.gadsApplyRecommendation,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => gadsApplyRecommendation(ctx, args),
+  },
+  {
+    name: "gads_apply_recommendations",
+    group: "gads-write",
+    family: "gads",
+    title: "Google Ads apply recommendations (Consent C)",
+    description:
+      "Paid mutate. Apply an explicit recommendation RN list (not apply-all). Live confirm_phrase must include customer_id and each RN. ENABLED is not a side effect. Prefer dry_run.",
+    inputSchema: S.gadsApplyRecommendations,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => gadsApplyRecommendations(ctx, args),
   },
   {
     name: "gads_link_merchant_center",
@@ -2107,10 +2120,21 @@ export const TOOLS: ToolSpec[] = [
     family: "klaviyo_write",
     title: "Klaviyo create campaign",
     description:
-      "Write. Draft email campaign only (POST /api/campaigns). dry_run default true. Live needs DGTL_WRITES_ENABLED plus confirm_phrase containing the account id. Never posts campaign-send-jobs. Local pk_ — no Polar.",
+      "Write. Draft email campaign only (POST /api/campaigns). dry_run default true. Live needs DGTL_WRITES_ENABLED plus confirm_phrase containing the account id. Never posts campaign-send-jobs — use klaviyo_create_campaign_send_job with SEND. Local pk_ — no Polar.",
     inputSchema: S.klaviyoCreateCampaign,
     annotations: ANN_WRITE,
     handler: (ctx, args) => klaviyoCreateCampaign(ctx, args),
+  },
+  {
+    name: "klaviyo_create_campaign_send_job",
+    group: "klaviyo-write",
+    family: "klaviyo_write",
+    title: "Klaviyo create campaign send job",
+    description:
+      "Write. POST /api/campaign-send-jobs for an existing draft campaign_id. dry_run default true. Live needs DGTL_WRITES_ENABLED plus confirm_phrase containing the account id, campaign id, and SEND. Cannot fire from klaviyo_create_campaign. Local pk_ — no Polar.",
+    inputSchema: S.klaviyoCreateCampaignSendJob,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => klaviyoCreateCampaignSendJob(ctx, args),
   },
   {
     name: "klaviyo_upsert_profile",

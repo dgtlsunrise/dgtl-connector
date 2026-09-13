@@ -1,0 +1,17 @@
+{
+  "note": "Wave 22 workspace vs live. Extra workspace tag is unpublished.",
+  "public_id": "GTM-XXXX000",
+  "workspace": {
+    "tags": [
+      { "id": "1", "name": "GA4 Configuration", "type": "gaawc" },
+      { "id": "9", "name": "Consent banner", "type": "html" }
+    ],
+    "triggers": [{ "id": "2147479572", "name": "All Pages", "type": "pageview" }],
+    "variables": []
+  },
+  "live": {
+    "tags": [{ "id": "1", "name": "GA4 Configuration", "type": "gaawc" }],
+    "triggers": [{ "id": "2147479572", "name": "All Pages", "type": "pageview" }],
+    "variables": []
+  }
+}

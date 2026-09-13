@@ -2223,6 +2223,25 @@
         "confirm_phrase": { "type": "string" }
       }
     },
+    "gads_apply_recommendations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["customer_id"],
+      "properties": {
+        "customer_id": { "type": "string", "minLength": 1 },
+        "login_customer_id": { "type": "string" },
+        "recommendation_resource_names": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "recommendation_resource_name": { "type": "string", "minLength": 1 },
+        "recommendation_id": { "type": "string" },
+        "dry_run": { "type": "boolean", "default": true },
+        "confirm_phrase": { "type": "string" }
+      }
+    },
     "tiktok_update_campaign_budget": {
       "type": "object",
       "additionalProperties": false,
@@ -2645,6 +2664,17 @@
         "from_email": { "type": "string", "minLength": 1 },
         "from_label": { "type": "string", "minLength": 1 },
         "preview_text": { "type": "string" },
+        "dry_run": { "type": "boolean", "default": true },
+        "confirm_phrase": { "type": "string" },
+        "confirm": { "type": "string" }
+      }
+    },
+    "klaviyo_create_campaign_send_job": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["campaign_id"],
+      "properties": {
+        "campaign_id": { "type": "string", "minLength": 1 },
         "dry_run": { "type": "boolean", "default": true },
         "confirm_phrase": { "type": "string" },
         "confirm": { "type": "string" }

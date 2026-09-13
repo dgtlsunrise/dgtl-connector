@@ -676,6 +676,13 @@
       "fail": "ADS_MUTATE_NOT_ENABLED"
     },
     {
+      "name": "gads_apply_recommendations",
+      "group": "gads-write",
+      "flag": "ads.mutate.enabled",
+      "fail": "ADS_MUTATE_NOT_ENABLED",
+      "note": "Wave 22 batch; explicit RN list in confirm; no apply-all; ENABLED is not a side effect"
+    },
+    {
       "name": "gads_link_merchant_center",
       "group": "gads-write",
       "flag": "ads.mutate.enabled",
@@ -1030,7 +1037,14 @@
       "group": "klaviyo-write",
       "flag": "writes.enabled",
       "fail": "WRITE_NOT_ENABLED",
-      "note": "Wave 18 draft only; dry_run default; confirm account id; never campaign-send-jobs"
+      "note": "Wave 18 draft only; dry_run default; confirm account id; never campaign-send-jobs (Wave 22 send tool)"
+    },
+    {
+      "name": "klaviyo_create_campaign_send_job",
+      "group": "klaviyo-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED",
+      "note": "Wave 22; POST /api/campaign-send-jobs; confirm account id + campaign id + SEND; cannot fire from draft create"
     },
     {
       "name": "klaviyo_upsert_profile",

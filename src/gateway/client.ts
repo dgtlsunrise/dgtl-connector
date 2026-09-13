@@ -165,6 +165,7 @@ export type GatewayParams = {
   default_value?: number;
   recommendation_resource_name?: string;
   recommendation_id?: string;
+  recommendation_resource_names?: string[];
   product_link_resource_name?: string;
   product_link_id?: string;
   experiment_name?: string;
@@ -747,6 +748,11 @@ function stripUrlishParams(params: Record<string, unknown>): GatewayParams {
     if (k === "content_ids" && Array.isArray(v)) {
       const arr = v.filter((x): x is string => typeof x === "string" && x.trim().length > 0).map((x) => x.trim());
       if (arr.length) out.content_ids = arr;
+      continue;
+    }
+    if (k === "recommendation_resource_names" && Array.isArray(v)) {
+      const arr = v.filter((x): x is string => typeof x === "string" && x.trim().length > 0).map((x) => x.trim());
+      if (arr.length) out.recommendation_resource_names = arr;
       continue;
     }
     if (typeof v === "string") {
