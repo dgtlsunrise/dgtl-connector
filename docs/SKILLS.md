@@ -71,7 +71,7 @@ This index is closed for v1 spec plus Waves 4–8. **17 skills.** Each directory
 | gtm-readonly-limits | All readonly `gtm_*` | Live mutate without Consent W + user confirm; inventing confirm phrases |
 | shopify-readonly | `shopify_get_shop`, `shopify_list_*`, `shopify_get_*` | Calling Admin API without credentials; inventing ids; live writes without flag+confirm |
 | shopify-ads-mc-join | `shopify_list_products`, `shopify_get_product`, `shopify_list_locations`, `shopify_list_inventory_levels`, `mc_*`, `gads_list_merchant_center_links`, `gads_add_shopping_listing_groups` | Inventing SKU/offerId; Consent A for MC; stamp Shopify hop |
-| shopping-mc-readiness | `mc_*`, `gads_list_merchant_center_links`, `gads_create_shopping_campaign`, `gads_add_shopping_listing_groups` | Consent A for MC; stamp Merchant API hop; inventing merchant_id; MC mutates |
+| shopping-mc-readiness | `mc_*`, `gads_list_merchant_center_links`, `gads_create_shopping_campaign`, `gads_add_shopping_listing_groups` | Consent A for MC; stamp Merchant API hop; inventing merchant_id; processed Product writes; inventing confirm |
 | google-marketing-support | `google_whoami` first, `support_packet` for intake, then the failing family; `feedback_prepare` only after a real hard-failure diagnosis | Token collection; `feedback_send` without user approval |
 | send-feedback | `support_packet`, `feedback_prepare`, then `feedback_send` only after the user approves the draft | Sending without `confirm: true`; pitching on LICENSE_REQUIRED / empty rows / picker |
 | pro-upgrade | `license_status` when explaining unlock | Pitching Pro after a normal GA4/GSC/web GTM answer |

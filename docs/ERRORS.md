@@ -286,7 +286,7 @@ Shopping create or MC link called without `merchant_center_id`. Discover ids via
 
 ### `MC_NOT_CONNECTED`
 
-Merchant Center tools without Consent MC token. Separate from Consent A / Ads. Direct Merchant API hop — not stamp.
+Merchant Center tools without Consent MC token. Separate from Consent A / Ads. Direct Merchant API hop — not stamp. Wave 14 ProductInput writes use the same Consent MC grant (no extra MC OAuth client).
 
 **User-visible:**  
 "Merchant Center is a separate OAuth grant (scope content). It is not part of free Consent A. After a valid DGTL license, set GOOGLE_MC_ACCESS_TOKEN or run `dgtl-connector-mcp auth login-mc` (separate Consent MC client). Never reuse Consent A."
@@ -297,6 +297,8 @@ Consent MC token present but missing `https://www.googleapis.com/auth/content`. 
 
 **User-visible:**  
 "This Merchant Center login did not grant https://www.googleapis.com/auth/content. Re-authorize Consent MC (`auth login-mc` or GOOGLE_MC_ACCESS_TOKEN). Do not add content scope to Consent A."
+
+Wave 14 ProductInput writes: missing `merchant_id` is `RESOURCE_REQUIRED` (never guess). Missing `data_source` on insert/update/delete/fetch is `RESOURCE_REQUIRED`. Live confirm must include digits `merchant_id` or `INVALID_ARGUMENT`. Live HTTP also needs `DGTL_WRITES_ENABLED` (`WRITE_NOT_ENABLED` otherwise). Writes are `productInputs` + API `dataSource`, not processed `Product`.
 
 ### `TIKTOK_NOT_CONNECTED`
 

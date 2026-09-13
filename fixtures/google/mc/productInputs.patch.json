@@ -1,0 +1,12 @@
+{
+  "name": "accounts/123456789/productInputs/en~US~SKU12345",
+  "product": "accounts/123456789/products/en~US~SKU12345",
+  "offerId": "SKU12345",
+  "contentLanguage": "en",
+  "feedLabel": "US",
+  "productAttributes": {
+    "title": "Classic Cotton T-Shirt",
+    "availability": "OUT_OF_STOCK",
+    "price": { "amountMicros": "12990000", "currencyCode": "USD" }
+  }
+}

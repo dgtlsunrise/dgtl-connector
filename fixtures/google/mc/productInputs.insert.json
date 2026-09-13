@@ -1,0 +1,17 @@
+{
+  "name": "accounts/123456789/productInputs/en~US~SKU12345",
+  "product": "accounts/123456789/products/en~US~SKU12345",
+  "offerId": "SKU12345",
+  "contentLanguage": "en",
+  "feedLabel": "US",
+  "productAttributes": {
+    "title": "Classic Cotton T-Shirt",
+    "description": "Soft cotton tee",
+    "link": "https://example.com/sku12345",
+    "imageLink": "https://example.com/sku12345.jpg",
+    "availability": "IN_STOCK",
+    "condition": "NEW",
+    "price": { "amountMicros": "15990000", "currencyCode": "USD" },
+    "brand": "Example Brand"
+  }
+}

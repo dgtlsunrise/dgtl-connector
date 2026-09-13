@@ -301,8 +301,23 @@ function route(method: string, url: URL, opts: FixtureOpts): unknown {
     if (/^\/accounts\/v1\/accounts\/\d+\/issues$/.test(p) && method === "GET") {
       return opts.emptyList ? { accountIssues: [] } : loadFixture("mc/accountIssues.list.json");
     }
+    if (/^\/datasources\/v1\/accounts\/\d+\/dataSources$/.test(p) && method === "POST") {
+      return loadFixture("mc/dataSources.create.json");
+    }
     if (/^\/datasources\/v1\/accounts\/\d+\/dataSources$/.test(p) && method === "GET") {
       return opts.emptyList ? { dataSources: [] } : loadFixture("mc/dataSources.list.json");
+    }
+    if (/^\/datasources\/v1\/accounts\/\d+\/dataSources\/\d+:fetch$/.test(p) && method === "POST") {
+      return loadFixture("mc/dataSources.fetch.json");
+    }
+    if (/^\/products\/v1\/accounts\/\d+\/productInputs:insert$/.test(p) && method === "POST") {
+      return loadFixture("mc/productInputs.insert.json");
+    }
+    if (/^\/products\/v1\/accounts\/\d+\/productInputs\/[^/]+$/.test(p) && method === "PATCH") {
+      return loadFixture("mc/productInputs.patch.json");
+    }
+    if (/^\/products\/v1\/accounts\/\d+\/productInputs\/[^/]+$/.test(p) && method === "DELETE") {
+      return loadFixture("mc/productInputs.delete.json");
     }
   }
 

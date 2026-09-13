@@ -1828,6 +1828,158 @@
         }
       },
       "required": ["advertiser_id", "campaign_id", "status"]
+    },
+    "mc_create_data_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["merchant_id", "display_name"],
+      "properties": {
+        "merchant_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["primary", "supplemental"]
+        },
+        "channel": {
+          "type": "string",
+          "enum": ["ONLINE_PRODUCTS"]
+        },
+        "feed_label": {
+          "type": "string"
+        },
+        "content_language": {
+          "type": "string"
+        },
+        "countries": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            { "type": "string" }
+          ]
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": {
+          "type": "string"
+        },
+        "confirm": {
+          "type": "string"
+        }
+      }
+    },
+    "mc_upsert_product_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["merchant_id"],
+      "properties": {
+        "merchant_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "data_source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dataSource": {
+          "type": "string",
+          "minLength": 1
+        },
+        "offer_id": { "type": "string" },
+        "content_language": { "type": "string" },
+        "feed_label": { "type": "string" },
+        "product_id": { "type": "string" },
+        "update_mask": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "link": { "type": "string" },
+        "image_link": { "type": "string" },
+        "availability": {
+          "type": "string",
+          "enum": ["IN_STOCK", "OUT_OF_STOCK", "PREORDER", "BACKORDER"]
+        },
+        "condition": {
+          "type": "string",
+          "enum": ["NEW", "USED", "REFURBISHED"]
+        },
+        "price_micros": {
+          "oneOf": [{ "type": "string" }, { "type": "number" }]
+        },
+        "currency": { "type": "string" },
+        "brand": { "type": "string" },
+        "gtin": { "type": "string" },
+        "mpn": { "type": "string" },
+        "google_product_category": { "type": "string" },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": { "type": "string" },
+        "confirm": { "type": "string" }
+      }
+    },
+    "mc_delete_product_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["merchant_id", "product_id"],
+      "properties": {
+        "merchant_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "data_source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dataSource": {
+          "type": "string",
+          "minLength": 1
+        },
+        "product_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": { "type": "string" },
+        "confirm": { "type": "string" }
+      }
+    },
+    "mc_fetch_data_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["merchant_id"],
+      "properties": {
+        "merchant_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "data_source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dataSource": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": true
+        },
+        "confirm_phrase": { "type": "string" },
+        "confirm": { "type": "string" }
+      }
     }
   }
 }

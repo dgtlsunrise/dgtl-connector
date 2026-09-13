@@ -8,6 +8,7 @@ import { GBP_HOSTS } from "./google/scopes.js";
 import { GoogleHttp } from "./http/google.js";
 import { GoogleGa4AdminHttp } from "./http/google-ga4-admin.js";
 import { GoogleGscWriteHttp } from "./http/google-gsc-write.js";
+import { GoogleMcWriteHttp } from "./http/google-mc-write.js";
 import { GoogleWriteHttp } from "./http/google-write.js";
 import type { HttpCall } from "./http/calls.js";
 import { loadLicenseToken, verifyLicenseJwt, type LicenseStatus } from "./license/verify.js";
@@ -40,8 +41,10 @@ export type AppContext = {
   httpGa4Admin: GoogleGa4AdminHttp;
   /** Consent S Search Console sitemap mutate client — never wired to ctx.auth. */
   httpGscWrite: GoogleGscWriteHttp;
-  /** Consent MC Merchant API client — never wired to ctx.auth / Consent A. */
+  /** Consent MC Merchant API read client — never wired to ctx.auth / Consent A. GET-only. */
   httpMc: GoogleHttp;
+  /** Consent MC ProductInput / API data-source writes — same AuthPort as reads. */
+  httpMcWrite: GoogleMcWriteHttp;
   /** Consent B GBP client — never wired to ctx.auth / Consent A. GET-only hosts. */
   httpGbp: GoogleHttp;
   fetchImpl: typeof fetch;
@@ -105,6 +108,7 @@ export function createAppContext(opts: {
     calls,
     allowedHosts: new Set(["merchantapi.googleapis.com"]),
   });
+  const httpMcWrite = new GoogleMcWriteHttp({ tokenSource: authMc, fetchImpl, calls });
   const httpGbp = new GoogleHttp({
     tokenSource: authGbp,
     fetchImpl,
@@ -129,6 +133,7 @@ export function createAppContext(opts: {
     httpGa4Admin,
     httpGscWrite,
     httpMc,
+    httpMcWrite,
     httpGbp,
     fetchImpl,
     flags: loadFlags(env),

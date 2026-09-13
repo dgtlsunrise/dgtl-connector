@@ -32,7 +32,7 @@ Do **not** request `https://www.googleapis.com/auth/userinfo.profile` unless a l
 | Scope | Reason |
 | --- | --- |
 | `https://www.googleapis.com/auth/adwords` | Google Ads — Consent C (separate client) |
-| `https://www.googleapis.com/auth/content` | Merchant Center / Merchant API — Consent MC (separate client; Wave 4 GET-only). Never on Consent A. |
+| `https://www.googleapis.com/auth/content` | Merchant Center / Merchant API — Consent MC (separate client; Wave 4 reads + Wave 14 ProductInput writes). Never on Consent A. |
 | `https://www.googleapis.com/auth/analytics` | Read/write Analytics |
 | `https://www.googleapis.com/auth/analytics.edit` | Would be needed to create some GA4 links; still not v1 |
 | `https://www.googleapis.com/auth/webmasters` | Read/write Search Console |
@@ -125,9 +125,9 @@ Merchant API reads use a **third Google Desktop client**. Not Consent A (no `con
 | Path | How |
 | --- | --- |
 | Merchant Center | `GOOGLE_MC_ACCESS_TOKEN` or `dgtl-connector-mcp auth login-mc` → `PLUGIN_DATA/google-oauth-mc.json` (`GOOGLE_OAUTH_MC_CLIENT_ID`) |
-| Scope | `https://www.googleapis.com/auth/content` only. Google has no readonly MC scope; Wave 4 tools are GET-only. |
+| Scope | `https://www.googleapis.com/auth/content` only. Google has no readonly MC scope. Reads stay GET-only on `GoogleHttp`. Wave 14 writes use `GoogleMcWriteHttp` (same Consent MC). |
 | License | Polar Pro `ads` feature (no separate `mc` bit). Direct hop — **no** `DGTL_GATEWAY_URL`. |
-| Fail closed | `LICENSE_REQUIRED` → `MC_NOT_CONNECTED` → `MC_SCOPE_MISSING` |
+| Fail closed | `LICENSE_REQUIRED` → `MC_NOT_CONNECTED` → `MC_SCOPE_MISSING`. Live writes also `WRITE_NOT_ENABLED` until `DGTL_WRITES_ENABLED` + confirm containing `merchant_id`. |
 
 Do **not** add `content` to Consent A verification. Merchant API Products / Accounts / DataSources must be Enabled on the **MC OAuth client's** GCP project (Noel gate). `ACCESS_NOT_CONFIGURED` is that enablement, not an empty catalog.
 
@@ -156,13 +156,13 @@ Do **not** add `business.manage` to Consent A verification. Account Management /
 
 | API | Host / path | If missing |
 | --- | --- | --- |
-| Merchant API (products) | `merchantapi.googleapis.com/products/v1` | 403 `accessNotConfigured` on `mc_list_products` / get / statuses |
+| Merchant API (products) | `merchantapi.googleapis.com/products/v1` | 403 `accessNotConfigured` on `mc_list_products` / get / statuses / `mc_upsert_product_input` / `mc_delete_product_input` |
 | Merchant API (accounts) | `merchantapi.googleapis.com/accounts/v1` | 403 on `mc_list_accounts` / `mc_list_account_issues` |
-| Merchant API (data sources) | `merchantapi.googleapis.com/datasources/v1` | 403 on `mc_list_data_sources` |
+| Merchant API (data sources) | `merchantapi.googleapis.com/datasources/v1` | 403 on `mc_list_data_sources` / `mc_create_data_source` / `mc_fetch_data_source` |
 
 ## Least privilege in the tools
 
-- Free GA4 / GSC / GTM tools are read/list/get on Consent A. GTM write/publish tools (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`, `gtm_create_client`, `gtm_update_client`, `gtm_create_container`, `gtm_create_environment`) are registered, flagged off by default (`WRITE_NOT_ENABLED`), and use Consent W + `GoogleWriteHttp` when enabled — they are **not** on the free consent screen. GA4 Admin writes use Consent G + `GoogleGa4AdminHttp`. GSC sitemap submit/delete (`gsc_submit_sitemap`, `gsc_delete_sitemap`) use Consent S + `GoogleGscWriteHttp`. None of those write tools are on the free consent screen.
+- Free GA4 / GSC / GTM tools are read/list/get on Consent A. GTM write/publish tools (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`, `gtm_create_client`, `gtm_update_client`, `gtm_create_container`, `gtm_create_environment`) are registered, flagged off by default (`WRITE_NOT_ENABLED`), and use Consent W + `GoogleWriteHttp` when enabled — they are **not** on the free consent screen. GA4 Admin writes use Consent G + `GoogleGa4AdminHttp`. GSC sitemap submit/delete (`gsc_submit_sitemap`, `gsc_delete_sitemap`) use Consent S + `GoogleGscWriteHttp`. Merchant Center ProductInput writes (`mc_create_data_source`, `mc_upsert_product_input`, `mc_delete_product_input`, `mc_fetch_data_source`) use Consent MC + `GoogleMcWriteHttp` (same `content` grant as reads — never Consent A). None of those write tools are on the free consent screen.
 - `ga4_run_report` defaults to small row limits (see [TOOLS.md](TOOLS.md)) so one prompt cannot burn a property's daily Data API tokens.
 - URL Inspection is read of index state, not request indexing (`webmasters.readonly` cannot submit anyway).
 - Workspace GTM lists may include **unpublished drafts**. Live tags come from `gtm_get_live_container_version`. Skills must not imply a draft tag is in production.

@@ -61,12 +61,12 @@ export const ERROR_RUNBOOKS: Partial<Record<ErrorCode, RunbookHint>> = {
   WRITE_NOT_ENABLED: {
     runbook: `${RUNBOOK_INDEX}#write_not_enabled`,
     next_human_step:
-      "Set DGTL_WRITES_ENABLED=true for Consent W GTM writes or Shopify inventory adjust. Marketplace default stays off. Consent A remains readonly.",
+      "Set DGTL_WRITES_ENABLED=true for Consent W GTM writes, Consent G/S writes, Shopify inventory adjust, or live Merchant Center ProductInput writes. Marketplace default stays off. Consent A remains readonly. MC live confirm must include merchant_id.",
   },
   MC_NOT_CONNECTED: {
     runbook: `${RUNBOOK_INDEX}#mc_not_connected`,
     next_human_step:
-      "Run `dgtl-connector-mcp auth login-mc` or set GOOGLE_MC_ACCESS_TOKEN (Consent MC, scope content). Never reuse Consent A. Needs a valid Pro license.",
+      "Run `dgtl-connector-mcp auth login-mc` or set GOOGLE_MC_ACCESS_TOKEN (Consent MC, scope content). Never reuse Consent A. Needs a valid Pro license (Polar ads). ProductInput writes use the same grant — prefer dry_run; live confirm must include merchant_id.",
   },
   MC_SCOPE_MISSING: {
     runbook: `${RUNBOOK_INDEX}#mc_scope_missing`,

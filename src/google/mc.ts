@@ -1,7 +1,8 @@
 /**
  * Merchant Center — Merchant API (direct Google hop).
  *
- * Wave 4: read-only products / status / feed issues. Not Ads product_link.
+ * Wave 4: read-only products / status / feed issues. Wave 14 writes live in
+ * mc-write.ts (ProductInput + API data sources). Not Ads product_link.
  * Not stamp (Ads developer-token is the wrong secret; Content API for Shopping
  * sunset 2026-08-18). Consent MC only — never ctx.auth / Consent A.
  */
@@ -29,15 +30,24 @@ function pageArgs(args: Rec): { pageSize: number; pageToken: string | undefined 
 }
 
 /**
+ * Polar `ads` only — no separate `mc` bit.
+ */
+export function requireMcLicense(ctx: AppContext, tool: string): Envelope | null {
+  if (!hasFeature(ctx.license, "ads")) {
+    return failEnvelope(tool, "LICENSE_REQUIRED", MSG.LICENSE_REQUIRED, {
+      hint: "Merchant Center tools are Pro (Polar ads feature). Polar has no separate mc bit. Consent MC is still a separate OAuth — never Consent A.",
+    });
+  }
+  return null;
+}
+
+/**
  * LICENSE_REQUIRED (ads) → MC_NOT_CONNECTED → MC_SCOPE_MISSING.
  * Direct hop: never GATEWAY_UNAVAILABLE. Never ctx.auth.
  */
 export async function requireMcHop(ctx: AppContext, tool: string): Promise<Envelope | null> {
-  if (!hasFeature(ctx.license, "ads")) {
-    return failEnvelope(tool, "LICENSE_REQUIRED", MSG.LICENSE_REQUIRED, {
-      hint: "Merchant Center reads are Pro (Polar ads feature). Polar has no separate mc bit. Consent MC is still a separate OAuth — never Consent A.",
-    });
-  }
+  const lic = requireMcLicense(ctx, tool);
+  if (lic) return lic;
   const tok = await ctx.authMc.getAccessToken();
   if (!tok?.accessToken) {
     return failEnvelope(tool, "MC_NOT_CONNECTED", MSG.MC_NOT_CONNECTED, {

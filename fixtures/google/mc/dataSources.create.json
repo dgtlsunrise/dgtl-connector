@@ -1,0 +1,12 @@
+{
+  "name": "accounts/123456789/dataSources/333",
+  "dataSourceId": "333",
+  "displayName": "API primary (Shopping)",
+  "input": "API",
+  "primaryProductDataSource": {
+    "channel": "ONLINE_PRODUCTS",
+    "feedLabel": "US",
+    "contentLanguage": "en",
+    "countries": ["US"]
+  }
+}

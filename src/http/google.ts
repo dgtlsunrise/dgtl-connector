@@ -138,7 +138,7 @@ export class GoogleHttp {
     if (GET_ONLY_HOSTS.has(url.hostname) && req.method !== "GET") {
       throw new ToolError(
         "UNSUPPORTED_OPERATION",
-        "GBP and Merchant API clients are GET-only in this binary. No posts, replies, or product mutate.",
+        "GBP clients and Merchant API reads are GET-only. ProductInput writes use GoogleMcWriteHttp + Consent MC. No GBP posts or replies.",
         { api: req.api },
       );
     }

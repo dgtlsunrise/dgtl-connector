@@ -21,7 +21,7 @@ Stamp does not proxy Merchant API. The Ads developer-token is the wrong secret. 
 1. Pro license (`ads`). Else `LICENSE_REQUIRED`.
 2. Consent MC: `GOOGLE_MC_ACCESS_TOKEN` or `dgtl-connector-mcp auth login-mc` → `PLUGIN_DATA/google-oauth-mc.json`. Separate Desktop client (`GOOGLE_OAUTH_MC_CLIENT_ID`). **Never** add `content` to Consent A.
 3. Missing MC token → `MC_NOT_CONNECTED`. Wrong scopes → `MC_SCOPE_MISSING`.
-4. Google's `content` scope is read/write; **Wave 4 tools are GET-only**. Do not insert/update/delete products.
+4. Google's `content` scope is read/write. **Reads** stay GET-only. **Writes** are named Wave 14 tools (`mc_create_data_source`, `mc_upsert_product_input`, `mc_delete_product_input`, `mc_fetch_data_source`) — ProductInput + API `data_source`, never processed Product, never Consent A. Prefer `dry_run`. Live confirm must include `merchant_id`. Live also needs `DGTL_WRITES_ENABLED`.
 5. Live Merchant API enablement on that GCP project is a **Noel gate**. `ACCESS_NOT_CONFIGURED` means the API is off — not an empty catalog.
 
 ## Sequence (never skip the picker)
@@ -52,7 +52,7 @@ Stamp does not proxy Merchant API. The Ads developer-token is the wrong secret. 
 
 - Consent A / `GOOGLE_ACCESS_TOKEN` for MC.
 - Stamp hop / developer-token for Merchant API.
-- Product insert/update/delete, feed fetch, or any MC mutate (later wave; dry_run + confirm if added).
-- Guessing `merchant_id` or `product_id`.
+- Guessing `merchant_id` or `product_id`, or writing processed `Product` (use ProductInput + `data_source`).
+- Inventing confirm phrases. Data-source delete/patch, promotions, reviews (later wave).
 - Axos. GBP / TikTok / Consent W E2E.
 - Publish/deploy.

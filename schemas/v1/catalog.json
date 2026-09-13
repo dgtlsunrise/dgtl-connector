@@ -772,6 +772,30 @@
       "fail": "LICENSE_REQUIRED"
     },
     {
+      "name": "mc_create_data_source",
+      "group": "mc-write",
+      "fail": "LICENSE_REQUIRED",
+      "note": "Wave 14; API-type data source create; Consent MC; Polar ads; dry_run default; confirm merchant_id; live DGTL_WRITES_ENABLED; never Consent A"
+    },
+    {
+      "name": "mc_upsert_product_input",
+      "group": "mc-write",
+      "fail": "LICENSE_REQUIRED",
+      "note": "Wave 14; productInputs insert/patch; requires dataSource; ProductInput not processed Product"
+    },
+    {
+      "name": "mc_delete_product_input",
+      "group": "mc-write",
+      "fail": "LICENSE_REQUIRED",
+      "note": "Wave 14; productInputs.delete; confirm merchant_id"
+    },
+    {
+      "name": "mc_fetch_data_source",
+      "group": "mc-write",
+      "fail": "LICENSE_REQUIRED",
+      "note": "Wave 14; FILE data source fetch now; not Product insert"
+    },
+    {
       "name": "shopify_get_shop",
       "group": "shopify",
       "fail": "SHOPIFY_NOT_CONNECTED",

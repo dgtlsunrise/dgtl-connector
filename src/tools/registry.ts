@@ -86,6 +86,12 @@ import {
   mcListProducts,
 } from "../google/mc.js";
 import {
+  mcCreateDataSource,
+  mcDeleteProductInput,
+  mcFetchDataSource,
+  mcUpsertProductInput,
+} from "../google/mc-write.js";
+import {
   shopifyGetShop,
   shopifyListProducts,
   shopifyGetProduct,
@@ -1549,7 +1555,7 @@ export const TOOLS: ToolSpec[] = [
     family: "mc",
     title: "Merchant Center list products",
     description:
-      "Paid. Direct Merchant API products.list. Requires merchant_id (from mc_list_accounts or gads_list_merchant_center_links). Never guess. GET-only.",
+      "Paid. Direct Merchant API products.list (processed Product). Requires merchant_id (from mc_list_accounts or gads_list_merchant_center_links). Never guess. Reads stay GET-only.",
     inputSchema: S.mcListProducts,
     annotations: ANN_RO,
     handler: (ctx, args) => mcListProducts(ctx, args),
@@ -1593,10 +1599,54 @@ export const TOOLS: ToolSpec[] = [
     family: "mc",
     title: "Merchant Center list data sources",
     description:
-      "Paid. Merchant API data sources (feeds). Pair with mc_list_account_issues. GET-only; no fetch/insert.",
+      "Paid. Merchant API data sources (feeds). Pair with mc_list_account_issues. Reads stay GET-only. Create/fetch are named write tools.",
     inputSchema: S.mcListDataSources,
     annotations: ANN_RO,
     handler: (ctx, args) => mcListDataSources(ctx, args),
+  },
+  {
+    name: "mc_create_data_source",
+    group: "mc-write",
+    family: "mc",
+    title: "Merchant Center create API data source",
+    description:
+      "Paid mutate. Create an API-type primary or supplemental product data source (no fileInput). Consent MC (content), not Consent A. Polar ads (no mc bit). dry_run default; live needs confirm_phrase containing merchant_id plus DGTL_WRITES_ENABLED. Never guess merchant_id.",
+    inputSchema: S.mcCreateDataSource,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => mcCreateDataSource(ctx, args),
+  },
+  {
+    name: "mc_upsert_product_input",
+    group: "mc-write",
+    family: "mc",
+    title: "Merchant Center upsert ProductInput",
+    description:
+      "Paid mutate. Merchant API productInputs insert (default) or patch when update_mask is set. Requires merchant_id + data_source (API data source). Writes ProductInput, not processed Product. Consent MC. Polar ads. dry_run default; live confirm_phrase must include merchant_id.",
+    inputSchema: S.mcUpsertProductInput,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => mcUpsertProductInput(ctx, args),
+  },
+  {
+    name: "mc_delete_product_input",
+    group: "mc-write",
+    family: "mc",
+    title: "Merchant Center delete ProductInput",
+    description:
+      "Paid mutate. Delete a ProductInput (contentLanguage~feedLabel~offerId) from an API data_source. Not processed Product. Consent MC. Polar ads. dry_run default; live confirm_phrase must include merchant_id.",
+    inputSchema: S.mcDeleteProductInput,
+    annotations: ANN_DESTRUCTIVE,
+    handler: (ctx, args) => mcDeleteProductInput(ctx, args),
+  },
+  {
+    name: "mc_fetch_data_source",
+    group: "mc-write",
+    family: "mc",
+    title: "Merchant Center fetch file data source",
+    description:
+      "Paid mutate. Immediate fetch on a FILE data source (not API ProductInput insert). Consent MC. Polar ads. dry_run default; live confirm_phrase must include merchant_id.",
+    inputSchema: S.mcFetchDataSource,
+    annotations: ANN_WRITE,
+    handler: (ctx, args) => mcFetchDataSource(ctx, args),
   },
   {
     name: "shopify_get_shop",
@@ -1744,6 +1794,9 @@ export const GA4_WRITE_TOOL_NAMES = TOOLS.filter((t) => t.family === "ga4_write"
 
 /** Consent S sitemap submit/delete — never in the Consent A kernel. */
 export const GSC_WRITE_TOOL_NAMES = TOOLS.filter((t) => t.family === "gsc_write").map((t) => t.name);
+
+/** Consent MC ProductInput / API data-source writes — Polar ads, never Consent A. */
+export const MC_WRITE_TOOL_NAMES = TOOLS.filter((t) => t.group === "mc-write").map((t) => t.name);
 
 /**
  * Alias of CONSENT_A_TOOLS (W0.4). Not the commercial free set.

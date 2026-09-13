@@ -110,6 +110,39 @@ export function normalizeMcProductId(raw: string): string {
   return id;
 }
 
+/**
+ * Merchant API data source — digits, dataSources/{id}, or
+ * accounts/{merchant}/dataSources/{id}. Never guess. Full names must match merchant_id.
+ */
+export function normalizeMcDataSource(
+  raw: string,
+  merchantId: string,
+): { id: string; name: string } {
+  const trimmed = raw.trim();
+  const full = trimmed.match(/^accounts\/([0-9]+)\/dataSources\/([0-9]+)$/);
+  let id = trimmed;
+  if (full?.[1] && full[2]) {
+    if (full[1] !== merchantId) {
+      throw new ToolError(
+        "INVALID_ARGUMENT",
+        `data_source account ${full[1]} does not match merchant_id ${merchantId}. Never guess merchant_id.`,
+        { resource_id: trimmed },
+      );
+    }
+    id = full[2];
+  } else if (trimmed.startsWith("dataSources/")) {
+    id = trimmed.slice("dataSources/".length);
+  }
+  if (!/^[0-9]+$/.test(id)) {
+    throw new ToolError(
+      "INVALID_ARGUMENT",
+      "data_source must be digits, dataSources/{id}, or accounts/{merchant}/dataSources/{id}. ProductInput writes require an API data source (not a processed Product).",
+      { resource_id: trimmed },
+    );
+  }
+  return { id, name: `accounts/${merchantId}/dataSources/${id}` };
+}
+
 /** GBP account — digits, accounts/{id}, or accounts/- (Google wildcard). Never guess. */
 export function normalizeGbpAccount(raw: string): { id: string; name: string } {
   const trimmed = raw.trim();

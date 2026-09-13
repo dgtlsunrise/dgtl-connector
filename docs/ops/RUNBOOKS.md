@@ -50,7 +50,7 @@ Reinstall the merchant custom app with the missing Admin scope. `write_inventory
 
 ## `WRITE_NOT_ENABLED`
 
-`DGTL_WRITES_ENABLED=false` (marketplace default). Required for Consent W GTM writes and Shopify inventory adjust. Consent A stays readonly.
+`DGTL_WRITES_ENABLED=false` (marketplace default). Required for Consent W GTM writes, Consent G/S writes, Shopify inventory adjust, and live Merchant Center ProductInput writes. Consent A stays readonly. Prefer `dry_run` first; MC live confirm must include `merchant_id`.
 
 ## `CONSENT_W_REQUIRED`
 
@@ -66,7 +66,7 @@ Reinstall the merchant custom app with the missing Admin scope. `write_inventory
 
 ## `MC_NOT_CONNECTED`
 
-`auth login-mc` or `GOOGLE_MC_ACCESS_TOKEN` (Consent MC, scope `content`). Needs Pro. Never reuse Consent A.
+`auth login-mc` or `GOOGLE_MC_ACCESS_TOKEN` (Consent MC, scope `content`). Needs Pro (`ads`). Never reuse Consent A. Wave 14 ProductInput writes use the same grant — never guess `merchant_id`; live needs `DGTL_WRITES_ENABLED` + confirm containing that id.
 
 ## `MC_SCOPE_MISSING`
 

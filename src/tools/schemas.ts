@@ -1654,6 +1654,121 @@ export const mcListProducts = mcMerchantPage;
 export const mcListProductStatuses = mcMerchantPage;
 export const mcListDataSources = mcMerchantPage;
 
+function requireMcConfirmWhenLive(
+  val: { dry_run: boolean; confirm_phrase?: string; confirm?: string },
+  ctx: z.RefinementCtx,
+): void {
+  if (val.dry_run === false) {
+    const phrase = val.confirm_phrase ?? val.confirm;
+    if (!phrase || !String(phrase).trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "confirm_phrase is required when dry_run is false (must include merchant_id)",
+        path: ["confirm_phrase"],
+      });
+    }
+  }
+}
+
+/** Wave 14 — API-type data source create. merchant_id required; dry_run default; live confirm contains merchant_id. */
+export const mcCreateDataSource = z
+  .object({
+    merchant_id: z.string().min(1),
+    display_name: z.string().min(1),
+    kind: z.enum(["primary", "supplemental"]).optional(),
+    channel: z.enum(["ONLINE_PRODUCTS"]).optional(),
+    feed_label: z.string().optional(),
+    content_language: z.string().optional(),
+    countries: z.union([z.array(z.string().min(2).max(2)), z.string().min(2).max(2)]).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+    confirm: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireMcConfirmWhenLive);
+
+/** Wave 14 — ProductInput insert (default) or patch when update_mask is set. data_source required. */
+export const mcUpsertProductInput = z
+  .object({
+    merchant_id: z.string().min(1),
+    data_source: z.string().min(1).optional(),
+    dataSource: z.string().min(1).optional(),
+    offer_id: z.string().optional(),
+    content_language: z.string().optional(),
+    feed_label: z.string().optional(),
+    product_id: z.string().optional(),
+    update_mask: z.string().optional(),
+    title: z.string().optional(),
+    description: z.string().optional(),
+    link: z.string().optional(),
+    image_link: z.string().optional(),
+    availability: z.enum(["IN_STOCK", "OUT_OF_STOCK", "PREORDER", "BACKORDER"]).optional(),
+    condition: z.enum(["NEW", "USED", "REFURBISHED"]).optional(),
+    price_micros: z.union([z.string(), z.number()]).optional(),
+    currency: z.string().optional(),
+    brand: z.string().optional(),
+    gtin: z.string().optional(),
+    mpn: z.string().optional(),
+    google_product_category: z.string().optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+    confirm: z.string().optional(),
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    requireMcConfirmWhenLive(val, ctx);
+    if (!val.data_source && !val.dataSource) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "data_source is required (API data source name or id). ProductInput writes are not processed Product.",
+        path: ["data_source"],
+      });
+    }
+  });
+
+export const mcDeleteProductInput = z
+  .object({
+    merchant_id: z.string().min(1),
+    data_source: z.string().min(1).optional(),
+    dataSource: z.string().min(1).optional(),
+    product_id: z.string().min(1),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+    confirm: z.string().optional(),
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    requireMcConfirmWhenLive(val, ctx);
+    if (!val.data_source && !val.dataSource) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "data_source is required",
+        path: ["data_source"],
+      });
+    }
+  });
+
+export const mcFetchDataSource = z
+  .object({
+    merchant_id: z.string().min(1),
+    data_source: z.string().min(1).optional(),
+    dataSource: z.string().min(1).optional(),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+    confirm: z.string().optional(),
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    requireMcConfirmWhenLive(val, ctx);
+    if (!val.data_source && !val.dataSource) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "data_source is required",
+        path: ["data_source"],
+      });
+    }
+  });
+
 /** Shopify local read — merchant credentials; no Polar. */
 export const shopifyGetShop = emptyInput;
 

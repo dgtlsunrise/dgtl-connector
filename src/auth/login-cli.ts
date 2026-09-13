@@ -191,7 +191,7 @@ export async function runAuthLoginAds(opts: {
 /**
  * Consent MC Merchant API PKCE — separate client; never adds content to Consent A.
  * Writes PLUGIN_DATA/google-oauth-mc.json only. Fail-closed without GOOGLE_OAUTH_MC_CLIENT_ID.
- * Wave 4 tools are GET-only even though Google's content scope is read/write.
+ * Wave 4 reads stay GET-only. Wave 14 ProductInput writes use the same Consent MC grant.
  */
 export async function runAuthLoginMc(opts: {
   clientId: string;
@@ -535,8 +535,9 @@ Consent C Ads: set GOOGLE_OAUTH_ADS_CLIENT_ID (separate Desktop client) then
 Consent MC (Merchant Center): set GOOGLE_OAUTH_MC_CLIENT_ID (separate Desktop
   client) then auth login-mc → PLUGIN_DATA/google-oauth-mc.json with scope
   content. Never reuse Consent A. Direct Merchant API hop (no stamp — Ads
-  developer-token is the wrong secret). Tools are GET-only. Needs Pro (ads)
-  license. Live API enablement on that GCP project is a Noel gate.
+  developer-token is the wrong secret). Reads stay GET-only; ProductInput writes
+  are confirm-gated (dry_run default; live confirm must include merchant_id).
+  Needs Pro (ads) license. Live API enablement on that GCP project is a Noel gate.
 
 Consent B (GBP): set GOOGLE_OAUTH_GBP_CLIENT_ID (separate Desktop client) then
   auth login-gbp → PLUGIN_DATA/google-oauth-gbp.json with scope business.manage.

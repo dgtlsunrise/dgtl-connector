@@ -8,14 +8,14 @@ If you need a 27th **Consent A** tool, bump a version and update `schemas/v1/cat
 
 Machine-readable list: [`schemas/v1/catalog.json`](../schemas/v1/catalog.json). Parameter schema: [`schemas/v1/tools.schema.json`](../schemas/v1/tools.schema.json). Error envelope: [`schemas/v1/error.schema.json`](../schemas/v1/error.schema.json).
 
-**Not all tools are read.** Consent A GA4 / GSC / GTM, Shopify products/orders/inventory/locations, and GBP (when enabled) are read (or fail-closed). GTM write (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`, `gtm_create_client`, `gtm_update_client`, `gtm_create_container`, `gtm_create_environment`), `shopify_adjust_inventory`, and Ads / Meta mutate + create tools are registered **writes**. Repeating a **read** call is safe (**idempotent** as HTTP GET/list/query). Write tools are **not** idempotent. Read results are **not bit-stable** (GA4 processing, GSC data_state, GTM workspace edits).
+**Not all tools are read.** Consent A GA4 / GSC / GTM, Shopify products/orders/inventory/locations, and GBP (when enabled) are read (or fail-closed). GTM write (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`, `gtm_create_client`, `gtm_update_client`, `gtm_create_container`, `gtm_create_environment`), `shopify_adjust_inventory`, Merchant Center ProductInput writes (`mc_create_data_source`, `mc_upsert_product_input`, `mc_delete_product_input`, `mc_fetch_data_source`), and Ads / Meta mutate + create tools are registered **writes**. Repeating a **read** call is safe (**idempotent** as HTTP GET/list/query). Write tools are **not** idempotent. Read results are **not bit-stable** (GA4 processing, GSC data_state, GTM workspace edits).
 
 ## Mutate honesty (Wave 0)
 
 ### ACTIVE / ENABLED only on confirm
 
 - `dry_run` **defaults true**. Omitted or `true` → proposed payload, **zero** mutate HTTP.
-- Live (`dry_run=false`) requires `confirm_phrase` containing the resource IDs for that tool (Ads: digits-only `customer_id`; Meta: `act_{ad_account_id}` plus child ids; TikTok: `advertiser_id` plus `campaign_id`; Consent W: container `publicId`; Shopify writes: shop domain `*.myshopify.com`).
+- Live (`dry_run=false`) requires `confirm_phrase` containing the resource IDs for that tool (Ads: digits-only `customer_id`; Meta: `act_{ad_account_id}` plus child ids; TikTok: `advertiser_id` plus `campaign_id`; Consent W: container `publicId`; Shopify writes: shop domain `*.myshopify.com`; Merchant Center writes: digits `merchant_id`).
 - **Harness:** a **user** message this turn must contain those IDs. List-tool output is not the user message (`harnessUserMessageContainsCustomerId` in `src/ads/gads-write.ts`).
 - Campaign / RSA / Meta **creates** default **PAUSED**.
 - **ACTIVE** (Meta) / **ENABLED** (Google Ads) only when the caller passes **explicit** `status` **and** live confirm. Do not infer ENABLED/ACTIVE from a dry-run or from a PAUSED parent.
@@ -663,13 +663,13 @@ Consent A kernel stays **26**. These are Polar-gated; local describe tools need 
 
 ---
 
-## Merchant Center — Merchant API reads (Wave 4; direct Google; not stamp)
+## Merchant Center — Merchant API reads + ProductInput writes (Wave 4 / Wave 14; direct Google; not stamp)
 
-**Hop decision:** plugin-direct `merchantapi.googleapis.com` with Consent MC. **Not** stamp. Content API for Shopping sunset **2026-08-18**; Wave 4 uses Merchant API v1 (`products`, `accounts`, `datasources`). Ads developer-token is the wrong secret (stamp exists to hold that token + Meta app secret). Same hop class as GA4/GSC (`direct_google`). Polar has no `mc` bit — tools require Pro (`ads`) **and** Consent MC. Never Consent A.
+**Hop decision:** plugin-direct `merchantapi.googleapis.com` with Consent MC. **Not** stamp. Content API for Shopping sunset **2026-08-18**; Merchant API v1 (`products`, `accounts`, `datasources`, `productInputs`). Ads developer-token is the wrong secret. Same hop class as GA4/GSC (`direct_google`). Polar has no `mc` bit — tools require Pro (`ads`) **and** Consent MC. Never Consent A. Never guess `merchant_id`.
 
-Auth: `GOOGLE_MC_ACCESS_TOKEN` or `dgtl-connector-mcp auth login-mc` (`GOOGLE_OAUTH_MC_CLIENT_ID` → `PLUGIN_DATA/google-oauth-mc.json`). Scope `https://www.googleapis.com/auth/content` (Google has no readonly content scope; **tools are GET-only**). Fail `LICENSE_REQUIRED` → `MC_NOT_CONNECTED` → `MC_SCOPE_MISSING`. **No** `GATEWAY_UNAVAILABLE` (no Worker hop). Live API enablement on the MC OAuth client's GCP project is a **Noel gate** (`ACCESS_NOT_CONFIGURED`).
+Auth: `GOOGLE_MC_ACCESS_TOKEN` or `dgtl-connector-mcp auth login-mc` (`GOOGLE_OAUTH_MC_CLIENT_ID` → `PLUGIN_DATA/google-oauth-mc.json`). Scope `https://www.googleapis.com/auth/content` (Google has no readonly content scope). **Reads** stay GET-only on `GoogleHttp`. **Writes** use `GoogleMcWriteHttp` (same Consent MC — no extra MC OAuth bit, no Consent A). Fail `LICENSE_REQUIRED` → `MC_NOT_CONNECTED` → `MC_SCOPE_MISSING`. Live writes also need `DGTL_WRITES_ENABLED` + `confirm_phrase` containing digits `merchant_id`. **No** `GATEWAY_UNAVAILABLE` (no Worker hop). Live API enablement on the MC OAuth client's GCP project is a **Noel gate** (`ACCESS_NOT_CONFIGURED`).
 
-`merchant_id` is required on product/issue/feed tools. Never guess. Discover via `mc_list_accounts` or Ads `gads_list_merchant_center_links`. `product_id` is `contentLanguage~feedLabel~offerId`.
+`merchant_id` is required on product/issue/feed/write tools. Discover via `mc_list_accounts` or Ads `gads_list_merchant_center_links`. `product_id` is `contentLanguage~feedLabel~offerId`. Product **writes** are `ProductInput` + `dataSource` (API data source). Do not POST processed `Product`.
 
 | Tool | Notes |
 | --- | --- |
@@ -679,8 +679,12 @@ Auth: `GOOGLE_MC_ACCESS_TOKEN` or `dgtl-connector-mcp auth login-mc` (`GOOGLE_OA
 | `mc_list_product_statuses` | Readiness view: `shopping_ads_ready` when `SHOPPING_ADS` has `approvedCountries`; `item_level_issues` block ads. |
 | `mc_list_account_issues` | Account/feed/website diagnostics. |
 | `mc_list_data_sources` | Feeds (primary/supplemental). Pair with account issues. |
+| `mc_create_data_source` | API-type primary/supplemental create (`ONLINE_PRODUCTS`). No `fileInput`. `dry_run` default; live confirm `merchant_id`. |
+| `mc_upsert_product_input` | `productInputs.insert` (default) or `patch` when `update_mask` is set. Requires `data_source`. Closed Shopping attributes. |
+| `mc_delete_product_input` | `productInputs.delete` from that API `data_source`. |
+| `mc_fetch_data_source` | Immediate fetch on a **FILE** data source (operator). Not Product insert. |
 
-Skill: [`skills/shopping-mc-readiness/`](../skills/shopping-mc-readiness/SKILL.md). Shopping **campaign** create still uses stamp `gads_create_shopping_campaign` + product_link id. Product data is `mc_*`. No MC insert/update/delete in this wave. No TikTok / Consent W E2E.
+Skill: [`skills/shopping-mc-readiness/`](../skills/shopping-mc-readiness/SKILL.md). Shopping **campaign** create still uses stamp `gads_create_shopping_campaign` + product_link id. Product inventory for ads is `mc_*` ProductInput. No data-source delete/patch, promotions, or reviews in this wave.
 
 ---
 
@@ -711,12 +715,14 @@ No posts, replies, Q&A, or location mutate in this wave.
 | GTM write when flag off / no Consent W | `WRITE_NOT_ENABLED` / `CONSENT_W_REQUIRED` |
 | GA4 Admin writes when flag off / no Consent G | `WRITE_NOT_ENABLED` / `CONSENT_G_REQUIRED` |
 | GSC sitemap write when flag off / no Consent S | `WRITE_NOT_ENABLED` / `CONSENT_S_REQUIRED` |
+| Merchant Center ProductInput live without flag / confirm | `WRITE_NOT_ENABLED` / `INVALID_ARGUMENT` (confirm must include `merchant_id`) |
 | Request indexing | No tool |
 | Create GA4–GSC link | No tool; `analytics.readonly` cannot |
 | Google Ads / Meta (live HTTP) | Tools are registered; fail closed: `LICENSE_REQUIRED` → `GATEWAY_UNAVAILABLE` → `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`. Consent C via `auth login-ads` / `auth login-meta --code` or host-injected tokens. No developer-token in this plugin. |
 | GBP write (posts / replies) | No tool. Scope is write-capable; Wave 5 tools are GET-only. |
 | GA4 realtime, funnel, pivot, batch | No tool |
-| GTM users / folders / built-in variables / environment reauthorize | No tool (Wave 14+) |
+| GTM users / folders / built-in variables / environment reauthorize | No tool (Wave 15+) |
+| MC data-source delete/patch, promotions, reviews | No tool (Wave 15+) |
 | Stamp conversion ingest / CAPI sinks | No plugin tool (Wave 20). Never put ingest keys in GTM clients or web variables. |
 | Gmail / Drive | No tool |
 | Mega `run_any_google_json` | Forbidden |

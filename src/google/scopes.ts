@@ -56,7 +56,8 @@ export const CONSENT_C_GOOGLE = [SCOPE.adwords] as const;
 /**
  * Consent MC — Merchant API (products / issues / data sources). Separate Desktop
  * client. Never merge into CONSENT_A. Google's `content` scope is read/write;
- * Wave 4 tools are GET-only (no product insert/update/delete).
+ * Wave 4 reads stay GET-only on GoogleHttp. Wave 14 ProductInput / API data-source
+ * writes use GoogleMcWriteHttp (same Consent MC — never Consent A).
  */
 export const CONSENT_MC = [SCOPE.content] as const;
 
