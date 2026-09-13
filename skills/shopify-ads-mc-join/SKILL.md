@@ -47,6 +47,6 @@ Stamp does **not** proxy Shopify. Multi-store vault is out of this wave.
 - Consent A for MC or Ads.
 - Stamp hop for Shopify (no vault).
 - Guessing `merchant_id`, `offerId`, or Shopify ids.
-- TikTok. Publishing the Worker. Stamp Shopify hop / multi-store vault.
+- TikTok / Meta / Klaviyo **writes** from this join skill — use `catalog-fan-out` (per-network tools, not a mega upsert-all).
 - Treating Shopify handle as a Google Ads asset.
-- Meta catalog / CAPI. Raw GraphQL. Customers dump.
+- Inventing `$shopify:::$default:::` or unnamed `merchant_id`. Raw GraphQL. Customers dump.

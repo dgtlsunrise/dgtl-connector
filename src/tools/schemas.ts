@@ -2593,3 +2593,62 @@ export const klaviyoCreateEvent = z
   .strict()
   .superRefine(requireConfirmWhenLive);
 
+const klaviyoCatalogItem = z
+  .object({
+    external_id: z.string().min(1).max(128),
+    title: z.string().min(1).max(200),
+    description: z.string().min(1).max(2000).optional(),
+    url: z.string().url().max(2048),
+    image_full_url: z.string().url().max(2048).optional(),
+    price: z.union([z.number(), z.string()]).optional(),
+    published: z.boolean().optional(),
+    catalog_item_id: z.string().min(1).max(256).optional(),
+  })
+  .strict();
+
+export const klaviyoListCatalogItems = z
+  .object({
+    page_size: pageSize,
+    page_token: pageToken,
+    published: z.boolean().optional(),
+  })
+  .strict();
+
+export const klaviyoListCatalogCategories = z
+  .object({
+    page_size: pageSize,
+    page_token: pageToken,
+  })
+  .strict();
+
+export const klaviyoListCatalogVariants = z
+  .object({
+    page_size: pageSize,
+    page_token: pageToken,
+  })
+  .strict();
+
+export const klaviyoUpsertCatalogItems = z
+  .object({
+    items: z.array(klaviyoCatalogItem).min(1).max(20),
+    dry_run: z.boolean().default(true),
+    confirm_phrase: z.string().optional(),
+    confirm: z.string().optional(),
+  })
+  .strict()
+  .superRefine(requireConfirmWhenLive);
+
+export const klaviyoListReviews = z
+  .object({
+    page_size: pageSize,
+    page_token: pageToken,
+    status: z.enum(["published", "unpublished", "rejected", "featured", "pending"]).optional(),
+  })
+  .strict();
+
+export const klaviyoGetReview = z
+  .object({
+    review_id: z.string().min(1),
+  })
+  .strict();
+

@@ -1,0 +1,53 @@
+{
+  "merchant_id": "5473821",
+  "data_source": "accounts/5473821/dataSources/1001",
+  "ad_account_id": "act_111222333",
+  "meta_catalog_id": "222333444",
+  "tiktok_advertiser_id": "7123456789012345678",
+  "tiktok_catalog_id": "catalog_tt_fixture_1",
+  "products": [
+    {
+      "id": "gid://shopify/Product/9001",
+      "title": "Canvas Tote — no GTIN",
+      "handle": "canvas-tote",
+      "sku": "TOTE-NO-GTIN",
+      "description": "Heavy canvas tote. Missing barcode on purpose.",
+      "vendor": "Fixture Co",
+      "product_type": "Bags",
+      "image": "https://cdn.example.com/tote.jpg",
+      "link": "https://dgtl-fixture.myshopify.com/products/canvas-tote",
+      "price": "28.00",
+      "currency": "USD",
+      "availability": "IN_STOCK"
+    },
+    {
+      "id": "gid://shopify/Product/9002",
+      "title": "Wool Beanie — no image",
+      "handle": "wool-beanie",
+      "sku": "BEANIE-NO-IMG",
+      "description": "Merino beanie. Image omitted on purpose.",
+      "vendor": "Fixture Co",
+      "product_type": "Hats",
+      "gtin": "012345678905",
+      "link": "https://dgtl-fixture.myshopify.com/products/wool-beanie",
+      "price": "22.00",
+      "currency": "USD",
+      "availability": "IN_STOCK"
+    },
+    {
+      "id": "gid://shopify/Product/9003",
+      "title": "Sunrise Mug",
+      "handle": "sunrise-mug",
+      "sku": "MUG-OK-1",
+      "description": "Ceramic mug. Valid for every network.",
+      "vendor": "Fixture Co",
+      "product_type": "Drinkware",
+      "gtin": "0789152123456",
+      "image": "https://cdn.example.com/sunrise-mug.jpg",
+      "link": "https://dgtl-fixture.myshopify.com/products/sunrise-mug",
+      "price": "16.00",
+      "currency": "USD",
+      "availability": "IN_STOCK"
+    }
+  ]
+}

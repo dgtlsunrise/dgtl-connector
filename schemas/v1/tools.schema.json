@@ -2626,6 +2626,81 @@
         "confirm_phrase": { "type": "string" },
         "confirm": { "type": "string" }
       }
+    },
+    "klaviyo_list_catalog_items": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "page_size": { "$ref": "#/$defs/page_size" },
+        "page_token": { "$ref": "#/$defs/page_token" },
+        "published": { "type": "boolean" }
+      }
+    },
+    "klaviyo_list_catalog_categories": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "page_size": { "$ref": "#/$defs/page_size" },
+        "page_token": { "$ref": "#/$defs/page_token" }
+      }
+    },
+    "klaviyo_list_catalog_variants": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "page_size": { "$ref": "#/$defs/page_size" },
+        "page_token": { "$ref": "#/$defs/page_token" }
+      }
+    },
+    "klaviyo_upsert_catalog_items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["external_id", "title", "url"],
+            "properties": {
+              "external_id": { "type": "string", "minLength": 1 },
+              "title": { "type": "string", "minLength": 1 },
+              "description": { "type": "string" },
+              "url": { "type": "string", "minLength": 1 },
+              "image_full_url": { "type": "string" },
+              "price": { "type": ["number", "string"] },
+              "published": { "type": "boolean" },
+              "catalog_item_id": { "type": "string" }
+            }
+          }
+        },
+        "dry_run": { "type": "boolean", "default": true },
+        "confirm_phrase": { "type": "string" },
+        "confirm": { "type": "string" }
+      }
+    },
+    "klaviyo_list_reviews": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "page_size": { "$ref": "#/$defs/page_size" },
+        "page_token": { "$ref": "#/$defs/page_token" },
+        "status": {
+          "type": "string",
+          "enum": ["published", "unpublished", "rejected", "featured", "pending"]
+        }
+      }
+    },
+    "klaviyo_get_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review_id"],
+      "properties": {
+        "review_id": { "type": "string", "minLength": 1 }
+      }
     }
   }
 }

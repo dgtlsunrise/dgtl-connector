@@ -58,7 +58,7 @@ Reinstall the merchant custom app with the missing Admin scope. Default install 
 
 ## `WRITE_NOT_ENABLED`
 
-`DGTL_WRITES_ENABLED=false` (marketplace default). Required for Consent W GTM writes, Consent G/S writes, Shopify inventory adjust / productSet, Klaviyo draft/upsert/event, and live Merchant Center ProductInput writes. Consent A stays readonly. Prefer `dry_run` first; Shopify live confirm must include the shop domain; Klaviyo live confirm must include the account id; MC live confirm must include `merchant_id`.
+`DGTL_WRITES_ENABLED=false` (marketplace default). Required for Consent W GTM writes, Consent G/S writes, Shopify inventory adjust / productSet, Klaviyo draft/upsert/event/catalog, and live Merchant Center ProductInput writes. Consent A stays readonly. Prefer `dry_run` first; Shopify live confirm must include the shop domain; Klaviyo live confirm must include the account id; MC live confirm must include `merchant_id`.
 
 ## `KLAVIYO_NOT_CONNECTED`
 
@@ -66,7 +66,7 @@ Reinstall the merchant custom app with the missing Admin scope. Default install 
 
 ## `KLAVIYO_SCOPE_MISSING`
 
-Generate a new Klaviyo private key with the matching accounts/profiles/lists/flows/campaigns/metrics/events scopes. Not Polar OAuth.
+Generate a new Klaviyo private key with the matching accounts/profiles/lists/flows/campaigns/metrics/events/catalogs/reviews scopes. Not Polar OAuth.
 
 ## `CONSENT_W_REQUIRED`
 

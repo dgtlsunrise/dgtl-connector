@@ -8,7 +8,7 @@ If you need a 27th **Consent A** tool, bump a version and update `schemas/v1/cat
 
 Machine-readable list: [`schemas/v1/catalog.json`](../schemas/v1/catalog.json). Parameter schema: [`schemas/v1/tools.schema.json`](../schemas/v1/tools.schema.json). Error envelope: [`schemas/v1/error.schema.json`](../schemas/v1/error.schema.json).
 
-**Not all tools are read.** Consent A GA4 / GSC / GTM, Shopify products/orders/inventory/locations/publications/catalogs/feeds, and GBP (when enabled) are read (or fail-closed). GTM write (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`, `gtm_create_client`, `gtm_update_client`, `gtm_create_container`, `gtm_create_environment`), `shopify_adjust_inventory`, `shopify_product_set`, Merchant Center ProductInput writes (`mc_create_data_source`, `mc_upsert_product_input`, `mc_delete_product_input`, `mc_fetch_data_source`), and Ads / Meta mutate + create tools are registered **writes**. Repeating a **read** call is safe (**idempotent** as HTTP GET/list/query). Write tools are **not** idempotent. Read results are **not bit-stable** (GA4 processing, GSC data_state, GTM workspace edits).
+**Not all tools are read.** Consent A GA4 / GSC / GTM, Shopify products/orders/inventory/locations/publications/catalogs/feeds, Klaviyo account/profiles/lists/flows/campaigns/metrics/catalog/reviews, and GBP (when enabled) are read (or fail-closed). GTM write (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`, `gtm_create_client`, `gtm_update_client`, `gtm_create_container`, `gtm_create_environment`), `shopify_adjust_inventory`, `shopify_product_set`, Klaviyo draft/upsert/event/catalog writes (`klaviyo_create_campaign`, `klaviyo_upsert_profile`, `klaviyo_create_event`, `klaviyo_upsert_catalog_items`), Merchant Center ProductInput writes (`mc_create_data_source`, `mc_upsert_product_input`, `mc_delete_product_input`, `mc_fetch_data_source`), and Ads / Meta mutate + create tools are registered **writes**. Repeating a **read** call is safe (**idempotent** as HTTP GET/list/query). Write tools are **not** idempotent. Read results are **not bit-stable** (GA4 processing, GSC data_state, GTM workspace edits).
 
 ## Mutate honesty (Wave 0)
 
@@ -758,7 +758,7 @@ Merchant-held Admin API credentials on the Bot computer. **No Polar. No stamp ho
 | --- | --- |
 | `shopify_get_shop` | Confirm shop domain + name. |
 | `shopify_list_products` | Paginated; title/handle/status/id. |
-| `shopify_get_product` | Requires `product_id` (gid or numeric). Variants include `sku` + `inventoryItem.id`. |
+| `shopify_get_product` | Requires `product_id` (gid or numeric). Variants include `sku`, `barcode` (GTIN), `inventoryItem.id`. Also `featuredImage.url` + `onlineStoreUrl` for catalog fan-out. |
 | `shopify_list_orders` | Paginated; closed `status` / `financial_status` / `fulfillment_status` / date filters. |
 | `shopify_get_order` | Requires `order_id` (gid or numeric); line items. |
 | `shopify_list_locations` | Paginated locations. `read_locations`. |
@@ -773,7 +773,7 @@ Fail order for writes: `WRITE_NOT_ENABLED` → `SHOPIFY_NOT_CONNECTED` → `SHOP
 
 **Out of this wave:** customers dump, ShopifyQL, raw GraphQL, themes, Multipass, stamp multi-store vault, draft orders, collections/metafields/files on productSet. Meta catalog/CAPI is Wave 16 (`meta_catalog_items_batch` / `meta_send_capi_events`), not Shopify.
 
-Skill: `shopify-ads-mc-join` joins Shopify SKU → MC `offerId` → Ads listing groups (and publications/feeds for catalog source of truth). `shopify-readonly` covers list/get.
+Skills: `shopify-ads-mc-join` joins Shopify SKU → MC `offerId` → Ads listing groups. `catalog-fan-out` maps Shopify → MC / Meta / TikTok / Klaviyo (per-network tools; Google omits missing GTIN / missing image). `shopify-readonly` covers list/get.
 
 ## TikTok Ads (Polar `tiktok` + stamp hop)
 
@@ -799,7 +799,7 @@ Live TikTok app + Marketing API + secrets + Polar `tiktok` mint are **Noel gates
 
 Skill: `tiktok-ads`.
 
-## Klaviyo — local `pk_` lane (Wave 18; not Consent A)
+## Klaviyo — local `pk_` lane (Waves 18–19; not Consent A)
 
 Merchant-held **private** API key on the Bot computer. **No Polar. No stamp hop. No Polar `klaviyo` OAuth.** Fail closed `KLAVIYO_NOT_CONNECTED` without `KLAVIYO_API_KEY` (or `PLUGIN_DATA/klaviyo.json`). Revision header **`2026-07-15`**. Host `a.klaviyo.com`. Closed free Google count stays **26**. Never log the key.
 
@@ -816,13 +816,19 @@ Merchant-held **private** API key on the Bot computer. **No Polar. No stamp hop.
 | `klaviyo_get_flow` | Requires `flow_id`. |
 | `klaviyo_list_campaigns` | Channel filter required by the API (default `email`). Closed `email` / `sms` / `mobile_push`. |
 | `klaviyo_list_metrics` | Metrics catalog. Not an open Metric Aggregates passthrough. |
+| `klaviyo_list_catalog_items` | Paginated custom catalog items. Sparse fields. Do not invent `$shopify:::$default:::` ids. |
+| `klaviyo_list_catalog_categories` | Paginated catalog categories. |
+| `klaviyo_list_catalog_variants` | Paginated catalog variants. |
+| `klaviyo_list_reviews` | Paginated reviews. Sparse — email / author stripped. Optional closed `status`. |
+| `klaviyo_get_review` | Requires `review_id`. Same sparse fieldset. |
 | `klaviyo_create_campaign` | Write. **Draft email only** (`POST /api/campaigns`). `dry_run` default true. Live: `confirm_phrase` must include the account id. **Never** `POST /api/campaign-send-jobs`. |
 | `klaviyo_upsert_profile` | Write. `POST /api/profile-import`. Closed fields (`email` / `external_id` / `profile_id` + optional names). No properties bag. |
 | `klaviyo_create_event` | Write. `POST /api/events` backfill. `backfill` defaults **true** (flows do not re-fire). Closed flat properties. |
+| `klaviyo_upsert_catalog_items` | Write. Closed bulk create/update jobs (`POST /api/catalog-item-bulk-create-jobs` or `…-update-jobs`). Cap 20. `$custom` / `$default` only. `dry_run` default true. Live: account-id confirm. **Not** a mega upsert-all across MC / Meta / TikTok. |
 
 Fail order for writes: `WRITE_NOT_ENABLED` → `KLAVIYO_NOT_CONNECTED` → dry-run (GET account, zero mutate POST) → live needs account id in `confirm_phrase`.
 
-**Out of this wave:** campaign send jobs (Wave 19/22), catalog items, reviews, Polar `klaviyo` OAuth, stamp hop, Consent A kernel membership.
+**Out of this wave:** campaign send jobs (Wave 22), Polar `klaviyo` OAuth (Wave 19b), stamp hop, Consent A kernel membership, Wave 20 conversion fabric.
 
-Skill: `klaviyo-readonly`.
+Skills: `klaviyo-readonly`, `catalog-fan-out` (Shopify → MC / Meta / TikTok / Klaviyo; Google payload omits missing GTIN / missing image; refuse unnamed `merchant_id`).
 

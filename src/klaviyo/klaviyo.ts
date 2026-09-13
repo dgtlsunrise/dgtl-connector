@@ -305,3 +305,120 @@ export async function klaviyoListMetrics(
 ): Promise<Envelope> {
   return listCollection(ctx, "klaviyo_list_metrics", "/api/metrics", "metrics", args);
 }
+
+const CATALOG_ITEM_FIELDS = "external_id,title,description,url,image_full_url,price,published,updated";
+const CATALOG_CATEGORY_FIELDS = "external_id,name,updated";
+const CATALOG_VARIANT_FIELDS = "external_id,title,sku,price,published,image_full_url,url,updated";
+const REVIEW_FIELDS =
+  "rating,content,title,status,created,updated,verified,review_type,product.name,product.external_id,product.url";
+const REVIEW_STRIP = new Set(["email", "author"]);
+
+const REVIEW_STATUSES = new Set([
+  "published",
+  "unpublished",
+  "rejected",
+  "featured",
+  "pending",
+]);
+
+export function sparsifyReview(resource: KlaviyoResource | undefined): KlaviyoResource | null {
+  if (!resource || typeof resource !== "object") return null;
+  const attrs = resource.attributes && typeof resource.attributes === "object" ? { ...resource.attributes } : {};
+  for (const key of REVIEW_STRIP) delete attrs[key];
+  return {
+    type: resource.type ?? "review",
+    id: resource.id,
+    attributes: attrs,
+  };
+}
+
+function publishedFilter(raw: unknown): string | undefined {
+  if (raw === undefined || raw === null || raw === "") return undefined;
+  if (raw === true || raw === "true") return "equals(published,true)";
+  if (raw === false || raw === "false") return "equals(published,false)";
+  throw new ToolError("INVALID_ARGUMENT", "published must be true or false", { api: "klaviyo" });
+}
+
+function reviewStatusFilter(raw: unknown): string | undefined {
+  if (raw === undefined || raw === null || raw === "") return undefined;
+  const status = String(raw).trim();
+  if (!REVIEW_STATUSES.has(status)) {
+    throw new ToolError(
+      "INVALID_ARGUMENT",
+      "status must be published, unpublished, rejected, featured, or pending",
+      { api: "klaviyo" },
+    );
+  }
+  return `equals(status,'${status}')`;
+}
+
+export async function klaviyoListCatalogItems(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  return listCollection(ctx, "klaviyo_list_catalog_items", "/api/catalog-items", "catalog_items", args, {
+    "fields[catalog-item]": CATALOG_ITEM_FIELDS,
+    filter: publishedFilter(args.published),
+  });
+}
+
+export async function klaviyoListCatalogCategories(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  return listCollection(ctx, "klaviyo_list_catalog_categories", "/api/catalog-categories", "catalog_categories", args, {
+    "fields[catalog-category]": CATALOG_CATEGORY_FIELDS,
+  });
+}
+
+export async function klaviyoListCatalogVariants(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  return listCollection(ctx, "klaviyo_list_catalog_variants", "/api/catalog-variants", "catalog_variants", args, {
+    "fields[catalog-variant]": CATALOG_VARIANT_FIELDS,
+  });
+}
+
+export async function klaviyoListReviews(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  return withKlaviyo(ctx, "klaviyo_list_reviews", async (http) => {
+    const json = await http.get("/api/reviews", {
+      "page[size]": String(pageSizeOf(args)),
+      "page[cursor]": pageTokenOf(args),
+      "fields[review]": REVIEW_FIELDS,
+      filter: reviewStatusFilter(args.status),
+    });
+    const reviews = asList(json.data).map((row) => sparsifyReview(row)).filter(Boolean);
+    return okEnvelope("klaviyo_list_reviews", {
+      data: { reviews, cited: { ...cited(), fields: REVIEW_FIELDS } },
+      page: listPage(json, reviews),
+      hint: reviews.length === 0 ? HINT_EMPTY_LIST : "Sparse review fields — email / author stripped.",
+    });
+  });
+}
+
+export async function klaviyoGetReview(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  return withKlaviyo(ctx, "klaviyo_get_review", async (http) => {
+    const id = requireId(args.review_id, "review_id");
+    const json = await http.get(`/api/reviews/${id}`, { "fields[review]": REVIEW_FIELDS });
+    const review = sparsifyReview(json.data as KlaviyoResource | undefined);
+    if (!review?.id) {
+      return failEnvelope("klaviyo_get_review", "NOT_FOUND", MSG.NOT_FOUND, {
+        resource_id: id,
+        api: "klaviyo",
+        hint: "Copy review_id from klaviyo_list_reviews.",
+      });
+    }
+    return okEnvelope("klaviyo_get_review", {
+      data: { review, cited: { ...cited(), fields: REVIEW_FIELDS, review_id: id } },
+      resource: { type: "klaviyo_review", id: review.id, display_name: String(review.attributes?.title ?? review.id) },
+      page: { truncated: false, row_count: 1 },
+    });
+  });
+}

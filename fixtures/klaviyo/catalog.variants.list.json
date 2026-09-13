@@ -1,0 +1,19 @@
+{
+  "data": [
+    {
+      "type": "catalog-variant",
+      "id": "$custom:::$default:::MUG-OK-1-default",
+      "attributes": {
+        "external_id": "MUG-OK-1-default",
+        "title": "Default Title",
+        "sku": "MUG-OK-1",
+        "price": 16,
+        "published": true,
+        "url": "https://dgtl-fixture.myshopify.com/products/sunrise-mug",
+        "image_full_url": "https://cdn.example.com/sunrise-mug.jpg",
+        "updated": "2026-09-13T12:00:00+00:00"
+      }
+    }
+  ],
+  "links": { "next": null }
+}

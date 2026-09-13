@@ -1,0 +1,23 @@
+{
+  "data": {
+    "type": "review",
+    "id": "01JWAVE19REVIEWTEST01",
+    "attributes": {
+      "rating": 5,
+      "title": "Keeps coffee hot",
+      "content": "The Sunrise Mug is my desk mug now.",
+      "status": { "value": "published" },
+      "created": "2026-09-01T12:00:00+00:00",
+      "updated": "2026-09-02T12:00:00+00:00",
+      "verified": true,
+      "review_type": "review",
+      "email": "hidden@example.com",
+      "author": "Alex Example",
+      "product": {
+        "external_id": "MUG-OK-1",
+        "name": "Sunrise Mug",
+        "url": "https://dgtl-fixture.myshopify.com/products/sunrise-mug"
+      }
+    }
+  }
+}

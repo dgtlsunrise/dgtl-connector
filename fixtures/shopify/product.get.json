@@ -11,12 +11,15 @@
       "tags": ["featured"],
       "createdAt": "2026-08-01T12:00:00Z",
       "updatedAt": "2026-09-01T12:00:00Z",
+      "featuredImage": { "url": "https://cdn.example.com/blue-widget.jpg" },
+      "onlineStoreUrl": "https://dgtl-fixture.myshopify.com/products/blue-widget",
       "variants": {
         "nodes": [
           {
             "id": "gid://shopify/ProductVariant/2001",
             "title": "Default Title",
             "sku": "BW-1",
+            "barcode": "012345678905",
             "price": "19.99",
             "inventoryQuantity": 12,
             "inventoryItem": { "id": "gid://shopify/InventoryItem/3001", "sku": "BW-1" }

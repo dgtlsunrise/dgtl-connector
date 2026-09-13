@@ -1,19 +1,20 @@
 /**
- * Confirm-gated Klaviyo writes (Wave 18).
+ * Confirm-gated Klaviyo writes (Wave 18 + Wave 19 catalog items).
  * Local pk_ — not Polar, not stamp, not Consent A.
  * Fail order: WRITE_NOT_ENABLED → KLAVIYO_NOT_CONNECTED → dry_run (account id, zero mutate)
  * → live needs confirm_phrase containing the account id.
- * Draft campaign only — never campaign-send-jobs.
+ * Draft campaign only — never campaign-send-jobs (Wave 22).
  */
 import type { AppContext } from "../context.js";
 import { failEnvelope, okEnvelope, type Envelope } from "../envelope.js";
 import { ToolError } from "../errors.js";
+import { assertNotInventedShopifyKlaviyoId, CUSTOM_KLAVIYO_ID_PREFIX } from "../catalog/fan-out.js";
 import { KLAVIYO_API_REVISION } from "./auth.js";
 import { assertKlaviyoPath } from "./http.js";
 import { loadAccount, sparsifyProfile, withKlaviyo, type KlaviyoResource } from "./klaviyo.js";
 
 const HINT_FLAG =
-  "Set DGTL_WRITES_ENABLED=true for live Klaviyo draft/upsert/event writes. Reads stay LOCAL_FREE without this flag. Not Polar. Not Consent A. Marketplace default stays off. Live confirm_phrase must include the Klaviyo account id from klaviyo_get_account.";
+  "Set DGTL_WRITES_ENABLED=true for live Klaviyo draft/upsert/event/catalog writes. Reads stay LOCAL_FREE without this flag. Not Polar. Not Consent A. Marketplace default stays off. Live confirm_phrase must include the Klaviyo account id from klaviyo_get_account.";
 
 function dryRunDefault(args: Record<string, unknown>): boolean {
   return args.dry_run !== false;
@@ -48,7 +49,7 @@ function writeGate(tool: string, ctx: AppContext): Envelope | null {
     return failEnvelope(
       tool,
       "WRITE_NOT_ENABLED",
-      "Klaviyo write tools are flagged off (DGTL_WRITES_ENABLED=false). Account/list/flow/campaign/metric reads still work with a local pk_. Live draft/upsert/event need this flag (local only; never marketplace default).",
+      "Klaviyo write tools are flagged off (DGTL_WRITES_ENABLED=false). Account/list/flow/campaign/metric/catalog/review reads still work with a local pk_. Live draft/upsert/event/catalog need this flag (local only; never marketplace default).",
       { hint: HINT_FLAG, api: "klaviyo" },
     );
   }
@@ -150,7 +151,7 @@ export function buildDraftCampaignBody(args: Record<string, unknown>): Record<st
   if (args.send_job || args.campaign_send_job || args.send === true) {
     throw new ToolError(
       "UNSUPPORTED_OPERATION",
-      "Campaign send jobs are Wave 19/22. Wave 18 creates a draft only.",
+      "Campaign send jobs are Wave 22. This plugin creates a draft only.",
       { api: "klaviyo" },
     );
   }
@@ -372,6 +373,176 @@ export async function klaviyoCreateEvent(
       },
       page: { truncated: false, row_count: 1 },
       hint: "Event accepted for processing (backfill defaults true so flows do not re-fire).",
+    });
+  });
+}
+
+const CATALOG_ITEM_CAP = 20;
+
+function httpsUrlOrThrow(raw: unknown, field: string): string {
+  if (typeof raw !== "string" || !raw.trim()) {
+    throw new ToolError("RESOURCE_REQUIRED", `${field} is required`, { api: "klaviyo", resource_id: field });
+  }
+  const url = raw.trim();
+  if (!url.startsWith("https://")) {
+    throw new ToolError("INVALID_ARGUMENT", `${field} must be an https URL`, { api: "klaviyo", resource_id: field });
+  }
+  return url;
+}
+
+function optionalHttps(raw: unknown, field: string): string | undefined {
+  if (raw === undefined || raw === null || raw === "") return undefined;
+  return httpsUrlOrThrow(raw, field);
+}
+
+function catalogItemAttributes(raw: Record<string, unknown>, index: number): Record<string, unknown> {
+  const externalId = typeof raw.external_id === "string" ? raw.external_id.trim() : "";
+  if (!externalId) {
+    throw new ToolError("RESOURCE_REQUIRED", `items[${index}].external_id is required`, {
+      api: "klaviyo",
+      resource_id: "external_id",
+    });
+  }
+  assertNotInventedShopifyKlaviyoId(externalId, "external_id");
+  const title = typeof raw.title === "string" ? raw.title.trim() : "";
+  if (!title) {
+    throw new ToolError("INVALID_ARGUMENT", `items[${index}].title is required`, { api: "klaviyo" });
+  }
+  const description =
+    typeof raw.description === "string" && raw.description.trim() ? raw.description.trim() : title;
+  const url = httpsUrlOrThrow(raw.url, `items[${index}].url`);
+  const attrs: Record<string, unknown> = {
+    external_id: externalId,
+    integration_type: "$custom",
+    catalog_type: "$default",
+    title,
+    description,
+    url,
+    published: raw.published !== false,
+  };
+  const image = optionalHttps(raw.image_full_url, `items[${index}].image_full_url`);
+  if (image) attrs.image_full_url = image;
+  if (typeof raw.price === "number" && Number.isFinite(raw.price)) attrs.price = raw.price;
+  if (typeof raw.price === "string" && raw.price.trim() && Number.isFinite(Number(raw.price))) {
+    attrs.price = Number(raw.price);
+  }
+  return attrs;
+}
+
+function catalogItemIdOf(raw: Record<string, unknown>, index: number): string | undefined {
+  const id = typeof raw.catalog_item_id === "string" ? raw.catalog_item_id.trim() : "";
+  if (!id) return undefined;
+  assertNotInventedShopifyKlaviyoId(id, "catalog_item_id");
+  if (!id.startsWith(CUSTOM_KLAVIYO_ID_PREFIX)) {
+    throw new ToolError(
+      "INVALID_ARGUMENT",
+      `items[${index}].catalog_item_id must be $custom:::$default:::{external_id} copied from klaviyo_list_catalog_items`,
+      { api: "klaviyo", resource_id: "catalog_item_id" },
+    );
+  }
+  return id;
+}
+
+export function buildCatalogItemsJobs(args: Record<string, unknown>): {
+  create?: Record<string, unknown>;
+  update?: Record<string, unknown>;
+} {
+  const raw = args.items;
+  if (!Array.isArray(raw) || raw.length === 0) {
+    throw new ToolError("RESOURCE_REQUIRED", "items must name at least one catalog item", {
+      api: "klaviyo",
+      resource_id: "items",
+    });
+  }
+  if (raw.length > CATALOG_ITEM_CAP) {
+    throw new ToolError("INVALID_ARGUMENT", `items is capped at ${CATALOG_ITEM_CAP}`, { api: "klaviyo" });
+  }
+  const creates: Record<string, unknown>[] = [];
+  const updates: Record<string, unknown>[] = [];
+  raw.forEach((row, index) => {
+    if (!row || typeof row !== "object" || Array.isArray(row)) {
+      throw new ToolError("INVALID_ARGUMENT", `items[${index}] must be an object`, { api: "klaviyo" });
+    }
+    const rec = row as Record<string, unknown>;
+    const attrs = catalogItemAttributes(rec, index);
+    const existingId = catalogItemIdOf(rec, index);
+    if (existingId) {
+      updates.push({ type: "catalog-item", id: existingId, attributes: attrs });
+    } else {
+      creates.push({ type: "catalog-item", attributes: attrs });
+    }
+  });
+  const out: { create?: Record<string, unknown>; update?: Record<string, unknown> } = {};
+  if (creates.length) {
+    out.create = {
+      data: {
+        type: "catalog-item-bulk-create-job",
+        attributes: { items: { data: creates } },
+      },
+    };
+  }
+  if (updates.length) {
+    out.update = {
+      data: {
+        type: "catalog-item-bulk-update-job",
+        attributes: { items: { data: updates } },
+      },
+    };
+  }
+  return out;
+}
+
+export async function klaviyoUpsertCatalogItems(
+  ctx: AppContext,
+  args: Record<string, unknown>,
+): Promise<Envelope> {
+  const tool = "klaviyo_upsert_catalog_items";
+  const gated = writeGate(tool, ctx);
+  if (gated) return gated;
+  const proposed = buildCatalogItemsJobs(args);
+  if (proposed.create) assertKlaviyoPath("/api/catalog-item-bulk-create-jobs", "POST");
+  if (proposed.update) assertKlaviyoPath("/api/catalog-item-bulk-update-jobs", "POST");
+
+  return withKlaviyo(ctx, tool, async (http) => {
+    const { id, display } = await loadAccount(http);
+    const dryRun = dryRunDefault(args);
+    if (dryRun) {
+      return okEnvelope(tool, {
+        resource: { type: "klaviyo_account", id, display_name: display },
+        data: {
+          dry_run: true,
+          account_id: id,
+          proposed,
+          integration_type: "$custom",
+          catalog_type: "$default",
+          invented_shopify_ids: false,
+          cited: cited(id),
+        },
+        page: { truncated: false, row_count: 0 },
+        hint: `Dry-run custom catalog only. Live needs dry_run=false and confirm_phrase containing ${id}. Zero catalog POST. Never $shopify::: ids.`,
+      });
+    }
+    assertConfirmContainsAccountId(confirmPhraseOf(args), id);
+    const jobs: Record<string, unknown> = {};
+    if (proposed.create) {
+      jobs.create = await http.post("/api/catalog-item-bulk-create-jobs", proposed.create);
+    }
+    if (proposed.update) {
+      jobs.update = await http.post("/api/catalog-item-bulk-update-jobs", proposed.update);
+    }
+    return okEnvelope(tool, {
+      resource: { type: "klaviyo_account", id, display_name: display },
+      data: {
+        dry_run: false,
+        account_id: id,
+        jobs,
+        integration_type: "$custom",
+        catalog_type: "$default",
+        invented_shopify_ids: false,
+        cited: cited(id),
+      },
+      page: { truncated: false, row_count: 1 },
+      hint: "Custom catalog job accepted. Klaviyo mints $custom:::$default:::{external_id}. This tool does not invent $shopify::: ids.",
     });
   });
 }

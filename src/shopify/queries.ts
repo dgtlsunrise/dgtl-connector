@@ -71,11 +71,14 @@ export const Q_PRODUCT = `query Product($id: ID!) {
     tags
     createdAt
     updatedAt
+    featuredImage { url }
+    onlineStoreUrl
     variants(first: 50) {
       nodes {
         id
         title
         sku
+        barcode
         price
         inventoryQuantity
         inventoryItem { id sku }

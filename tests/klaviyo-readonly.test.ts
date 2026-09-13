@@ -170,10 +170,11 @@ describe("Wave 18 Klaviyo local pk_ lane", () => {
 
   it("registers 9 reads + 3 writes as LOCAL_FREE, not Consent A, not Polar", () => {
     assert.equal(CONSENT_A_TOOLS.length, 26);
-    assert.equal(KLAVIYO_TOOL_NAMES.length, 12);
+    assert.equal(KLAVIYO_TOOL_NAMES.length, 18);
     assert.deepEqual(KLAVIYO_WRITE_TOOL_NAMES.slice().sort(), [
       "klaviyo_create_campaign",
       "klaviyo_create_event",
+      "klaviyo_upsert_catalog_items",
       "klaviyo_upsert_profile",
     ]);
     for (const name of KLAVIYO_READ_TOOLS) {
@@ -196,7 +197,8 @@ describe("Wave 18 Klaviyo local pk_ lane", () => {
       assert.ok(!LICENSE_GATED_TOOLS.includes(name), name);
     }
     assert.equal(TOOLS.some((t) => t.name.includes("send_job") || t.name.includes("send-job")), false);
-    assert.equal(TOOLS.some((t) => t.name === "klaviyo_list_catalogs" || t.name === "klaviyo_list_reviews"), false);
+    assert.ok(TOOLS.some((t) => t.name === "klaviyo_list_catalog_items"));
+    assert.ok(TOOLS.some((t) => t.name === "klaviyo_list_reviews"));
   });
 
   it("schemas stay closed; live writes require confirm_phrase", () => {
@@ -237,10 +239,10 @@ describe("Wave 18 Klaviyo local pk_ lane", () => {
     assert.equal(creds, null);
   });
 
-  it("allowlist refuses send jobs / catalog / reviews", () => {
+  it("allowlist refuses send jobs; catalog/reviews are Wave 19", () => {
     assert.throws(() => assertKlaviyoPath("/api/campaign-send-jobs", "POST"));
-    assert.throws(() => assertKlaviyoPath("/api/catalog-items", "GET"));
-    assert.throws(() => assertKlaviyoPath("/api/reviews", "GET"));
+    assertKlaviyoPath("/api/catalog-items", "GET");
+    assertKlaviyoPath("/api/reviews", "GET");
     assertKlaviyoPath("/api/accounts", "GET");
     assertKlaviyoPath("/api/campaigns", "POST");
   });
@@ -332,7 +334,7 @@ describe("Wave 18 Klaviyo local pk_ lane", () => {
     }
   });
 
-  it("skill + help document local pk_ and refuse send/catalog/Polar", () => {
+  it("skill + help document local pk_ and refuse send/Polar", () => {
     const skill = readFileSync(join(ROOT, "skills/klaviyo-readonly/SKILL.md"), "utf8");
     assert.ok(skill.includes("name: klaviyo-readonly"));
     assert.ok(skill.includes("KLAVIYO_NOT_CONNECTED"));

@@ -2,7 +2,7 @@
 
 Skills are Agent Skills (`skills/<name>/SKILL.md`). They are how the plugin behaves in conversation. Tools are dumb and typed; skills carry the product judgment.
 
-This index is closed for v1 spec plus Waves 4–18. **18 skills.** Each directory below must exist.
+This index is closed for v1 spec plus Waves 4–19. **19 skills.** Each directory below must exist.
 
 | Skill | Directory | Job |
 | --- | --- | --- |
@@ -17,7 +17,8 @@ This index is closed for v1 spec plus Waves 4–18. **18 skills.** Each director
 | Shopify ↔ Ads/MC join | `skills/shopify-ads-mc-join/` | Join Shopify SKU/handle/inventory/publications to MC offerId and Ads listing groups. Never invent SKUs. |
 | Shopping ↔ MC readiness | `skills/shopping-mc-readiness/` | Merchant API products/status/issues then Shopping campaign create. Consent MC, not Consent A. |
 | TikTok Ads | `skills/tiktok-ads/` | Stamp hop. Polar `tiktok` (not ads/meta). List advertisers first. Catalog + Events API + mutate are dry_run + confirm. `content_id` must match catalog `sku_id`. App secret never in the plugin. |
-| Klaviyo readonly | `skills/klaviyo-readonly/` | Local `pk_` account/profiles/lists/flows/campaigns/metrics; `KLAVIYO_NOT_CONNECTED` without key. Draft/upsert/event writes are flag-gated. |
+| Klaviyo readonly | `skills/klaviyo-readonly/` | Local `pk_` account/profiles/lists/flows/campaigns/metrics/catalog/reviews; `KLAVIYO_NOT_CONNECTED` without key. Draft/upsert/event/catalog writes are flag-gated. |
+| Catalog fan-out | `skills/catalog-fan-out/` | Map Shopify products to MC / Meta / TikTok / Klaviyo with per-network validation. No mega upsert-all. Refuse unnamed `merchant_id`. Never invent `$shopify:::$default:::` ids. |
 | Google marketing support | `skills/google-marketing-support/` | Diagnose OAuth / empty / quota / API-not-enabled. One optional DGTL line after a real answer. |
 | Send feedback | `skills/send-feedback/` | After a hard-failure diagnosis, offer once to prepare a draft for support@dgtlsunrise.com. User must approve before `feedback_send`. |
 | License and reconnect | `skills/license-and-reconnect/` | Map `LICENSE_REQUIRED` / `REAUTH_REQUIRED` / `CONSENT_MISSING`. |
@@ -55,6 +56,7 @@ This index is closed for v1 spec plus Waves 4–18. **18 skills.** Each director
 | “Are my products ready for Shopping ads?” / feed issues | `shopping-mc-readiness` |
 | “What’s actually on production?” | `gtm-readonly-limits` → live version, not workspace |
 | “List my Klaviyo lists / draft a campaign” | `klaviyo-readonly` |
+| “Push these Shopify products to Merchant Center / Meta / TikTok / Klaviyo” | `catalog-fan-out` |
 | Auth cancelled / PKCE failed; GTM 403 API not enabled; empty property | `google-marketing-support` |
 | Quota / 429 | `google-marketing-support` |
 | Ads / Meta / sGTM unlock, `LICENSE_REQUIRED`, `GATEWAY_UNAVAILABLE` | `pro-upgrade` (+ `license-and-reconnect`) |
@@ -72,7 +74,8 @@ This index is closed for v1 spec plus Waves 4–18. **18 skills.** Each director
 | gsc-vs-ga4-search | `gsc_query_search_analytics`, `gsc_list_sites`, `ga4_run_report` only for landing-page **sessions** | `ga4_run_report` with `searchQuery` |
 | gtm-readonly-limits | All readonly `gtm_*` | Live mutate without Consent W + user confirm; inventing confirm phrases |
 | shopify-readonly | `shopify_get_shop`, `shopify_list_*`, `shopify_get_*` | Calling Admin API without credentials; inventing ids; live writes without flag+confirm; silent scope expand |
-| klaviyo-readonly | `klaviyo_get_account`, `klaviyo_list_*`, `klaviyo_get_*` | Calling Klaviyo without a `pk_`; dumping full profile PII; campaign send jobs; Polar OAuth; logging the key |
+| klaviyo-readonly | `klaviyo_get_account`, `klaviyo_list_*`, `klaviyo_get_*` | Calling Klaviyo without a `pk_`; dumping full profile/review PII; campaign send jobs; Polar OAuth; inventing `$shopify:::` ids; logging the key |
+| catalog-fan-out | `shopify_list_products`, `shopify_get_product`, `mc_list_accounts`, `mc_upsert_product_input`, `meta_list_catalogs`, `meta_catalog_items_batch`, `tiktok_list_catalogs`, `tiktok_upload_catalog_products`, `klaviyo_get_account`, `klaviyo_list_catalog_*`, `klaviyo_upsert_catalog_items` | Mega upsert-all; unnamed `merchant_id`; inventing `$shopify:::$default:::` / GTIN / SKU; live write without that destination’s grant |
 | shopify-ads-mc-join | `shopify_list_products`, `shopify_get_product`, `shopify_list_locations`, `shopify_list_inventory_levels`, `shopify_list_publications`, `shopify_list_catalogs`, `shopify_list_product_feeds`, `shopify_product_set`, `mc_*`, `gads_list_merchant_center_links`, `gads_add_shopping_listing_groups` | Inventing SKU/offerId; Consent A for MC; stamp Shopify hop; joining Shopify catalogs to Meta CAPI without the Wave 16 named tools |
 | shopping-mc-readiness | `mc_*`, `gads_list_merchant_center_links`, `gads_create_shopping_campaign`, `gads_add_shopping_listing_groups` | Consent A for MC; stamp Merchant API hop; inventing merchant_id; processed Product writes; inventing confirm |
 | google-marketing-support | `google_whoami` first, `support_packet` for intake, then the failing family; `feedback_prepare` only after a real hard-failure diagnosis | Token collection; `feedback_send` without user approval |

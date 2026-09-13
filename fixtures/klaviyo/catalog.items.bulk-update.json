@@ -1,0 +1,13 @@
+{
+  "data": {
+    "type": "catalog-item-bulk-update-job",
+    "id": "W19CatUpdateJob",
+    "attributes": {
+      "status": "processing",
+      "created_at": "2026-09-13T12:00:00+00:00",
+      "total_count": 1,
+      "completed_count": 0,
+      "failed_count": 0
+    }
+  }
+}

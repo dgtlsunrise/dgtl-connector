@@ -1,6 +1,6 @@
 {
   "comment": "Wave 9 tools/list freeze. Additive named tools are allowed. Deleting a name fails CI. No gads_mutate / meta_mutate.",
-  "count": 141,
+  "count": 159,
   "names": [
     "google_whoami",
     "ga4_list_accounts",
@@ -142,6 +142,24 @@
     "tiktok_bind_catalog_eventsource",
     "tiktok_list_pixels",
     "tiktok_track_events",
-    "tiktok_create_campaign"
+    "tiktok_create_campaign",
+    "klaviyo_get_account",
+    "klaviyo_list_profiles",
+    "klaviyo_get_profile",
+    "klaviyo_list_lists",
+    "klaviyo_list_segments",
+    "klaviyo_list_flows",
+    "klaviyo_get_flow",
+    "klaviyo_list_campaigns",
+    "klaviyo_list_metrics",
+    "klaviyo_create_campaign",
+    "klaviyo_upsert_profile",
+    "klaviyo_create_event",
+    "klaviyo_list_catalog_items",
+    "klaviyo_list_catalog_categories",
+    "klaviyo_list_catalog_variants",
+    "klaviyo_upsert_catalog_items",
+    "klaviyo_list_reviews",
+    "klaviyo_get_review"
   ]
 }

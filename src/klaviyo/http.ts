@@ -18,17 +18,28 @@ const READ_PATHS = new Set([
   "/api/flows",
   "/api/campaigns",
   "/api/metrics",
+  "/api/catalog-items",
+  "/api/catalog-categories",
+  "/api/catalog-variants",
+  "/api/reviews",
 ]);
 
-const WRITE_PATHS = new Set(["/api/campaigns", "/api/profile-import", "/api/events"]);
+const WRITE_PATHS = new Set([
+  "/api/campaigns",
+  "/api/profile-import",
+  "/api/events",
+  "/api/catalog-item-bulk-create-jobs",
+  "/api/catalog-item-bulk-update-jobs",
+]);
 
-const ID_PATH = /^\/api\/(profiles|flows)\/[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
+const ID_PATH = /^\/api\/(profiles|flows|reviews)\/[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
 
 const FORBIDDEN_PATH_NEEDLES = [
   "campaign-send-jobs",
   "campaign-recipient-estimation",
-  "catalog",
-  "reviews",
+  "catalog-item-bulk-delete",
+  "catalog-variant-bulk-delete",
+  "catalog-category-bulk-delete",
   "coupons",
   "oauth",
 ];
@@ -52,7 +63,7 @@ export function assertKlaviyoPath(path: string, method: "GET" | "POST"): void {
     if (lower.includes(needle)) {
       throw new ToolError(
         "UNSUPPORTED_OPERATION",
-        "Klaviyo catalog, reviews, OAuth, and campaign send jobs are out of Wave 18",
+        "Klaviyo OAuth, campaign send jobs, and catalog delete jobs are out of Wave 19",
         { api: "klaviyo" },
       );
     }
@@ -77,7 +88,7 @@ function mapStatus(status: number, detail: string): ToolError {
       {
         google_status: 401,
         api: "klaviyo",
-        hint: "Support never collects Klaviyo keys. This is not a Google Consent A reconnect. No Polar OAuth in Wave 18.",
+        hint: "Support never collects Klaviyo keys. This is not a Google Consent A reconnect. No Polar OAuth in Wave 19 (19b deferred).",
       },
     );
   }
@@ -85,7 +96,9 @@ function mapStatus(status: number, detail: string): ToolError {
     return new ToolError("KLAVIYO_SCOPE_MISSING", MSG.KLAVIYO_SCOPE_MISSING, {
       google_status: 403,
       api: "klaviyo",
-      hint: detail || "Private key needs the matching accounts/profiles/lists/flows/campaigns/metrics/events scope.",
+      hint:
+        detail ||
+        "Private key needs the matching accounts/profiles/lists/flows/campaigns/metrics/events/catalogs/reviews scope.",
     });
   }
   if (status === 404) {

@@ -60,6 +60,7 @@ SKILLS = [
     "shopping-mc-readiness",
     "tiktok-ads",
     "klaviyo-readonly",
+    "catalog-fan-out",
 ]
 
 SCOPES = [
@@ -254,6 +255,11 @@ def check_catalog_and_tools() -> None:
             "klaviyo_get_flow",
             "klaviyo_list_campaigns",
             "klaviyo_list_metrics",
+            "klaviyo_list_catalog_items",
+            "klaviyo_list_catalog_categories",
+            "klaviyo_list_catalog_variants",
+            "klaviyo_list_reviews",
+            "klaviyo_get_review",
         ):
             g = by_name.get(kname)
             if not g:
@@ -264,7 +270,12 @@ def check_catalog_and_tools() -> None:
                 err(f"catalog.json {kname} fail must be KLAVIYO_NOT_CONNECTED, got {g.get('fail')!r}")
             elif kname in names:
                 err(f"catalog.json: Klaviyo tool {kname} must not be in Consent A tools[]")
-        for kwname in ("klaviyo_create_campaign", "klaviyo_upsert_profile", "klaviyo_create_event"):
+        for kwname in (
+            "klaviyo_create_campaign",
+            "klaviyo_upsert_profile",
+            "klaviyo_create_event",
+            "klaviyo_upsert_catalog_items",
+        ):
             gwrite = by_name.get(kwname)
             if not gwrite:
                 err(f"catalog.json gated_tools missing {kwname}")

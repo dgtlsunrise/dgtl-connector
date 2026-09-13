@@ -1,0 +1,19 @@
+{
+  "data": [
+    {
+      "type": "catalog-item",
+      "id": "$custom:::$default:::MUG-OK-1",
+      "attributes": {
+        "external_id": "MUG-OK-1",
+        "title": "Sunrise Mug",
+        "description": "Ceramic mug. Valid for every network.",
+        "url": "https://dgtl-fixture.myshopify.com/products/sunrise-mug",
+        "image_full_url": "https://cdn.example.com/sunrise-mug.jpg",
+        "price": 16,
+        "published": true,
+        "updated": "2026-09-13T12:00:00+00:00"
+      }
+    }
+  ],
+  "links": { "next": null }
+}

@@ -1025,6 +1025,40 @@
       "flag": "writes.enabled",
       "fail": "WRITE_NOT_ENABLED",
       "note": "Backfill event; backfill defaults true; confirm account id"
+    },
+    {
+      "name": "klaviyo_list_catalog_items",
+      "group": "klaviyo",
+      "fail": "KLAVIYO_NOT_CONNECTED",
+      "note": "Wave 19; GET /api/catalog-items; local pk_; not $shopify::: invent"
+    },
+    {
+      "name": "klaviyo_list_catalog_categories",
+      "group": "klaviyo",
+      "fail": "KLAVIYO_NOT_CONNECTED"
+    },
+    {
+      "name": "klaviyo_list_catalog_variants",
+      "group": "klaviyo",
+      "fail": "KLAVIYO_NOT_CONNECTED"
+    },
+    {
+      "name": "klaviyo_upsert_catalog_items",
+      "group": "klaviyo-write",
+      "flag": "writes.enabled",
+      "fail": "WRITE_NOT_ENABLED",
+      "note": "Wave 19; bulk create/update jobs; $custom only; confirm account id; not a mega upsert-all"
+    },
+    {
+      "name": "klaviyo_list_reviews",
+      "group": "klaviyo",
+      "fail": "KLAVIYO_NOT_CONNECTED",
+      "note": "Wave 19; sparse reviews; email/author stripped"
+    },
+    {
+      "name": "klaviyo_get_review",
+      "group": "klaviyo",
+      "fail": "KLAVIYO_NOT_CONNECTED"
     }
   ]
 }
