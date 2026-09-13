@@ -55,7 +55,7 @@ describe("Wave 12 GSC sitemap writes (Consent S)", () => {
       tools: Array<{ name: string }>;
       gated_tools: Array<{ name: string; fail: string }>;
     };
-    assert.equal(catalog.tools.length, 24);
+    assert.equal(catalog.tools.length, 26);
     for (const name of WRITE_TOOLS) {
       assert.ok(!catalog.tools.some((t) => t.name === name), name);
       const g = catalog.gated_tools.find((t) => t.name === name);
