@@ -7,7 +7,7 @@ import { helpText } from "../src/auth/login-cli.js";
 import { createAppContext } from "../src/context.js";
 import { assertKlaviyoPath } from "../src/klaviyo/http.js";
 import { isKlaviyoPrivateKey, resolveKlaviyoCredentials, writeKlaviyoStore } from "../src/klaviyo/auth.js";
-import { sparsifyProfile } from "../src/klaviyo/klaviyo.js";
+import { sparsifyProfile, sparsifyReview } from "../src/klaviyo/klaviyo.js";
 import { dispatch } from "../src/tools/dispatch.js";
 import {
   CONSENT_A_TOOLS,
@@ -168,7 +168,7 @@ describe("Wave 18 Klaviyo local pk_ lane", () => {
   });
   after(() => restore());
 
-  it("registers 9 reads + 3 writes as LOCAL_FREE, not Consent A, not Polar", () => {
+  it("registers Klaviyo reads + writes as LOCAL_FREE, not Consent A, not Polar", () => {
     assert.equal(CONSENT_A_TOOLS.length, 26);
     assert.equal(KLAVIYO_TOOL_NAMES.length, 18);
     assert.deepEqual(KLAVIYO_WRITE_TOOL_NAMES.slice().sort(), [
@@ -197,8 +197,21 @@ describe("Wave 18 Klaviyo local pk_ lane", () => {
       assert.ok(!LICENSE_GATED_TOOLS.includes(name), name);
     }
     assert.equal(TOOLS.some((t) => t.name.includes("send_job") || t.name.includes("send-job")), false);
-    assert.ok(TOOLS.some((t) => t.name === "klaviyo_list_catalog_items"));
-    assert.ok(TOOLS.some((t) => t.name === "klaviyo_list_reviews"));
+    for (const name of [
+      "klaviyo_list_catalog_items",
+      "klaviyo_list_catalog_categories",
+      "klaviyo_list_catalog_variants",
+      "klaviyo_list_reviews",
+      "klaviyo_get_review",
+    ]) {
+      const t = TOOLS.find((x) => x.name === name);
+      assert.ok(t, name);
+      assert.equal(t!.family, "klaviyo");
+      assert.equal(t!.stampHop, undefined);
+      assert.ok(LOCAL_FREE_TOOLS.includes(name), name);
+      assert.ok(!CONSENT_A_TOOLS.includes(name), name);
+      assert.ok(!LICENSE_GATED_TOOLS.includes(name), name);
+    }
   });
 
   it("schemas stay closed; live writes require confirm_phrase", () => {
@@ -241,10 +254,59 @@ describe("Wave 18 Klaviyo local pk_ lane", () => {
 
   it("allowlist refuses send jobs; catalog/reviews are Wave 19", () => {
     assert.throws(() => assertKlaviyoPath("/api/campaign-send-jobs", "POST"));
+    assert.throws(() => assertKlaviyoPath("/api/catalog-item-bulk-delete-jobs", "POST"));
     assertKlaviyoPath("/api/catalog-items", "GET");
+    assertKlaviyoPath("/api/catalog-categories", "GET");
+    assertKlaviyoPath("/api/catalog-variants", "GET");
     assertKlaviyoPath("/api/reviews", "GET");
+    assertKlaviyoPath("/api/reviews/01JWAVE19REVIEWTEST01", "GET");
+    assertKlaviyoPath("/api/catalog-item-bulk-create-jobs", "POST");
+    assertKlaviyoPath("/api/catalog-item-bulk-update-jobs", "POST");
     assertKlaviyoPath("/api/accounts", "GET");
     assertKlaviyoPath("/api/campaigns", "POST");
+  });
+
+  it("catalog and review schemas stay closed; live upsert needs confirm_phrase", () => {
+    assert.equal(S.klaviyoListCatalogItems.safeParse({}).success, true);
+    assert.equal(S.klaviyoGetReview.safeParse({}).success, false);
+    assert.equal(S.klaviyoGetReview.safeParse({ review_id: "01JWAVE19REVIEWTEST01" }).success, true);
+    assert.equal(S.klaviyoListReviews.safeParse({ status: "postcard" }).success, false);
+    assert.equal(
+      S.klaviyoUpsertCatalogItems.safeParse({
+        items: [
+          {
+            external_id: "MUG-OK-1",
+            title: "Sunrise Mug",
+            url: "https://dgtl-fixture.myshopify.com/products/sunrise-mug",
+          },
+        ],
+      }).success,
+      true,
+    );
+    assert.equal(
+      S.klaviyoUpsertCatalogItems.safeParse({
+        items: [
+          {
+            external_id: "MUG-OK-1",
+            title: "Sunrise Mug",
+            url: "https://dgtl-fixture.myshopify.com/products/sunrise-mug",
+          },
+        ],
+        dry_run: false,
+      }).success,
+      false,
+    );
+  });
+
+  it("sparsifyReview strips email / author", () => {
+    const sparse = sparsifyReview({
+      type: "review",
+      id: "r1",
+      attributes: { rating: 4, email: "hidden@example.com", author: "Pat", title: "Nice" },
+    });
+    assert.equal(sparse?.attributes?.rating, 4);
+    assert.equal(sparse?.attributes?.email, undefined);
+    assert.equal(sparse?.attributes?.author, undefined);
   });
 
   it("sparsifyProfile strips phone / location / properties", () => {
