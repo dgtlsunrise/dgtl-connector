@@ -190,68 +190,68 @@
     {
       "name": "gtm_create_tag",
       "group": "gtm-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_W_REQUIRED"
     },
     {
       "name": "gtm_update_tag",
       "group": "gtm-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_W_REQUIRED"
     },
     {
       "name": "gtm_create_trigger",
       "group": "gtm-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_W_REQUIRED"
     },
     {
       "name": "gtm_update_trigger",
       "group": "gtm-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_W_REQUIRED"
     },
     {
       "name": "gtm_create_variable",
       "group": "gtm-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_W_REQUIRED"
     },
     {
       "name": "gtm_update_variable",
       "group": "gtm-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_W_REQUIRED"
     },
     {
       "name": "gtm_publish_container",
       "group": "gtm-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_W_REQUIRED"
     },
     {
       "name": "gtm_create_client",
       "group": "gtm-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_W_REQUIRED"
     },
     {
       "name": "gtm_update_client",
       "group": "gtm-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_W_REQUIRED"
     },
     {
       "name": "gtm_create_container",
       "group": "gtm-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_W_REQUIRED"
     },
     {
       "name": "gtm_create_environment",
       "group": "gtm-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_W_REQUIRED"
     },
     {
       "name": "ga4_list_google_ads_links",
@@ -274,80 +274,80 @@
     {
       "name": "ga4_create_google_ads_link",
       "group": "ga4-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_G_REQUIRED"
     },
     {
       "name": "ga4_delete_google_ads_link",
       "group": "ga4-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_G_REQUIRED"
     },
     {
       "name": "ga4_update_attribution_settings",
       "group": "ga4-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_G_REQUIRED"
     },
     {
       "name": "ga4_create_data_stream",
       "group": "ga4-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_G_REQUIRED"
     },
     {
       "name": "ga4_update_data_stream",
       "group": "ga4-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_G_REQUIRED"
     },
     {
       "name": "ga4_create_key_event",
       "group": "ga4-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_G_REQUIRED"
     },
     {
       "name": "ga4_update_key_event",
       "group": "ga4-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_G_REQUIRED"
     },
     {
       "name": "ga4_create_custom_dimension",
       "group": "ga4-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_G_REQUIRED"
     },
     {
       "name": "ga4_create_custom_metric",
       "group": "ga4-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_G_REQUIRED"
     },
     {
       "name": "ga4_create_mp_secret",
       "group": "ga4-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_G_REQUIRED"
     },
     {
       "name": "ga4_create_property",
       "group": "ga4-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_G_REQUIRED"
     },
     {
       "name": "gsc_submit_sitemap",
       "group": "gsc-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_S_REQUIRED"
     },
     {
       "name": "gsc_delete_sitemap",
       "group": "gsc-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED"
+      "flag": null,
+      "fail": "CONSENT_S_REQUIRED"
     },
     {
       "name": "gbp_list_accounts",
@@ -879,8 +879,8 @@
     {
       "name": "shopify_adjust_inventory",
       "group": "shopify-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED",
+      "flag": null,
+      "fail": "SHOPIFY_NOT_CONNECTED",
       "note": "Local write; dry_run default; confirm shop domain; write_inventory; not stamp vault"
     },
     {
@@ -904,8 +904,8 @@
     {
       "name": "shopify_product_set",
       "group": "shopify-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED",
+      "flag": null,
+      "fail": "SHOPIFY_NOT_CONNECTED",
       "note": "Wave 15; allowlisted productSet; dry_run default; confirm shop domain; write_products"
     },
     {
@@ -1035,29 +1035,29 @@
     {
       "name": "klaviyo_create_campaign",
       "group": "klaviyo-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED",
+      "flag": null,
+      "fail": "KLAVIYO_NOT_CONNECTED",
       "note": "Wave 18 draft only; dry_run default; confirm account id; never campaign-send-jobs (Wave 22 send tool)"
     },
     {
       "name": "klaviyo_create_campaign_send_job",
       "group": "klaviyo-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED",
+      "flag": null,
+      "fail": "KLAVIYO_NOT_CONNECTED",
       "note": "Wave 22; POST /api/campaign-send-jobs; confirm account id + campaign id + SEND; cannot fire from draft create"
     },
     {
       "name": "klaviyo_upsert_profile",
       "group": "klaviyo-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED",
+      "flag": null,
+      "fail": "KLAVIYO_NOT_CONNECTED",
       "note": "POST /api/profile-import; closed fields; no properties bag"
     },
     {
       "name": "klaviyo_create_event",
       "group": "klaviyo-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED",
+      "flag": null,
+      "fail": "KLAVIYO_NOT_CONNECTED",
       "note": "Backfill event; backfill defaults true; confirm account id"
     },
     {
@@ -1079,8 +1079,8 @@
     {
       "name": "klaviyo_upsert_catalog_items",
       "group": "klaviyo-write",
-      "flag": "writes.enabled",
-      "fail": "WRITE_NOT_ENABLED",
+      "flag": null,
+      "fail": "KLAVIYO_NOT_CONNECTED",
       "note": "Wave 19; bulk create/update jobs; $custom only; confirm account id; not a mega upsert-all"
     },
     {

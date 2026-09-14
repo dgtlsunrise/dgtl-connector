@@ -60,7 +60,7 @@ describe("Wave 12 GSC sitemap writes (Consent S)", () => {
       assert.ok(!catalog.tools.some((t) => t.name === name), name);
       const g = catalog.gated_tools.find((t) => t.name === name);
       assert.ok(g, name);
-      assert.equal(g!.fail, "WRITE_NOT_ENABLED", name);
+      assert.equal(g!.fail, "CONSENT_S_REQUIRED", name);
     }
   });
 
@@ -106,16 +106,18 @@ describe("Wave 12 GSC sitemap writes (Consent S)", () => {
     assert.equal(googleGscWritePathAllowed("PUT", "/webmasters/v3/sites/sc-domain%3Aexample.com/sitemaps"), false);
   });
 
-  it("WRITE_NOT_ENABLED with zero HTTP", async () => {
+  it("writesEnabled false + Consent S token + confirm proceeds (no WRITE_NOT_ENABLED)", async () => {
     const ctx = makeCtx({}, testEnv({ GOOGLE_GSC_WRITE_ACCESS_TOKEN: S_TOKEN }));
+    assert.equal(ctx.flags.writesEnabled, false);
     const env = await dispatch(ctx, "gsc_submit_sitemap", {
       site_url: SITE,
       feedpath: FEED,
       dry_run: false,
       confirm_phrase: SITE,
     });
-    assert.equal(env.error_code, "WRITE_NOT_ENABLED");
-    assert.equal(ctx.calls.length, 0);
+    assert.equal(env.ok, true, JSON.stringify(env));
+    assert.notEqual(env.error_code, "WRITE_NOT_ENABLED");
+    assert.ok(ctx.calls.some((c) => c.method === "PUT" && c.path.includes("/sitemaps/")));
   });
 
   it("CONSENT_S_REQUIRED when flag on but no S token; never uses Consent A", async () => {

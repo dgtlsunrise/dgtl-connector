@@ -81,16 +81,20 @@ describe("Wave 18 Klaviyo writes (draft / upsert / backfill)", () => {
   });
   after(() => restore());
 
-  it("WRITE_NOT_ENABLED before any Klaviyo HTTP when flag is off", async () => {
+  it("writesEnabled false + pk_ + dry_run proceeds (GET account only)", async () => {
     const { fetchImpl, calls } = createKlaviyoFetch();
     const env = await dispatch(
       ctx(testEnv({ KLAVIYO_API_KEY: FIXTURE_KEY, DGTL_WRITES_ENABLED: "false" }), fetchImpl),
       "klaviyo_create_campaign",
       DRAFT,
     );
-    assert.equal(env.ok, false);
-    assert.equal(env.error_code, "WRITE_NOT_ENABLED");
-    assert.equal(calls.length, 0);
+    assert.equal(env.ok, true, JSON.stringify(env));
+    assert.equal((env.data as { dry_run?: boolean }).dry_run, true);
+    assert.notEqual(env.error_code, "WRITE_NOT_ENABLED");
+    assert.deepEqual(
+      calls.map((call) => `${call.method} ${call.path}`),
+      ["GET /api/accounts"],
+    );
   });
 
   it("KLAVIYO_NOT_CONNECTED when writes are on but no key", async () => {

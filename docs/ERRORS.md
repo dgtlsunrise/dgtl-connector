@@ -88,7 +88,7 @@ Plugin denylist (GA4 `searchQuery` / `query` / `searchTerm` / `keyword`).
 Write/publish/index request on a surface that has **no** registered write tool (or Consent A cannot do it).
 
 **User-visible:**  
-“This read tool cannot publish Tag Manager containers, create tags, submit sitemaps, request indexing, or create GA4–Search Console links (`analytics.readonly` cannot create those links). Named write tools exist on Free Google and stay `WRITE_NOT_ENABLED` until flagged on. Ads/Meta mutates are separate Pro tools.”
+“This read tool cannot publish Tag Manager containers, create tags, submit sitemaps, request indexing, or create GA4–Search Console links (`analytics.readonly` cannot create those links). Named write tools exist on Free Google after Connect plus in-chat confirm. Ads/Meta mutates are separate Pro tools.”
 
 ### `QUOTA_EXCEEDED` / `RATE_LIMITED`
 
@@ -151,7 +151,7 @@ Shopify tools are **local merchant credentials** (not Polar, not stamp).
 
 - Missing `SHOPIFY_STORE` / `SHOPIFY_ACCESS_TOKEN` / `shopify-oauth.json` → `SHOPIFY_NOT_CONNECTED` (zero Admin HTTP).
 - Detectable or GraphQL-denied missing `read_products` / `read_orders` / `read_inventory` / `read_locations` / `read_publications` / `read_product_listings` / `write_inventory` / `write_products` → `SHOPIFY_SCOPE_MISSING`.
-- Shopify writes with flag off → `WRITE_NOT_ENABLED` (zero HTTP) **before** connected/scope checks.
+- Shopify writes without the merchant token → `SHOPIFY_NOT_CONNECTED`. Missing `write_*` → `SHOPIFY_SCOPE_MISSING`. `DGTL_WRITES_ENABLED` is not a Shopify gate.
 - Live `shopify_adjust_inventory` / `shopify_product_set` without the shop domain in `confirm_phrase` (or `confirm`) → `INVALID_ARGUMENT` (no mutation HTTP).
 - Support never collects Shopify tokens. Default install is the original read_* set. `read_publications`, `read_product_listings`, `write_inventory`, and `write_products` are **explicit** merchant-app expansions (not Polar, not stamp vault). Never silently expand scopes on an existing app.
 
@@ -169,13 +169,13 @@ GA4 Admin writes and Search Console writes use Free Google manage scopes (`analy
 - `CONSENT_G_REQUIRED` — GA4 Admin writes (and MP secret list) need `analytics.edit` via `auth login` (alias `login-ga4-admin`) or legacy `PLUGIN_DATA/google-oauth-ga4-admin.json` / `GOOGLE_GA4_ADMIN_ACCESS_TOKEN`.
 - `CONSENT_S_REQUIRED` — GSC sitemap submit/delete need `webmasters` (write) via `auth login` (alias `login-gsc-write`) or legacy `PLUGIN_DATA/google-oauth-gsc-write.json` / `GOOGLE_GSC_WRITE_ACCESS_TOKEN`.
 
-Wave 11 ships named Admin tools. Wave 12 ships `gsc_submit_sitemap` / `gsc_delete_sitemap`. Writes still require `DGTL_WRITES_ENABLED` (login does **not** flip it). Live GSC confirm must include the exact `site_url`. Measurement Protocol `secretValue` is never written to logs.
+Wave 11 ships named Admin tools. Wave 12 ships `gsc_submit_sitemap` / `gsc_delete_sitemap`. Live mutates need confirm (`dry_run` default). `DGTL_WRITES_ENABLED` is not required. Live GSC confirm must include the exact `site_url`. Measurement Protocol `secretValue` is never written to logs.
 
 **User-visible (G):**  
-“This GA4 Admin write path needs analytics.edit on the Free Google (Consent A) token (`auth login`, or the login-ga4-admin alias) or a legacy google-oauth-ga4-admin.json / GOOGLE_GA4_ADMIN_ACCESS_TOKEN. Then set DGTL_WRITES_ENABLED=true for mutate tools.”
+“This GA4 Admin write path needs analytics.edit on the Free Google (Consent A) token (`auth login`, or the login-ga4-admin alias) or a legacy google-oauth-ga4-admin.json / GOOGLE_GA4_ADMIN_ACCESS_TOKEN. Live mutate needs dry_run=false plus a confirm that includes the resource id.”
 
 **User-visible (S):**  
-“This Search Console write path needs webmasters (write) on the Free Google (Consent A) token (`auth login`, or the login-gsc-write alias) or a legacy google-oauth-gsc-write.json / GOOGLE_GSC_WRITE_ACCESS_TOKEN. Then set DGTL_WRITES_ENABLED=true for gsc_submit_sitemap / gsc_delete_sitemap.”
+“This Search Console write path needs webmasters (write) on the Free Google (Consent A) token (`auth login`, or the login-gsc-write alias) or a legacy google-oauth-gsc-write.json / GOOGLE_GSC_WRITE_ACCESS_TOKEN. Live gsc_submit_sitemap / gsc_delete_sitemap need dry_run=false plus a confirm that includes the exact site_url.”
 
 ### `GOOGLE_UNAVAILABLE`
 
@@ -220,7 +220,7 @@ Zero rows with `ok: true` after `ga4_get_property` succeeded means no events in 
 
 Listing tags (or sGTM **clients**) in a workspace can show unpublished drafts. Production is `gtm_get_live_container_version`. Users who say “GTM is wrong” may be looking at the draft. Clients exist on **server** containers; an empty `gtm_list_clients` on a web container is not an auth failure.
 
-Unknown `gtm_create_client` `type` (for example a tag type like `html`) is `INVALID_ARGUMENT` with the closed enum listed — zero HTTP. Flag off write tools stay `WRITE_NOT_ENABLED` (zero HTTP).
+Unknown `gtm_create_client` `type` (for example a tag type like `html`) is `INVALID_ARGUMENT` with the closed enum listed — zero HTTP. Missing GTM write scopes stay `CONSENT_W_REQUIRED` (zero HTTP).
 
 ### 7. GSC site URL is exact
 
@@ -242,7 +242,7 @@ Use `REAUTH_REQUIRED`. After reconnect, call `google_whoami` and confirm email *
 
 ## “Publish this tag” scenario (copy)
 
-On flag off: refuse (`WRITE_NOT_ENABLED`). Add: “I can show the live container and the workspace draft so you can see the diff. Publishing needs `DGTL_WRITES_ENABLED` plus a confirm that includes the container publicId. Trigger/variable create uses the same flag + publicId confirm; publish last.”
+If GTM write scopes are missing: refuse (`CONSENT_W_REQUIRED`). Add: “I can show the live container and the workspace draft so you can see the diff. Publishing needs Free Google Tag Manager manage scopes plus a confirm that includes the container publicId. Trigger/variable create uses the same publicId confirm; publish last.”
 
 ## “Search queries in GA4” scenario (copy)
 

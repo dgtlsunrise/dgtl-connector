@@ -12,9 +12,6 @@ import {
 } from "./gtm-types.js";
 import { APIS, SCOPE } from "./scopes.js";
 
-const HINT_FLAG =
-  "Set DGTL_WRITES_ENABLED=true to allow local GTM mutates. Free Google can already hold tagmanager.edit.containers / tagmanager.publish. Ads/Meta/TikTok stay Pro.";
-
 const HINT_CONSENT =
   "Use Free Google (`auth login` / GOOGLE_ACCESS_TOKEN with GTM write scopes) or a legacy GOOGLE_WRITE_ACCESS_TOKEN / google-oauth-write.json. Do not add adwords, content, or business.manage to Free Google.";
 
@@ -41,12 +38,6 @@ function dryRunDefault(args: Rec): boolean {
 }
 
 async function gateWrites(tool: string, ctx: AppContext): Promise<Envelope | null> {
-  if (!ctx.flags.writesEnabled) {
-    return failEnvelope(tool, "WRITE_NOT_ENABLED", MSG.WRITE_NOT_ENABLED, {
-      hint: HINT_FLAG,
-      api: HOST,
-    });
-  }
   const writeTok = await ctx.authWrite.getAccessToken();
   if (!writeTok?.accessToken) {
     return failEnvelope(tool, "CONSENT_W_REQUIRED", MSG.CONSENT_W_REQUIRED, {

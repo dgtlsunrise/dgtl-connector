@@ -5,13 +5,13 @@ Local **GA4**, **Search Console**, and **Tag Manager** (read and manage) for Gro
 Publisher: **DGTL Sunrise** (Sunrise Consulting LLC), `noel@dgtlsunrise.com`. Apache-2.0.  
 Homepage: https://www.dgtlsunrise.com/ · Privacy: https://www.dgtlsunrise.com/privacy
 
-Working package id: `dgtl-connector`. Version **0.1.0**. Marketplace listing copy = Free Google **read and manage**. Mutates stay flag-gated. Ads / Meta / TikTok are Pro. Submit is deferred.
+Working package id: `dgtl-connector`. Version **0.1.0**. Marketplace listing copy = Free Google **read and manage**. Live mutates need in-chat confirm. Ads / Meta / TikTok are Pro. Submit is deferred.
 
 ## What it is / is not
 
 **Is:** a local stdio MCP plugin. Closed typed tools (26 free kernel: identity + GA4 + GSC + GTM, including Wave 13 client/environment lists). One Free Google Connect with read and manage scopes. Skills that refuse hallucinated metrics and will not pick the first of 40 agency properties.
 
-**Is not:** a hosted analytics warehouse, a Gmail-style Connect card for stdio, Google Ads/Meta/TikTok (those tools are listed and return `LICENSE_REQUIRED` until a paid license + Worker), or a GBP client until `DGTL_GBP_ENABLED=true` **and** Consent B (flag off → `GBP_NOT_ENABLED`). GTM / GA4 Admin / GSC write tools are **flagged off** by default (`DGTL_WRITES_ENABLED`) even after Free Google grants manage scopes.
+**Is not:** a hosted analytics warehouse, a Gmail-style Connect card for stdio, Google Ads/Meta/TikTok (those tools are listed and return `LICENSE_REQUIRED` until a paid license + Worker), or a GBP client until `DGTL_GBP_ENABLED=true` **and** Consent B (flag off → `GBP_NOT_ENABLED`). GTM / GA4 Admin / GSC write tools need Free Google manage scopes plus in-chat confirm (`dry_run` default). `DGTL_WRITES_ENABLED` stays for live Merchant Center ProductInput writes.
 
 ## Auth on this host (stdio is Manual)
 

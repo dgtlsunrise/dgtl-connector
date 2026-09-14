@@ -14,7 +14,7 @@ Reviewers will treat this as code that runs on a user's computer and talks to Go
 - [ ] `plugin.json` validates against Agent Plugins 1.0 (`$schema` + `name` constraints)
 - [ ] `mcp.json` validates against Agent Plugins MCP schema (`$schema` + `mcpServers`, stdio `type`+`command`)
 - [ ] Auth is **AuthPort**: host-injected token, then installed-app PKCE (public Desktop client). stdio is Manual — no Gmail-style Connect card. Do not embed a client secret.
-- [ ] Tools: closed **26** free kernel tools in the listing story. Free Google is **read and manage** for GA4 / GSC / GTM. Mutates stay flag-gated (`DGTL_WRITES_ENABLED` + confirms). Ads / Meta / TikTok / MC / GBP stay out of the listing promise. Operator write details live in [TOOLS.md](TOOLS.md) / [PERMISSIONS.md](PERMISSIONS.md).
+- [ ] Tools: closed **26** free kernel tools in the listing story. Free Google is **read and manage** for GA4 / GSC / GTM. Live mutates need in-chat confirm (`dry_run` default). Ads / Meta / TikTok / MC / GBP stay out of the listing promise. Operator write details live in [TOOLS.md](TOOLS.md) / [PERMISSIONS.md](PERMISSIONS.md).
 - [ ] README explains who it's for, Consent A in/out, AuthPort, and that users authorize **their** Google accounts
 - [ ] Skills refuse hallucinated metrics, silent property pick, flag-off publish, GA4 `searchQuery`; writes are gated, not eternal “no publish tool”
 - [ ] License is a public OSI license (replace `UNLICENSED` before submit)
@@ -30,7 +30,7 @@ Source: Cursor plugins reference, submit at [cursor.com/marketplace/publish](htt
 
 - [ ] Valid **root** `plugin.json` (Agent Plugin), not only `.cursor-plugin/plugin.json`
 - [ ] `name` is unique, lowercase kebab-case: `dgtl-connector`
-- [ ] `description` explains local GA4 / GSC / GTM **read and manage**, flag-gated mutates, Pro Ads/Meta/TikTok, and user-owned Google auth (remove “SPEC STUB” before submit)
+- [ ] `description` explains local GA4 / GSC / GTM **read and manage**, in-chat confirm for live mutates, Pro Ads/Meta/TikTok, and user-owned Google auth (remove “SPEC STUB” before submit)
 - [ ] `homepage` is `https://www.dgtlsunrise.com/`
 - [ ] `author.name` is **DGTL Sunrise**
 - [ ] Skills have YAML frontmatter (`name`, `description`)
@@ -94,14 +94,14 @@ A marketplace listing that still uses an unverified testing-mode OAuth client wi
 
 ## Listing copy vs operator docs
 
-Public marketplace / `plugin.json` / `package.json` description = **Free Google read and manage** (26-tool kernel: identity + GA4 + GSC + GTM). Mutates stay flag-gated. Ads / Meta / TikTok are Pro. That is the honest listing.
+Public marketplace / `plugin.json` / `package.json` description = **Free Google read and manage** (26-tool kernel: identity + GA4 + GSC + GTM). Live mutates need in-chat confirm. Ads / Meta / TikTok are Pro. That is the honest listing.
 
 Operator docs ([TOOLS.md](TOOLS.md), [PERMISSIONS.md](PERMISSIONS.md), [ops/RUNBOOKS.md](ops/RUNBOOKS.md)) document confirm gates, legacy W/G/S stores, and Polar-gated families. Do **not** paste Ads/Meta/TikTok unlock copy into marketplace title/description. Marketplace submit is **deferred**. Do **not** publish the site, Worker, or marketplace listing from this PR (Noel RED). Do not invent Polar checkout URLs in listing copy.
 
 ## What not to submit
 
 - This spec-only revision (`version` `0.0.0`, description contains `SPEC STUB`, `bin/` empty)
-- Listing copy that promises Ads, Meta, TikTok, GBP, or live writes without the flag/confirm gate
+- Listing copy that promises Ads, Meta, TikTok, GBP, or live writes without the confirm gate
 - A remote MCP URL on DGTL infrastructure “just for Grok Bot”
 - Docs that tell reviewers to use a Connect card for stdio or that “there is no publish tool” while gated stubs exist
 - Docs that still promise a **readonly-only** Free Google product

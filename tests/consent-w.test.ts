@@ -23,7 +23,7 @@ const WRITE_TOOLS = [
   "gtm_create_environment",
 ] as const;
 
-describe("Consent W scaffold — writes stay flag-gated on Free Google", () => {
+describe("Consent W scaffold — writes need scopes + confirm, not DGTL_WRITES_ENABLED", () => {
   let restore: () => void;
   before(() => {
     restore = installNetworkGuard();
@@ -89,7 +89,7 @@ describe("Consent W scaffold — writes stay flag-gated on Free Google", () => {
     assert.equal(loadFlags({ DGTL_WRITES_ENABLED: "true" }).writesEnabled, true);
   });
 
-  it("write tools gated off by default (WRITE_NOT_ENABLED, zero HTTP)", async () => {
+  it("write tools without GTM write scopes → CONSENT_W_REQUIRED, zero HTTP", async () => {
     const ctx = makeCtx();
     assert.equal(ctx.flags.writesEnabled, false);
     for (const name of WRITE_TOOLS) {
@@ -109,7 +109,7 @@ describe("Consent W scaffold — writes stay flag-gated on Free Google", () => {
         variable_id: "1",
       });
       assert.equal(env.ok, false, name);
-      assert.equal(env.error_code, "WRITE_NOT_ENABLED", name);
+      assert.equal(env.error_code, "CONSENT_W_REQUIRED", name);
     }
     assert.equal(ctx.calls.length, 0);
   });
@@ -179,21 +179,21 @@ describe("Consent W scaffold — writes stay flag-gated on Free Google", () => {
     }
   });
 
-  it("catalog gated_tools lists write stubs with WRITE_NOT_ENABLED", () => {
+  it("catalog gated_tools lists write stubs with CONSENT_W_REQUIRED", () => {
     const catalog = JSON.parse(readFileSync(join(ROOT, "schemas/v1/catalog.json"), "utf8"));
-    const gated = catalog.gated_tools as Array<{ name: string; fail: string; flag?: string }>;
+    const gated = catalog.gated_tools as Array<{ name: string; fail: string; flag?: string | null }>;
     for (const name of WRITE_TOOLS) {
       const g = gated.find((x) => x.name === name);
       assert.ok(g, name);
-      assert.equal(g!.fail, "WRITE_NOT_ENABLED", name);
-      assert.equal(g!.flag, "writes.enabled", name);
+      assert.equal(g!.fail, "CONSENT_W_REQUIRED", name);
+      assert.equal(g!.flag, null, name);
       assert.ok(!catalog.tools.some((t: { name: string }) => t.name === name), name);
     }
   });
 
-  it("gtm skill gates: refuse when flag off; dry-run + publicId confirm when on", () => {
+  it("gtm skill gates: refuse without scopes; dry-run + publicId confirm when connected", () => {
     const skill = readFileSync(join(ROOT, "skills/gtm-readonly-limits/SKILL.md"), "utf8");
-    assert.ok(/WRITE_NOT_ENABLED/.test(skill));
+    assert.ok(/CONSENT_W_REQUIRED/.test(skill));
     assert.ok(/DGTL_WRITES_ENABLED/.test(skill));
     assert.ok(/publicId/.test(skill) || /GTM-XXXX/.test(skill));
     assert.ok(/dry_run/.test(skill));

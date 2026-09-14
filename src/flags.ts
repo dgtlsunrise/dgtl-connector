@@ -1,6 +1,10 @@
 export type Flags = {
   gbpEnabled: boolean;
-  /** Consent W write tools. Default off until write OAuth client + scopes exist. */
+  /**
+   * Merchant Center ProductInput / data-source live writes. Default off.
+   * Free Google (GA4 Admin / GTM / GSC), Shopify, and Klaviyo ignore this flag
+   * (Connect + in-chat confirm only).
+   */
   writesEnabled: boolean;
   /**
    * Google Ads mutate tools (status/budget/keyword/ad/Search create).

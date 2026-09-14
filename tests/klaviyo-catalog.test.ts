@@ -128,28 +128,20 @@ describe("Wave 19 Klaviyo catalog and reviews", () => {
     assert.ok(!JSON.stringify([items, cats, vars, reviews, one]).includes(FIXTURE_KEY));
   });
 
-  it("WRITE_NOT_ENABLED then dry-run GET account only for catalog upsert", async () => {
+  it("writesEnabled false + pk_ dry-run GETs account only for catalog upsert", async () => {
     const off = createKlaviyoFetch();
-    const blocked = await dispatch(
+    const dry = await dispatch(
       ctx(testEnv({ KLAVIYO_API_KEY: FIXTURE_KEY, DGTL_WRITES_ENABLED: "false" }), off.fetchImpl),
       "klaviyo_upsert_catalog_items",
       { items: [ITEM] },
     );
-    assert.equal(blocked.error_code, "WRITE_NOT_ENABLED");
-    assert.equal(off.calls.length, 0);
-
-    const on = createKlaviyoFetch();
-    const dry = await dispatch(
-      ctx(testEnv({ KLAVIYO_API_KEY: FIXTURE_KEY, DGTL_WRITES_ENABLED: "true" }), on.fetchImpl),
-      "klaviyo_upsert_catalog_items",
-      { items: [ITEM] },
-    );
-    assert.equal(dry.ok, true);
+    assert.equal(dry.ok, true, JSON.stringify(dry));
     const data = dry.data as { dry_run?: boolean; invented_shopify_ids?: boolean };
     assert.equal(data.dry_run, true);
     assert.equal(data.invented_shopify_ids, false);
+    assert.notEqual(dry.error_code, "WRITE_NOT_ENABLED");
     assert.deepEqual(
-      on.calls.map((call) => `${call.method} ${call.path}`),
+      off.calls.map((call) => `${call.method} ${call.path}`),
       ["GET /api/accounts"],
     );
   });

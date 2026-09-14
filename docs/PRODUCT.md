@@ -11,7 +11,7 @@ These are not open questions. Implementation later must obey them.
 1. **Grok Bot / Cursor plugin people install.** They authorize **their own** Google accounts. Tools run on **their** Grok Bot computer (or the equivalent Cursor host process). **No DGTL data plane in v1. No DGTL token vault.**
 2. **Free:** everything that can run locally. **Paid hosted later only** for things a public plugin cannot hold (shared Google Ads developer token, Meta app secret, agency token vault). **Not a $5–10 SaaS.**
 3. **v1 APIs (readonly):** GA4 Admin + Data v1beta (`analytics.readonly`), Search Console (`webmasters.readonly`), Tag Manager v2 (`tagmanager.readonly`). **GTM is in v1. Do not defer.**
-4. **Free Connect must not include** Google Ads, Meta Ads, TikTok, GBP, Merchant Center, Gmail, or Drive. GA4/GSC/GTM writes exist locally and stay flag-gated.
+4. **Free Connect must not include** Google Ads, Meta Ads, TikTok, GBP, Merchant Center, Gmail, or Drive. GA4/GSC/GTM writes exist locally and need in-chat confirm.
 5. **One Google consent** with Free Google scopes (GA4/GSC/GTM read and manage). Not sequential per-product tokens. Ads/MC/GBP stay off that screen.
 6. **Published stdio auth** is **AuthPort** (host-injected access token, then installed-app PKCE with a Desktop OAuth client). A Gmail-style Connect card is **not** available for third-party stdio MCP on today's hosts — that older lock is **stale for stdio**. Remote-HTTP Connect cards may exist later as a **host** feature; do not rewrite the plugin to fake one. Writes / paid Ads-Meta → [ops/FULL-STACK-ACCELERATE.md](ops/FULL-STACK-ACCELERATE.md) + [ops/PRODUCT-DESIGN.md](ops/PRODUCT-DESIGN.md) (Consent W + Worker), not this lock.
 7. **OAuth client ID** may belong to DGTL's Google Cloud project. **Refresh tokens stay in the user's connector store.** Never commit secrets.
@@ -64,7 +64,7 @@ Order is product logic, not a calendar.
 | 4 | Desktop OAuth client + loopback PKCE (and host-injected token path) | Noel | `auth login` / host token works; no Connect-card redirect on this client |
 | 5 | Google brand verification + sensitive-scope verification | Google | Production users beyond the testing cap; demo video of **Consent A read** flows only |
 | 6 | Public git + LICENSE | Noel | Repo public **only** when ready to submit; still no secrets |
-| 7 | Cursor Marketplace submit (`cursor.com/marketplace/publish`) | Cursor review | Deferred. Listing copy = Free Google read and manage; mutates flag-gated; Ads/Meta/TikTok are Pro |
+| 7 | Cursor Marketplace submit (`cursor.com/marketplace/publish`) | Cursor review | Deferred. Listing copy = Free Google read and manage; live mutates need in-chat confirm; Ads/Meta/TikTok are Pro |
 | 8 | Grok Build catalog PR (`xai-org/plugin-marketplace`) | xAI review | Pinned SHA; remote source |
 | 9 | Optional paid hosted Ads/Meta + Consent W writes | Noel + Google Ads API / Meta App Review | Same plugin + DGTL Worker (see PRODUCT-DESIGN); free Consent A unchanged |
 
@@ -82,7 +82,7 @@ We are not a cheaper Ryze.
 | Who holds tokens | Their connector | User's platform connector store |
 | Ads networks | In scope | Out of v1; hosted later if ever |
 | Writes | Approval-gated | Flag-gated local GA4/GSC/GTM; Ads/Meta later |
-| GTM | Not the differentiator | In v1, read and manage (flag-gated mutates) |
+| GTM | Not the differentiator | In v1, read and manage (confirm-gated mutates) |
 | Price | Hosted product | Free local; hosted only when unavoidable |
 
 The product sentence: **your Google marketing properties, in your agent, with your consent, without a DGTL proxy.**

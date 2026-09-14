@@ -25,7 +25,7 @@ API revision pin: **`2026-07-15`** (`revision` header). Host: `https://a.klaviyo
 6. `klaviyo_list_metrics` — metrics catalog only; not an open Metric Aggregates passthrough.
 7. Catalog (Wave 19): `klaviyo_list_catalog_items` / `klaviyo_list_catalog_categories` / `klaviyo_list_catalog_variants`. `$custom` / `$default` only. Do not invent `$shopify:::$default:::` ids.
 8. Reviews (Wave 19): `klaviyo_list_reviews` / `klaviyo_get_review`. Sparse — never dump reviewer email.
-9. Writes (not this skill’s default path): `klaviyo_create_campaign` (**draft only**), `klaviyo_upsert_profile`, `klaviyo_create_event` (backfill defaults **true**), `klaviyo_upsert_catalog_items` (closed items; not a mega upsert-all). `DGTL_WRITES_ENABLED` + `confirm_phrase` containing the **account id**. `dry_run` defaults true.
+9. Writes (not this skill’s default path): `klaviyo_create_campaign` (**draft only**), `klaviyo_upsert_profile`, `klaviyo_create_event` (backfill defaults **true**), `klaviyo_upsert_catalog_items` (closed items; not a mega upsert-all). `confirm_phrase` containing the **account id**. `dry_run` defaults true.
 
 Never invent list / flow / campaign / profile / catalog ids. Empty lists are not auth failures. Multi-network Shopify → ads/email mapping is `catalog-fan-out`.
 

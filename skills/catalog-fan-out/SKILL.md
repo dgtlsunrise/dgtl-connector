@@ -12,7 +12,7 @@ Wave 19. Four destinations, **four named write tools**. Do **not** collapse them
 | Merchant Center | Google payload (omit missing GTIN / missing HTTPS image) | `mc_upsert_product_input` (one offer at a time) | Polar `ads` + Consent MC + `DGTL_WRITES_ENABLED` + `merchant_id` in confirm |
 | Meta catalog | HTTPS `image_link` / `link` required | `meta_catalog_items_batch` | Polar `meta` + stamp + `META_MUTATE_ENABLED` dual-gate + confirm `act_` AND `catalog_id` |
 | TikTok catalog | HTTPS `image_url` / `landing_page_url`; `sku_id` is Events `content_id` | `tiktok_upload_catalog_products` | Polar `tiktok` + stamp + `TIKTOK_MUTATE_ENABLED` dual-gate + confirm `advertiser_id` AND `catalog_id` |
-| Klaviyo catalog | Local `pk_`; `$custom` only | `klaviyo_upsert_catalog_items` | `KLAVIYO_API_KEY` + `DGTL_WRITES_ENABLED` + account-id confirm. **No Polar. No stamp.** |
+| Klaviyo catalog | Local `pk_`; `$custom` only | `klaviyo_upsert_catalog_items` | `KLAVIYO_API_KEY` + account-id confirm. **No Polar. No stamp.** |
 
 **Live fan-out still requires each destination’s write grant.** Mapping a row does not write it. A missing grant is not a reason to skip naming the tool — refuse that destination and continue the others only after the user asks.
 

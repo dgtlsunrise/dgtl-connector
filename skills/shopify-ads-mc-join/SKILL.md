@@ -40,7 +40,7 @@ Stamp does **not** proxy Shopify. Multi-store vault is out of this wave.
 - Empty join is **not** an auth failure. Cite both sides (Shopify sku vs MC offerId).
 - Do not invent GTINs, SKUs, or offerIds.
 - Shopify `inventoryQuantity` / available qty is merchandising truth; MC `item_level_issues` is ads eligibility.
-- Writes are a **separate** path: `DGTL_WRITES_ENABLED` + shop-domain confirm. `shopify_adjust_inventory` needs `write_inventory`. `shopify_product_set` needs `write_products` (allowlisted fields only; variants/tags **replace**). Do not adjust inventory or productSet to “fix” a Shopping disapproval — that is MC eligibility. Never silently expand scopes on an existing custom app.
+- Writes are a **separate** path: matching write scope + shop-domain confirm. `shopify_adjust_inventory` needs `write_inventory`. `shopify_product_set` needs `write_products` (allowlisted fields only; variants/tags **replace**). Do not adjust inventory or productSet to “fix” a Shopping disapproval — that is MC eligibility. Never silently expand scopes on an existing custom app.
 
 ## Refuse
 

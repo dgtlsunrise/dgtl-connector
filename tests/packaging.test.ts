@@ -115,7 +115,7 @@ describe("packaging and secrets", () => {
     ]) {
       const g = catalog.gated_tools.find((x: { name: string }) => x.name === name);
       assert.ok(g, name);
-      assert.equal(g.fail, "WRITE_NOT_ENABLED", name);
+      assert.equal(g.fail, "CONSENT_W_REQUIRED", name);
     }
     for (const name of ["support_packet", "feedback_prepare", "feedback_send", "conversion_fabric_status"]) {
       const g = catalog.gated_tools.find((x: { name: string }) => x.name === name);
@@ -130,11 +130,7 @@ describe("packaging and secrets", () => {
       assert.notEqual(g.fail, "LICENSE_REQUIRED", name);
       const spec = TOOLS.find((t) => t.name === name);
       assert.ok(spec, name);
-      if (spec!.family === "shopify_write") {
-        assert.equal(g.fail, "WRITE_NOT_ENABLED", name);
-      } else {
-        assert.equal(g.fail, "SHOPIFY_NOT_CONNECTED", name);
-      }
+      assert.equal(g.fail, "SHOPIFY_NOT_CONNECTED", name);
       assert.ok(!catalog.tools.some((t: { name: string }) => t.name === name), name);
     }
     for (const name of LOCAL_FREE_TOOLS.filter((n) => n.startsWith("klaviyo_"))) {
@@ -143,11 +139,7 @@ describe("packaging and secrets", () => {
       assert.notEqual(g.fail, "LICENSE_REQUIRED", name);
       const spec = TOOLS.find((t) => t.name === name);
       assert.ok(spec, name);
-      if (spec!.family === "klaviyo_write") {
-        assert.equal(g.fail, "WRITE_NOT_ENABLED", name);
-      } else {
-        assert.equal(g.fail, "KLAVIYO_NOT_CONNECTED", name);
-      }
+      assert.equal(g.fail, "KLAVIYO_NOT_CONNECTED", name);
       assert.ok(!catalog.tools.some((t: { name: string }) => t.name === name), name);
     }
     for (const name of [

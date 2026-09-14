@@ -135,7 +135,7 @@ describe("Shopify confirm-gated inventory write (Wave 7)", () => {
     );
   });
 
-  it("flag off → WRITE_NOT_ENABLED with zero HTTP", async () => {
+  it("writesEnabled false + write scope + dry_run proceeds (no WRITE_NOT_ENABLED)", async () => {
     const { fetchImpl, calls } = createShopifyFetch();
     const ctx = shopifyCtx(
       testEnv({
@@ -144,13 +144,15 @@ describe("Shopify confirm-gated inventory write (Wave 7)", () => {
       }),
       fetchImpl,
     );
+    assert.equal(ctx.flags.writesEnabled, false);
     const env = await dispatch(ctx, "shopify_adjust_inventory", {
       inventory_item_id: "3001",
       location_id: "1",
       delta: -1,
     });
-    assert.equal(env.ok, false);
-    assert.equal(env.error_code, "WRITE_NOT_ENABLED");
+    assert.equal(env.ok, true, JSON.stringify(env));
+    assert.equal((env.data as { dry_run?: boolean }).dry_run, true);
+    assert.notEqual(env.error_code, "WRITE_NOT_ENABLED");
     assert.equal(calls.length, 0);
   });
 
@@ -281,18 +283,21 @@ describe("Shopify confirm-gated inventory write (Wave 7)", () => {
     assert.equal(empty.success, false);
   });
 
-  it("productSet flag off → WRITE_NOT_ENABLED with zero HTTP", async () => {
+  it("productSet writesEnabled false + write_products + dry_run proceeds", async () => {
     const { fetchImpl, calls } = createShopifyFetch();
     const ctx = shopifyCtx(
       testEnv({
         ...WRITE_CREDS,
+        SHOPIFY_GRANTED_SCOPES: `${WRITE_CREDS.SHOPIFY_GRANTED_SCOPES},write_products`,
         DGTL_WRITES_ENABLED: "false",
       }),
       fetchImpl,
     );
+    assert.equal(ctx.flags.writesEnabled, false);
     const env = await dispatch(ctx, "shopify_product_set", { handle: "blue-widget", title: "Blue Widget" });
-    assert.equal(env.ok, false);
-    assert.equal(env.error_code, "WRITE_NOT_ENABLED");
+    assert.equal(env.ok, true, JSON.stringify(env));
+    assert.equal((env.data as { dry_run?: boolean }).dry_run, true);
+    assert.notEqual(env.error_code, "WRITE_NOT_ENABLED");
     assert.equal(calls.length, 0);
   });
 

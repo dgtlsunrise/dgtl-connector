@@ -328,7 +328,7 @@ export const TOOLS: ToolSpec[] = [
     family: "ga4_write",
     title: "GA4 create Google Ads link (Consent G)",
     description:
-      "Create a Google Ads link on a property. Needs analytics.edit on Free Google. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+      "Create a Google Ads link on a property. Needs analytics.edit on Free Google. dry_run default; live needs confirm_phrase containing properties/{id}.",
     inputSchema: S.ga4CreateGoogleAdsLink,
     annotations: ANN_WRITE,
     handler: (ctx, args) => ga4Write.ga4CreateGoogleAdsLink(ctx, args),
@@ -339,7 +339,7 @@ export const TOOLS: ToolSpec[] = [
     family: "ga4_write",
     title: "GA4 delete Google Ads link (Consent G)",
     description:
-      "Delete a Google Ads link. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+      "Delete a Google Ads link. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}.",
     inputSchema: S.ga4DeleteGoogleAdsLink,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => ga4Write.ga4DeleteGoogleAdsLink(ctx, args),
@@ -361,7 +361,7 @@ export const TOOLS: ToolSpec[] = [
     family: "ga4_write",
     title: "GA4 update attribution settings (Consent G)",
     description:
-      "Patch attributionSettings (v1alpha). Consent G. Closed enums only. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+      "Patch attributionSettings (v1alpha). Consent G. Closed enums only. dry_run default; live needs confirm_phrase containing properties/{id}.",
     inputSchema: S.ga4UpdateAttributionSettings,
     annotations: ANN_WRITE,
     handler: (ctx, args) => ga4Write.ga4UpdateAttributionSettings(ctx, args),
@@ -372,7 +372,7 @@ export const TOOLS: ToolSpec[] = [
     family: "ga4_write",
     title: "GA4 create web data stream (Consent G)",
     description:
-      "Create a WEB_DATA_STREAM. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+      "Create a WEB_DATA_STREAM. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}.",
     inputSchema: S.ga4CreateDataStream,
     annotations: ANN_WRITE,
     handler: (ctx, args) => ga4Write.ga4CreateDataStream(ctx, args),
@@ -383,7 +383,7 @@ export const TOOLS: ToolSpec[] = [
     family: "ga4_write",
     title: "GA4 update data stream (Consent G)",
     description:
-      "Patch a data stream display name and/or default URI. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+      "Patch a data stream display name and/or default URI. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}.",
     inputSchema: S.ga4UpdateDataStream,
     annotations: ANN_WRITE,
     handler: (ctx, args) => ga4Write.ga4UpdateDataStream(ctx, args),
@@ -394,7 +394,7 @@ export const TOOLS: ToolSpec[] = [
     family: "ga4_write",
     title: "GA4 create key event (Consent G)",
     description:
-      "Create a key event / conversion. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+      "Create a key event / conversion. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}.",
     inputSchema: S.ga4CreateKeyEvent,
     annotations: ANN_WRITE,
     handler: (ctx, args) => ga4Write.ga4CreateKeyEvent(ctx, args),
@@ -405,7 +405,7 @@ export const TOOLS: ToolSpec[] = [
     family: "ga4_write",
     title: "GA4 update key event (Consent G)",
     description:
-      "Patch a key event counting method. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+      "Patch a key event counting method. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}.",
     inputSchema: S.ga4UpdateKeyEvent,
     annotations: ANN_WRITE,
     handler: (ctx, args) => ga4Write.ga4UpdateKeyEvent(ctx, args),
@@ -416,7 +416,7 @@ export const TOOLS: ToolSpec[] = [
     family: "ga4_write",
     title: "GA4 create custom dimension (Consent G)",
     description:
-      "Create a custom dimension (EVENT/USER/ITEM). Consent G. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+      "Create a custom dimension (EVENT/USER/ITEM). Consent G. dry_run default; live needs confirm_phrase containing properties/{id}.",
     inputSchema: S.ga4CreateCustomDimension,
     annotations: ANN_WRITE,
     handler: (ctx, args) => ga4Write.ga4CreateCustomDimension(ctx, args),
@@ -427,7 +427,7 @@ export const TOOLS: ToolSpec[] = [
     family: "ga4_write",
     title: "GA4 create custom metric (Consent G)",
     description:
-      "Create an EVENT-scoped custom metric. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}. Flagged off by default (WRITE_NOT_ENABLED).",
+      "Create an EVENT-scoped custom metric. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}.",
     inputSchema: S.ga4CreateCustomMetric,
     annotations: ANN_WRITE,
     handler: (ctx, args) => ga4Write.ga4CreateCustomMetric(ctx, args),
@@ -449,7 +449,7 @@ export const TOOLS: ToolSpec[] = [
     family: "ga4_write",
     title: "GA4 create Measurement Protocol secret (Consent G)",
     description:
-      "Create an MP secret. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}. secretValue is never written to logs. Flagged off by default (WRITE_NOT_ENABLED).",
+      "Create an MP secret. Consent G. dry_run default; live needs confirm_phrase containing properties/{id}. secretValue is never written to logs.",
     inputSchema: S.ga4CreateMpSecret,
     annotations: ANN_WRITE,
     handler: (ctx, args) => ga4Write.ga4CreateMpSecret(ctx, args),
@@ -460,7 +460,7 @@ export const TOOLS: ToolSpec[] = [
     family: "ga4_write",
     title: "GA4 create property (Consent G)",
     description:
-      "Create an ordinary GA4 property under an account. Consent G. dry_run default; live needs confirm_phrase containing accounts/{id}. Flagged off by default (WRITE_NOT_ENABLED). Disposable DGTL property only.",
+      "Create an ordinary GA4 property under an account. Consent G. dry_run default; live needs confirm_phrase containing accounts/{id}. Disposable DGTL property only.",
     inputSchema: S.ga4CreateProperty,
     annotations: ANN_WRITE,
     handler: (ctx, args) => ga4Write.ga4CreateProperty(ctx, args),
@@ -541,7 +541,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gsc_write",
     title: "GSC submit sitemap (Consent S)",
     description:
-      "PUT sitemaps.submit for an exact site_url + feedpath. Needs webmasters write on Free Google. dry_run default; live needs confirm_phrase containing that site_url. Flagged off by default (WRITE_NOT_ENABLED). No request-indexing tool.",
+      "PUT sitemaps.submit for an exact site_url + feedpath. Needs webmasters write on Free Google. dry_run default; live needs confirm_phrase containing that site_url. No request-indexing tool.",
     inputSchema: S.gscSubmitSitemap,
     annotations: ANN_WRITE,
     handler: (ctx, args) => gscWrite.gscSubmitSitemap(ctx, args),
@@ -552,7 +552,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gsc_write",
     title: "GSC delete sitemap (Consent S)",
     description:
-      "DELETE sitemaps.delete for an exact site_url + feedpath. Consent S. dry_run default; live needs confirm_phrase containing that site_url. Flagged off by default (WRITE_NOT_ENABLED).",
+      "DELETE sitemaps.delete for an exact site_url + feedpath. Consent S. dry_run default; live needs confirm_phrase containing that site_url.",
     inputSchema: S.gscDeleteSitemap,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => gscWrite.gscDeleteSitemap(ctx, args),
@@ -658,14 +658,14 @@ export const TOOLS: ToolSpec[] = [
     handler: (ctx, args) => gtm.gtmListEnvironments(ctx, args),
   },
 
-  // GTM write/publish via GoogleWriteHttp (flagged off by default; Free Google may hold write scopes)
+  // GTM write/publish via GoogleWriteHttp (Free Google manage scopes + confirm; not DGTL_WRITES_ENABLED)
   {
     name: "gtm_create_tag",
     group: "gtm-write",
     family: "gtm_write",
     title: "GTM create tag (Consent W)",
     description:
-      "Create a workspace tag. Needs tagmanager.edit.containers on Free Google. Returns WRITE_NOT_ENABLED when DGTL_WRITES_ENABLED is false. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
+      "Create a workspace tag. Needs tagmanager.edit.containers on Free Google. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
     inputSchema: S.gtmCreateTag,
     annotations: ANN_WRITE,
     handler: (ctx, args) => gtmWrite.gtmCreateTag(ctx, args),
@@ -676,7 +676,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gtm_write",
     title: "GTM update tag (Consent W)",
     description:
-      "Update a workspace tag. Needs Free Google GTM write scopes. Returns WRITE_NOT_ENABLED / CONSENT_W_REQUIRED when gated off. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
+      "Update a workspace tag. Needs Free Google GTM write scopes. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
     inputSchema: S.gtmUpdateTag,
     annotations: ANN_WRITE,
     handler: (ctx, args) => gtmWrite.gtmUpdateTag(ctx, args),
@@ -687,7 +687,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gtm_write",
     title: "GTM create trigger (Consent W)",
     description:
-      "Create a workspace trigger. Needs Free Google GTM write scopes. Returns WRITE_NOT_ENABLED when DGTL_WRITES_ENABLED is false. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
+      "Create a workspace trigger. Needs Free Google GTM write scopes. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
     inputSchema: S.gtmCreateTrigger,
     annotations: ANN_WRITE,
     handler: (ctx, args) => gtmWrite.gtmCreateTrigger(ctx, args),
@@ -709,7 +709,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gtm_write",
     title: "GTM create variable (Consent W)",
     description:
-      "Create a workspace variable. Needs Free Google GTM write scopes. Returns WRITE_NOT_ENABLED when DGTL_WRITES_ENABLED is false. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
+      "Create a workspace variable. Needs Free Google GTM write scopes. Prefer dry_run; live mutate needs an explicit user confirm that includes the container publicId.",
     inputSchema: S.gtmCreateVariable,
     annotations: ANN_WRITE,
     handler: (ctx, args) => gtmWrite.gtmCreateVariable(ctx, args),
@@ -731,7 +731,7 @@ export const TOOLS: ToolSpec[] = [
     family: "gtm_write",
     title: "GTM publish container (Consent W)",
     description:
-      "Publish a GTM container version. Highest-risk write. Needs tagmanager.publish on Free Google. Prefer dry_run first; live publish requires an explicit confirm that includes the container publicId from the user this turn. Flagged off by default (WRITE_NOT_ENABLED).",
+      "Publish a GTM container version. Highest-risk write. Needs tagmanager.publish on Free Google. Prefer dry_run first; live publish requires an explicit confirm that includes the container publicId from the user this turn.",
     inputSchema: S.gtmPublishContainer,
     annotations: ANN_DESTRUCTIVE,
     handler: (ctx, args) => gtmWrite.gtmPublishContainer(ctx, args),
@@ -1846,7 +1846,7 @@ export const TOOLS: ToolSpec[] = [
     family: "shopify_write",
     title: "Shopify adjust inventory",
     description:
-      "Write. inventoryAdjustQuantities (delta) at one location. dry_run defaults true. Live needs confirm_phrase containing the shop domain (*.myshopify.com) plus DGTL_WRITES_ENABLED and write_inventory on the merchant app. Local — no Polar, no stamp vault.",
+      "Write. inventoryAdjustQuantities (delta) at one location. dry_run defaults true. Live needs confirm_phrase containing the shop domain (*.myshopify.com) plus write_inventory on the merchant app. Local — no Polar, no stamp vault.",
     inputSchema: S.shopifyAdjustInventory,
     annotations: ANN_WRITE,
     handler: (ctx, args) => shopifyAdjustInventory(ctx, args),
@@ -1887,7 +1887,7 @@ export const TOOLS: ToolSpec[] = [
     family: "shopify_write",
     title: "Shopify productSet",
     description:
-      "Write. Allowlisted productSet GraphQL only (title/handle/status/variants). dry_run defaults true. Live needs confirm_phrase containing the shop domain plus DGTL_WRITES_ENABLED and write_products. List fields replace omitted variants/tags. No raw GraphQL. No customers. Local — no Polar, no stamp vault. Not Meta CAPI.",
+      "Write. Allowlisted productSet GraphQL only (title/handle/status/variants). dry_run defaults true. Live needs confirm_phrase containing the shop domain plus write_products. List fields replace omitted variants/tags. No raw GraphQL. No customers. Local — no Polar, no stamp vault. Not Meta CAPI.",
     inputSchema: S.shopifyProductSet,
     annotations: ANN_WRITE,
     handler: (ctx, args) => shopifyProductSet(ctx, args),
@@ -2120,7 +2120,7 @@ export const TOOLS: ToolSpec[] = [
     family: "klaviyo_write",
     title: "Klaviyo create campaign",
     description:
-      "Write. Draft email campaign only (POST /api/campaigns). dry_run default true. Live needs DGTL_WRITES_ENABLED plus confirm_phrase containing the account id. Never posts campaign-send-jobs — use klaviyo_create_campaign_send_job with SEND. Local pk_ — no Polar.",
+      "Write. Draft email campaign only (POST /api/campaigns). dry_run default true. Live needs confirm_phrase containing the account id. Never posts campaign-send-jobs — use klaviyo_create_campaign_send_job with SEND. Local pk_ — no Polar.",
     inputSchema: S.klaviyoCreateCampaign,
     annotations: ANN_WRITE,
     handler: (ctx, args) => klaviyoCreateCampaign(ctx, args),
@@ -2131,7 +2131,7 @@ export const TOOLS: ToolSpec[] = [
     family: "klaviyo_write",
     title: "Klaviyo create campaign send job",
     description:
-      "Write. POST /api/campaign-send-jobs for an existing draft campaign_id. dry_run default true. Live needs DGTL_WRITES_ENABLED plus confirm_phrase containing the account id, campaign id, and SEND. Cannot fire from klaviyo_create_campaign. Local pk_ — no Polar.",
+      "Write. POST /api/campaign-send-jobs for an existing draft campaign_id. dry_run default true. Live needs confirm_phrase containing the account id, campaign id, and SEND. Cannot fire from klaviyo_create_campaign. Local pk_ — no Polar.",
     inputSchema: S.klaviyoCreateCampaignSendJob,
     annotations: ANN_WRITE,
     handler: (ctx, args) => klaviyoCreateCampaignSendJob(ctx, args),
@@ -2142,7 +2142,7 @@ export const TOOLS: ToolSpec[] = [
     family: "klaviyo_write",
     title: "Klaviyo upsert profile",
     description:
-      "Write. POST /api/profile-import (email / external_id / profile_id). Closed fields only — no properties bag. dry_run default true. Live needs DGTL_WRITES_ENABLED plus account-id confirm. Local pk_.",
+      "Write. POST /api/profile-import (email / external_id / profile_id). Closed fields only — no properties bag. dry_run default true. Live needs account-id confirm. Local pk_.",
     inputSchema: S.klaviyoUpsertProfile,
     annotations: ANN_WRITE,
     handler: (ctx, args) => klaviyoUpsertProfile(ctx, args),
@@ -2153,7 +2153,7 @@ export const TOOLS: ToolSpec[] = [
     family: "klaviyo_write",
     title: "Klaviyo create event",
     description:
-      "Write. POST /api/events backfill (backfill defaults true so flows do not re-fire). Closed properties. dry_run default true. Live needs DGTL_WRITES_ENABLED plus account-id confirm. Local pk_.",
+      "Write. POST /api/events backfill (backfill defaults true so flows do not re-fire). Closed properties. dry_run default true. Live needs account-id confirm. Local pk_.",
     inputSchema: S.klaviyoCreateEvent,
     annotations: ANN_WRITE,
     handler: (ctx, args) => klaviyoCreateEvent(ctx, args),
@@ -2194,7 +2194,7 @@ export const TOOLS: ToolSpec[] = [
     family: "klaviyo_write",
     title: "Klaviyo upsert catalog items",
     description:
-      "Write. Closed bulk create/update jobs (POST /api/catalog-item-bulk-create-jobs or bulk-update-jobs). $custom / $default only — never invent $shopify::: ids. dry_run default true. Live needs DGTL_WRITES_ENABLED plus account-id confirm. Local pk_. Not a mega upsert-all across MC/Meta/TikTok.",
+      "Write. Closed bulk create/update jobs (POST /api/catalog-item-bulk-create-jobs or bulk-update-jobs). $custom / $default only — never invent $shopify::: ids. dry_run default true. Live needs account-id confirm. Local pk_. Not a mega upsert-all across MC/Meta/TikTok.",
     inputSchema: S.klaviyoUpsertCatalogItems,
     annotations: ANN_WRITE,
     handler: (ctx, args) => klaviyoUpsertCatalogItems(ctx, args),

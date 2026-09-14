@@ -18,7 +18,7 @@ import {
   SCOPE,
 } from "../src/google/scopes.js";
 import { dispatch } from "../src/tools/dispatch.js";
-import { installNetworkGuard, makeCtx, ROOT, testEnv, TEST_TOKEN } from "./helpers.js";
+import { FREE_FULL_SCOPES, installNetworkGuard, makeCtx, ROOT, testEnv, TEST_TOKEN } from "./helpers.js";
 
 const FREE_FULL = [
   "openid",
@@ -144,13 +144,15 @@ describe("Free full Google Connect", () => {
     }
   });
 
-  it("writes stay flag-gated even when Free Google already has manage scopes", async () => {
+  it("writesEnabled false + manage scopes + dry_run proceeds; live without confirm stays blocked; no scope → CONSENT", async () => {
     assert.equal(loadFlags({}).writesEnabled, false);
     const env = testEnv({
       GOOGLE_ACCESS_TOKEN: TEST_TOKEN,
-      GOOGLE_GRANTED_SCOPES: FREE_FULL.join(" "),
+      GOOGLE_GRANTED_SCOPES: FREE_FULL_SCOPES,
     });
     const off = makeCtx({}, env);
+    assert.equal(off.flags.writesEnabled, false);
+
     const publish = await dispatch(off, "gtm_publish_container", {
       account_id: "444444",
       container_id: "555555",
@@ -158,9 +160,9 @@ describe("Free full Google Connect", () => {
       dry_run: true,
       confirm_phrase: "PUBLISH",
     });
-    assert.equal(publish.ok, false);
-    assert.equal(publish.error_code, "WRITE_NOT_ENABLED");
-    assert.equal(off.calls.length, 0);
+    assert.equal(publish.ok, true, JSON.stringify(publish));
+    assert.equal((publish.data as { dry_run?: boolean }).dry_run, true);
+    assert.notEqual(publish.error_code, "WRITE_NOT_ENABLED");
 
     const create = await dispatch(off, "ga4_create_property", {
       account_id: "accounts/111111",
@@ -169,25 +171,61 @@ describe("Free full Google Connect", () => {
       currency_code: "USD",
       dry_run: true,
     });
-    assert.equal(create.error_code, "WRITE_NOT_ENABLED");
+    assert.equal(create.ok, true, JSON.stringify(create));
+    assert.equal((create.data as { dry_run?: boolean }).dry_run, true);
 
     const sitemap = await dispatch(off, "gsc_submit_sitemap", {
       site_url: "https://www.example.com/",
       feedpath: "https://www.example.com/sitemap.xml",
       dry_run: true,
     });
-    assert.equal(sitemap.error_code, "WRITE_NOT_ENABLED");
+    assert.equal(sitemap.ok, true, JSON.stringify(sitemap));
+    assert.equal((sitemap.data as { dry_run?: boolean }).dry_run, true);
+
+    const liveOk = await dispatch(off, "gtm_create_tag", {
+      account_id: "444444",
+      container_id: "555555",
+      workspace_id: "6",
+      dry_run: false,
+      confirm_phrase: "please apply GTM-XXXX000",
+      name: "Example",
+      type: "html",
+    });
+    assert.equal(liveOk.ok, true, JSON.stringify(liveOk));
+    assert.equal((liveOk.data as { dry_run?: boolean }).dry_run, false);
+    assert.ok(off.calls.some((c) => c.method === "POST" && c.path.endsWith("/tags")));
+
+    const liveNoConfirm = await dispatch(off, "gsc_submit_sitemap", {
+      site_url: "https://www.example.com/",
+      feedpath: "https://www.example.com/sitemap.xml",
+      dry_run: false,
+      confirm_phrase: "yes do it",
+    });
+    assert.equal(liveNoConfirm.error_code, "INVALID_ARGUMENT");
+    assert.ok(!off.calls.some((c) => c.method === "PUT" || c.method === "DELETE"));
+
+    const noScope = makeCtx();
+    const missing = await dispatch(noScope, "gtm_create_tag", {
+      account_id: "444444",
+      container_id: "555555",
+      workspace_id: "6",
+      dry_run: true,
+      name: "Example",
+      type: "html",
+    });
+    assert.equal(missing.error_code, "CONSENT_W_REQUIRED");
+    assert.equal(noScope.calls.length, 0);
   });
 
-  it("flag on + Free Google manage scopes is enough for GTM dry-run (no CONSENT_W_REQUIRED)", async () => {
+  it("Free Google manage scopes are enough for GTM dry-run without DGTL_WRITES_ENABLED", async () => {
     const ctx = makeCtx(
       {},
       testEnv({
-        DGTL_WRITES_ENABLED: "true",
         GOOGLE_ACCESS_TOKEN: TEST_TOKEN,
-        GOOGLE_GRANTED_SCOPES: FREE_FULL.join(" "),
+        GOOGLE_GRANTED_SCOPES: FREE_FULL_SCOPES,
       }),
     );
+    assert.equal(ctx.flags.writesEnabled, false);
     const env = await dispatch(ctx, "gtm_create_tag", {
       account_id: "444444",
       container_id: "555555",
@@ -220,7 +258,7 @@ describe("Free full Google Connect", () => {
     };
     assert.deepEqual(plugin.extensions["com.dgtlsunrise"].consentA, [...CONSENT_A_PRODUCT]);
     assert.match(plugin.description, /read and manage/i);
-    assert.match(plugin.description, /flag-gated/i);
+    assert.match(plugin.description, /in-chat confirm/i);
     assert.doesNotMatch(plugin.description, /read-only/i);
     for (const banned of FREE_GOOGLE_NEVER) {
       assert.ok(!plugin.extensions["com.dgtlsunrise"].consentA.includes(banned), banned);

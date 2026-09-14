@@ -10,9 +10,6 @@ import {
 } from "../ids.js";
 import { APIS, SCOPE } from "./scopes.js";
 
-const HINT_FLAG =
-  "Set DGTL_WRITES_ENABLED=true to allow local GA4 Admin mutates. Free Google can already hold analytics.edit. Ads/Meta/TikTok stay Pro.";
-
 const HINT_CONSENT =
   "Use Free Google (`auth login` / GOOGLE_ACCESS_TOKEN with analytics.edit) or a legacy GOOGLE_GA4_ADMIN_ACCESS_TOKEN / google-oauth-ga4-admin.json. Do not add adwords, content, or business.manage to Free Google.";
 
@@ -87,12 +84,6 @@ function assertConfirmContains(confirmPhrase: unknown, resourceId: string): void
 }
 
 async function gateWrites(tool: string, ctx: AppContext): Promise<Envelope | null> {
-  if (!ctx.flags.writesEnabled) {
-    return failEnvelope(tool, "WRITE_NOT_ENABLED", MSG.WRITE_NOT_ENABLED, {
-      hint: HINT_FLAG,
-      api: HOST,
-    });
-  }
   const tok = await ctx.authGa4Admin.getAccessToken();
   if (!tok?.accessToken) {
     return failEnvelope(tool, "CONSENT_G_REQUIRED", MSG.CONSENT_G_REQUIRED, {

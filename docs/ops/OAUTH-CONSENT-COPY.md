@@ -50,7 +50,7 @@ The binary requests these on **one** consent screen. **Noel RED:** adding them o
 4. `https://www.googleapis.com/auth/webmasters.readonly`
 5. `https://www.googleapis.com/auth/tagmanager.readonly`
 
-### Sensitive manage (same screen; mutates still flag-gated)
+### Sensitive manage (same screen; live mutates need in-chat confirm)
 
 6. `https://www.googleapis.com/auth/analytics.edit`
 7. `https://www.googleapis.com/auth/tagmanager.edit.containers`

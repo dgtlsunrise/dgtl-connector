@@ -24,6 +24,19 @@ export const ALL_SCOPES = [
   SCOPE.tagmanager,
 ].join(" ");
 
+/** Free Google Connect with manage scopes (CONSENT_A). */
+export const FREE_FULL_SCOPES = [
+  SCOPE.openid,
+  SCOPE.email,
+  SCOPE.analytics,
+  SCOPE.webmasters,
+  SCOPE.tagmanager,
+  SCOPE.analyticsEdit,
+  SCOPE.tagmanagerEditContainers,
+  SCOPE.tagmanagerPublish,
+  SCOPE.webmastersWrite,
+].join(" ");
+
 export function loadFixture(rel: string): unknown {
   return JSON.parse(readFileSync(join(FIXTURES, rel), "utf8"));
 }

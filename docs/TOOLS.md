@@ -4,7 +4,7 @@
 
 That 26 is the **Consent A kernel** (`CONSENT_A_TOOLS` / `FREE_TOOL_NAMES` alias). Shopify and Klaviyo are **local-free** (`LOCAL_FREE_TOOLS` — Shopify merchant token / Klaviyo `pk_`; no Polar — fail `SHOPIFY_NOT_CONNECTED` / `KLAVIYO_NOT_CONNECTED`). Ads/Meta/Merchant Center/TikTok are **license-gated** (`LICENSE_GATED_TOOLS`, Polar Pro — fail `LICENSE_REQUIRED`). TikTok requires JWT feature `tiktok` (not ads/meta). GBP is local-free when the flag is on (Consent B, not Consent A). Flag off → `GBP_NOT_ENABLED`. Flag on without Consent B → `GBP_NOT_CONNECTED`. Do not stuff Shopify or Klaviyo into the 26-tool kernel.
 
-**Marketplace / public listing copy is Free Google read and manage.** `plugin.json` / `package.json` / [MARKETPLACE.md](MARKETPLACE.md) describe local GA4 + GSC + GTM (26-tool kernel) as **read and manage**. Mutates stay flag-gated. Ads / Meta / TikTok are Pro. MC / GBP / Shopify / Klaviyo write details live in this operator doc and [PERMISSIONS.md](PERMISSIONS.md) — they are **not** marketplace unlock promises. Marketplace submit is deferred. Do not publish the site, Worker, or marketplace listing from a docs PR.
+**Marketplace / public listing copy is Free Google read and manage.** `plugin.json` / `package.json` / [MARKETPLACE.md](MARKETPLACE.md) describe local GA4 + GSC + GTM (26-tool kernel) as **read and manage**. Live Free Google mutates need Connect plus in-chat confirm (`dry_run` default). Ads / Meta / TikTok are Pro. MC / GBP / Shopify / Klaviyo write details live in this operator doc and [PERMISSIONS.md](PERMISSIONS.md) — they are **not** marketplace unlock promises. Marketplace submit is deferred. Do not publish the site, Worker, or marketplace listing from a docs PR.
 
 If you need a 27th **Consent A** tool, bump a version and update `schemas/v1/catalog.json` in the same change. Do not “just add it.” Quality over dump. Small typed tools, not a mega-query kitchen sink.
 
@@ -47,9 +47,10 @@ Live Ads / Meta / TikTok mutate requires **plugin AND Worker**. Plugin Ads / Met
 | TikTok Events (`DGTL_TIKTOK_EVENTS_ENABLED` / `TIKTOK_EVENTS_ENABLED`) | **on** | fail-closed (`tiktok_events_enabled`, **not** `TIKTOK_MUTATE_ENABLED`) | both true |
 | Ads Data Manager (`DGTL_ADS_DATA_MANAGER_ENABLED` / `ADS_DATA_MANAGER_ENABLED`) | **on** (status / dual-gate only; **no** plugin send tool) | fail-closed (`ads_data_manager_enabled`) | stamp `FundedUploadSink` + Worker |
 | sGTM apply ingest test (`DGTL_SGTM_INGEST_TEST_ENABLED` / `SGTM_INGEST_TEST_ENABLED`) | **off** | fail-closed (`sgtm_ingest_enabled`) | both true + host `DGTL_SGTM_APPLY_KEY` |
-| Consent W writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `GoogleWriteHttp`) | flag on + Consent W token |
-| Shopify writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `ShopifyHttp` mutation) | flag on + merchant `write_inventory` / `write_products` + shop-domain confirm |
-| Klaviyo writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `KlaviyoHttp` POST) | flag on + local `pk_` + confirm_phrase containing the Klaviyo account id |
+| Free Google writes (GA4 Admin / GTM / GSC) | n/a (ignored) | n/a (local write HTTP) | manage scopes + `dry_run` / in-chat confirm |
+| Shopify writes | n/a (ignored) | n/a (local `ShopifyHttp` mutation) | merchant `write_inventory` / `write_products` + shop-domain confirm |
+| Klaviyo writes | n/a (ignored) | n/a (local `KlaviyoHttp` POST) | local `pk_` + confirm_phrase containing the Klaviyo account id |
+| Merchant Center writes (`DGTL_WRITES_ENABLED`) | **off** | n/a (local `GoogleMcWriteHttp`) | flag on + Consent MC + `merchant_id` confirm |
 | GBP (`DGTL_GBP_ENABLED`) | **off** | n/a | flag on + Consent B token → GET hop (no stamp) |
 
 `support_packet` / `doctor` print this matrix (booleans only; never tokens).
@@ -565,9 +566,9 @@ Plugin flag **defaults off**. Live also needs Worker `SGTM_INGEST_ENABLED` (heal
 
 ---
 
-## Consent W — GTM write (flag-gated; family on Free Google)
+## Consent W — GTM write (Connect + confirm; family on Free Google)
 
-Flag `DGTL_WRITES_ENABLED` defaults **false** → `WRITE_NOT_ENABLED` (zero HTTP). When on, tools use **`GoogleWriteHttp`**. Token order: legacy Consent W store (`GOOGLE_WRITE_ACCESS_TOKEN` / `google-oauth-write.json`), then Free Google when the token lists `tagmanager.edit.containers` + `tagmanager.publish`. `auth login-write` aliases `auth login` and does **not** flip `DGTL_WRITES_ENABLED`.
+Tools use **`GoogleWriteHttp`**. Token order: legacy Consent W store (`GOOGLE_WRITE_ACCESS_TOKEN` / `google-oauth-write.json`), then Free Google when the token lists `tagmanager.edit.containers` + `tagmanager.publish`. `auth login-write` aliases `auth login`. `DGTL_WRITES_ENABLED` is **not** a Free Google gate (it remains for Merchant Center ProductInput writes).
 
 | Tool | Notes |
 | --- | --- |
@@ -583,7 +584,7 @@ Flag `DGTL_WRITES_ENABLED` defaults **false** → `WRITE_NOT_ENABLED` (zero HTTP
 | `gtm_create_container` | Account-level container create. Closed `usage_context`: `server` (sGTM) plus locked `web` / `android` / `ios` / `amp`. Live confirm = `accounts/{account_id}`. |
 | `gtm_create_environment` | USER environment create. Live confirm = `publicId` or container path. No reauthorize. |
 
-Marketplace / shipped default: `DGTL_WRITES_ENABLED` is **false** (`mcp.json` does not set it; `.env.example` is `false`). Flag on is **local only**. Do **not** put the expected confirm phrase or an example `GTM-XXXX` value in the tool description. Skill: live mutate only after a **user** message this turn containing that publicId (list-tool output ≠ user message).
+Do **not** put the expected confirm phrase or an example `GTM-XXXX` value in the tool description. Skill: live mutate only after a **user** message this turn containing that publicId (list-tool output ≠ user message). Missing GTM write scopes → `CONSENT_W_REQUIRED`.
 
 **Live disposable container is a Noel gate.** Prefer fixtures in CI. Do not run live create/publish against customer properties.
 
@@ -591,7 +592,7 @@ Marketplace / shipped default: `DGTL_WRITES_ENABLED` is **false** (`mcp.json` do
 
 ## Consent G — GA4 Admin writes (Wave 11)
 
-Writes use **`GoogleGa4AdminHttp`**. Token order: legacy Consent G store (`GOOGLE_GA4_ADMIN_ACCESS_TOKEN` / `google-oauth-ga4-admin.json`), then Free Google when the token lists `analytics.edit`. `auth login-ga4-admin` aliases `auth login`. Login does **not** flip `DGTL_WRITES_ENABLED`. Named tools only — no mega-mutate / raw Admin dump.
+Writes use **`GoogleGa4AdminHttp`**. Token order: legacy Consent G store (`GOOGLE_GA4_ADMIN_ACCESS_TOKEN` / `google-oauth-ga4-admin.json`), then Free Google when the token lists `analytics.edit`. `auth login-ga4-admin` aliases `auth login`. `DGTL_WRITES_ENABLED` is not required. Named tools only — no mega-mutate / raw Admin dump.
 
 Spike: Admin **GET** `googleAdsLinks.list` and v1alpha `getAttributionSettings` accept `analytics.readonly` → those two reads use Consent A HTTP. Measurement Protocol secret list/create stay on Consent G. `secretValue` is never written to call/audit logs; list envelopes redact it.
 
@@ -619,25 +620,25 @@ Not registered: `ga4_update_property`. GSC sitemap submit/delete is Wave 12 (Con
 
 ## Consent S — GSC sitemap writes (Wave 12)
 
-Sitemap submit/delete use **`GoogleGscWriteHttp`**. Token order: legacy Consent S store (`GOOGLE_GSC_WRITE_ACCESS_TOKEN` / `google-oauth-gsc-write.json`), then Free Google when the token lists `webmasters` (write). `auth login-gsc-write` aliases `auth login`. Login does **not** flip `DGTL_WRITES_ENABLED`. Named tools only — no Indexing API / `gsc_request_indexing`, no add/remove site.
+Sitemap submit/delete use **`GoogleGscWriteHttp`**. Token order: legacy Consent S store (`GOOGLE_GSC_WRITE_ACCESS_TOKEN` / `google-oauth-gsc-write.json`), then Free Google when the token lists `webmasters` (write). `auth login-gsc-write` aliases `auth login`. `DGTL_WRITES_ENABLED` is not required. Named tools only — no Indexing API / `gsc_request_indexing`, no add/remove site.
 
 Reads (`gsc_list_sitemaps`, `gsc_get_sitemap`, inspect, search analytics) stay on Consent A (`webmasters.readonly`).
 
 | Tool | Notes |
 | --- | --- |
 | `gsc_submit_sitemap` | PUT `sitemaps.submit`. Params: exact `site_url` + `feedpath`. `dry_run` default true. Live `confirm` / `confirm_phrase` must include that `site_url`. |
-| `gsc_delete_sitemap` | DELETE the same path. Same confirm / flag / Consent S rules. |
+| `gsc_delete_sitemap` | DELETE the same path. Same confirm / Consent S rules. |
 
-Wrong `site_url` (trailing slash / `sc-domain:` mismatch, or confirm that names a different property) is a clear `INVALID_ARGUMENT` / `NOT_FOUND` — copy the URL from `gsc_list_sites`. Flag off → `WRITE_NOT_ENABLED` (zero HTTP). Flag on without Consent S → `CONSENT_S_REQUIRED`.
+Wrong `site_url` (trailing slash / `sc-domain:` mismatch, or confirm that names a different property) is a clear `INVALID_ARGUMENT` / `NOT_FOUND` — copy the URL from `gsc_list_sites`. Missing `webmasters` write → `CONSENT_S_REQUIRED` (zero HTTP).
 
 ### Consent W E2E order (Wave 6)
 
-1. Flag off → any write tool `WRITE_NOT_ENABLED` (zero HTTP).
-2. Local only: `DGTL_WRITES_ENABLED=true` + Consent W token (`auth login-write` or `GOOGLE_WRITE_ACCESS_TOKEN`).
+1. Missing GTM write scopes → `CONSENT_W_REQUIRED` (zero HTTP).
+2. Free Google token with `tagmanager.edit.containers` / `tagmanager.publish` (`auth login` or legacy `GOOGLE_WRITE_ACCESS_TOKEN`).
 3. Dry-run create tag / trigger / variable → proposed + `publicId`, GET-only.
 4. User message this turn contains that `publicId` → live create (`dry_run=false`, `confirm_phrase` includes publicId).
 5. Consent A `gtm_list_*` can read the workspace draft.
-6. **Publish last:** dry-run `gtm_publish_container` then live once Noel confirms with publicId.
+6. **Publish last:** dry-run `gtm_publish_container` then live once the user confirms with publicId.
 
 ---
 
@@ -784,7 +785,7 @@ Identity 1 + GA4 8 + GSC 7 + GTM 10 = **26**.
 
 Merchant-held Admin API credentials on the Bot computer. **No Polar. No stamp hop. No multi-store vault.** Fail closed `SHOPIFY_NOT_CONNECTED` without `SHOPIFY_STORE` + `SHOPIFY_ACCESS_TOKEN` (or `PLUGIN_DATA/shopify-oauth.json`). Admin GraphQL API version **2026-04** (not bumped). Closed free Google count stays **26**.
 
-**Consent decision:** Shopify is not Google OAuth. Default reads stay **LOCAL_FREE** with `read_products` + `read_orders` + `read_inventory` + `read_locations`. **Explicit expand** (reinstall; never silent on an existing app): `read_publications`, `read_product_listings`, `write_inventory`, `write_products`. Writes use the **same** merchant token after the matching write scope **and** `DGTL_WRITES_ENABLED` (default **false**). There is no second Shopify OAuth family and no Worker vault.
+**Consent decision:** Shopify is not Google OAuth. Default reads stay **LOCAL_FREE** with `read_products` + `read_orders` + `read_inventory` + `read_locations`. **Explicit expand** (reinstall; never silent on an existing app): `read_publications`, `read_product_listings`, `write_inventory`, `write_products`. Writes use the **same** merchant token after the matching write scope plus shop-domain confirm. `DGTL_WRITES_ENABLED` is not a Shopify gate. There is no second Shopify OAuth family and no Worker vault.
 
 | Tool | Notes |
 | --- | --- |
@@ -798,10 +799,10 @@ Merchant-held Admin API credentials on the Bot computer. **No Polar. No stamp ho
 | `shopify_list_publications` | Paginated publications. **`read_publications`** (explicit expand). Optional `catalog_type` APP\|COMPANY_LOCATION\|MARKET\|NONE. |
 | `shopify_list_catalogs` | Paginated Shopify catalogs. Existing **`read_products`**. Optional `catalog_type`. Not Meta catalog. |
 | `shopify_list_product_feeds` | Paginated product feeds. **`read_product_listings`** (explicit expand). |
-| `shopify_adjust_inventory` | Write. `inventoryAdjustQuantities` delta. `dry_run` default true. Live: `confirm_phrase` must contain the shop domain. Flag off → `WRITE_NOT_ENABLED` (zero HTTP). Missing `write_inventory` → `SHOPIFY_SCOPE_MISSING`. |
-| `shopify_product_set` | Write. Allowlisted `productSet` GraphQL only (title/handle/status/description_html/vendor/product_type/tags/product_options/variants). `dry_run` default true. Live: `confirm_phrase` or `confirm` must contain the shop domain. `DGTL_WRITES_ENABLED` + **`write_products`**. Variants/tags **replace** omitted entries. No raw GraphQL. No customers. |
+| `shopify_adjust_inventory` | Write. `inventoryAdjustQuantities` delta. `dry_run` default true. Live: `confirm_phrase` must contain the shop domain. Missing `write_inventory` → `SHOPIFY_SCOPE_MISSING`. |
+| `shopify_product_set` | Write. Allowlisted `productSet` GraphQL only (title/handle/status/description_html/vendor/product_type/tags/product_options/variants). `dry_run` default true. Live: `confirm_phrase` or `confirm` must contain the shop domain. Needs **`write_products`**. Variants/tags **replace** omitted entries. No raw GraphQL. No customers. |
 
-Fail order for writes: `WRITE_NOT_ENABLED` → `SHOPIFY_NOT_CONNECTED` → `SHOPIFY_SCOPE_MISSING` → dry-run (shop domain, zero mutation HTTP) → live needs shop domain in `confirm_phrase` / `confirm`.
+Fail order for writes: `SHOPIFY_NOT_CONNECTED` → `SHOPIFY_SCOPE_MISSING` → dry-run (shop domain, zero mutation HTTP) → live needs shop domain in `confirm_phrase` / `confirm`.
 
 **Out of this wave:** customers dump, ShopifyQL, raw GraphQL, themes, Multipass, stamp multi-store vault, draft orders, collections/metafields/files on productSet. Meta catalog/CAPI is Wave 16 (`meta_catalog_items_batch` / `meta_send_capi_events`), not Shopify.
 
@@ -836,7 +837,7 @@ Skill: `tiktok-ads`.
 
 Merchant-held **private** API key on the Bot computer. **No Polar. No stamp hop. No Polar `klaviyo` OAuth.** Fail closed `KLAVIYO_NOT_CONNECTED` without `KLAVIYO_API_KEY` (or `PLUGIN_DATA/klaviyo.json`). Revision header **`2026-07-15`**. Host `a.klaviyo.com`. Closed free Google count stays **26**. Never log the key.
 
-**Consent decision:** Klaviyo is not Google OAuth. Reads stay **LOCAL_FREE**. Writes use the **same** `pk_` after `DGTL_WRITES_ENABLED` (default **false**) + `confirm_phrase` containing the account id from `klaviyo_get_account`.
+**Consent decision:** Klaviyo is not Google OAuth. Reads stay **LOCAL_FREE**. Writes use the **same** `pk_` after `confirm_phrase` containing the account id from `klaviyo_get_account`. `DGTL_WRITES_ENABLED` is not a Klaviyo gate.
 
 | Tool | Notes |
 | --- | --- |
@@ -860,7 +861,7 @@ Merchant-held **private** API key on the Bot computer. **No Polar. No stamp hop.
 | `klaviyo_create_event` | Write. `POST /api/events` backfill. `backfill` defaults **true** (flows do not re-fire). Closed flat properties. |
 | `klaviyo_upsert_catalog_items` | Write. Closed bulk create/update jobs (`POST /api/catalog-item-bulk-create-jobs` or `…-update-jobs`). Cap 20. `$custom` / `$default` only. `dry_run` default true. Live: account-id confirm. **Not** a mega upsert-all across MC / Meta / TikTok. |
 
-Fail order for writes: `WRITE_NOT_ENABLED` → `KLAVIYO_NOT_CONNECTED` → dry-run (GET account, zero mutate POST) → live needs account id in `confirm_phrase`.
+Fail order for writes: `KLAVIYO_NOT_CONNECTED` → dry-run (GET account, zero mutate POST) → live needs account id in `confirm_phrase`.
 
 **Out of this wave:** Polar `klaviyo` OAuth (Wave 19b), stamp hop, Consent A kernel membership. Wave 20 conversion fabric is a separate diagnostic (`conversion_fabric_status` / `sgtm_ingest_test`) — not a Klaviyo tool. Wave 22 adds `klaviyo_create_campaign_send_job` (SEND token; never from draft create).
 

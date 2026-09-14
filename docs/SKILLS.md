@@ -17,7 +17,7 @@ This index is closed for v1 spec plus Waves 4–23. **21 skills.** Each director
 | Shopify ↔ Ads/MC join | `skills/shopify-ads-mc-join/` | Join Shopify SKU/handle/inventory/publications to MC offerId and Ads listing groups. Never invent SKUs. |
 | Shopping ↔ MC readiness | `skills/shopping-mc-readiness/` | Merchant API products/status/issues then Shopping campaign create. Consent MC, not Consent A. |
 | TikTok Ads | `skills/tiktok-ads/` | Stamp hop. Polar `tiktok` (not ads/meta). List advertisers first. Catalog + Events API + mutate are dry_run + confirm. `content_id` must match catalog `sku_id`. App secret never in the plugin. |
-| Klaviyo readonly | `skills/klaviyo-readonly/` | Local `pk_` account/profiles/lists/flows/campaigns/metrics/catalog/reviews; `KLAVIYO_NOT_CONNECTED` without key. Draft/upsert/event/catalog writes are flag-gated. Send jobs are `recs-approve-push` + `SEND`. |
+| Klaviyo readonly | `skills/klaviyo-readonly/` | Local `pk_` account/profiles/lists/flows/campaigns/metrics/catalog/reviews; `KLAVIYO_NOT_CONNECTED` without key. Draft/upsert/event/catalog writes are confirm-gated. Send jobs are `recs-approve-push` + `SEND`. |
 | Catalog fan-out | `skills/catalog-fan-out/` | Map Shopify products to MC / Meta / TikTok / Klaviyo with per-network validation. No mega upsert-all. Refuse unnamed `merchant_id`. Never invent `$shopify:::$default:::` ids. |
 | Google marketing support | `skills/google-marketing-support/` | Diagnose OAuth / empty / quota / API-not-enabled. One optional DGTL line after a real answer. |
 | Send feedback | `skills/send-feedback/` | After a hard-failure diagnosis, offer once to prepare a draft for support@dgtlsunrise.com. User must approve before `feedback_send`. |

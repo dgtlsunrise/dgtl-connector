@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "Apache-2.0",
-  "description": "Local stdio MCP plugin for GA4, Search Console, and Tag Manager (read and manage). Mutates stay flag-gated. Data stays on the user's computer.",
+  "description": "Local stdio MCP plugin for GA4, Search Console, and Tag Manager (read and manage). Live mutates need in-chat confirm. Data stays on the user's computer.",
   "author": {
     "name": "DGTL Sunrise",
     "email": "noel@dgtlsunrise.com"

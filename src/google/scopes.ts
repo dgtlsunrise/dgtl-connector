@@ -6,7 +6,7 @@ export const SCOPE = {
   openid: "openid",
   business: "https://www.googleapis.com/auth/business.manage",
   adwords: "https://www.googleapis.com/auth/adwords",
-  /** GTM write family — on free Connect; mutates still need DGTL_WRITES_ENABLED. */
+  /** GTM write family — on free Connect; live mutates need confirm, not DGTL_WRITES_ENABLED. */
   tagmanagerEditContainers: "https://www.googleapis.com/auth/tagmanager.edit.containers",
   tagmanagerPublish: "https://www.googleapis.com/auth/tagmanager.publish",
   webmastersWrite: "https://www.googleapis.com/auth/webmasters",
@@ -47,7 +47,7 @@ export const FREE_GOOGLE_NEVER = [SCOPE.adwords, SCOPE.content, SCOPE.business] 
 
 /**
  * GTM/GSC/GA4 write family. Requested on free Connect. Legacy W/G/S stores
- * still accepted. Mutates stay fail-closed without DGTL_WRITES_ENABLED.
+ * still accepted. Live mutates need dry_run/confirm — not DGTL_WRITES_ENABLED.
  */
 export const CONSENT_W = [
   SCOPE.tagmanagerEditContainers,

@@ -1,12 +1,13 @@
 /**
  * Confirm-gated Klaviyo writes (Wave 18 + Wave 19 catalog items + Wave 22 send job).
  * Local pk_ — not Polar, not stamp, not Consent A.
- * Fail order: WRITE_NOT_ENABLED → KLAVIYO_NOT_CONNECTED → dry_run (account id, zero mutate)
+ * Fail order: KLAVIYO_NOT_CONNECTED → dry_run (account id, zero mutate)
  * → live needs confirm_phrase containing the account id.
+ * DGTL_WRITES_ENABLED is not a Klaviyo gate (Connect + confirm only).
  * Draft campaign never posts campaign-send-jobs. Send is a separate SEND-token tool.
  */
 import type { AppContext } from "../context.js";
-import { failEnvelope, okEnvelope, type Envelope } from "../envelope.js";
+import { okEnvelope, type Envelope } from "../envelope.js";
 import { ToolError } from "../errors.js";
 import { requireId } from "../ids.js";
 import { assertNotInventedShopifyKlaviyoId, CUSTOM_KLAVIYO_ID_PREFIX } from "../catalog/fan-out.js";
@@ -18,9 +19,6 @@ import {
 import { KLAVIYO_API_REVISION } from "./auth.js";
 import { assertKlaviyoPath } from "./http.js";
 import { loadAccount, sparsifyProfile, withKlaviyo, type KlaviyoResource } from "./klaviyo.js";
-
-const HINT_FLAG =
-  "Set DGTL_WRITES_ENABLED=true for live Klaviyo draft/upsert/event/catalog/send writes. Reads stay LOCAL_FREE without this flag. Not Polar. Not Consent A. Marketplace default stays off. Live confirm_phrase must include the Klaviyo account id from klaviyo_get_account. Send jobs also need the campaign id and the SEND token.";
 
 function dryRunDefault(args: Record<string, unknown>): boolean {
   return args.dry_run !== false;
@@ -48,18 +46,6 @@ function assertConfirmContainsAccountId(confirmPhrase: string, accountId: string
       },
     );
   }
-}
-
-function writeGate(tool: string, ctx: AppContext): Envelope | null {
-  if (!ctx.flags.writesEnabled) {
-    return failEnvelope(
-      tool,
-      "WRITE_NOT_ENABLED",
-      "Klaviyo write tools are flagged off (DGTL_WRITES_ENABLED=false). Account/list/flow/campaign/metric/catalog/review reads still work with a local pk_. Live draft/upsert/event/catalog need this flag (local only; never marketplace default).",
-      { hint: HINT_FLAG, api: "klaviyo" },
-    );
-  }
-  return null;
 }
 
 function cited(accountId: string): Record<string, string> {
@@ -261,8 +247,6 @@ export async function klaviyoCreateCampaign(
   args: Record<string, unknown>,
 ): Promise<Envelope> {
   const tool = "klaviyo_create_campaign";
-  const gated = writeGate(tool, ctx);
-  if (gated) return gated;
   const proposed = buildDraftCampaignBody(args);
   assertKlaviyoPath("/api/campaigns", "POST");
 
@@ -310,8 +294,6 @@ export async function klaviyoUpsertProfile(
   args: Record<string, unknown>,
 ): Promise<Envelope> {
   const tool = "klaviyo_upsert_profile";
-  const gated = writeGate(tool, ctx);
-  if (gated) return gated;
   const proposed = buildProfileImportBody(args);
 
   return withKlaviyo(ctx, tool, async (http) => {
@@ -345,8 +327,6 @@ export async function klaviyoCreateEvent(
   args: Record<string, unknown>,
 ): Promise<Envelope> {
   const tool = "klaviyo_create_event";
-  const gated = writeGate(tool, ctx);
-  if (gated) return gated;
   const proposed = buildEventBody(args);
 
   return withKlaviyo(ctx, tool, async (http) => {
@@ -497,8 +477,6 @@ export async function klaviyoUpsertCatalogItems(
   args: Record<string, unknown>,
 ): Promise<Envelope> {
   const tool = "klaviyo_upsert_catalog_items";
-  const gated = writeGate(tool, ctx);
-  if (gated) return gated;
   const proposed = buildCatalogItemsJobs(args);
   if (proposed.create) assertKlaviyoPath("/api/catalog-item-bulk-create-jobs", "POST");
   if (proposed.update) assertKlaviyoPath("/api/catalog-item-bulk-update-jobs", "POST");
@@ -563,8 +541,6 @@ export async function klaviyoCreateCampaignSendJob(
   args: Record<string, unknown>,
 ): Promise<Envelope> {
   const tool = "klaviyo_create_campaign_send_job";
-  const gated = writeGate(tool, ctx);
-  if (gated) return gated;
   const campaignId = requireId(args.campaign_id, "campaign_id").trim();
   const proposed = buildCampaignSendJobBody(campaignId);
   assertKlaviyoPath("/api/campaign-send-jobs", "POST");

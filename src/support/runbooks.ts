@@ -81,7 +81,7 @@ export const ERROR_RUNBOOKS: Partial<Record<ErrorCode, RunbookHint>> = {
   WRITE_NOT_ENABLED: {
     runbook: `${RUNBOOK_INDEX}#write_not_enabled`,
     next_human_step:
-      "Set DGTL_WRITES_ENABLED=true for Consent W GTM writes, Consent G/S writes, Shopify inventory adjust / productSet, Klaviyo draft/upsert/event/catalog/send-job, or live Merchant Center ProductInput writes. Marketplace default stays off. Free Google may already hold manage scopes. Shopify live confirm must include the shop domain; Klaviyo live confirm must include the account id; MC live confirm must include merchant_id.",
+      "Set DGTL_WRITES_ENABLED=true only for live Merchant Center ProductInput / data-source writes. Free Google GA4 Admin / GTM / GSC and local Shopify / Klaviyo writes ignore this flag — they need Connect plus in-chat confirm. Marketplace default stays off. MC live confirm must include merchant_id.",
   },
   MC_NOT_CONNECTED: {
     runbook: `${RUNBOOK_INDEX}#mc_not_connected`,
@@ -141,17 +141,17 @@ export const ERROR_RUNBOOKS: Partial<Record<ErrorCode, RunbookHint>> = {
   CONSENT_W_REQUIRED: {
     runbook: `${RUNBOOK_INDEX}#consent_w_required`,
     next_human_step:
-      "Run `dgtl-connector-mcp auth login` (Free Google). `login-write` is an alias. Legacy google-oauth-write.json is still accepted. Then set DGTL_WRITES_ENABLED=true. Do not add adwords, content, or business.manage.",
+      "Run `dgtl-connector-mcp auth login` (Free Google). `login-write` is an alias. Legacy google-oauth-write.json is still accepted. Live mutate needs dry_run=false plus a confirm that includes the container publicId. Do not add adwords, content, or business.manage.",
   },
   CONSENT_G_REQUIRED: {
     runbook: `${RUNBOOK_INDEX}#consent_g_required`,
     next_human_step:
-      "Run `dgtl-connector-mcp auth login` (Free Google; `login-ga4-admin` aliases). Legacy google-oauth-ga4-admin.json is still accepted. Then set DGTL_WRITES_ENABLED=true for mutate tools. Prefer dry_run. Live confirm must include properties/{id} (or accounts/{id} on create property).",
+      "Run `dgtl-connector-mcp auth login` (Free Google; `login-ga4-admin` aliases). Legacy google-oauth-ga4-admin.json is still accepted. Prefer dry_run. Live confirm must include properties/{id} (or accounts/{id} on create property).",
   },
   CONSENT_S_REQUIRED: {
     runbook: `${RUNBOOK_INDEX}#consent_s_required`,
     next_human_step:
-      "Run `dgtl-connector-mcp auth login` (Free Google; `login-gsc-write` aliases). Legacy google-oauth-gsc-write.json is still accepted. Then set DGTL_WRITES_ENABLED=true for gsc_submit_sitemap / gsc_delete_sitemap. Prefer dry_run; live confirm must include the exact site_url.",
+      "Run `dgtl-connector-mcp auth login` (Free Google; `login-gsc-write` aliases). Legacy google-oauth-gsc-write.json is still accepted. Prefer dry_run; live confirm must include the exact site_url.",
   },
 };
 

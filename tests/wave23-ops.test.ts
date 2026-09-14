@@ -62,8 +62,8 @@ describe("Wave 23 ops honesty (support / marketplace / kernel)", () => {
     }
     assert.match(plugin.description, /read and manage/i);
     assert.match(pkg.description, /read and manage/i);
-    assert.match(plugin.description, /flag-gated/i);
-    assert.match(pkg.description, /flag-gated/i);
+    assert.match(plugin.description, /in-chat confirm/i);
+    assert.match(pkg.description, /in-chat confirm/i);
     assert.doesNotMatch(plugin.description, /read-only/i);
     assert.doesNotMatch(pkg.description, /read-only/i);
     assert.ok(TOOLS.some((t) => t.name === "support_packet"));
@@ -74,7 +74,7 @@ describe("Wave 23 ops honesty (support / marketplace / kernel)", () => {
     const hint = ERROR_RUNBOOKS.CONSENT_G_REQUIRED;
     assert.ok(hint);
     assert.match(hint.next_human_step, /login-ga4-admin/);
-    assert.match(hint.next_human_step, /DGTL_WRITES_ENABLED/);
+    assert.match(hint.next_human_step, /properties\/\{id\}/);
     assert.doesNotMatch(hint.next_human_step, /Wave 10 is plumbing/i);
     assert.doesNotMatch(hint.next_human_step, /no Admin mutate/i);
     const env = await dispatch(makeCtx(), "support_packet", {

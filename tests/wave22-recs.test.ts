@@ -157,7 +157,7 @@ describe("wave22 recs approve push", () => {
     assert.equal(batch!.fail, "ADS_MUTATE_NOT_ENABLED");
     const send = catalog.gated_tools.find((x) => x.name === "klaviyo_create_campaign_send_job");
     assert.ok(send);
-    assert.equal(send!.fail, "WRITE_NOT_ENABLED");
+    assert.equal(send!.fail, "KLAVIYO_NOT_CONNECTED");
   });
 
   it("three-recs fixture: one confirmed RN → one mutate HTTP", async () => {

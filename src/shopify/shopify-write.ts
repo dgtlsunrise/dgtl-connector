@@ -1,19 +1,17 @@
 /**
  * Confirm-gated Shopify writes (Wave 7 inventory + Wave 15 productSet).
  * Same merchant token as reads. Not Polar. Not stamp vault.
- * Fail order: WRITE_NOT_ENABLED → SHOPIFY_NOT_CONNECTED → SHOPIFY_SCOPE_MISSING
+ * Fail order: SHOPIFY_NOT_CONNECTED → SHOPIFY_SCOPE_MISSING
  * → dry_run (shop domain, zero mutation HTTP) → live needs confirm_phrase with shop domain.
+ * DGTL_WRITES_ENABLED is not a Shopify gate (Connect + confirm only).
  */
 import type { AppContext } from "../context.js";
-import { failEnvelope, okEnvelope, type Envelope } from "../envelope.js";
+import { okEnvelope, type Envelope } from "../envelope.js";
 import { ToolError } from "../errors.js";
 import { requireId } from "../ids.js";
 import { OP_INVENTORY_ADJUST, OP_PRODUCT_SET } from "./queries.js";
 import { SHOPIFY_API_VERSION, type ShopifyCredentials } from "./auth.js";
 import { normalizeGid, withShopify } from "./shopify.js";
-
-const HINT_FLAG =
-  "Set DGTL_WRITES_ENABLED=true only after the merchant custom app grants the matching write_* scope (write_inventory and/or write_products). Reads stay LOCAL_FREE without this flag. Not Polar. Not a stamp multi-store vault. Marketplace default stays off. Never silently expand scopes on an existing app.";
 
 const FORBIDDEN_PRODUCT_SET_KEYS = [
   "query",
@@ -91,14 +89,6 @@ export async function shopifyAdjustInventory(
   args: Record<string, unknown>,
 ): Promise<Envelope> {
   const tool = "shopify_adjust_inventory";
-  if (!ctx.flags.writesEnabled) {
-    return failEnvelope(
-      tool,
-      "WRITE_NOT_ENABLED",
-      "Shopify write tools are flagged off (DGTL_WRITES_ENABLED=false). Inventory/location reads still work with the merchant token. Writes need write_inventory on the custom app plus this flag (local only; never marketplace default).",
-      { hint: HINT_FLAG, api: "shopify-admin-graphql" },
-    );
-  }
 
   return withShopify(ctx, tool, "write_inventory", async (http, creds: ShopifyCredentials) => {
     const inventoryItemId = normalizeGid(
@@ -456,14 +446,6 @@ export async function shopifyProductSet(
   args: Record<string, unknown>,
 ): Promise<Envelope> {
   const tool = "shopify_product_set";
-  if (!ctx.flags.writesEnabled) {
-    return failEnvelope(
-      tool,
-      "WRITE_NOT_ENABLED",
-      "Shopify write tools are flagged off (DGTL_WRITES_ENABLED=false). Publication/catalog/feed reads still work with the merchant token. productSet needs write_products on the custom app plus this flag (local only; never marketplace default).",
-      { hint: HINT_FLAG, api: "shopify-admin-graphql" },
-    );
-  }
 
   return withShopify(ctx, tool, "write_products", async (http, creds: ShopifyCredentials) => {
     const proposed = buildProductSetProposed(args);

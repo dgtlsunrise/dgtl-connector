@@ -5,9 +5,6 @@ import { encodeSiteUrl, requireId } from "../ids.js";
 import { APIS, SCOPE } from "./scopes.js";
 import { siteUrlHint } from "./gsc.js";
 
-const HINT_FLAG =
-  "Set DGTL_WRITES_ENABLED=true to allow local Search Console sitemap mutates. Free Google can already hold webmasters write. Ads/Meta/TikTok stay Pro.";
-
 const HINT_CONSENT =
   "Use Free Google (`auth login` / GOOGLE_ACCESS_TOKEN with webmasters write) or a legacy GOOGLE_GSC_WRITE_ACCESS_TOKEN / google-oauth-gsc-write.json. Do not add adwords, content, or business.manage to Free Google.";
 
@@ -51,12 +48,6 @@ function assertConfirmContains(confirm: unknown, siteUrl: string): void {
 }
 
 async function gateWrites(tool: string, ctx: AppContext): Promise<Envelope | null> {
-  if (!ctx.flags.writesEnabled) {
-    return failEnvelope(tool, "WRITE_NOT_ENABLED", MSG.WRITE_NOT_ENABLED, {
-      hint: HINT_FLAG,
-      api: HOST,
-    });
-  }
   const tok = await ctx.authGscWrite.getAccessToken();
   if (!tok?.accessToken) {
     return failEnvelope(tool, "CONSENT_S_REQUIRED", MSG.CONSENT_S_REQUIRED, {

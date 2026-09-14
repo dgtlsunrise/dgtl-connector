@@ -70,7 +70,7 @@ Reinstall the merchant custom app with the missing Admin scope. Default install 
 
 ## `WRITE_NOT_ENABLED`
 
-`DGTL_WRITES_ENABLED=false` (marketplace default). Required for GTM / GA4 Admin / GSC writes, Shopify inventory adjust / productSet, Klaviyo draft/upsert/event/catalog/send-job, and live Merchant Center ProductInput writes. Free Google may already hold manage scopes. Prefer `dry_run` first; Shopify live confirm must include the shop domain; Klaviyo live confirm must include the account id (send-job also needs `campaign_id` + `SEND`); MC live confirm must include `merchant_id`.
+`DGTL_WRITES_ENABLED=false` (marketplace default). Required only for live Merchant Center ProductInput / data-source writes. Free Google GA4 Admin / GTM / GSC and local Shopify / Klaviyo writes ignore this flag — they need Connect plus in-chat confirm. Prefer `dry_run` first. MC live confirm must include `merchant_id`.
 
 ## `KLAVIYO_NOT_CONNECTED`
 
@@ -82,15 +82,15 @@ Generate a new Klaviyo private key with the matching accounts/profiles/lists/flo
 
 ## `CONSENT_W_REQUIRED`
 
-`auth login` (Free Google; `login-write` aliases). Legacy `google-oauth-write.json` is still accepted. Then set `DGTL_WRITES_ENABLED=true`. Do not add `adwords`, `content`, or `business.manage`.
+`auth login` (Free Google; `login-write` aliases). Legacy `google-oauth-write.json` is still accepted. Live mutate needs `dry_run=false` plus a confirm that includes the container publicId. Do not add `adwords`, `content`, or `business.manage`.
 
 ## `CONSENT_G_REQUIRED`
 
-`auth login` (Free Google; `login-ga4-admin` aliases) so the token has `analytics.edit`. Legacy `google-oauth-ga4-admin.json` is still accepted. Then set `DGTL_WRITES_ENABLED=true` for mutate tools. Prefer `dry_run`. Live confirm must include `properties/{id}` (or `accounts/{id}` on create property).
+`auth login` (Free Google; `login-ga4-admin` aliases) so the token has `analytics.edit`. Legacy `google-oauth-ga4-admin.json` is still accepted. Prefer `dry_run`. Live confirm must include `properties/{id}` (or `accounts/{id}` on create property).
 
 ## `CONSENT_S_REQUIRED`
 
-`auth login` (Free Google; `login-gsc-write` aliases) so the token has `webmasters` write. Legacy `google-oauth-gsc-write.json` is still accepted. Then set `DGTL_WRITES_ENABLED=true` for `gsc_submit_sitemap` / `gsc_delete_sitemap`. Prefer `dry_run`. Live confirm must include the exact `site_url`.
+`auth login` (Free Google; `login-gsc-write` aliases) so the token has `webmasters` write. Legacy `google-oauth-gsc-write.json` is still accepted. Prefer `dry_run`. Live confirm must include the exact `site_url`.
 
 ## `MC_NOT_CONNECTED`
 

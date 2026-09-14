@@ -95,7 +95,7 @@ describe("Wave 13 sGTM clients / container / environments", () => {
     assert.ok(!ctx.calls.some((c) => c.method === "POST" || c.method === "PUT"));
   });
 
-  it("flag off write tools → WRITE_NOT_ENABLED and zero HTTP", async () => {
+  it("write tools without GTM write scopes → CONSENT_W_REQUIRED and zero HTTP", async () => {
     const ctx = makeCtx();
     for (const name of WAVE13_WRITES) {
       const env = await dispatch(ctx, name, {
@@ -109,7 +109,7 @@ describe("Wave 13 sGTM clients / container / environments", () => {
         dry_run: true,
       });
       assert.equal(env.ok, false, name);
-      assert.equal(env.error_code, "WRITE_NOT_ENABLED", name);
+      assert.equal(env.error_code, "CONSENT_W_REQUIRED", name);
     }
     assert.equal(ctx.calls.length, 0);
   });

@@ -222,8 +222,10 @@ def check_catalog_and_tools() -> None:
             g = by_name.get(wname)
             if not g:
                 err(f"catalog.json gated_tools missing {wname}")
-            elif g.get("fail") != "WRITE_NOT_ENABLED":
-                err(f"catalog.json {wname} fail must be WRITE_NOT_ENABLED, got {g.get('fail')!r}")
+            elif g.get("fail") != ("CONSENT_S_REQUIRED" if wname.startswith("gsc_") else "CONSENT_W_REQUIRED"):
+                err(
+                    f"catalog.json {wname} fail must be CONSENT_W_REQUIRED/CONSENT_S_REQUIRED, got {g.get('fail')!r}"
+                )
             elif wname in names:
                 err(f"catalog.json: write tool {wname} must not be in closed tools[]")
         for sname in (
@@ -251,9 +253,9 @@ def check_catalog_and_tools() -> None:
             gwrite = by_name.get(wname)
             if not gwrite:
                 err(f"catalog.json gated_tools missing {wname}")
-            elif gwrite.get("fail") != "WRITE_NOT_ENABLED":
+            elif gwrite.get("fail") != "SHOPIFY_NOT_CONNECTED":
                 err(
-                    f"catalog.json {wname} fail must be WRITE_NOT_ENABLED, got {gwrite.get('fail')!r}"
+                    f"catalog.json {wname} fail must be SHOPIFY_NOT_CONNECTED, got {gwrite.get('fail')!r}"
                 )
             elif wname in names:
                 err(f"catalog.json: Shopify write tool {wname} must not be in Consent A tools[]")
@@ -292,9 +294,9 @@ def check_catalog_and_tools() -> None:
             gwrite = by_name.get(kwname)
             if not gwrite:
                 err(f"catalog.json gated_tools missing {kwname}")
-            elif gwrite.get("fail") != "WRITE_NOT_ENABLED":
+            elif gwrite.get("fail") != "KLAVIYO_NOT_CONNECTED":
                 err(
-                    f"catalog.json {kwname} fail must be WRITE_NOT_ENABLED, got {gwrite.get('fail')!r}"
+                    f"catalog.json {kwname} fail must be KLAVIYO_NOT_CONNECTED, got {gwrite.get('fail')!r}"
                 )
             elif kwname in names:
                 err(f"catalog.json: Klaviyo write tool {kwname} must not be in Consent A tools[]")
@@ -486,8 +488,8 @@ def check_marketplace_honesty() -> None:
                 err(f"plugin.json consentA must not include {banned}")
     if "read and manage" not in desc.lower():
         err("plugin.json description must say Free Google is read and manage")
-    if "flag-gated" not in desc.lower() and "flag gated" not in desc.lower():
-        err("plugin.json description must say mutates stay flag-gated")
+    if "in-chat confirm" not in desc.lower() and "in chat confirm" not in desc.lower():
+        err("plugin.json description must say live mutates need in-chat confirm")
     if not re.search(r"\b(ads|meta|tiktok)\b", desc, re.I):
         err("plugin.json description must say Ads/Meta/TikTok are Pro")
     if re.search(r"\bread-only\b|\breadonly-only\b", desc, re.I):
@@ -497,8 +499,8 @@ def check_marketplace_honesty() -> None:
         pkg_desc = str(pkg.get("description") or "")
         if "read and manage" not in pkg_desc.lower():
             err("package.json description must say Free Google is read and manage")
-        if "flag-gated" not in pkg_desc.lower() and "flag gated" not in pkg_desc.lower():
-            err("package.json description must say mutates stay flag-gated")
+        if "in-chat confirm" not in pkg_desc.lower() and "in chat confirm" not in pkg_desc.lower():
+            err("package.json description must say live mutates need in-chat confirm")
         if re.search(r"\bread-only\b|\breadonly-only\b", pkg_desc, re.I):
             err("package.json description must not promise a readonly-only product")
     market = read(ROOT / "docs/MARKETPLACE.md")
@@ -616,17 +618,12 @@ def main() -> int:
         if not isinstance(g, dict):
             continue
         fail = g.get("fail")
-        name = str(g.get("name") or "")
         if fail in {
             "SHOPIFY_NOT_CONNECTED",
             "KLAVIYO_NOT_CONNECTED",
             "GBP_NOT_ENABLED",
             "GBP_NOT_CONNECTED",
         }:
-            local_free += 1
-        elif fail == "WRITE_NOT_ENABLED" and (
-            name.startswith("shopify_") or name.startswith("klaviyo_")
-        ):
             local_free += 1
     print(
         f"SPEC OK  tools={catalog['count']} (Consent A kernel)  "

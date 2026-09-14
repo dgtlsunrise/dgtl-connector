@@ -101,8 +101,9 @@ describe("Wave 11 GA4 Admin (Consent G)", () => {
     assert.equal(googleGa4AdminPathAllowed("POST", "/v1beta/properties/111111111:runAccessReport"), false);
   });
 
-  it("WRITE_NOT_ENABLED with zero HTTP", async () => {
+  it("writesEnabled false + Consent G token + confirm proceeds (no WRITE_NOT_ENABLED)", async () => {
     const ctx = makeCtx({}, testEnv({ GOOGLE_GA4_ADMIN_ACCESS_TOKEN: G_TOKEN }));
+    assert.equal(ctx.flags.writesEnabled, false);
     const env = await dispatch(ctx, "ga4_create_data_stream", {
       property_id: PROP,
       display_name: "Web",
@@ -110,8 +111,9 @@ describe("Wave 11 GA4 Admin (Consent G)", () => {
       dry_run: false,
       confirm_phrase: PROP,
     });
-    assert.equal(env.error_code, "WRITE_NOT_ENABLED");
-    assert.equal(ctx.calls.length, 0);
+    assert.equal(env.ok, true, JSON.stringify(env));
+    assert.notEqual(env.error_code, "WRITE_NOT_ENABLED");
+    assert.ok(ctx.calls.some((c) => c.method === "POST" && c.path.includes("/dataStreams")));
   });
 
   it("CONSENT_G_REQUIRED when flag on but no G token; never uses Consent A", async () => {

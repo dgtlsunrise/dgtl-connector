@@ -471,7 +471,7 @@ AUTH (stdio is Manual — there is no Gmail-style Connect card)
      then run auth login. Tokens stay in PLUGIN_DATA/google-oauth.json (Free Google).
 
 Free Google is one Connect for GA4 / Search Console / Tag Manager read and
-  manage. Mutates still need DGTL_WRITES_ENABLED (default off) plus confirms.
+  manage. Live mutates need in-chat confirm (dry_run default true).
   login-write / login-ga4-admin / login-gsc-write alias to auth login and write
   the same store. Legacy google-oauth-write.json / google-oauth-ga4-admin.json /
   google-oauth-gsc-write.json and GOOGLE_WRITE_* / GOOGLE_GA4_ADMIN_* /
@@ -488,6 +488,7 @@ Do not add adwords, content, or business.manage to Free Google. Those stay
   TIKTOK_ACCESS_TOKEN / tiktok-oauth.json          (host-injected; app secret on Worker)
 
 Does not turn on DGTL_WRITES_ENABLED.
+  That flag is only for live Merchant Center ProductInput writes.
   Legacy write-lane env files (.env.write.local, .env.ga4-admin.local,
   .env.gsc-write.local) still fill dedicated tokens if present.
 
@@ -531,15 +532,14 @@ Shopify (free local): set SHOPIFY_STORE + SHOPIFY_ACCESS_TOKEN (merchant custom
   app; default read_products + read_orders + read_inventory + read_locations) or
   PLUGIN_DATA/shopify-oauth.json. Fail closed SHOPIFY_NOT_CONNECTED. No Polar /
   stamp / vault. Explicit expand (never silent): read_publications,
-  read_product_listings, write_inventory, write_products. Writes also need
-  DGTL_WRITES_ENABLED (default off).
+  read_product_listings, write_inventory, write_products. Live writes need the
+  matching write scope plus confirm_phrase containing the shop domain.
 
 Klaviyo (free local pk_): set KLAVIYO_API_KEY or PLUGIN_DATA/klaviyo.json.
   Fail closed KLAVIYO_NOT_CONNECTED. Revision 2026-07-15. No Polar OAuth, no
   stamp, not Consent A. Never log the key. Writes (draft campaign / profile
-  upsert / backfill event) need DGTL_WRITES_ENABLED + confirm_phrase with the
-  account id. Campaign send is a separate SEND-token tool (cannot fire from
-  draft create).
+  upsert / backfill event) need confirm_phrase with the account id. Campaign
+  send is a separate SEND-token tool (cannot fire from draft create).
 
 Paid Google Ads / Meta tools are listed and return LICENSE_REQUIRED until a
 DGTL license JWT is present. This binary never ships a developer-token.

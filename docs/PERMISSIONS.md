@@ -1,6 +1,6 @@
 # Permissions
 
-Least privilege is a product feature. Free Google is **one** Connect for Analytics, Search Console, and Tag Manager **read and manage**. Ads, Merchant Center, and GBP stay off that screen. Mutates still need `DGTL_WRITES_ENABLED` plus confirms.
+Least privilege is a product feature. Free Google is **one** Connect for Analytics, Search Console, and Tag Manager **read and manage**. Ads, Merchant Center, and GBP stay off that screen. Live Free Google mutates need in-chat confirm (`dry_run` default). `DGTL_WRITES_ENABLED` is only for live Merchant Center ProductInput writes.
 
 ## Exact OAuth scopes
 
@@ -13,10 +13,10 @@ Request **all of these** on a **single** Google consent screen. Do not run seque
 | `https://www.googleapis.com/auth/analytics.readonly` | GA4 Admin API v1beta, GA4 Data API v1beta | See and download Google Analytics data |
 | `https://www.googleapis.com/auth/webmasters.readonly` | Search Console API (sites, searchanalytics, sitemaps, URL Inspection) | View Search Console data for verified sites |
 | `https://www.googleapis.com/auth/tagmanager.readonly` | Tag Manager API v2 | View Google Tag Manager accounts, containers, workspaces, tags/triggers/variables, **clients**, **environments**, and live versions |
-| `https://www.googleapis.com/auth/analytics.edit` | GA4 Admin writes | Manage GA4 properties, streams, key events, custom defs (flag + confirm) |
-| `https://www.googleapis.com/auth/tagmanager.edit.containers` | Tag Manager writes | Create/update tags, triggers, variables, clients, containers, environments (flag + confirm) |
-| `https://www.googleapis.com/auth/tagmanager.publish` | Tag Manager publish | Publish a container version (flag + confirm) |
-| `https://www.googleapis.com/auth/webmasters` | Search Console writes | Submit/delete sitemaps (flag + confirm). No Indexing API. |
+| `https://www.googleapis.com/auth/analytics.edit` | GA4 Admin writes | Manage GA4 properties, streams, key events, custom defs (confirm) |
+| `https://www.googleapis.com/auth/tagmanager.edit.containers` | Tag Manager writes | Create/update tags, triggers, variables, clients, containers, environments (confirm) |
+| `https://www.googleapis.com/auth/tagmanager.publish` | Tag Manager publish | Publish a container version (confirm) |
+| `https://www.googleapis.com/auth/webmasters` | Search Console writes | Submit/delete sitemaps (confirm). No Indexing API. |
 
 These strings are the source of truth in `src/google/scopes.ts` (`CONSENT_A`). Do not add `adwords`, `content`, or `business.manage`. Do not request blanket `analytics`.
 
@@ -80,19 +80,19 @@ Readonly scopes see **everything that Google user can already see** in the Googl
 
 If an agency needs employees to see only one client, that is a **Google permissions** problem (don't share the agency owner login). Support may explain that. DGTL does not collect a list of client properties into a vault in v1.
 
-## Consent W / G / S (writes) — on Free Google, still flag-gated
+## Consent W / G / S (writes) — on Free Google, Connect + confirm only
 
-Free Google (`CONSENT_A`) now includes the W / G / S manage scopes. `auth login` writes `PLUGIN_DATA/google-oauth.json`. `login-write` / `login-ga4-admin` / `login-gsc-write` alias to that login. Legacy stores are still accepted if present.
+Free Google (`CONSENT_A`) includes the W / G / S manage scopes. `auth login` writes `PLUGIN_DATA/google-oauth.json`. `login-write` / `login-ga4-admin` / `login-gsc-write` alias to that login. Legacy stores are still accepted if present.
 
 | Env / flag | Meaning |
 | --- | --- |
 | `GOOGLE_OAUTH_CLIENT_ID` | Free Google Desktop client |
 | Legacy `GOOGLE_WRITE_*` / `GOOGLE_GA4_ADMIN_*` / `GOOGLE_GSC_WRITE_*` | Still accepted when present |
-| `DGTL_WRITES_ENABLED` | Default `false` (marketplace / `.env.example`). When off, mutate tools return `WRITE_NOT_ENABLED`. Never ship `true` as the package default. |
-| When flag on but write scopes missing | `CONSENT_W_REQUIRED` / `CONSENT_G_REQUIRED` / `CONSENT_S_REQUIRED` |
+| `DGTL_WRITES_ENABLED` | Default `false`. **Not** a Free Google / Shopify / Klaviyo gate. Still required for live Merchant Center ProductInput writes. Never ship `true` as the package default. |
+| When write scopes missing | `CONSENT_W_REQUIRED` / `CONSENT_G_REQUIRED` / `CONSENT_S_REQUIRED` |
 | Live mutate | Dedicated write HTTP clients; `dry_run` default true; `confirm_phrase` must include the resource id |
 
-Wave 13: `gtm_list_clients` / `gtm_list_environments` use `tagmanager.readonly`. Create/update/publish tools need the matching write scopes + `DGTL_WRITES_ENABLED`.
+Wave 13: `gtm_list_clients` / `gtm_list_environments` use `tagmanager.readonly`. Create/update/publish tools need the matching write scopes plus confirm.
 
 | Lane | Scopes | Login | Store (mode 0600) | Fail |
 | --- | --- | --- | --- | --- |
@@ -100,7 +100,7 @@ Wave 13: `gtm_list_clients` / `gtm_list_environments` use `tagmanager.readonly`.
 | **G** | `CONSENT_G` = `analytics.edit` only (never blanket `analytics`) | `auth login` (alias `login-ga4-admin`) | Primary `google-oauth.json`; legacy `google-oauth-ga4-admin.json` | `CONSENT_G_REQUIRED` |
 | **S** | `CONSENT_S` = `webmasters` (write, not `.readonly`) | `auth login` (alias `login-gsc-write`) | Primary `google-oauth.json`; legacy `google-oauth-gsc-write.json` | `CONSENT_S_REQUIRED` |
 
-Login does **not** set `DGTL_WRITES_ENABLED`. Intersection tests lock `adwords` / `content` / `business.manage` off Free Google (`A ∩ {adwords, content, business.manage} = ∅`). `CONSENT_W` / `CONSENT_G` / `CONSENT_S` are subsets of `CONSENT_A`.
+Login does **not** set `DGTL_WRITES_ENABLED` (MC still uses that flag). Intersection tests lock `adwords` / `content` / `business.manage` off Free Google (`A ∩ {adwords, content, business.manage} = ∅`). `CONSENT_W` / `CONSENT_G` / `CONSENT_S` are subsets of `CONSENT_A`.
 
 ## Consent C (Ads / Meta user OAuth) — separate from Consent A
 
@@ -160,7 +160,7 @@ Do **not** add `business.manage` to Consent A verification. Account Management /
 
 ## Least privilege in the tools
 
-- Free GA4 / GSC / GTM tools are read/list/get on Consent A. GTM write/publish tools (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`, `gtm_create_client`, `gtm_update_client`, `gtm_create_container`, `gtm_create_environment`) are registered, flagged off by default (`WRITE_NOT_ENABLED`), and use Consent W + `GoogleWriteHttp` when enabled — they are **not** on the free consent screen. GA4 Admin writes use Consent G + `GoogleGa4AdminHttp`. GSC sitemap submit/delete (`gsc_submit_sitemap`, `gsc_delete_sitemap`) use Consent S + `GoogleGscWriteHttp`. Merchant Center ProductInput writes (`mc_create_data_source`, `mc_upsert_product_input`, `mc_delete_product_input`, `mc_fetch_data_source`) use Consent MC + `GoogleMcWriteHttp` (same `content` grant as reads — never Consent A). None of those write tools are on the free consent screen.
+- Free GA4 / GSC / GTM tools are read/list/get on Consent A. GTM write/publish tools (`gtm_create_tag`, `gtm_update_tag`, `gtm_create_trigger`, `gtm_update_trigger`, `gtm_create_variable`, `gtm_update_variable`, `gtm_publish_container`, `gtm_create_client`, `gtm_update_client`, `gtm_create_container`, `gtm_create_environment`) are registered and use Consent W + `GoogleWriteHttp` after Free Google grants manage scopes — live mutate needs confirm, not `DGTL_WRITES_ENABLED`. GA4 Admin writes use Consent G + `GoogleGa4AdminHttp`. GSC sitemap submit/delete (`gsc_submit_sitemap`, `gsc_delete_sitemap`) use Consent S + `GoogleGscWriteHttp`. Merchant Center ProductInput writes (`mc_create_data_source`, `mc_upsert_product_input`, `mc_delete_product_input`, `mc_fetch_data_source`) use Consent MC + `GoogleMcWriteHttp` (same `content` grant as reads — never Consent A) and still need `DGTL_WRITES_ENABLED`. MC write tools are not on the free consent screen.
 - `ga4_run_report` defaults to small row limits (see [TOOLS.md](TOOLS.md)) so one prompt cannot burn a property's daily Data API tokens.
 - URL Inspection is read of index state, not request indexing (`webmasters.readonly` cannot submit anyway).
 - Workspace GTM lists may include **unpublished drafts**. Live tags come from `gtm_get_live_container_version`. Skills must not imply a draft tag is in production.
@@ -229,7 +229,7 @@ Local merchant custom app / Dev Dashboard credentials:
 - Default scopes on the **merchant app**: `read_products`, `read_orders`, `read_inventory`, `read_locations`
 - **Explicit expand** (reinstall / request; **never silent** on an existing app): `read_publications`, `read_product_listings`, `write_inventory`, `write_products`. Same token, not a second OAuth family, not stamp vault. Missing detectable scope → `SHOPIFY_SCOPE_MISSING`.
 - Catalogs list uses existing `read_products`. Publications need `read_publications`. Product feeds need `read_product_listings`. `shopify_adjust_inventory` needs `write_inventory`. `shopify_product_set` needs `write_products`.
-- Writes also need `DGTL_WRITES_ENABLED=true` (marketplace default **false**) + `confirm_phrase` / `confirm` containing the shop domain
+- Writes need the matching `write_*` scope + `confirm_phrase` / `confirm` containing the shop domain. `DGTL_WRITES_ENABLED` is not a Shopify gate.
 - Store under `PLUGIN_DATA/shopify-oauth.json` mode 0600; never git
 
 Fail closed: `SHOPIFY_NOT_CONNECTED`. Free local lane (do not require Polar Pro). Support never collects Shopify tokens. Not part of Consent A verification / marketplace Google consent screen.
@@ -256,7 +256,7 @@ Local private API key on the Bot computer:
 
 - `KLAVIYO_API_KEY` (`pk_…`) and/or `PLUGIN_DATA/klaviyo.json`
 - Revision header `2026-07-15`
-- Reads stay local-free. Writes reuse `DGTL_WRITES_ENABLED` (marketplace default **false**) + `confirm_phrase` containing the account id
+- Reads stay local-free. Writes need `confirm_phrase` containing the account id. `DGTL_WRITES_ENABLED` is not a Klaviyo gate.
 - **No** Polar `klaviyo` feature. **No** stamp hop. Campaign send is Wave 22 `klaviyo_create_campaign_send_job` (confirm-gated `SEND` token; **cannot** fire from draft create). Wave 19 adds `catalogs:read` / `catalogs:write` / `reviews:read` on the same local `pk_` (least privilege — only the scopes the merchant enables). Polar `klaviyo` OAuth is Wave 19b, not this plugin.
 
 Fail closed: `KLAVIYO_NOT_CONNECTED`. Support never collects Klaviyo keys. Never log the key. Not part of Consent A verification / marketplace Google consent screen.
