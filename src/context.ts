@@ -11,6 +11,8 @@ import { GoogleGscWriteHttp } from "./http/google-gsc-write.js";
 import { GoogleMcWriteHttp } from "./http/google-mc-write.js";
 import { GoogleWriteHttp } from "./http/google-write.js";
 import type { HttpCall } from "./http/calls.js";
+import { ga4MetadataCacheTtlMs, MetadataCache, metadataCacheTtlMs } from "./http/metadata-cache.js";
+import { GatewayHealthCache, gatewayHealthTtlMs } from "./gateway/client.js";
 import { loadLicenseToken, verifyLicenseJwt, type LicenseStatus } from "./license/verify.js";
 
 export type AppContext = {
@@ -51,6 +53,10 @@ export type AppContext = {
   flags: Flags;
   license: LicenseStatus;
   calls: HttpCall[];
+  /** In-process list/metadata envelope cache. Per context; never disk. */
+  metadataCache: MetadataCache;
+  /** Short-TTL GET /v1/health result. Per context; never disk. */
+  gatewayHealthCache: GatewayHealthCache;
   now: () => Date;
   env: NodeJS.ProcessEnv;
 };
@@ -116,6 +122,16 @@ export function createAppContext(opts: {
     allowedHosts: GBP_HOSTS,
   });
   const license = verifyLicenseJwt(loadLicenseToken(env, pluginDataDir));
+  const now = opts.now ?? (() => new Date());
+  const metadataCache = new MetadataCache({
+    ttlMs: metadataCacheTtlMs(env),
+    catalogTtlMs: ga4MetadataCacheTtlMs(env),
+    now: () => now().getTime(),
+  });
+  const gatewayHealthCache = new GatewayHealthCache({
+    ttlMs: gatewayHealthTtlMs(env),
+    now: () => now().getTime(),
+  });
   return {
     pluginRoot: opts.pluginRoot,
     pluginDataDir,
@@ -139,7 +155,9 @@ export function createAppContext(opts: {
     flags: loadFlags(env),
     license,
     calls,
-    now: opts.now ?? (() => new Date()),
+    metadataCache,
+    gatewayHealthCache,
+    now,
     env,
   };
 }

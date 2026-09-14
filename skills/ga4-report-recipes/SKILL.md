@@ -19,8 +19,8 @@ Example shape: `properties/123456789 · America/Los_Angeles · 2026-08-09–2026
 
 ## Preconditions
 
-1. Picker confirmed `property_id`. Call `ga4_get_property`. Timezone + date range go in the header (above).
-2. Unfamiliar metric/dimension → `ga4_get_metadata` first. If it is not in the catalog, refuse (`no-hallucinated-metrics`).
+1. Picker confirmed `property_id`. Call `ga4_get_property` unless this conversation already fetched that same `property_id`. Timezone + date range go in the header (above).
+2. Unfamiliar metric/dimension → `ga4_get_metadata` first unless this conversation already fetched metadata for that same `property_id`. If it is not in the catalog, refuse (`no-hallucinated-metrics`).
 3. Key events / conversions → `ga4_list_key_events` so you don’t assume `purchase` exists.
 
 ## Recipes (dimensions / metrics)

@@ -11,6 +11,7 @@ import {
   GA4_ADS_ID_RECIPES,
 } from "./ga4-ads-id.js";
 import { denyGa4GclidDimensions, denySearchQueryDimensions } from "../tools/denylist.js";
+import { lookupGa4MetadataCatalog, storeGa4MetadataCatalog } from "../http/metadata-cache.js";
 import { capDateRange } from "../tools/dates.js";
 import { compileFilterExpression, compileOrderBys } from "../tools/filters.js";
 import { APIS, SCOPE } from "./scopes.js";
@@ -152,7 +153,17 @@ function filterMetadataItems(
  */
 export async function ga4GetMetadata(ctx: AppContext, args: Rec): Promise<Envelope> {
   const prop = normalizeGa4Property(requireId(args.property_id, "property_id"));
-  const raw = (await ctx.http.get(DATA, `/v1beta/${prop.name}/metadata`, undefined, dataMeta("ga4_get_metadata"))) as Rec;
+  const identityInput = { env: ctx.env, pluginDataDir: ctx.pluginDataDir };
+  let raw = lookupGa4MetadataCatalog(ctx.metadataCache, prop.name, identityInput);
+  if (!raw) {
+    raw = (await ctx.http.get(
+      DATA,
+      `/v1beta/${prop.name}/metadata`,
+      undefined,
+      dataMeta("ga4_get_metadata"),
+    )) as Rec;
+    storeGa4MetadataCatalog(ctx.metadataCache, prop.name, raw, identityInput);
+  }
   const kindRaw = typeof args.kind === "string" ? args.kind.trim().toLowerCase() : "all";
   const kind = kindRaw === "dimension" || kindRaw === "metric" || kindRaw === "all" ? kindRaw : null;
   if (!kind) {

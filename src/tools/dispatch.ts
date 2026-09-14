@@ -1,6 +1,11 @@
 import type { AppContext } from "../context.js";
 import { failEnvelope, type Envelope } from "../envelope.js";
 import { ToolError } from "../errors.js";
+import {
+  bustMetadataCacheAfterWrite,
+  lookupMetadataCache,
+  storeMetadataCache,
+} from "../http/metadata-cache.js";
 import { logTool, newRequestId } from "../log.js";
 import { TOOL_BY_NAME } from "./registry.js";
 
@@ -37,8 +42,16 @@ export async function dispatch(ctx: AppContext, name: string, args: unknown): Pr
     return env;
   }
   const raw = args && typeof args === "object" && !Array.isArray(args) ? (args as Record<string, unknown>) : {};
+  const identityInput = { env: ctx.env, pluginDataDir: ctx.pluginDataDir };
   try {
+    const cached = lookupMetadataCache(ctx.metadataCache, name, raw, identityInput);
+    if (cached) {
+      emitAudit(ctx, requestId, name, cached, started);
+      return cached;
+    }
     const env = await spec.handler(ctx, raw);
+    storeMetadataCache(ctx.metadataCache, name, raw, env, identityInput);
+    bustMetadataCacheAfterWrite(ctx.metadataCache, spec.family, name, env, identityInput);
     emitAudit(ctx, requestId, name, env, started);
     return env;
   } catch (err) {

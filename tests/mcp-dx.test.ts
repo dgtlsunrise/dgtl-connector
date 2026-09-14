@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { dispatch } from "../src/tools/dispatch.js";
 import { GoogleHttp } from "../src/http/google.js";
+import { GoogleWriteHttp } from "../src/http/google-write.js";
 import { ALL_SCOPES, installNetworkGuard, makeCtx, reportArgs, TEST_TOKEN } from "./helpers.js";
 import { GSC_DIMENSION_NAMES } from "../src/google/gsc-schema.js";
 import type { AccessTokenSource } from "../src/auth/types.js";
@@ -139,6 +140,37 @@ describe("Google MCP DX patterns (no live Google)", () => {
     })) as { accounts?: unknown[] };
     assert.equal(hits, 2);
     assert.ok(Array.isArray(raw.accounts));
+    assert.equal(calls.length, 2);
+  });
+
+  it("GoogleWriteHttp retries 429 then succeeds", async () => {
+    let hits = 0;
+    const calls: HttpCall[] = [];
+    const tokenSource: AccessTokenSource = {
+      name: "test-write",
+      async getAccessToken() {
+        return { accessToken: TEST_TOKEN, source: "host-injected" };
+      },
+    };
+    const fetchImpl: typeof fetch = async () => {
+      hits += 1;
+      if (hits === 1) {
+        return new Response(JSON.stringify({ error: { message: "rate limit", status: "RESOURCE_EXHAUSTED" } }), {
+          status: 429,
+          headers: { "content-type": "application/json", "retry-after": "0" },
+        });
+      }
+      return new Response(JSON.stringify({ path: "accounts/1/containers/2", publicId: "GTM-XXXX000" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    };
+    const http = new GoogleWriteHttp({ tokenSource, fetchImpl, calls });
+    const raw = (await http.get("/tagmanager/v2/accounts/1/containers/2", undefined, {
+      tool: "gtm_get_container",
+    })) as { publicId?: string };
+    assert.equal(hits, 2);
+    assert.equal(raw.publicId, "GTM-XXXX000");
     assert.equal(calls.length, 2);
   });
 });

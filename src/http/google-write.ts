@@ -1,6 +1,7 @@
 import { MSG, ToolError, consentMissing } from "../errors.js";
 import type { HttpCall } from "./calls.js";
 import { mapGoogleHttpError } from "./map-error.js";
+import { requestWithRetry } from "./retry.js";
 import type { AccessTokenSource } from "../auth/types.js";
 import { APIS } from "../google/scopes.js";
 
@@ -152,31 +153,22 @@ export class GoogleWriteHttp {
     }
 
     const headerNames = Object.keys(headers);
-    this.opts.calls.push({
-      method: req.method,
-      host: url.hostname,
-      path: url.pathname,
-      search: url.search.replace(/access_token=[^&]+/gi, "access_token=REDACTED"),
-      headerNames,
-      hasAuthorization: true,
-      hasDeveloperToken: headerNames.some((n) => n.toLowerCase() === "developer-token"),
+    const { res, parsed } = await requestWithRetry({
+      fetchImpl: this.opts.fetchImpl,
+      url: url.toString(),
+      init: { method: req.method, headers, body },
+      onAttempt: () => {
+        this.opts.calls.push({
+          method: req.method,
+          host: url.hostname,
+          path: url.pathname,
+          search: url.search.replace(/access_token=[^&]+/gi, "access_token=REDACTED"),
+          headerNames,
+          hasAuthorization: true,
+          hasDeveloperToken: headerNames.some((n) => n.toLowerCase() === "developer-token"),
+        });
+      },
     });
-
-    const res = await this.opts.fetchImpl(url.toString(), {
-      method: req.method,
-      headers,
-      body,
-    });
-
-    let parsed: unknown = undefined;
-    const text = await res.text();
-    if (text) {
-      try {
-        parsed = JSON.parse(text);
-      } catch {
-        parsed = { raw: text };
-      }
-    }
     if (!res.ok) {
       throw mapGoogleHttpError({ status: res.status, body: parsed, api: WRITE_HOST });
     }

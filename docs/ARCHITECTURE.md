@@ -79,7 +79,19 @@ Refresh token revoked, password change, or unused-token expiry → tools return 
 
 ### PLUGIN_DATA
 
-Hosts provide `PLUGIN_DATA`. **Allowed:** PKCE token store `google-oauth.json` (mode 0600); Consent W/C/G/S stores (`google-oauth-write.json`, `google-oauth-ads.json`, `google-oauth-ga4-admin.json`, `google-oauth-gsc-write.json`); optional `license.jwt`; optional local audit jsonl. **Never-list as sticky defaults:** do not persist “active client = first property” across sessions. Resource IDs are required parameters on every data tool. v1 **may** cache metadata (dimension catalogs) keyed by `properties/{id}` with a short TTL.
+Hosts provide `PLUGIN_DATA`. **Allowed:** PKCE token store `google-oauth.json` (mode 0600); Consent W/C/G/S stores (`google-oauth-write.json`, `google-oauth-ads.json`, `google-oauth-ga4-admin.json`, `google-oauth-gsc-write.json`); optional `license.jwt`; optional local audit jsonl. **Never-list as sticky defaults:** do not persist “active client = first property” across sessions. Resource IDs are required parameters on every data tool.
+
+v1 caches a few stable reads in-process on the MCP `AppContext` (never disk, never tokens). This is not a generic Magdoub response cache and is not a token bucket.
+
+`ga4_get_metadata` stores the Data API dimension/metric catalog keyed by `property_id` plus a hashed auth identity. Default TTL is 15 minutes (`DGTL_GA4_METADATA_CACHE_TTL_MS`; `0` disables). Filters (`kind` / `query` / `custom_only`) apply after a cache hit, so a second call for the same property does not hit Google even when the filter changes.
+
+Successful envelopes from a closed allowlist of stable list tools (GA4 account/property/stream/key-event lists, GSC site/sitemap lists, GTM account/container/workspace/tag lists, GBP account/location lists, Shopify shop/product/location/publication lists, Klaviyo account/list/segment/flow/campaign/metric/catalog lists) use a shorter 120-second TTL (`DGTL_METADATA_CACHE_TTL_MS`; `0` disables). Keys are `platform + hashed auth identity + tool name + normalized args`.
+
+`probeGatewayReachable` caches `GET /v1/health` per gateway URL for 45 seconds (`DGTL_GATEWAY_HEALTH_TTL_MS`; `0` disables). Cached bodies still carry Worker dual-gate flags (`meta_capi_enabled`, `tiktok_events_enabled`, and the mutate flags). Ads/Meta/TikTok hops therefore stop pairing every tool with a fresh health GET.
+
+A successful live write (not `dry_run`) for Free Google, Shopify, or Klaviyo busts that platform prefix for the same identity, including the GA4 catalog keys. Google write HTTP clients share the read-side 429/503 retry helper (still reactive; no proactive limiter).
+
+Not cached: `ga4_run_report`, GSC search analytics, URL inspection, Insights/performance time-series, Shopify orders, Klaviyo profiles/reviews, live mutate responses, dry-run previews, `google_whoami`, license JWTs, and Ads/Meta/TikTok/MC hop payloads.
 
 ## If a host cannot run stdio
 

@@ -7,12 +7,14 @@
 import type { AppContext } from "../context.js";
 import { failEnvelope, type Envelope } from "../envelope.js";
 import { MSG, type ErrorCode } from "../errors.js";
+import { isRetryableHttpStatus, MAX_HTTP_RETRIES, retryAfterMs, sleep } from "../http/retry.js";
 import { loadLicenseToken } from "../license/verify.js";
 import { newRequestId } from "../log.js";
 import { CLOSED_HTTPS_FIELD_KEYS, GATEWAY_PARAM_ALLOW_KEYS } from "./hop-maps.generated.js";
 
 const HEALTH_TIMEOUT_MS = 3_000;
 const HOP_TIMEOUT_MS = 25_000;
+export const DEFAULT_GATEWAY_HEALTH_TTL_MS = 45_000;
 
 export type GatewayRecipe =
   | "campaigns"
@@ -301,6 +303,49 @@ function healthBool(value: unknown): boolean | null {
   return typeof value === "boolean" ? value : null;
 }
 
+export function gatewayHealthTtlMs(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = env.DGTL_GATEWAY_HEALTH_TTL_MS;
+  if (raw === undefined || raw.trim() === "") return DEFAULT_GATEWAY_HEALTH_TTL_MS;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return DEFAULT_GATEWAY_HEALTH_TTL_MS;
+  return Math.max(0, Math.floor(n));
+}
+
+/** One GET /v1/health result per gateway URL. Dual-gate flags stay on the cached body. */
+export class GatewayHealthCache {
+  private readonly store = new Map<string, { value: GatewayReachable; expiresAt: number }>();
+
+  constructor(
+    private readonly opts: {
+      ttlMs: number;
+      now: () => number;
+    },
+  ) {}
+
+  get enabled(): boolean {
+    return this.opts.ttlMs > 0;
+  }
+
+  get(url: string): GatewayReachable | undefined {
+    if (!this.enabled) return undefined;
+    const hit = this.store.get(url);
+    if (!hit) return undefined;
+    if (hit.expiresAt <= this.opts.now()) {
+      this.store.delete(url);
+      return undefined;
+    }
+    return structuredClone(hit.value);
+  }
+
+  set(url: string, value: GatewayReachable): void {
+    if (!this.enabled) return;
+    this.store.set(url, {
+      value: structuredClone(value),
+      expiresAt: this.opts.now() + this.opts.ttlMs,
+    });
+  }
+}
+
 /** Normalize DGTL_GATEWAY_URL (trim trailing slash). Empty → undefined. */
 export function gatewayUrlFromEnv(env: NodeJS.ProcessEnv = process.env): string | undefined {
   const raw = (env.DGTL_GATEWAY_URL || "").trim();
@@ -314,7 +359,9 @@ export function gatewayUrlFromEnv(env: NodeJS.ProcessEnv = process.env): string 
  * Probe fail → false + hint, not throw. Never true from “URL configured” alone.
  */
 export async function probeGatewayReachable(
-  ctx: Pick<AppContext, "env" | "fetchImpl" | "flags">,
+  ctx: Pick<AppContext, "env" | "fetchImpl" | "flags"> & {
+    gatewayHealthCache?: GatewayHealthCache;
+  },
 ): Promise<GatewayReachable> {
   const base = ctx.flags.gatewayUrl ?? gatewayUrlFromEnv(ctx.env);
   if (!base) {
@@ -322,6 +369,9 @@ export async function probeGatewayReachable(
   }
 
   const url = `${base}/v1/health`;
+  const cached = ctx.gatewayHealthCache?.get(url);
+  if (cached) return cached;
+
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), HEALTH_TIMEOUT_MS);
   try {
@@ -334,10 +384,10 @@ export async function probeGatewayReachable(
       signal: ac.signal,
     });
     if (!res.ok) {
-      return {
+      return cacheHealth(ctx, url, {
         reachable: false,
         note: `Gateway health returned HTTP ${res.status}. Set a reachable DGTL_GATEWAY_URL.`,
-      };
+      });
     }
     let body: {
       ok?: boolean;
@@ -352,12 +402,12 @@ export async function probeGatewayReachable(
     try {
       body = (await res.json()) as typeof body;
     } catch {
-      return { reachable: false, note: "Gateway health returned non-JSON." };
+      return cacheHealth(ctx, url, { reachable: false, note: "Gateway health returned non-JSON." });
     }
     if (body.ok !== true) {
-      return { reachable: false, note: "Gateway health ok≠true." };
+      return cacheHealth(ctx, url, { reachable: false, note: "Gateway health ok≠true." });
     }
-    return {
+    return cacheHealth(ctx, url, {
       reachable: true,
       ads_mutate_enabled: healthBool(body.ads_mutate_enabled),
       meta_mutate_enabled: healthBool(body.meta_mutate_enabled),
@@ -366,16 +416,25 @@ export async function probeGatewayReachable(
       tiktok_events_enabled: healthBool(body.tiktok_events_enabled),
       ads_data_manager_enabled: healthBool(body.ads_data_manager_enabled),
       sgtm_ingest_enabled: healthBool(body.sgtm_ingest_enabled),
-    };
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    return {
+    return cacheHealth(ctx, url, {
       reachable: false,
       note: `Gateway health probe failed (${msg}). Check DGTL_GATEWAY_URL.`,
-    };
+    });
   } finally {
     clearTimeout(timer);
   }
+}
+
+function cacheHealth(
+  ctx: { gatewayHealthCache?: GatewayHealthCache },
+  url: string,
+  value: GatewayReachable,
+): GatewayReachable {
+  ctx.gatewayHealthCache?.set(url, value);
+  return value;
 }
 
 /**
@@ -922,21 +981,33 @@ export async function postGateway(ctx: AppContext, opts: GatewayHopOpts): Promis
   const requestId = newRequestId();
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), HOP_TIMEOUT_MS);
+  const hopInit: RequestInit = {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${licenseJwt}`,
+      "X-DGTL-User-Access-Token": opts.userAccessToken,
+      "X-DGTL-Request-Id": requestId,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      // Never developer-token on the client.
+    },
+    body: JSON.stringify(body),
+    signal: ac.signal,
+  };
 
   try {
-    const res = await ctx.fetchImpl(path, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${licenseJwt}`,
-        "X-DGTL-User-Access-Token": opts.userAccessToken,
-        "X-DGTL-Request-Id": requestId,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        // Never developer-token on the client.
-      },
-      body: JSON.stringify(body),
-      signal: ac.signal,
-    });
+    let res: Response | undefined;
+    for (let attempt = 0; attempt <= MAX_HTTP_RETRIES; attempt++) {
+      res = await ctx.fetchImpl(path, hopInit);
+      if (isRetryableHttpStatus(res.status) && attempt < MAX_HTTP_RETRIES) {
+        await sleep(retryAfterMs(res, attempt));
+        continue;
+      }
+      break;
+    }
+    if (!res) {
+      return failEnvelope(opts.tool, "GATEWAY_UNAVAILABLE", MSG.GATEWAY_UNAVAILABLE);
+    }
 
     let parsed: Record<string, unknown> = {};
     try {

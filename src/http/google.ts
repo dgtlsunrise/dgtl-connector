@@ -1,24 +1,8 @@
 import { MSG, ToolError, consentMissing } from "../errors.js";
 import { headerMap, type HttpCall } from "./calls.js";
 import { mapGoogleHttpError } from "./map-error.js";
+import { isRetryableHttpStatus, MAX_HTTP_RETRIES, retryAfterMs, sleep } from "./retry.js";
 import type { AccessTokenSource } from "../auth/types.js";
-
-/** Reactive backoff for 429/503 (Magdoub-inspired; no proactive token bucket). */
-const MAX_RETRIES = 2;
-const BASE_BACKOFF_MS = 400;
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function retryAfterMs(res: Response, attempt: number): number {
-  const raw = res.headers.get("retry-after");
-  if (raw) {
-    const sec = Number(raw);
-    if (Number.isFinite(sec) && sec >= 0) return Math.min(sec * 1000, 10_000);
-  }
-  return Math.min(BASE_BACKOFF_MS * 2 ** attempt, 5_000);
-}
 
 const ALLOWED_HOSTS = new Set([
   "analyticsadmin.googleapis.com",
@@ -160,7 +144,7 @@ export class GoogleHttp {
     let lastStatus = 0;
     let parsed: unknown = undefined;
     let authRetried = false;
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    for (let attempt = 0; attempt <= MAX_HTTP_RETRIES; attempt++) {
       this.opts.calls.push({
         method: req.method,
         host: url.hostname,
@@ -202,8 +186,8 @@ export class GoogleHttp {
           continue;
         }
       }
-      const retryable = res.status === 429 || res.status === 503;
-      if (retryable && attempt < MAX_RETRIES) {
+      const retryable = isRetryableHttpStatus(res.status);
+      if (retryable && attempt < MAX_HTTP_RETRIES) {
         await sleep(retryAfterMs(res, attempt));
         continue;
       }
