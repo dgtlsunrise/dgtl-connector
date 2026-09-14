@@ -4,6 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 import { collectDoctor, DOCTOR_ENV_NAMES, formatDoctorReport, runDoctorCli } from "../src/auth/doctor.js";
+import { DEFAULT_GATEWAY_HEALTH_TTL_MS } from "../src/gateway/client.js";
+import { DEFAULT_GA4_METADATA_CACHE_TTL_MS, DEFAULT_METADATA_CACHE_TTL_MS } from "../src/http/metadata-cache.js";
 import { installNetworkGuard, ROOT, signLicense } from "./helpers.js";
 
 const W03 = JSON.parse(
@@ -382,6 +384,65 @@ describe("doctor CLI (no secrets)", () => {
       assert.ok(!JSON.stringify(report).includes("leak-pass"));
     } finally {
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("cache layers are booleans/ms (on/default or env TTL); doctor still exits 0", async () => {
+    const emptyRoot = mkdtempSync(join(tmpdir(), "dgtl-doctor-cache-"));
+    const data = mkdtempSync(join(tmpdir(), "dgtl-doctor-cache-data-"));
+    const secret = "host-injected-access-token-must-never-appear";
+    try {
+      mkdirSync(join(emptyRoot, "dist"));
+      writeFileSync(join(emptyRoot, "dist", "index.js"), "export {};\n");
+      writeFileSync(join(emptyRoot, "package.json"), JSON.stringify({ name: "dgtl-connector", version: "0.1.0" }));
+      writeFileSync(join(emptyRoot, "plugin.json"), JSON.stringify({ name: "dgtl-connector", version: "0.1.0" }));
+
+      const defaults = await collectDoctor({
+        pluginRoot: emptyRoot,
+        pluginDataDir: data,
+        env: { GOOGLE_ACCESS_TOKEN: secret },
+      });
+      assert.equal(defaults.ok, true);
+      assert.deepEqual(defaults.cache, {
+        metadata: { enabled: true, ttl_ms: DEFAULT_GA4_METADATA_CACHE_TTL_MS, source: "default" },
+        list: { enabled: true, ttl_ms: DEFAULT_METADATA_CACHE_TTL_MS, source: "default" },
+        health: { enabled: true, ttl_ms: DEFAULT_GATEWAY_HEALTH_TTL_MS, source: "default" },
+      });
+      const defaultText = formatDoctorReport(defaults);
+      assert.ok(defaultText.includes("cache layers (TTL ms; no secrets):"));
+      assert.ok(defaultText.includes(`metadata: on/default ttl_ms=${DEFAULT_GA4_METADATA_CACHE_TTL_MS}`));
+      assert.ok(defaultText.includes(`list: on/default ttl_ms=${DEFAULT_METADATA_CACHE_TTL_MS}`));
+      assert.ok(defaultText.includes(`health: on/default ttl_ms=${DEFAULT_GATEWAY_HEALTH_TTL_MS}`));
+      assert.ok(!defaultText.includes(secret));
+      assert.ok(!defaults.critical.includes("cache"));
+
+      const chunks: string[] = [];
+      const code = await runDoctorCli(
+        {
+          pluginRoot: emptyRoot,
+          pluginDataDir: data,
+          env: {
+            GOOGLE_ACCESS_TOKEN: secret,
+            DGTL_GA4_METADATA_CACHE_TTL_MS: "0",
+            DGTL_METADATA_CACHE_TTL_MS: "60000",
+            DGTL_GATEWAY_HEALTH_TTL_MS: "15000",
+          },
+        },
+        (s) => {
+          chunks.push(s);
+        },
+      );
+      assert.equal(code, 0);
+      const out = chunks.join("");
+      assert.ok(out.includes("metadata: off ttl_ms=0"));
+      assert.ok(out.includes("list: on ttl_ms=60000"));
+      assert.ok(out.includes("health: on ttl_ms=15000"));
+      assert.ok(out.includes("exit: 0"));
+      assert.ok(!out.includes(secret));
+      assert.ok(!out.includes("host-injected"));
+    } finally {
+      rmSync(emptyRoot, { recursive: true, force: true });
+      rmSync(data, { recursive: true, force: true });
     }
   });
 });

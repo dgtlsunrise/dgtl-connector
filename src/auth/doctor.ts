@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadFlags } from "../flags.js";
-import { probeGatewayReachable } from "../gateway/client.js";
+import { gatewayHealthTtlMs, probeGatewayReachable } from "../gateway/client.js";
+import { ga4MetadataCacheTtlMs, metadataCacheTtlMs } from "../http/metadata-cache.js";
 import { loadLicenseToken, verifyLicenseJwt } from "../license/verify.js";
 import {
   consentStorePresence,
@@ -118,6 +119,12 @@ export type DoctorReport = {
     reachable: boolean;
     host: string | null;
   };
+  /** In-process TTL layers. Booleans + ms only — never env strings or secrets. */
+  cache: {
+    metadata: DoctorCacheLayer;
+    list: DoctorCacheLayer;
+    health: DoctorCacheLayer;
+  };
   license: {
     present: boolean;
     status: "missing" | "valid" | "invalid" | "expired" | "issuer";
@@ -140,7 +147,46 @@ export type DoctorReport = {
   ok: boolean;
 };
 
+export type DoctorCacheLayer = {
+  enabled: boolean;
+  ttl_ms: number;
+  source: "default" | "env";
+};
+
 const EXPECTED_FEATURES = ["ads", "meta"] as const;
+
+function ttlLayer(ttlMs: number, raw: string | undefined): DoctorCacheLayer {
+  const set = typeof raw === "string" && raw.trim() !== "";
+  return {
+    enabled: ttlMs > 0,
+    ttl_ms: ttlMs,
+    source: set ? "env" : "default",
+  };
+}
+
+/** metadata = GA4 catalog; list = stable envelopes; health = GET /v1/health. */
+export function doctorCacheHint(env: NodeJS.ProcessEnv): DoctorReport["cache"] {
+  return {
+    metadata: ttlLayer(ga4MetadataCacheTtlMs(env), env.DGTL_GA4_METADATA_CACHE_TTL_MS),
+    list: ttlLayer(metadataCacheTtlMs(env), env.DGTL_METADATA_CACHE_TTL_MS),
+    health: ttlLayer(gatewayHealthTtlMs(env), env.DGTL_GATEWAY_HEALTH_TTL_MS),
+  };
+}
+
+function cacheLayerLine(name: keyof DoctorReport["cache"], layer: DoctorCacheLayer): string {
+  let state: string;
+  if (!layer.enabled) {
+    state = "off";
+  } else if (layer.source === "default") {
+    state = "on/default";
+  } else if (layer.source === "env") {
+    state = "on";
+  } else {
+    const _exhaustive: never = layer.source;
+    throw new Error(`unexpected cache source ${String(_exhaustive)}`);
+  }
+  return `  ${name}: ${state} ttl_ms=${layer.ttl_ms}`;
+}
 
 function readJsonVersion(path: string): string | null {
   if (!existsSync(path)) return null;
@@ -235,6 +281,7 @@ export async function collectDoctor(opts: DoctorOpts): Promise<DoctorReport> {
       reachable: probe.reachable,
       host: gatewayHostname(flagsLoaded.gatewayUrl),
     },
+    cache: doctorCacheHint(env),
     license: {
       present,
       status,
@@ -315,6 +362,11 @@ export function formatDoctorReport(report: DoctorReport): string {
     `  tiktok_events: plugin=${report.dual_gate.tiktok_events.plugin_mutate_enabled} worker=${report.dual_gate.tiktok_events.worker_mutate_enabled} worker_known=${report.dual_gate.tiktok_events.worker_flag_known} live=${report.dual_gate.tiktok_events.live_mutate_possible}`,
     `  ads_data_manager: plugin=${report.dual_gate.ads_data_manager.plugin_mutate_enabled} worker=${report.dual_gate.ads_data_manager.worker_mutate_enabled} worker_known=${report.dual_gate.ads_data_manager.worker_flag_known} live=${report.dual_gate.ads_data_manager.live_mutate_possible}`,
     `  sgtm_ingest: plugin=${report.dual_gate.sgtm_ingest.plugin_mutate_enabled} worker=${report.dual_gate.sgtm_ingest.worker_mutate_enabled} worker_known=${report.dual_gate.sgtm_ingest.worker_flag_known} live=${report.dual_gate.sgtm_ingest.live_mutate_possible}`,
+    "",
+    "cache layers (TTL ms; no secrets):",
+    cacheLayerLine("metadata", report.cache.metadata),
+    cacheLayerLine("list", report.cache.list),
+    cacheLayerLine("health", report.cache.health),
     "",
     `license: ${licenseLine(report)}`,
     `auth: host_injected=${report.auth.host_injected} pkce_store=${report.auth.pkce_store} GOOGLE_OAUTH_CLIENT_ID=${report.auth.oauth_client_id}`,

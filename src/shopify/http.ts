@@ -1,25 +1,10 @@
 import { MSG, ToolError } from "../errors.js";
 import type { HttpCall } from "../http/calls.js";
 import { headerMap } from "../http/calls.js";
+import { isRetryableHttpStatus, MAX_HTTP_RETRIES, retryAfterMs, sleep } from "../http/retry.js";
 import type { ShopifyCredentials } from "./auth.js";
 import { SHOPIFY_API_VERSION } from "./auth.js";
 import { ALLOWED_MUTATIONS, ALLOWED_OPERATIONS, DOC_BY_OP, MUTATION_DOC_BY_OP } from "./queries.js";
-
-const MAX_RETRIES = 2;
-const BASE_BACKOFF_MS = 400;
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function retryAfterMs(res: Response, attempt: number): number {
-  const raw = res.headers.get("retry-after");
-  if (raw) {
-    const sec = Number(raw);
-    if (Number.isFinite(sec) && sec >= 0) return Math.min(sec * 1000, 10_000);
-  }
-  return Math.min(BASE_BACKOFF_MS * 2 ** attempt, 5_000);
-}
 
 function stripGraphql(document: string): string {
   return document.replace(/#[^\n]*/g, " ").replace(/\s+/g, " ").trim();
@@ -79,6 +64,17 @@ export type ShopifyGraphqlResult = {
   data?: Record<string, unknown>;
   errors?: Array<{ message?: string; extensions?: { code?: string } }>;
 };
+
+/** Same predicate that maps GraphQL throttle bodies to RATE_LIMITED. */
+export function isShopifyGraphqlThrottle(parsed: ShopifyGraphqlResult | undefined): boolean {
+  const errors = parsed?.errors;
+  if (!Array.isArray(errors) || errors.length === 0) return false;
+  const haystack = errors
+    .map((e) => `${e.extensions?.code ?? ""} ${e.message ?? ""}`)
+    .join(" ")
+    .toLowerCase();
+  return /throttl|rate.?limit/.test(haystack);
+}
 
 export class ShopifyHttp {
   constructor(
@@ -148,7 +144,8 @@ export class ShopifyHttp {
 
     let lastStatus = 0;
     let parsed: ShopifyGraphqlResult | undefined;
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    // HTTP 429/503 *and* GraphQL THROTTLED bodies retry with GoogleHttp backoff.
+    for (let attempt = 0; attempt <= MAX_HTTP_RETRIES; attempt++) {
       this.opts.calls.push({
         method: "POST",
         host: url.hostname,
@@ -173,11 +170,11 @@ export class ShopifyHttp {
         parsed = undefined;
       }
 
-      if (res.status === 429 || res.status === 503) {
-        if (attempt < MAX_RETRIES) {
-          await sleep(retryAfterMs(res, attempt));
-          continue;
-        }
+      const retryable =
+        isRetryableHttpStatus(res.status) || (res.ok && isShopifyGraphqlThrottle(parsed));
+      if (retryable && attempt < MAX_HTTP_RETRIES) {
+        await sleep(retryAfterMs(res, attempt));
+        continue;
       }
       break;
     }
@@ -231,7 +228,7 @@ export class ShopifyHttp {
           hint: msg,
         });
       }
-      if (/throttl|rate.?limit/.test(lower)) {
+      if (isShopifyGraphqlThrottle(parsed)) {
         throw new ToolError("RATE_LIMITED", MSG.QUOTA, {
           api: "shopify-admin-graphql",
           google_reason: code || undefined,
