@@ -5,7 +5,7 @@ Local **GA4**, **Search Console**, and **Tag Manager** (read and manage) for Gro
 Publisher: **DGTL Sunrise** (Sunrise Consulting LLC), `noel@dgtlsunrise.com`. Apache-2.0.  
 Homepage: https://www.dgtlsunrise.com/ · Privacy: https://www.dgtlsunrise.com/privacy
 
-Working package id: `dgtl-connector`. Version **0.1.0**. Marketplace listing copy = Free Google **read and manage**. Live mutates need in-chat confirm. Ads / Meta / TikTok are Pro. Submit is deferred.
+Working package id: `dgtl-connector`. Version **0.1.0**. Marketplace listing copy = Free Google **read and manage**. Live mutates need in-chat confirm. Ads / Meta / TikTok are Pro. Marketplace Submit is active; the listing is pending Cursor review and is not live yet.
 
 ## What it is / is not
 
@@ -26,7 +26,7 @@ There is no Gmail-style Connect card for stdio. Agent Plugins 1.0 and today’s 
 
    Tokens are written to `PLUGIN_DATA/google-oauth.json` (mode 0600). Refresh tokens are never logged.
 
-Until Google verifies the OAuth client, it stays in **testing** with an allowlist. Google may show “This app isn’t verified” or block sign-in — that is Google’s allowlist, not a broken plugin. Continue only for your own Google account (or a tester the publisher added); strangers stay stranded until Google verification. That is not a plugin Connect card.
+Google Cloud project `dgtl-marketing-oauth-20260903` Publishing is **In production** (not Testing). Branding plus `analytics.readonly` and `tagmanager.readonly` are verified. Manage scopes (`analytics.edit`, `tagmanager.edit.containers`, `tagmanager.publish`, `webmasters`) were submitted 2026-09-14 and are under Trust & Safety review (~4–6 weeks). Strangers may still see “This app isn’t verified” on manage scopes until that clears — that is Google’s review, not a broken plugin. That is not a plugin Connect card.
 
 ## Install (local)
 
