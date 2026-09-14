@@ -29,7 +29,7 @@ Authorized domain is the **top private domain** only: `dgtlsunrise.com` (no `www
 
 ## One-line product description (questionnaire / demo intro)
 
-DGTL Sunrise is a local agent plugin. The user authorizes their own Google account so the plugin can read and manage Google Analytics 4, Search Console, and Tag Manager on their computer. Sunrise Consulting LLC does not receive report bytes. Mutate tools stay flagged off until the user opts in. This OAuth client (Free Google / Consent A) does **not** request Google Ads, Merchant Center, or Business Profile. Those stay on separate grants / Pro.
+DGTL Sunrise is a local agent plugin. The user authorizes their own Google account so the plugin can read and manage Google Analytics 4, Search Console, and Tag Manager on their computer. Sunrise Consulting LLC does not receive report bytes. Live mutates require in-chat confirmation that includes the resource id (`dry_run` defaults true). This OAuth client (Free Google / Consent A) does **not** request Google Ads, Merchant Center, or Business Profile. Those stay on separate grants / Pro.
 
 **Noel RED:** do not change Consent A Data Access in Google Cloud from an agent PR. The plugin now requests the Free Google manage scopes. Adding them on the Cloud consent screen is a Noel console atom.
 
@@ -63,7 +63,7 @@ Do **not** declare `userinfo.profile`, `adwords`, `business.manage`, blanket `an
 
 ## Scope justifications (paste into Google verification)
 
-Google asks why each sensitive scope is required. Paste these verbatim. They match `docs/PERMISSIONS.md` and the 23 read-only tools.
+Google asks why each sensitive scope is required. Paste these verbatim. They match `docs/PERMISSIONS.md` and the Free Google tools.
 
 ### `https://www.googleapis.com/auth/analytics.readonly`
 
@@ -75,7 +75,7 @@ The app lists Search Console sites the signed-in user already has access to, rea
 
 ### `https://www.googleapis.com/auth/tagmanager.readonly`
 
-The app lists the signed-in user's Tag Manager accounts, containers, workspaces, tags, triggers, variables, and the live (published) container version so they can audit what is on a site. `tagmanager.readonly` cannot publish. Create/edit/publish tools on this same Free Google grant stay flagged off until the user sets `DGTL_WRITES_ENABLED` and confirms.
+The app lists the signed-in user's Tag Manager accounts, containers, workspaces, tags, triggers, variables, and the live (published) container version so they can audit what is on a site. `tagmanager.readonly` cannot publish. Create/edit/publish tools on this same Free Google grant are confirm-gated: live mutates require in-chat confirmation that includes the container publicId, and `dry_run` defaults true.
 
 ### `openid` (non-sensitive)
 
@@ -87,19 +87,19 @@ Used so `google_whoami` can show which Google account connected (email only). Th
 
 ### `https://www.googleapis.com/auth/analytics.edit`
 
-The app lets the signed-in user manage their own GA4 properties, data streams, key events, custom definitions, and Measurement Protocol secrets on their computer. Calls use Analytics Admin API. Mutates stay flagged off until the user opts in (`DGTL_WRITES_ENABLED`) and confirms the target property. The app does not access other users' Analytics data. Property IDs are chosen by the user.
+The app lets the signed-in user manage their own GA4 properties, data streams, key events, custom definitions, and Measurement Protocol secrets on their computer. Calls use Analytics Admin API. Live mutates require in-chat confirmation that includes the target property id (`properties/{id}` or `accounts/{id}` on create property). `dry_run` defaults true. The app does not access other users' Analytics data. Property IDs are chosen by the user.
 
 ### `https://www.googleapis.com/auth/tagmanager.edit.containers`
 
-The app lets the signed-in user create and update tags, triggers, variables, clients, containers, and environments in Tag Manager workspaces they already can access. Mutates stay flagged off until the user opts in and confirms the container publicId. The app does not access other users' Tag Manager accounts.
+The app lets the signed-in user create and update tags, triggers, variables, clients, containers, and environments in Tag Manager workspaces they already can access. Live mutates require in-chat confirmation that includes the container publicId. `dry_run` defaults true. The app does not access other users' Tag Manager accounts.
 
 ### `https://www.googleapis.com/auth/tagmanager.publish`
 
-The app lets the signed-in user publish a Tag Manager container version they already can access. Publish stays flagged off until the user opts in and confirms the container publicId. Publish is irreversible; the app does not publish without that confirm.
+The app lets the signed-in user publish a Tag Manager container version they already can access. Live publish requires in-chat confirmation that includes the container publicId. `dry_run` defaults true. Publish is irreversible; the app does not publish without that confirm.
 
 ### `https://www.googleapis.com/auth/webmasters`
 
-The app lets the signed-in user submit and delete sitemaps for Search Console sites they already verify. Mutates stay flagged off until the user opts in and confirms the exact site URL. The app does not request indexing and does not add or remove sites.
+The app lets the signed-in user submit and delete sitemaps for Search Console sites they already verify. Live mutates require in-chat confirmation that includes the exact site URL. `dry_run` defaults true. The app does not request indexing and does not add or remove sites.
 
 ---
 
@@ -118,7 +118,7 @@ Paid Google Ads / Meta (later, not this OAuth client) will use a separate consen
 
 ## Demo video pointer
 
-Unlisted YouTube script: [DEMO-VIDEO-SCRIPT.md](DEMO-VIDEO-SCRIPT.md). The video must show the consent URL including this client's `client_id`, the app name **DGTL Sunrise**, the Free Google scopes, list → pick → report, GSC queries, GTM live version, and a refused publish (flag off). Auth on camera is installed-app PKCE (`auth login`), not a Gmail Connect card.
+Unlisted YouTube script: [DEMO-VIDEO-SCRIPT.md](DEMO-VIDEO-SCRIPT.md). The video must show the consent URL including this client's `client_id`, the app name **DGTL Sunrise**, the Free Google scopes (read and manage), list → pick → report, GSC queries, GTM live version, a dry_run mutate, and a live mutate without in-chat confirm refused. Auth on camera is installed-app PKCE (`auth login`), not a Gmail Connect card. Historical Shot 0–6 (readonly-only) stays in that file as the earlier take.
 
 ---
 

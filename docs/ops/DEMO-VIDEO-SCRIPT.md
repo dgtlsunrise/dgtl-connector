@@ -8,6 +8,8 @@ Auth on camera is Manual / PKCE, not a Connect card. Agent Plugins 1.0 and today
 
 Do not show Ads, Gmail, Drive, write scopes, a client secret, or token files.
 
+Shots 0–6 below are the historical readonly take. After Free full Connect, also film the appendix **Manage-scope verification**.
+
 ---
 
 ## Before you record
@@ -119,3 +121,35 @@ Voice: "Publishing is out of scope. The plugin is read-only. I will not invent a
 4. Paste the URL into the Google verification form. Do not tweet it.
 
 If Google asks to re-shoot because the client ID was cropped, re-do Shot 1 only and splice, or re-record the whole take.
+
+---
+
+## Appendix — Manage-scope verification (after Free full Connect)
+
+Short add-on after the historical Shot 0–6 readonly take. Film this once Free Google Connect requests the manage scopes. Do **not** require filming Ads, Meta, GBP, Merchant Center, Gmail, or Drive.
+
+### Shot M1 — Consent shows edit / publish / webmasters
+
+Same PKCE login as Shot 1. **Hold the address bar** so reviewers can read:
+
+- host is accounts.google.com
+- `client_id=` equal to the Desktop OAuth client
+- query includes `analytics.edit`, `tagmanager.edit.containers`, `tagmanager.publish`, and `webmasters` (plus the three readonly + identity scopes)
+
+Consent screen must show app name **DGTL Sunrise** and the manage scopes (wording may vary: Manage your Google Analytics data; Manage your Tag Manager containers / publish; Manage Search Console data). Click Allow. Do not uncheck GTM.
+
+Voice: "This is the same Free Google Connect. The user grants read and manage for Analytics, Search Console, and Tag Manager. Ads stay off this screen."
+
+### Shot M2 — dry_run mutate
+
+Call one named Free Google mutate with `dry_run` true (the default). Examples: `gtm_create_tag`, `gsc_submit_sitemap`, or a GA4 Admin tool. Show the proposed change and the resource id (`GTM-…`, exact `site_url`, or `properties/{id}`). No live write.
+
+Voice: "Dry-run defaults true. The plugin shows the change and the resource id. It does not write yet."
+
+### Shot M3 — Live without confirm refused
+
+Call the same tool with `dry_run=false` and **no** in-chat confirm that contains that resource id. The tool must refuse (`INVALID_ARGUMENT` or equivalent confirm failure).
+
+Voice: "Live mutates need an in-chat confirm that includes the resource id. Without that confirm, the plugin refuses."
+
+Do not film a successful live mutate. Do not film Ads. Do not mention or toggle `DGTL_WRITES_ENABLED` — Free Google mutates are Connect + confirm only.
