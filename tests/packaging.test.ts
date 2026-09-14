@@ -27,6 +27,10 @@ describe("packaging and secrets", () => {
     const srv = parsed.mcpServers["dgtl-connector"];
     assert.equal(srv.type, "stdio");
     assert.equal(srv.command, "./bin/dgtl-connector-mcp");
+    assert.equal(srv.cwd, "${PLUGIN_ROOT}");
+    const env = (srv.env ?? {}) as Record<string, string>;
+    assert.ok(!Object.hasOwn(env, "PLUGIN_DATA"), "host injects PLUGIN_DATA; do not set it as an env key");
+    assert.ok(!Object.hasOwn(env, "PLUGIN_ROOT"), "host injects PLUGIN_ROOT; do not set it as an env key");
     assert.ok(!JSON.stringify(parsed).includes("npx"));
     assert.ok(!JSON.stringify(parsed).toLowerCase().includes("client_secret"));
   });

@@ -4,10 +4,7 @@
     "dgtl-connector": {
       "type": "stdio",
       "command": "./bin/dgtl-connector-mcp",
-      "cwd": "${PLUGIN_ROOT}",
-      "env": {
-        "PLUGIN_DATA": "${PLUGIN_DATA}"
-      }
+      "cwd": "${PLUGIN_ROOT}"
     }
   }
 }

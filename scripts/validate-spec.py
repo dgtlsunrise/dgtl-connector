@@ -373,6 +373,16 @@ def check_manifests() -> None:
                 err("mcp.json: v1 server type must be stdio")
             if srv.get("command") != "./bin/dgtl-connector-mcp":
                 err("mcp.json: command must be ./bin/dgtl-connector-mcp")
+            if srv.get("cwd") != "${PLUGIN_ROOT}":
+                err("mcp.json: cwd must be ${PLUGIN_ROOT}")
+            env = srv.get("env")
+            if isinstance(env, dict):
+                for banned in ("PLUGIN_DATA", "PLUGIN_ROOT"):
+                    if banned in env:
+                        err(
+                            f"mcp.json: env must not declare host-injected key {banned} "
+                            "(Agent Plugins mcp.schema.json forbids those property names)"
+                        )
             blob = json.dumps(mcp)
             if "npx" in blob:
                 err("mcp.json: npx is not the marketplace command")
