@@ -122,11 +122,25 @@ describe("license_status update fields + LICENSE_REQUIRED copy", () => {
     assert.ok(/GATEWAY_UNAVAILABLE/.test(text));
     assert.ok(/sGTM/.test(text));
     assert.ok(/https:\/\/www\.dgtlsunrise\.com\//.test(text));
+    assert.ok(
+      text.includes(
+        "https://buy.polar.sh/polar_cl_aIrywIIxJ2cOwj70VQAcJn2umEgSS9kWBMUJS241Dll",
+      ),
+    );
+    assert.ok(!text.includes("stamp.dgtlsunrise.com/checkout"));
+    assert.ok(!text.includes("polar_cl_yZECJ26"));
     assert.ok(/developer-token/.test(text));
     assert.ok(/do not pitch|Do not pitch|never on a normal GA4|normal free GA4/i.test(text));
     const license = readFileSync(join(ROOT, "skills/license-and-reconnect/SKILL.md"), "utf8");
     assert.ok(/\$19/.test(license));
     assert.ok(/pro-upgrade/.test(license));
+    assert.ok(
+      license.includes(
+        "https://buy.polar.sh/polar_cl_aIrywIIxJ2cOwj70VQAcJn2umEgSS9kWBMUJS241Dll",
+      ),
+    );
+    assert.ok(!license.includes("stamp.dgtlsunrise.com/checkout"));
+    assert.ok(!license.includes("polar_cl_yZECJ26"));
   });
 
   it("LICENSE_REQUIRED mentions $19/mo, site, JWT path, never developer-token", () => {

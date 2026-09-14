@@ -524,7 +524,7 @@ License: after Polar checkout, run auth redeem --code <code> or
   --checkout-id <uuid|polar_c_*> (stamp accepts both; needs DGTL_GATEWAY_URL
   → POST /v1/license). Writes
   PLUGIN_DATA/license.jwt; never prints the JWT. Or set DGTL_LICENSE_JWT.
-  Checkout: https://buy.polar.sh/polar_cl_yZECJ26Ln9mGTQDwBETXCskJRMTwrYAd6thMJO1zHPk
+  Checkout: https://buy.polar.sh/polar_cl_aIrywIIxJ2cOwj70VQAcJn2umEgSS9kWBMUJS241Dll
   (site: https://www.dgtlsunrise.com/). Gateway example:
   https://stamp.dgtlsunrise.com (backup: https://dgtl-stamp.noel-4ea.workers.dev)
 

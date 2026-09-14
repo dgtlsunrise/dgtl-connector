@@ -26,6 +26,13 @@ describe("auth redeem / POST /v1/license", () => {
     assert.ok(h.includes("POST /v1/license") || h.includes("/v1/license"));
     assert.ok(h.includes("never prints the JWT") || h.includes("never print"));
     assert.ok(h.includes("stamp.dgtlsunrise.com"));
+    assert.ok(
+      h.includes(
+        "https://buy.polar.sh/polar_cl_aIrywIIxJ2cOwj70VQAcJn2umEgSS9kWBMUJS241Dll",
+      ),
+    );
+    assert.ok(!h.includes("stamp.dgtlsunrise.com/checkout"));
+    assert.ok(!h.includes("polar_cl_yZECJ26"));
   });
 
   it("parseRedeemArgs accepts --code / --checkout-id and = forms; rejects both/neither", () => {
@@ -238,6 +245,13 @@ describe("auth redeem / POST /v1/license", () => {
     assert.ok(/LICENSE_REQUIRED ladder/i.test(skill));
     assert.ok(/auth redeem/.test(skill));
     assert.ok(/stamp\.dgtlsunrise\.com/.test(skill));
+    assert.ok(
+      skill.includes(
+        "https://buy.polar.sh/polar_cl_aIrywIIxJ2cOwj70VQAcJn2umEgSS9kWBMUJS241Dll",
+      ),
+    );
+    assert.ok(!skill.includes("stamp.dgtlsunrise.com/checkout"));
+    assert.ok(!skill.includes("polar_cl_yZECJ26"));
     assert.ok(/ADS_SCOPE_MISSING/.test(skill));
     assert.ok(/META_NOT_CONNECTED/.test(skill));
     assert.ok(/\$19/.test(skill));
