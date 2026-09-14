@@ -1,6 +1,6 @@
 # `bin/dgtl-connector-mcp`
 
-Plugin-relative stdio entry. Hosts spawn this with `cwd` = plugin root.
+Plugin-relative stdio entry. `mcp.json` omits `cwd` so Agent Plugins hosts default it to the plugin root (Cursor does not expand `${PLUGIN_ROOT}`). The wrapper locates `dist/` from its own path, not from process cwd.
 
 ```
 ./bin/dgtl-connector-mcp           # MCP stdio

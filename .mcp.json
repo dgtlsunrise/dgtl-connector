@@ -3,8 +3,7 @@
   "mcpServers": {
     "dgtl-connector": {
       "type": "stdio",
-      "command": "./bin/dgtl-connector-mcp",
-      "cwd": "${PLUGIN_ROOT}"
+      "command": "./bin/dgtl-connector-mcp"
     }
   }
 }

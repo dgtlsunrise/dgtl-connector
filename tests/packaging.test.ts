@@ -27,7 +27,13 @@ describe("packaging and secrets", () => {
     const srv = parsed.mcpServers["dgtl-connector"];
     assert.equal(srv.type, "stdio");
     assert.equal(srv.command, "./bin/dgtl-connector-mcp");
-    assert.equal(srv.cwd, "${PLUGIN_ROOT}");
+    assert.ok(!Object.hasOwn(srv, "cwd"), "omit cwd: AP default is plugin root; Cursor does not expand ${PLUGIN_ROOT}");
+    assert.ok(!JSON.stringify(parsed).includes("${PLUGIN_ROOT}"));
+    assert.ok(!JSON.stringify(parsed).includes("${CURSOR_PLUGIN_ROOT}"));
+    // Agent Plugins mcp.schema.json stdio cwd pattern (fetched 2026-09-14).
+    const cwdPattern = new RegExp("^(?:\\./|\\$\\{PLUGIN_ROOT\\}(?:/|$)|\\$\\{PLUGIN_DATA\\}(?:/|$))");
+    assert.ok(cwdPattern.test("${PLUGIN_ROOT}"));
+    assert.ok(!cwdPattern.test("${CURSOR_PLUGIN_ROOT}"), "${CURSOR_PLUGIN_ROOT} is invalid AP cwd");
     const env = (srv.env ?? {}) as Record<string, string>;
     assert.ok(!Object.hasOwn(env, "PLUGIN_DATA"), "host injects PLUGIN_DATA; do not set it as an env key");
     assert.ok(!Object.hasOwn(env, "PLUGIN_ROOT"), "host injects PLUGIN_ROOT; do not set it as an env key");
@@ -38,7 +44,7 @@ describe("packaging and secrets", () => {
   it("binary --help exits 0", () => {
     const bin = join(ROOT, "bin/dgtl-connector-mcp");
     assert.equal(existsSync(bin), true);
-    const out = execFileSync(bin, ["--help"], { encoding: "utf8" });
+    const out = execFileSync(bin, ["--help"], { encoding: "utf8", cwd: "/tmp" });
     assert.ok(out.includes("stdio"));
     assert.ok(out.toLowerCase().includes("pkce"));
     assert.ok(out.includes("Connect card") || out.includes("connect card"));
@@ -96,6 +102,8 @@ describe("packaging and secrets", () => {
     assert.equal(plugin.extensions["com.dgtlsunrise"].closedToolCount, 26);
     assert.equal(plugin.license, "Apache-2.0");
     assert.equal(plugin.author.name, "DGTL Sunrise");
+    assert.equal(plugin.repository, "https://github.com/dgtlsunrise/dgtl-connector");
+    assert.ok(!Object.hasOwn(plugin, "logo"), "Agent Plugins 1.0 plugin.schema.json has no logo field");
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
     assert.equal(pkg.name, "dgtl-connector");
     assert.ok(pkg.bin["dgtl-connector-mcp"]);
