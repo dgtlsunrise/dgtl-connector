@@ -375,8 +375,12 @@ def check_manifests() -> None:
                 err("mcp.json: v1 server type must be stdio")
             if srv.get("command") != "./bin/dgtl-connector-mcp":
                 err("mcp.json: command must be ./bin/dgtl-connector-mcp")
-            if srv.get("cwd") != "${PLUGIN_ROOT}":
-                err("mcp.json: cwd must be ${PLUGIN_ROOT}")
+            if "cwd" in srv:
+                err(
+                    "mcp.json: omit cwd (Agent Plugins default is plugin root; "
+                    "Cursor does not expand ${PLUGIN_ROOT}; "
+                    "${CURSOR_PLUGIN_ROOT} fails mcp.schema.json cwd pattern)"
+                )
             env = srv.get("env")
             if isinstance(env, dict):
                 for banned in ("PLUGIN_DATA", "PLUGIN_ROOT"):

@@ -41,7 +41,7 @@ npm run doctor
 
 The marketplace command is **one token**, plugin-relative: `./bin/dgtl-connector-mcp`. Not `npx`.
 
-- Cursor / Agent Plugins: `mcp.json` (generated).
+- Cursor / Agent Plugins: `mcp.json` (generated). `cwd` is omitted: Agent Plugins defaults it to the plugin root; Cursor does not expand `${PLUGIN_ROOT}`, and `${CURSOR_PLUGIN_ROOT}` is not a valid Agent Plugins `cwd`.
 - Grok Build: `.mcp.json` (same bytes, generated from `src/packaging/mcp.template.json`).
 
 Load with `--plugin-dir` pointing at this directory after `npm run build`.

@@ -8,6 +8,7 @@
     "email": "noel@dgtlsunrise.com"
   },
   "homepage": "https://www.dgtlsunrise.com/",
+  "repository": "https://github.com/dgtlsunrise/dgtl-connector",
   "license": "Apache-2.0",
   "keywords": [
     "dgtl",

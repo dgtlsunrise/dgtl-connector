@@ -81,7 +81,7 @@ npm test
 ./bin/dgtl-connector-mcp --help
 ```
 
-stdio MCP: hosts spawn `./bin/dgtl-connector-mcp` with `cwd` = plugin root. Set `GOOGLE_ACCESS_TOKEN` or run `auth login`.
+stdio MCP: hosts spawn `./bin/dgtl-connector-mcp`. `mcp.json` omits `cwd` (Agent Plugins default = plugin root; Cursor does not expand `${PLUGIN_ROOT}`). Set `GOOGLE_ACCESS_TOKEN` or run `auth login`.
 
 ## Remaining (Phase 7+)
 
