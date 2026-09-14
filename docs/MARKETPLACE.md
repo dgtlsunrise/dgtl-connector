@@ -10,6 +10,7 @@ Reviewers will treat this as code that runs on a user's computer and talks to Go
 
 - [ ] Git history and HEAD contain **no** OAuth client secrets, refresh tokens, service account keys, `token.json`, `client_secret*.json`, or `.env` with credentials
 - [ ] `mcp.json` has **no** `CLIENT_SECRET`, no `Authorization` header with a real token, no remote URL to a DGTL proxy
+- [ ] `mcp.json` has **no** `env` keys named `PLUGIN_ROOT` or `PLUGIN_DATA` (the host injects those; Agent Plugins `mcp.schema.json` forbids them as `env` property names)
 - [ ] `plugin.json` validates against Agent Plugins 1.0 (`$schema` + `name` constraints)
 - [ ] `mcp.json` validates against Agent Plugins MCP schema (`$schema` + `mcpServers`, stdio `type`+`command`)
 - [ ] Auth is **AuthPort**: host-injected token, then installed-app PKCE (public Desktop client). stdio is Manual — no Gmail-style Connect card. Do not embed a client secret.
@@ -19,7 +20,7 @@ Reviewers will treat this as code that runs on a user's computer and talks to Go
 - [ ] License is a public OSI license (replace `UNLICENSED` before submit)
 - [ ] Support email `noel@dgtlsunrise.com` is real
 - [ ] Privacy policy URL exists (Google verification needs it; marketplace reviewers will look)
-- [ ] Logo optional but preferred; commit a relative path when you have one — do not hotlink a secret bucket
+- [ ] Logo: Agent Plugins 1.0 `plugin.schema.json` has **no** `logo` / `icon` field (`additionalProperties: false`). Keep `assets/logo.svg` in-repo for later clients; do **not** add an unofficial field to `plugin.json`. Do not hotlink a secret bucket.
 
 Open source is the review bar. Do not ship a “contact us for the binary” plugin.
 
@@ -78,7 +79,7 @@ Grok Build also discovers `.mcp.json` in some layouts. **Only add a duplicate `.
 - [ ] No unknown **required** fields at the top level; client-specific data under `extensions`
 - [ ] Skills only as immediate children of `skills/` with `SKILL.md`
 - [ ] stdio `command` is one token (`./bin/dgtl-connector-mcp` or a PATH binary)
-- [ ] Placeholders in `args` / `env` / `cwd` are only `${PLUGIN_ROOT}` and `${PLUGIN_DATA}` (Agent Plugins). Host token injection is **not** encoded as a fake secret in headers
+- [ ] Host injects `PLUGIN_ROOT` and `PLUGIN_DATA` into the process environment. Do **not** put `PLUGIN_ROOT` or `PLUGIN_DATA` as `env` *keys* — `mcp.schema.json` `propertyNames` forbids those names. `cwd` may be `${PLUGIN_ROOT}`. Other `env` values (if any) may interpolate `${PLUGIN_DATA}`; this plugin omits `env` entirely. Runtime still reads `env.PLUGIN_DATA` / `GROK_PLUGIN_DATA` / `CLAUDE_PLUGIN_DATA` in `detectPluginData` when the host sets them. Host token injection is **not** encoded as a fake secret in headers.
 
 ## Google verification vs marketplace
 
