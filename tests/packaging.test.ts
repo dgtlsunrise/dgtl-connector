@@ -65,6 +65,7 @@ describe("packaging and secrets", () => {
     assert.ok(url.includes("analytics.readonly"));
     assert.ok(url.includes("analytics.edit"));
     assert.ok(url.includes("tagmanager.edit.containers"));
+    assert.ok(url.includes("tagmanager.edit.containerversions"));
     assert.ok(url.includes("tagmanager.publish"));
     assert.ok(!url.includes("adwords"));
     assert.ok(!url.includes("auth/content"));

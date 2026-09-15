@@ -202,7 +202,9 @@ export async function gtmCreateTag(ctx: AppContext, args: Rec): Promise<Envelope
 
   const { publicId } = await resolveContainerPublicId(ctx, tool, accountId, containerId);
   const workspaceName = await resolveWorkspaceName(ctx, tool, accountId, containerId, workspaceId);
-  const proposed = { name, type };
+  const proposed: Rec = { name, type };
+  const parameter = gtmParameters(args.parameter);
+  if (parameter) proposed.parameter = parameter;
 
   if (dryRun) {
     return okEnvelope(tool, {
@@ -645,8 +647,7 @@ export async function gtmPublishContainer(ctx: AppContext, args: Rec): Promise<E
     versionBody,
     {
       tool,
-      // create_version is part of the publish path; W token must cover edit/publish.
-      requiredScope: SCOPE.tagmanagerEditContainers,
+      requiredScope: SCOPE.tagmanagerEditContainerversions,
     },
   )) as Rec;
 

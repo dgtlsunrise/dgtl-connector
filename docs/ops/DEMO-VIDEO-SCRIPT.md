@@ -143,7 +143,7 @@ Operator packet: [OAUTH-ACTION-NEEDED-2026-09-15.md](OAUTH-ACTION-NEEDED-2026-09
 3. Hold the address bar until a reviewer can read:
    - host is `accounts.google.com`
    - `client_id=` equals the Desktop OAuth client
-   - `scope=` includes the exact strings `https://www.googleapis.com/auth/analytics.edit`, `https://www.googleapis.com/auth/tagmanager.edit.containers`, `https://www.googleapis.com/auth/tagmanager.publish`, and `https://www.googleapis.com/auth/webmasters`
+   - `scope=` includes the exact strings `https://www.googleapis.com/auth/analytics.edit`, `https://www.googleapis.com/auth/tagmanager.edit.containers`, `https://www.googleapis.com/auth/tagmanager.edit.containerversions`, `https://www.googleapis.com/auth/tagmanager.publish`, and `https://www.googleapis.com/auth/webmasters`
    - `scope=` also includes the readonly trio (`analytics.readonly`, `webmasters.readonly`, `tagmanager.readonly`) plus `openid` and `userinfo.email`
    - `scope=` does not include `adwords`, `content`, or `business.manage`
 4. Consent screen must show app name **DGTL Sunrise** and the manage scopes (wording may vary: Manage your Google Analytics data; Edit your Google Tag Manager containers; Publish your Google Tag Manager containers).
@@ -175,7 +175,7 @@ Voice: "tagmanager.edit.containers is for workspace edits the user confirms. Her
 
 Same container. Publish is irreversible. Use the disposable container only.
 
-1. Call `gtm_publish_container` with `dry_run` true. Show `create_version_then_publish` and the publicId. No publish yet.
+1. Call `gtm_publish_container` with `dry_run` true. Show `create_version_then_publish` and the publicId. No publish yet. Live `create_version` needs `tagmanager.edit.containerversions` on the same grant.
 2. Call the same tool with `dry_run=false`, `confirm_phrase` that includes that publicId, and a `version_name` such as `DGTL OAuth verify publish`.
 3. Stay in `https://tagmanager.google.com`. Open Versions. Show the new published version as the live version.
 

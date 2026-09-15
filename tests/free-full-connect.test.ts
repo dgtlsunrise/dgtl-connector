@@ -29,6 +29,7 @@ const FREE_FULL = [
   "https://www.googleapis.com/auth/tagmanager.readonly",
   "https://www.googleapis.com/auth/analytics.edit",
   "https://www.googleapis.com/auth/tagmanager.edit.containers",
+  "https://www.googleapis.com/auth/tagmanager.edit.containerversions",
   "https://www.googleapis.com/auth/tagmanager.publish",
   "https://www.googleapis.com/auth/webmasters",
 ] as const;
@@ -76,6 +77,7 @@ describe("Free full Google Connect", () => {
       SCOPE.tagmanager,
       SCOPE.analyticsEdit,
       SCOPE.tagmanagerEditContainers,
+      SCOPE.tagmanagerEditContainerversions,
       SCOPE.tagmanagerPublish,
       SCOPE.webmastersWrite,
     ]);
@@ -142,6 +144,7 @@ describe("Free full Google Connect", () => {
       assert.deepEqual(granted, [...FREE_FULL]);
       assert.ok(granted.includes("https://www.googleapis.com/auth/analytics.edit"));
       assert.ok(granted.includes("https://www.googleapis.com/auth/tagmanager.edit.containers"));
+      assert.ok(granted.includes("https://www.googleapis.com/auth/tagmanager.edit.containerversions"));
       assert.ok(granted.includes("https://www.googleapis.com/auth/tagmanager.publish"));
       assert.ok(granted.includes("https://www.googleapis.com/auth/webmasters"));
       assert.ok(!granted.includes("https://www.googleapis.com/auth/adwords"));

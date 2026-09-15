@@ -54,8 +54,9 @@ The binary requests these on **one** consent screen. **Noel RED:** adding them o
 
 6. `https://www.googleapis.com/auth/analytics.edit`
 7. `https://www.googleapis.com/auth/tagmanager.edit.containers`
-8. `https://www.googleapis.com/auth/tagmanager.publish`
-9. `https://www.googleapis.com/auth/webmasters`
+8. `https://www.googleapis.com/auth/tagmanager.edit.containerversions`
+9. `https://www.googleapis.com/auth/tagmanager.publish`
+10. `https://www.googleapis.com/auth/webmasters`
 
 Do **not** declare `userinfo.profile`, `adwords`, `business.manage`, blanket `analytics`, `content`, Gmail, or Drive on this client.
 
@@ -92,6 +93,10 @@ The app lets the signed-in user manage their own GA4 properties, data streams, k
 ### `https://www.googleapis.com/auth/tagmanager.edit.containers`
 
 The app lets the signed-in user create and update tags, triggers, variables, clients, containers, and environments in Tag Manager workspaces they already can access. Live mutates require in-chat confirmation that includes the container publicId. `dry_run` defaults true. The app does not access other users' Tag Manager accounts.
+
+### `https://www.googleapis.com/auth/tagmanager.edit.containerversions`
+
+The app creates a Tag Manager container version before it publishes. `workspaces/{id}:create_version` requires this scope. `tagmanager.edit.containers` and `tagmanager.publish` are not enough. Live mutates stay confirm-gated. `dry_run` defaults true. The app does not access other users' Tag Manager accounts.
 
 ### `https://www.googleapis.com/auth/tagmanager.publish`
 

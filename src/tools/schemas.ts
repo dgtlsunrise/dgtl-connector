@@ -322,6 +322,14 @@ function requireConfirmWhenLive(val: { dry_run: boolean; confirm_phrase?: string
   }
 }
 
+const gtmParameter = z
+  .object({
+    type: z.string().min(1),
+    key: z.string().min(1).optional(),
+    value: z.string().optional(),
+  })
+  .strict();
+
 /** Consent W GTM write tools — dry_run defaults true; live needs confirm_phrase. */
 export const gtmCreateTag = z
   .object({
@@ -330,6 +338,7 @@ export const gtmCreateTag = z
     workspace_id: str,
     name: str,
     type: str,
+    parameter: z.array(gtmParameter).max(20).optional(),
     /** Default true in code — live mutate only when explicitly false. */
     dry_run: z.boolean().default(true),
     /** Required when dry_run=false; must include resolved publicId (checked in handler). */
@@ -351,15 +360,6 @@ export const gtmUpdateTag = z
   })
   .strict()
   .superRefine(requireConfirmWhenLive);
-
-/** Closed GTM parameter (trigger/variable). Keys are type/key/value only. */
-const gtmParameter = z
-  .object({
-    type: z.string().min(1),
-    key: z.string().min(1).optional(),
-    value: z.string().optional(),
-  })
-  .strict();
 
 export const gtmCreateTrigger = z
   .object({

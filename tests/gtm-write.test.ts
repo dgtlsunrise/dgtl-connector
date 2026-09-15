@@ -127,6 +127,40 @@ describe("GoogleWriteHttp GTM mutate (PR-8)", () => {
     );
   });
 
+  it("dry_run create forwards parameter onto proposed for Custom HTML tags", async () => {
+    const html = "<script>window.dataLayer=window.dataLayer||[];</script>";
+    const parsed = S.gtmCreateTag.parse({
+      account_id: "1",
+      container_id: "2",
+      workspace_id: "3",
+      name: "Custom HTML",
+      type: "html",
+      parameter: [{ type: "template", key: "html", value: html }],
+    });
+    assert.deepEqual(parsed.parameter, [{ type: "template", key: "html", value: html }]);
+
+    const ctx = makeCtx({}, WRITE_ENV());
+    const env = await dispatch(ctx, "gtm_create_tag", {
+      account_id: "444444",
+      container_id: "555555",
+      workspace_id: "6",
+      name: "Custom HTML",
+      type: "html",
+      parameter: [{ type: "template", key: "html", value: html }],
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    const data = env.data as {
+      dry_run: boolean;
+      proposed: { name: string; type: string; parameter?: Array<{ type: string; key?: string; value?: string }> };
+    };
+    assert.equal(data.dry_run, true);
+    assert.equal(data.proposed.name, "Custom HTML");
+    assert.equal(data.proposed.type, "html");
+    assert.deepEqual(data.proposed.parameter, [{ type: "template", key: "html", value: html }]);
+    assert.ok(ctx.calls.every((c) => c.method === "GET"));
+    assert.ok(!ctx.calls.some((c) => c.path.endsWith("/tags") && c.method === "POST"));
+  });
+
   it("dry_run create returns proposed body + publicId with zero mutate HTTP", async () => {
     const ctx = makeCtx({}, WRITE_ENV());
     let authCalls = 0;

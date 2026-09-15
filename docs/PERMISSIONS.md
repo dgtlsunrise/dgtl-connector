@@ -15,6 +15,7 @@ Request **all of these** on a **single** Google consent screen. Do not run seque
 | `https://www.googleapis.com/auth/tagmanager.readonly` | Tag Manager API v2 | View Google Tag Manager accounts, containers, workspaces, tags/triggers/variables, **clients**, **environments**, and live versions |
 | `https://www.googleapis.com/auth/analytics.edit` | GA4 Admin writes | Manage GA4 properties, streams, key events, custom defs (confirm) |
 | `https://www.googleapis.com/auth/tagmanager.edit.containers` | Tag Manager writes | Create/update tags, triggers, variables, clients, containers, environments (confirm) |
+| `https://www.googleapis.com/auth/tagmanager.edit.containerversions` | Tag Manager versions | Create a container version before publish (`create_version`). Confirm-gated. `dry_run` default. |
 | `https://www.googleapis.com/auth/tagmanager.publish` | Tag Manager publish | Publish a container version (confirm) |
 | `https://www.googleapis.com/auth/webmasters` | Search Console writes | Submit/delete sitemaps (confirm). No Indexing API. |
 
