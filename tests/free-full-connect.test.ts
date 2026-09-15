@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
+import { get as httpGet } from "node:http";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 import { AuthPort, tokenHasScopes } from "../src/auth/port.js";
-import { helpText } from "../src/auth/login-cli.js";
+import { helpText, runAuthLogin } from "../src/auth/login-cli.js";
 import { buildGoogleAuthUrl, generatePkce } from "../src/auth/pkce.js";
 import { loadFlags } from "../src/flags.js";
 import {
@@ -31,6 +32,34 @@ const FREE_FULL = [
   "https://www.googleapis.com/auth/tagmanager.publish",
   "https://www.googleapis.com/auth/webmasters",
 ] as const;
+
+function waitForPrintedAuthUrl(chunks: string[], timeoutMs = 5000): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const started = Date.now();
+    const tick = () => {
+      const match = chunks.join("").match(/https:\/\/accounts\.google\.com\/o\/oauth2\/v2\/auth[^\s]+/);
+      if (match) {
+        resolve(match[0]);
+        return;
+      }
+      if (Date.now() - started > timeoutMs) {
+        reject(new Error(`auth login did not print a Google URL: ${chunks.join("")}`));
+        return;
+      }
+      setTimeout(tick, 25);
+    };
+    tick();
+  });
+}
+
+function loopbackGet(url: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    httpGet(url, (res) => {
+      res.resume();
+      res.on("end", () => resolve(res.statusCode ?? 0));
+    }).on("error", reject);
+  });
+}
 
 describe("Free full Google Connect", () => {
   let restore: () => void;
@@ -70,7 +99,7 @@ describe("Free full Google Connect", () => {
     );
   });
 
-  it("auth login URL requests Free Google and never adwords/content/business.manage", () => {
+  it("auth login URL scope param includes exact Free Connect strings Google named", () => {
     const pkce = generatePkce();
     const url = buildGoogleAuthUrl({
       clientId: "example-public-client-id.apps.googleusercontent.com",
@@ -79,10 +108,66 @@ describe("Free full Google Connect", () => {
       state: pkce.state,
     });
     const granted = new URL(url).searchParams.get("scope")?.split(/\s+/) ?? [];
+    const required = [
+      "openid",
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/analytics.readonly",
+      "https://www.googleapis.com/auth/webmasters.readonly",
+      "https://www.googleapis.com/auth/tagmanager.readonly",
+      "https://www.googleapis.com/auth/analytics.edit",
+      "https://www.googleapis.com/auth/tagmanager.edit.containers",
+      "https://www.googleapis.com/auth/tagmanager.publish",
+      "https://www.googleapis.com/auth/webmasters",
+    ] as const;
+    for (const scope of required) {
+      assert.ok(granted.includes(scope), `Free Connect URL missing ${scope}`);
+    }
+    assert.deepEqual(granted, [...required]);
     assert.deepEqual(granted, [...FREE_FULL]);
+    assert.ok(!granted.includes("https://www.googleapis.com/auth/adwords"));
+    assert.ok(!granted.includes("https://www.googleapis.com/auth/content"));
+    assert.ok(!granted.includes("https://www.googleapis.com/auth/business.manage"));
     assert.ok(!url.includes("adwords"));
     assert.ok(!url.includes("auth/content"));
     assert.ok(!url.includes("business.manage"));
+  });
+
+  it("auth login prints a Free Connect URL with the same exact scope strings", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "dgtl-free-url-"));
+    const chunks: string[] = [];
+    const origWrite = process.stderr.write.bind(process.stderr);
+    process.stderr.write = ((chunk: string | Uint8Array) => {
+      chunks.push(typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8"));
+      return true;
+    }) as typeof process.stderr.write;
+    try {
+      const login = runAuthLogin({
+        clientId: "example-public-client-id.apps.googleusercontent.com",
+        pluginDataDir: dir,
+        fetchImpl: (async () => {
+          throw new Error("NETWORK_FORBIDDEN");
+        }) as typeof fetch,
+      });
+      const url = await waitForPrintedAuthUrl(chunks);
+      const parsed = new URL(url);
+      const granted = parsed.searchParams.get("scope")?.split(/\s+/) ?? [];
+      assert.deepEqual(granted, [...FREE_FULL]);
+      assert.ok(granted.includes("https://www.googleapis.com/auth/analytics.edit"));
+      assert.ok(granted.includes("https://www.googleapis.com/auth/tagmanager.edit.containers"));
+      assert.ok(granted.includes("https://www.googleapis.com/auth/tagmanager.publish"));
+      assert.ok(granted.includes("https://www.googleapis.com/auth/webmasters"));
+      assert.ok(!granted.includes("https://www.googleapis.com/auth/adwords"));
+      const redirectUri = parsed.searchParams.get("redirect_uri");
+      assert.ok(redirectUri);
+      const deny = new URL(redirectUri);
+      deny.searchParams.set("error", "access_denied");
+      deny.searchParams.set("state", parsed.searchParams.get("state") ?? "");
+      assert.equal(await loopbackGet(deny.toString()), 200);
+      assert.equal(await login, 1);
+    } finally {
+      process.stderr.write = origWrite;
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("write ports ignore a readonly Free Google token and accept one with write scopes", async () => {
