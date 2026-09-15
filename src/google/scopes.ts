@@ -8,6 +8,7 @@ export const SCOPE = {
   adwords: "https://www.googleapis.com/auth/adwords",
   /** GTM write family — on free Connect; live mutates need confirm, not DGTL_WRITES_ENABLED. */
   tagmanagerEditContainers: "https://www.googleapis.com/auth/tagmanager.edit.containers",
+  tagmanagerEditContainerversions: "https://www.googleapis.com/auth/tagmanager.edit.containerversions",
   tagmanagerPublish: "https://www.googleapis.com/auth/tagmanager.publish",
   webmastersWrite: "https://www.googleapis.com/auth/webmasters",
   analyticsEdit: "https://www.googleapis.com/auth/analytics.edit",
