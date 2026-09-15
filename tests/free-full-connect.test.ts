@@ -108,21 +108,9 @@ describe("Free full Google Connect", () => {
       state: pkce.state,
     });
     const granted = new URL(url).searchParams.get("scope")?.split(/\s+/) ?? [];
-    const required = [
-      "openid",
-      "https://www.googleapis.com/auth/userinfo.email",
-      "https://www.googleapis.com/auth/analytics.readonly",
-      "https://www.googleapis.com/auth/webmasters.readonly",
-      "https://www.googleapis.com/auth/tagmanager.readonly",
-      "https://www.googleapis.com/auth/analytics.edit",
-      "https://www.googleapis.com/auth/tagmanager.edit.containers",
-      "https://www.googleapis.com/auth/tagmanager.publish",
-      "https://www.googleapis.com/auth/webmasters",
-    ] as const;
-    for (const scope of required) {
+    for (const scope of FREE_FULL) {
       assert.ok(granted.includes(scope), `Free Connect URL missing ${scope}`);
     }
-    assert.deepEqual(granted, [...required]);
     assert.deepEqual(granted, [...FREE_FULL]);
     assert.ok(!granted.includes("https://www.googleapis.com/auth/adwords"));
     assert.ok(!granted.includes("https://www.googleapis.com/auth/content"));

@@ -189,17 +189,7 @@ Plus `openid` and `userinfo.email` as non-sensitive identity.
 
 ### Demo video (plan)
 
-English, unlisted YouTube, showing:
-
-1. **Manual / PKCE auth** (`dgtl-connector-mcp auth login` or host-injected token) — **not** a Gmail-style Connect card. Google consent with the **same** three Consent A scopes visible.
-2. Address bar includes the OAuth **client ID**.
-3. App name on the consent screen.
-4. List GA4 properties → user picks one → `runReport` numbers appear.
-5. GSC search analytics for **queries**.
-6. GTM list tags or live version.
-7. A refusal: user asks to publish a tag → agent declines (Consent A cannot publish; write stubs, if listed, are flagged off on a **different** OAuth client).
-
-Do **not** show Ads, Gmail, Connect-card UI, or write scopes on the Consent A client in that video.
+For the 2026-09-15 Action Needed, do not follow the historical readonly take (refuse publish, hide manage scopes). Film [DEMO-VIDEO-SCRIPT.md](ops/DEMO-VIDEO-SCRIPT.md) appendix M1–M4 and reply from [OAUTH-ACTION-NEEDED-2026-09-15.md](ops/OAUTH-ACTION-NEEDED-2026-09-15.md). That packet requires edit/publish on the consent screen and live GA4/GTM UI impact. Do not show Ads, Meta, Gmail, tokens, or secrets.
 
 ### Sensitive vs restricted
 
