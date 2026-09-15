@@ -322,7 +322,6 @@ function requireConfirmWhenLive(val: { dry_run: boolean; confirm_phrase?: string
   }
 }
 
-/** Closed GTM parameter (tag/trigger/variable). Keys are type/key/value only. */
 const gtmParameter = z
   .object({
     type: z.string().min(1),
