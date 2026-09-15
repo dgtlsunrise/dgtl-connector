@@ -28,6 +28,7 @@ export const CONSENT_A = [
   SCOPE.tagmanager,
   SCOPE.analyticsEdit,
   SCOPE.tagmanagerEditContainers,
+  SCOPE.tagmanagerEditContainerversions,
   SCOPE.tagmanagerPublish,
   SCOPE.webmastersWrite,
 ] as const;
@@ -39,6 +40,7 @@ export const CONSENT_A_PRODUCT = [
   SCOPE.tagmanager,
   SCOPE.analyticsEdit,
   SCOPE.tagmanagerEditContainers,
+  SCOPE.tagmanagerEditContainerversions,
   SCOPE.tagmanagerPublish,
   SCOPE.webmastersWrite,
 ] as const;
@@ -52,13 +54,18 @@ export const FREE_GOOGLE_NEVER = [SCOPE.adwords, SCOPE.content, SCOPE.business] 
  */
 export const CONSENT_W = [
   SCOPE.tagmanagerEditContainers,
+  SCOPE.tagmanagerEditContainerversions,
   SCOPE.tagmanagerPublish,
   SCOPE.webmastersWrite,
   SCOPE.analyticsEdit,
 ] as const;
 
 /** GTM edit/publish subset used by GoogleWriteHttp. */
-export const CONSENT_W_GTM = [SCOPE.tagmanagerEditContainers, SCOPE.tagmanagerPublish] as const;
+export const CONSENT_W_GTM = [
+  SCOPE.tagmanagerEditContainers,
+  SCOPE.tagmanagerEditContainerversions,
+  SCOPE.tagmanagerPublish,
+] as const;
 
 /**
  * GA4 Admin write family (`analytics.edit` only). On free Connect.
