@@ -118,7 +118,7 @@ Paid Google Ads / Meta (later, not this OAuth client) will use a separate consen
 
 ## Demo video pointer
 
-Unlisted YouTube script: [DEMO-VIDEO-SCRIPT.md](DEMO-VIDEO-SCRIPT.md). The video must show the consent URL including this client's `client_id`, the app name **DGTL Sunrise**, the Free Google scopes (read and manage), list → pick → report, GSC queries, GTM live version, a dry_run mutate, and a live mutate without in-chat confirm refused. Auth on camera is installed-app PKCE (`auth login`), not a Gmail Connect card. Historical Shot 0–6 (readonly-only) stays in that file as the earlier take.
+Unlisted YouTube script: [DEMO-VIDEO-SCRIPT.md](DEMO-VIDEO-SCRIPT.md). For the 2026-09-15 Action Needed, film the manage-scope appendix (consent edit/publish, one live GA4 Admin mutate with the change in `analytics.google.com`, one live GTM edit and one live GTM publish with the change in `tagmanager.google.com`). Operator packet: [OAUTH-ACTION-NEEDED-2026-09-15.md](OAUTH-ACTION-NEEDED-2026-09-15.md). Auth on camera is installed-app PKCE (`auth login`), not a Gmail Connect card. Historical Shot 0–6 (readonly-only, `https://youtu.be/1HLqQDRKmM0`) stays as the earlier take. Do not resubmit that video for this Action Needed.
 
 ---
 

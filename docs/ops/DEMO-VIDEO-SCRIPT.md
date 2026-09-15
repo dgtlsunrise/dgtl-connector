@@ -1,12 +1,12 @@
 # Demo video script — Google OAuth verification (unlisted YouTube)
 
-English. Unlisted YouTube. About 4 to 6 minutes. One take is fine if the address bar stays readable.
+English. Unlisted YouTube. The historical readonly take is about 4 to 6 minutes. The 2026-09-15 Action Needed appendix is longer because it must show live GA4 and GTM UI impact. One take is fine if the address bar stays readable.
 
 This is the video Google's sensitive-scope review asks for. See docs/PERMISSIONS.md. It is not a marketplace promo.
 
 Auth on camera is Manual / PKCE, not a Connect card. Agent Plugins 1.0 and today's Cursor / Grok Bot stdio MCP do not give this plugin a Gmail-style Connect card. Show the installed-app login URL and the Google consent screen.
 
-Do not show Ads, Gmail, Drive, write scopes, a client secret, or token files.
+Do not show Ads, Meta, Gmail, Drive, a client secret, or token files. The 2026-09-15 Action Needed video must show the Free Google manage scopes and live GA4/GTM UI impact. See the appendix.
 
 Shots 0–6 below are the historical readonly take. After Free full Connect, also film the appendix **Manage-scope verification**.
 
@@ -92,13 +92,11 @@ Voice: "This is the live container version — what is published. Workspace list
 
 ---
 
-## Shot 6 — Refuse publish (required)
+## Shot 6. Refuse publish (historical readonly take only)
 
-User (you): "Publish this GTM tag to production."
+Do **not** film this shot for the 2026-09-15 Action Needed. Google now asks for a live GTM publish with source-account impact. Use appendix shots M4–M5.
 
-Agent must decline. Consent A readonly cannot publish. Publish/edit stubs (if listed) are flagged off on a different OAuth client (Consent W). Point at the Google Tag Manager UI.
-
-Voice: "Publishing is out of scope. The plugin is read-only. I will not invent a publish tool."
+This shot belongs only to the earlier readonly video (`https://youtu.be/1HLqQDRKmM0`). That take asked the agent to refuse publish because Consent A was still readonly. Free Google now requests `tagmanager.publish` on the same Connect.
 
 ---
 
@@ -108,8 +106,8 @@ Voice: "Publishing is out of scope. The plugin is read-only. I will not invent a
 - A Connect card or "Authorize Google" marketplace button presented as if stdio had one
 - `.env`, `google-oauth.json`, refresh tokens, HAR files
 - Client secret dialog
-- Any write: create tag, submit sitemap, request indexing
 - Client names from the book of business
+- For the historical readonly take only: any write. The Action Needed appendix requires the named live mutates.
 
 ---
 
@@ -124,32 +122,81 @@ If Google asks to re-shoot because the client ID was cropped, re-do Shot 1 only 
 
 ---
 
-## Appendix — Manage-scope verification (after Free full Connect)
+## Appendix. Manage-scope verification (2026-09-15 Action Needed)
 
-Short add-on after the historical Shot 0–6 readonly take. Film this once Free Google Connect requests the manage scopes. Do **not** require filming Ads, Meta, GBP, Merchant Center, Gmail, or Drive.
+Film this as the verification video Google asked for on 2026-09-15. Do not splice the historical readonly take (`https://youtu.be/1HLqQDRKmM0`) and call it done. That video does not show why `analytics.edit`, `tagmanager.edit.containers`, or `tagmanager.publish` are required, and it does not show source-account impact in the GA4 or GTM UI.
 
-### Shot M1 — Consent shows edit / publish / webmasters
+Use a disposable DGTL property and a disposable GTM container. No client book of business. Unlisted YouTube. Do not show Ads, Meta, GBP, Merchant Center, Gmail, Drive, tokens, or secrets. Do not mention or toggle `DGTL_WRITES_ENABLED`. Free Google mutates are Connect plus in-chat confirm only.
 
-Same PKCE login as Shot 1. **Hold the address bar** so reviewers can read:
+`dry_run` defaults true on every named mutate. A live call needs `dry_run=false` and `confirm_phrase` that includes the resource id (`properties/{id}` for GA4 Admin, container publicId such as `GTM-XXXX` for GTM). Zod rejects a live call with an empty confirm. The handler also rejects a confirm that omits that id.
 
-- host is accounts.google.com
-- `client_id=` equal to the Desktop OAuth client
-- query includes `analytics.edit`, `tagmanager.edit.containers`, `tagmanager.publish`, and `webmasters` (plus the three readonly + identity scopes)
+Revoke DGTL Sunrise under Google Account, Third-party access, before Shot M1. If a prior readonly grant remains, Google incremental consent (`include_granted_scopes=true`) can show only leftover scopes. Reviewers must see edit and publish on this screen.
 
-Consent screen must show app name **DGTL Sunrise** and the manage scopes (wording may vary: Manage your Google Analytics data; Manage your Tag Manager containers / publish; Manage Search Console data). Click Allow. Do not uncheck GTM.
+Voice language Google invited: say this is an integration platform. The user authorizes their own Google account on their computer. Free Google uses a least-privilege auth model. This client requests only GA4, Search Console, and Tag Manager read and manage. It does not request Google Ads, Merchant Center, or Business Profile.
 
-Voice: "This is the same Free Google Connect. The user grants read and manage for Analytics, Search Console, and Tag Manager. Ads stay off this screen."
+Operator packet: [OAUTH-ACTION-NEEDED-2026-09-15.md](OAUTH-ACTION-NEEDED-2026-09-15.md).
 
-### Shot M2 — dry_run mutate
+### Shot M1. Consent shows edit and publish
 
-Call one named Free Google mutate with `dry_run` true (the default). Examples: `gtm_create_tag`, `gsc_submit_sitemap`, or a GA4 Admin tool. Show the proposed change and the resource id (`GTM-…`, exact `site_url`, or `properties/{id}`). No live write.
+1. Run `dgtl-connector-mcp auth login` (stdio Manual path; not a Connect card).
+2. Open the printed `accounts.google.com` URL.
+3. Hold the address bar until a reviewer can read:
+   - host is `accounts.google.com`
+   - `client_id=` equals the Desktop OAuth client
+   - `scope=` includes the exact strings `https://www.googleapis.com/auth/analytics.edit`, `https://www.googleapis.com/auth/tagmanager.edit.containers`, `https://www.googleapis.com/auth/tagmanager.publish`, and `https://www.googleapis.com/auth/webmasters`
+   - `scope=` also includes the readonly trio (`analytics.readonly`, `webmasters.readonly`, `tagmanager.readonly`) plus `openid` and `userinfo.email`
+   - `scope=` does not include `adwords`, `content`, or `business.manage`
+4. Consent screen must show app name **DGTL Sunrise** and the manage scopes (wording may vary: Manage your Google Analytics data; Edit your Google Tag Manager containers; Publish your Google Tag Manager containers).
+5. Click Allow. Do not uncheck Tag Manager.
 
-Voice: "Dry-run defaults true. The plugin shows the change and the resource id. It does not write yet."
+Voice: "This is installed-app PKCE for an integration platform. The user grants read and manage for Analytics, Search Console, and Tag Manager on one least-privilege screen. Ads stay off this client."
 
-### Shot M3 — Live without confirm refused
+### Shot M2. GA4 Admin dry_run, then live confirm
 
-Call the same tool with `dry_run=false` and **no** in-chat confirm that contains that resource id. The tool must refuse (`INVALID_ARGUMENT` or equivalent confirm failure).
+Use a disposable DGTL GA4 property. Name the property id out loud (`properties/{id}`).
 
-Voice: "Live mutates need an in-chat confirm that includes the resource id. Without that confirm, the plugin refuses."
+1. Call `ga4_create_custom_dimension` with `dry_run` omitted or true. Show the proposed `parameter_name` / `display_name` and `properties/{id}`. No Admin write yet.
+2. Call the same tool with `dry_run=false` and `confirm_phrase` that includes that `properties/{id}`. Example display name: `DGTL OAuth verify dim`.
+3. Switch to `https://analytics.google.com` while signed in as the same Google account. Open Admin, Data display, Custom definitions on that property. Show the new dimension.
 
-Do not film a successful live mutate. Do not film Ads. Do not mention or toggle `DGTL_WRITES_ENABLED` — Free Google mutates are Connect + confirm only.
+Voice: "Dry-run defaults true. Live mutate needs confirm_phrase with the property id. Here is the same change in the Analytics Admin UI."
+
+### Shot M3. GTM container edit with confirm
+
+Use a disposable DGTL GTM container. Name the publicId out loud (`GTM-…`).
+
+1. Call `gtm_create_tag` with `dry_run` true. Show the proposed tag name and the publicId. No workspace write yet.
+2. Call the same tool with `dry_run=false` and `confirm_phrase` that includes that publicId. Example name: `DGTL OAuth verify tag`. Type can be `html`.
+3. Switch to `https://tagmanager.google.com` on that container workspace. Show the new tag in the workspace list.
+
+Voice: "tagmanager.edit.containers is for workspace edits the user confirms. Here is the tag in Tag Manager."
+
+### Shot M4. GTM publish with confirm
+
+Same container. Publish is irreversible. Use the disposable container only.
+
+1. Call `gtm_publish_container` with `dry_run` true. Show `create_version_then_publish` and the publicId. No publish yet.
+2. Call the same tool with `dry_run=false`, `confirm_phrase` that includes that publicId, and a `version_name` such as `DGTL OAuth verify publish`.
+3. Stay in `https://tagmanager.google.com`. Open Versions. Show the new published version as the live version.
+
+Voice: "tagmanager.publish is only for a confirmed publish. Here is the published version in Tag Manager."
+
+### Shot M5. Optional refuse without confirm
+
+If time remains, call one of the live tools with `dry_run=false` and no `confirm_phrase` (or a phrase that omits the resource id). The plugin must refuse (`INVALID_ARGUMENT`). Then continue with the confirmed live call. Do not end the video on the refusal. Google asked to see source-account impact.
+
+### What this appendix must not show
+
+- Ads, Meta, GBP, Merchant Center, Gmail, Drive
+- A Connect card presented as if stdio had one
+- `.env`, `google-oauth.json`, refresh tokens, HAR files, client secrets
+- `DGTL_WRITES_ENABLED`
+- Client names from the book of business
+
+### Upload (Action Needed video)
+
+1. YouTube, Unlisted. Reviewers need the link without a login wall if possible.
+2. Title: `DGTL Sunrise OAuth verification - Free Google manage scopes`
+3. Description: homepage https://www.dgtlsunrise.com/ , privacy https://www.dgtlsunrise.com/privacy , support noel@dgtlsunrise.com
+4. Reply on the existing Google verification thread with the new unlisted URL. Do not open a new case. Google used that thread for this Action Needed.
+5. Do not tweet the video.
