@@ -78,6 +78,11 @@ describe("openapi", () => {
     const paths = body["paths"] as Record<string, unknown>;
     expect(paths["/v1/ga4/properties/{property_id}/sessions"]).toBeDefined();
     expect(paths["/v1/ga4/properties/{property_id}"]).toBeDefined();
+    expect(paths["/v1/ga4/properties/{property_id}/reports"]).toBeDefined();
+    expect(paths["/v1/gsc/sites"]).toBeDefined();
+    expect(paths["/v1/gsc/search-analytics"]).toBeDefined();
+    expect(paths["/v1/gtm/accounts"]).toBeDefined();
+    expect(paths["/v1/gtm/accounts/{account_id}/containers/{container_id}/versions/live"]).toBeDefined();
     expect(paths["/v1/writes/preview"]).toBeDefined();
     expect(paths["/v1/writes/confirm"]).toBeDefined();
 
@@ -93,11 +98,35 @@ describe("openapi", () => {
     expect(response.status).toBe(200);
     const body = await readJson(response);
     const paths = body["paths"] as Record<string, Record<string, unknown>>;
-    expect(Object.keys(paths).filter((path) => path.startsWith("/v1/"))).toEqual([
-      "/v1/ga4/properties/{property_id}/sessions",
+    expect(Object.keys(paths).filter((path) => path.startsWith("/v1/")).sort()).toEqual([
+      "/v1/ga4/account-summaries",
+      "/v1/ga4/accounts",
+      "/v1/ga4/accounts/{account_id}/properties",
       "/v1/ga4/properties/{property_id}",
-      "/v1/writes/preview",
+      "/v1/ga4/properties/{property_id}/data-streams",
+      "/v1/ga4/properties/{property_id}/key-events",
+      "/v1/ga4/properties/{property_id}/metadata",
+      "/v1/ga4/properties/{property_id}/reports",
+      "/v1/ga4/properties/{property_id}/sessions",
+      "/v1/gsc/schema",
+      "/v1/gsc/search-analytics",
+      "/v1/gsc/site",
+      "/v1/gsc/sitemap",
+      "/v1/gsc/sitemaps",
+      "/v1/gsc/sites",
+      "/v1/gsc/url-inspection",
+      "/v1/gtm/accounts",
+      "/v1/gtm/accounts/{account_id}/containers",
+      "/v1/gtm/accounts/{account_id}/containers/{container_id}",
+      "/v1/gtm/accounts/{account_id}/containers/{container_id}/environments",
+      "/v1/gtm/accounts/{account_id}/containers/{container_id}/versions/live",
+      "/v1/gtm/accounts/{account_id}/containers/{container_id}/workspaces",
+      "/v1/gtm/accounts/{account_id}/containers/{container_id}/workspaces/{workspace_id}/clients",
+      "/v1/gtm/accounts/{account_id}/containers/{container_id}/workspaces/{workspace_id}/tags",
+      "/v1/gtm/accounts/{account_id}/containers/{container_id}/workspaces/{workspace_id}/triggers",
+      "/v1/gtm/accounts/{account_id}/containers/{container_id}/workspaces/{workspace_id}/variables",
       "/v1/writes/confirm",
+      "/v1/writes/preview",
     ]);
 
     let operations = 0;
@@ -124,7 +153,7 @@ describe("openapi", () => {
         });
       }
     }
-    expect(operations).toBe(4);
+    expect(operations).toBe(28);
   });
 });
 
@@ -137,17 +166,17 @@ describe("routes", () => {
     expect(await readJson(response)).toEqual({ ok: true });
   });
 
-  it("returns 501 JSON for the unimplemented GA4 property read", async () => {
+  it("returns 501 JSON for an unknown /v1 path", async () => {
     const { token, hash, grant } = await issuedToken();
     const env = envWithGrant(hash, grant);
-    const req = request("/v1/ga4/properties/123456789", "GET", token);
+    const req = request("/v1/not-a-route", "GET", token);
     const response = await worker.fetch(req, env);
     expect(response.status).toBe(501);
     expect(response.headers.get("content-type")).toContain("application/json");
     expect(response.headers.get("access-control-allow-origin")).toBe("*");
     const body = await readJson(response);
     expect(body["error"]).toBe("not_implemented");
-    expect(body["path"]).toBe("/v1/ga4/properties/123456789");
+    expect(body["path"]).toBe("/v1/not-a-route");
     expect(body["method"]).toBe("GET");
   });
 

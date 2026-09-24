@@ -2,7 +2,7 @@
 
 Cloudflare Worker for the DGTL Sunrise Muse connector (Raw API + OpenAPI).
 
-`GET /openapi.json` is an OpenAPI 3.1 document. `GET /healthz` returns `200`. `GET /connect` starts Google sign-in and the callback shows a Bearer token once. `GET /v1/ga4/properties/{property_id}/sessions` reads the GA4 sessions metric for a linked grant. `POST /v1/writes/preview` and `POST /v1/writes/confirm` are a confirm gate that does not mutate Google. `GET /v1/ga4/properties/{property_id}` still returns `501`.
+`GET /openapi.json` is an OpenAPI 3.1 document. `GET /healthz` returns `200`. `GET /connect` starts Google sign-in and the callback shows a Bearer token once. Free Google reads cover GA4, Search Console, and Tag Manager. `POST /v1/writes/preview` and `POST /v1/writes/confirm` are a confirm gate that does not mutate Google.
 
 The stdio tip (`src/`) and stamp are separate. This directory installs and deploys on its own.
 
@@ -90,7 +90,44 @@ Open `https://muse-api.dgtlsunrise.com/connect` and choose Connect Google. The c
 - `https://www.googleapis.com/auth/tagmanager.publish`
 - `https://www.googleapis.com/auth/webmasters`
 
-It does not request `https://www.googleapis.com/auth/adwords`, `https://www.googleapis.com/auth/content`, or `https://www.googleapis.com/auth/business.manage`. Google must return every requested scope. A partial grant is not stored. The callback writes the granted scope list on the grant next to the sealed refresh token. The refresh token is encrypted with AES-256-GCM before it is stored. `GET /v1/ga4/properties/{property_id}/sessions` returns `{property_id, start_date, end_date, sessions}` and still works for an older grant that only has `analytics.readonly`. `start_date` defaults to `28daysAgo` and `end_date` defaults to `yesterday`. A grant with `google: null` returns `403` `{"error":"google_not_linked"}`.
+It does not request `https://www.googleapis.com/auth/adwords`, `https://www.googleapis.com/auth/content`, or `https://www.googleapis.com/auth/business.manage`. Google must return every requested scope. A partial grant is not stored. The callback writes the granted scope list on the grant next to the sealed refresh token. The refresh token is encrypted with AES-256-GCM before it is stored. A grant with `google: null` returns `403` `{"error":"google_not_linked"}`.
+
+## Reads
+
+Google-calling reads open the stored refresh token and mint an access token. `GET /v1/gsc/schema` is a local catalog and does not. A linked grant that is missing the readonly scope for that route returns `403` `{"error":"google_reconnect_required","missing_scopes":[...]}` and does not call Google. An older grant that only has `analytics.readonly` can still read GA4, including sessions. Search Console reads need `webmasters.readonly`. Tag Manager reads need `tagmanager.readonly`. These routes do not publish a container, submit a sitemap, or write GA4 Admin.
+
+`GET /v1/ga4/properties/{property_id}/sessions` returns `{property_id, start_date, end_date, sessions}`. `start_date` defaults to `28daysAgo` and `end_date` defaults to `yesterday`. That path is a sessions convenience. The tip report tool is `POST /v1/ga4/properties/{property_id}/reports`.
+
+| Tip tool | Muse path | Notes |
+| --- | --- | --- |
+| `ga4_list_accounts` | `GET /v1/ga4/accounts` | `page_token` is Google `nextPageToken`. |
+| `ga4_list_account_summaries` | `GET /v1/ga4/account-summaries` | Response key `account_summaries`. |
+| `ga4_list_properties` | `GET /v1/ga4/accounts/{account_id}/properties` | Path is the numeric id. Tip also accepts an `accounts/{id}` prefix. |
+| `ga4_get_property` | `GET /v1/ga4/properties/{property_id}` | Admin resource is `resource` (`displayName`, `timeZone`, `currencyCode`). |
+| `ga4_list_data_streams` | `GET /v1/ga4/properties/{property_id}/data-streams` | Response key `data_streams`. |
+| `ga4_list_key_events` | `GET /v1/ga4/properties/{property_id}/key-events` | Response key `key_events`. |
+| `ga4_get_metadata` | `GET /v1/ga4/properties/{property_id}/metadata` | Not cached. Query `query`, `kind`, `custom_only`. |
+| `ga4_run_report` | `POST /v1/ga4/properties/{property_id}/reports` | Subset. No `recipe`, `dimension_filter`, `metric_filter`, or `order_bys`. Search-query and gclid names are rejected locally. |
+| (sessions convenience) | `GET /v1/ga4/properties/{property_id}/sessions` | Not a tip tool. Sessions metric only. |
+| `gsc_describe_schema` | `GET /v1/gsc/schema` | Local catalog. No Google call. |
+| `gsc_list_sites` | `GET /v1/gsc/sites` | `page_token` is a numeric offset. Copy `siteUrl` exactly. |
+| `gsc_get_site` | `GET /v1/gsc/site?site_url=` | Query, not a path, because the property string contains slashes. |
+| `gsc_query_search_analytics` | `POST /v1/gsc/search-analytics` | `data_state` defaults to `final`. |
+| `gsc_inspect_url` | `POST /v1/gsc/url-inspection` | No request-indexing route. |
+| `gsc_list_sitemaps` | `GET /v1/gsc/sitemaps?site_url=` | Optional `sitemap_index`. Numeric `page_token`. |
+| `gsc_get_sitemap` | `GET /v1/gsc/sitemap?site_url=&feedpath=` | `feedpath` is a query parameter. |
+| `gtm_list_accounts` | `GET /v1/gtm/accounts` | Numeric `page_token`. |
+| `gtm_list_containers` | `GET /v1/gtm/accounts/{account_id}/containers` | `publicId` (`GTM-XXXX`) is a field, not the path id. |
+| `gtm_get_container` | `GET /v1/gtm/accounts/{account_id}/containers/{container_id}` | |
+| `gtm_list_workspaces` | `GET .../workspaces` | Do not assume a default workspace. |
+| `gtm_list_tags` | `GET .../workspaces/{workspace_id}/tags` | `source=workspace` drafts, not live. |
+| `gtm_list_triggers` | `GET .../workspaces/{workspace_id}/triggers` | Drafts. |
+| `gtm_list_variables` | `GET .../workspaces/{workspace_id}/variables` | Drafts. |
+| `gtm_list_clients` | `GET .../workspaces/{workspace_id}/clients` | Drafts. Not stamp ingest. |
+| `gtm_get_live_container_version` | `GET .../versions/live` | Google path is `versions:live`. Does not publish. |
+| `gtm_list_environments` | `GET .../environments` | Container-level, not workspace-level. |
+
+`...` is `/v1/gtm/accounts/{account_id}/containers/{container_id}`. Path ids are digits. Google list objects keep Google's field names.
 
 ## Writes
 
