@@ -21,7 +21,7 @@ const DIMENSION_SCOPES = ["EVENT", "USER", "ITEM"] as const;
 /**
  * Confirm-gated Free Google mutates. Preview stores the proposal.
  * Confirm posts only after `confirm_phrase` contains every resource id.
- * GA4 matches tip `ga4CreateCustomDimension`. GTM matches tip `gtmCreateVariable`.
+ * GA4 matches tip `ga4CreateCustomDimension`.
  */
 const WRITE_KINDS = {
   ga4_custom_dimension_create: {
@@ -44,10 +44,21 @@ type Dimension = {
   readonly description?: string;
 };
 
+type GtmParameter = {
+  readonly type: string;
+  readonly key?: string;
+  readonly value?: string;
+};
+
 type GtmVariable = {
   readonly name: string;
   readonly type: string;
+  readonly parameter?: readonly GtmParameter[];
 };
+
+const CONSTANT_PARAMETER: readonly GtmParameter[] = [
+  { type: "template", key: "value", value: "muse" },
+];
 
 type Ga4Stored = {
   readonly kind: "ga4_custom_dimension_create";
@@ -163,6 +174,52 @@ function parseDimension(value: unknown): Dimension | null {
   };
 }
 
+function parseParameter(value: unknown): GtmParameter | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+  for (const key of Object.keys(value)) {
+    if (key !== "type" && key !== "key" && key !== "value") {
+      return null;
+    }
+  }
+  const type = plainText(value["type"], 64);
+  if (type === null) {
+    return null;
+  }
+  const item: { type: string; key?: string; value?: string } = { type };
+  if (value["key"] !== undefined) {
+    const key = plainText(value["key"], 200);
+    if (key === null) {
+      return null;
+    }
+    item.key = key;
+  }
+  if (value["value"] !== undefined) {
+    const paramValue = plainText(value["value"], 1024);
+    if (paramValue === null) {
+      return null;
+    }
+    item.value = paramValue;
+  }
+  return item;
+}
+
+function parseParameterList(value: unknown): readonly GtmParameter[] | null {
+  if (!Array.isArray(value) || value.length === 0 || value.length > 20) {
+    return null;
+  }
+  const items: GtmParameter[] = [];
+  for (const item of value) {
+    const parsed = parseParameter(item);
+    if (parsed === null) {
+      return null;
+    }
+    items.push(parsed);
+  }
+  return items;
+}
+
 function parseVariable(value: unknown): GtmVariable | null {
   if (!isRecord(value)) {
     return null;
@@ -172,10 +229,14 @@ function parseVariable(value: unknown): GtmVariable | null {
   if (name === null || typeof type !== "string" || !VARIABLE_TYPE_PATTERN.test(type)) {
     return null;
   }
-  if (value["parameter"] !== undefined) {
+  if (value["parameter"] === undefined) {
+    return { name, type };
+  }
+  const parameter = parseParameterList(value["parameter"]);
+  if (parameter === null) {
     return null;
   }
-  return { name, type };
+  return { name, type, parameter };
 }
 
 function expiresAt(): string {
@@ -399,6 +460,15 @@ function phraseCovers(phrase: string, resourceIds: readonly string[]): boolean {
   return resourceIds.every((resourceId) => phrase.includes(resourceId));
 }
 
+function gtmVariableBody(variable: GtmVariable): Record<string, unknown> {
+  const parameter = variable.parameter ?? (variable.type === "c" ? CONSTANT_PARAMETER : undefined);
+  return {
+    name: variable.name,
+    type: variable.type,
+    ...(parameter === undefined ? {} : { parameter }),
+  };
+}
+
 function mutateCall(stored: StoredPreview): { readonly url: string; readonly body: Record<string, unknown> } {
   switch (stored.kind) {
     case "ga4_custom_dimension_create":
@@ -416,7 +486,7 @@ function mutateCall(stored: StoredPreview): { readonly url: string; readonly bod
     case "gtm_variable_create":
       return {
         url: `${GTM_ORIGIN}/tagmanager/v2/accounts/${stored.account_id}/containers/${stored.container_id}/workspaces/${stored.workspace_id}/variables`,
-        body: { name: stored.variable.name, type: stored.variable.type },
+        body: gtmVariableBody(stored.variable),
       };
     default: {
       const unexpected: never = stored;
