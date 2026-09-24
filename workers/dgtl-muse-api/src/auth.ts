@@ -10,6 +10,8 @@ export type SealedRefreshToken = {
   readonly ct: string;
 };
 
+export type SealedSecret = SealedRefreshToken;
+
 export type GoogleLink = {
   readonly sub: string;
   readonly email: string;
@@ -18,11 +20,25 @@ export type GoogleLink = {
   readonly linked_at: string;
 };
 
+export type ShopifyLink = {
+  readonly shop: string;
+  readonly access_token: SealedSecret;
+  readonly linked_at: string;
+};
+
+export type KlaviyoLink = {
+  readonly api_key: SealedSecret;
+  readonly account_id: string | null;
+  readonly linked_at: string;
+};
+
 type GrantFields = {
   readonly v: 1;
   readonly grant_id: string;
   readonly created_at: string;
   readonly google: GoogleLink | null;
+  readonly shopify: ShopifyLink | null;
+  readonly klaviyo: KlaviyoLink | null;
 };
 
 export type ActiveGrant = GrantFields & { readonly status: "active" };
@@ -30,7 +46,7 @@ export type RevokedGrant = GrantFields & { readonly status: "revoked" };
 export type Grant = ActiveGrant | RevokedGrant;
 
 export type AuthResult =
-  | { readonly kind: "grant"; readonly grant: ActiveGrant }
+  | { readonly kind: "grant"; readonly grant: ActiveGrant; readonly key: string }
   | { readonly kind: "unauthorized" };
 
 const TOKEN_PREFIX = "dgtl_muse_";
@@ -107,6 +123,44 @@ function parseScopes(value: unknown): readonly string[] | null {
   return scopes;
 }
 
+const SHOP_DOMAIN = /^[a-z0-9](?:[a-z0-9-]{0,60}[a-z0-9])?\.myshopify\.com$/;
+const SHOPIFY_ACCESS_TOKEN = /^[^\s]{1,4096}$/;
+const KLAVIYO_API_KEY = /^pk_[A-Za-z0-9_-]{8,240}$/;
+
+export function parseShopDomain(value: string): string | null {
+  const shop = value.trim().toLowerCase();
+  if (!SHOP_DOMAIN.test(shop)) {
+    return null;
+  }
+  return shop;
+}
+
+export function parseShopifyAccessToken(value: string): string | null {
+  if (!SHOPIFY_ACCESS_TOKEN.test(value)) {
+    return null;
+  }
+  return value;
+}
+
+export function parseKlaviyoApiKey(value: string): string | null {
+  if (!KLAVIYO_API_KEY.test(value)) {
+    return null;
+  }
+  return value;
+}
+
+function parseSealed(value: unknown): SealedSecret | undefined {
+  if (!isRecord(value) || value["alg"] !== "A256GCM") {
+    return undefined;
+  }
+  const iv = nonEmptyString(value["iv"]);
+  const ct = nonEmptyString(value["ct"]);
+  if (iv === null || ct === null) {
+    return undefined;
+  }
+  return { alg: "A256GCM", iv, ct };
+}
+
 function parseGoogle(value: unknown): GoogleLink | null | undefined {
   if (value === null) {
     return null;
@@ -118,23 +172,62 @@ function parseGoogle(value: unknown): GoogleLink | null | undefined {
   const email = nonEmptyString(value["email"]);
   const linkedAt = nonEmptyString(value["linked_at"]);
   const scopes = parseScopes(value["scopes"]);
-  const refresh = value["refresh_token"];
-  if (sub === null || email === null || linkedAt === null || scopes === null || !isRecord(refresh)) {
-    return undefined;
-  }
-  if (refresh["alg"] !== "A256GCM") {
-    return undefined;
-  }
-  const iv = nonEmptyString(refresh["iv"]);
-  const ct = nonEmptyString(refresh["ct"]);
-  if (iv === null || ct === null) {
+  const refresh = parseSealed(value["refresh_token"]);
+  if (sub === null || email === null || linkedAt === null || scopes === null || refresh === undefined) {
     return undefined;
   }
   return {
     sub,
     email,
     scopes,
-    refresh_token: { alg: "A256GCM", iv, ct },
+    refresh_token: refresh,
+    linked_at: linkedAt,
+  };
+}
+
+function parseShopify(value: unknown): ShopifyLink | null | undefined {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  if (!isRecord(value)) {
+    return undefined;
+  }
+  const shop = nonEmptyString(value["shop"]);
+  const accessToken = parseSealed(value["access_token"]);
+  const linkedAt = nonEmptyString(value["linked_at"]);
+  if (shop === null || shop !== parseShopDomain(shop) || accessToken === undefined || linkedAt === null) {
+    return undefined;
+  }
+  return {
+    shop,
+    access_token: accessToken,
+    linked_at: linkedAt,
+  };
+}
+
+function parseAccountId(value: unknown): string | null | undefined {
+  if (value === null) {
+    return null;
+  }
+  return nonEmptyString(value) ?? undefined;
+}
+
+function parseKlaviyo(value: unknown): KlaviyoLink | null | undefined {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  if (!isRecord(value)) {
+    return undefined;
+  }
+  const apiKey = parseSealed(value["api_key"]);
+  const accountId = parseAccountId(value["account_id"]);
+  const linkedAt = nonEmptyString(value["linked_at"]);
+  if (apiKey === undefined || accountId === undefined || linkedAt === null) {
+    return undefined;
+  }
+  return {
+    api_key: apiKey,
+    account_id: accountId,
     linked_at: linkedAt,
   };
 }
@@ -153,12 +246,16 @@ function parseGrant(raw: string): Grant | null {
   const createdAt = nonEmptyString(value["created_at"]);
   const status = value["status"];
   const google = parseGoogle(value["google"]);
+  const shopify = parseShopify(value["shopify"]);
+  const klaviyo = parseKlaviyo(value["klaviyo"]);
   if (
     value["v"] !== 1 ||
     grantId === null ||
     createdAt === null ||
     (status !== "active" && status !== "revoked") ||
-    google === undefined
+    google === undefined ||
+    shopify === undefined ||
+    klaviyo === undefined
   ) {
     return null;
   }
@@ -168,6 +265,8 @@ function parseGrant(raw: string): Grant | null {
     created_at: createdAt,
     status,
     google,
+    shopify,
+    klaviyo,
   };
 }
 
@@ -180,7 +279,8 @@ export async function authenticate(
     return { kind: "unauthorized" };
   }
 
-  const record = await tokens.get(await tokenKey(token), "text");
+  const key = await tokenKey(token);
+  const record = await tokens.get(key, "text");
   if (record === null) {
     return { kind: "unauthorized" };
   }
@@ -192,7 +292,7 @@ export async function authenticate(
 
   switch (grant.status) {
     case "active":
-      return { kind: "grant", grant };
+      return { kind: "grant", grant, key };
     case "revoked":
       return { kind: "unauthorized" };
     default: {

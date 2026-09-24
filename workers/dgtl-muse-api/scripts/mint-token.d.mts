@@ -4,6 +4,8 @@ export type MintedGrant = {
   created_at: string;
   status: "active";
   google: null;
+  shopify: null;
+  klaviyo: null;
 };
 
 export type Mint = {

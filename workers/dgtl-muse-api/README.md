@@ -30,10 +30,10 @@ Authorization: Bearer dgtl_muse_...
 The token is `dgtl_muse_` plus 43 base64url characters from 32 random bytes. It is not a Google token, an Ads dev token, a Meta secret, or a stamp license. The Worker stores only the sha256 hex of the full token in the `MUSE_TOKENS` KV namespace. The value is a grant record:
 
 ```json
-{"v":1,"grant_id":"<uuid>","created_at":"<iso-8601>","status":"active","google":null}
+{"v":1,"grant_id":"<uuid>","created_at":"<iso-8601>","status":"active","google":null,"shopify":null,"klaviyo":null}
 ```
 
-`status` is `active` or `revoked`. `google` is `null` or a link `{sub, email, scopes, refresh_token: {alg: "A256GCM", iv, ct}, linked_at}`. Records with `google: null` still parse. A missing, malformed, unknown, or revoked token returns `401` with `WWW-Authenticate: Bearer` and `{"error":"unauthorized"}`. The operator mint script still writes `google: null`. A user gets a linked token from `/connect`.
+`status` is `active` or `revoked`. `google` is `null` or a link `{sub, email, scopes, refresh_token: {alg: "A256GCM", iv, ct}, linked_at}`. `shopify` is `null` or `{shop, access_token: {alg, iv, ct}, linked_at}` with `shop` a normalized `*.myshopify.com` host. `klaviyo` is `null` or `{api_key: {alg, iv, ct}, account_id, linked_at}`. `account_id` stays `null` until a later read. Older records that omit `shopify` and `klaviyo` still parse as unlinked. A missing, malformed, unknown, or revoked token returns `401` with `WWW-Authenticate: Bearer` and `{"error":"unauthorized"}`. The operator mint script writes `google`, `shopify`, and `klaviyo` as `null`. A user gets a Google-linked token from `/connect`.
 
 ### KV namespace
 
@@ -91,6 +91,8 @@ Open `https://muse-api.dgtlsunrise.com/connect` and choose Connect Google. The c
 - `https://www.googleapis.com/auth/webmasters`
 
 It does not request `https://www.googleapis.com/auth/adwords`, `https://www.googleapis.com/auth/content`, or `https://www.googleapis.com/auth/business.manage`. Google must return every requested scope. A partial grant is not stored. The callback writes the granted scope list on the grant next to the sealed refresh token. The refresh token is encrypted with AES-256-GCM before it is stored. A grant with `google: null` returns `403` `{"error":"google_not_linked"}`.
+
+`GET /v1/connect` returns `{shopify, klaviyo}` as `linked` or `null`. `POST /v1/connect/shopify` body `{shop, access_token}` seals the Admin API token and returns `{connected: true, shop}`. `POST /v1/connect/klaviyo` body `{api_key}` seals a `pk_` private key and returns `{connected: true}`. `DELETE` on either path clears that link and returns `{connected: false}`. These routes do not call Shopify or Klaviyo, and they do not return the token, the key, or ciphertext. Shop and Klaviyo tool routes are not in this API.
 
 ## Reads
 

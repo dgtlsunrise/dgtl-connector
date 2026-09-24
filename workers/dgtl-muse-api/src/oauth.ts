@@ -379,6 +379,8 @@ export async function finishGoogleOAuth(request: Request, env: Env): Promise<Res
     created_at: now,
     status: "active",
     google,
+    shopify: null,
+    klaviyo: null,
   };
   await env.MUSE_TOKENS.put(minted.key, JSON.stringify(grant));
   return tokenPage(minted.token);

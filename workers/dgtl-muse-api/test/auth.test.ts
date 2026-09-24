@@ -120,6 +120,8 @@ describe("mint script", () => {
     expect(minted.grant.created_at).toBe("2026-09-24T00:00:00.000Z");
     expect(minted.grant.status).toBe("active");
     expect(minted.grant.google).toBeNull();
+    expect(minted.grant.shopify).toBeNull();
+    expect(minted.grant.klaviyo).toBeNull();
     expect(minted.grant.grant_id).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
     );

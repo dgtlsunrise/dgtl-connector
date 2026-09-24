@@ -1,4 +1,5 @@
 import { authenticate, type ActiveGrant } from "./auth";
+import { routeConnect } from "./connect";
 import { CORS_HEADERS, json } from "./http";
 import { connectPage, finishGoogleOAuth, startGoogleOAuth } from "./oauth";
 import { openApiDocument } from "./openapi";
@@ -33,7 +34,16 @@ function notImplemented(request: Request): Response {
   );
 }
 
-async function handleV1(request: Request, grant: ActiveGrant, env: Env): Promise<Response> {
+async function handleV1(
+  request: Request,
+  grant: ActiveGrant,
+  key: string,
+  env: Env,
+): Promise<Response> {
+  const connect = await routeConnect(request, grant, key, env);
+  if (connect !== null) {
+    return connect;
+  }
   const { pathname } = new URL(request.url);
   const sessions = /^\/v1\/ga4\/properties\/([^/]+)\/sessions$/.exec(pathname);
   if (request.method === "GET" && sessions !== null) {
@@ -98,7 +108,7 @@ const worker = {
       );
       switch (result.kind) {
         case "grant":
-          return handleV1(request, result.grant, env);
+          return handleV1(request, result.grant, result.key, env);
         case "unauthorized":
           return unauthorized(request);
         default: {
