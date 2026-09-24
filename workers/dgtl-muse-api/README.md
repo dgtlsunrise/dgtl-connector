@@ -2,7 +2,7 @@
 
 Cloudflare Worker for the DGTL Sunrise Muse connector (Raw API + OpenAPI).
 
-`GET /openapi.json` is an OpenAPI 3.1 document. `GET /healthz` returns `200`. `GET /connect` starts Google sign-in and the callback shows a Bearer token once. `GET /v1/ga4/properties/{property_id}/sessions` reads the GA4 sessions metric for a linked grant. Other `/v1/*` routes still return `501`.
+`GET /openapi.json` is an OpenAPI 3.1 document. `GET /healthz` returns `200`. `GET /connect` starts Google sign-in and the callback shows a Bearer token once. `GET /v1/ga4/properties/{property_id}/sessions` reads the GA4 sessions metric for a linked grant. `POST /v1/writes/preview` and `POST /v1/writes/confirm` are a confirm gate that does not mutate Google. `GET /v1/ga4/properties/{property_id}` still returns `501`.
 
 The stdio tip (`src/`) and stamp are separate. This directory installs and deploys on its own.
 
@@ -78,6 +78,12 @@ To revoke without deleting the record, put the same JSON with `"status":"revoked
 Open `https://muse-api.dgtlsunrise.com/connect` and choose Connect Google Analytics. The callback stores the grant and shows a `dgtl_muse_` token once. Paste that token into Muse as the Bearer token.
 
 The Google web client is asked only for `openid`, `https://www.googleapis.com/auth/userinfo.email`, and `https://www.googleapis.com/auth/analytics.readonly`. The refresh token is encrypted with AES-256-GCM before it is stored. `GET /v1/ga4/properties/{property_id}/sessions` returns `{property_id, start_date, end_date, sessions}`. `start_date` defaults to `28daysAgo` and `end_date` defaults to `yesterday`. A grant with `google: null` returns `403` `{"error":"google_not_linked"}`.
+
+## Writes
+
+`POST /v1/writes/preview` accepts only `kind` `ga4_custom_dimension_create` with `property_id` and `dimension` (`parameter_name`, `display_name`, `scope`). The grant must have `google` linked, or the response is `403` `{"error":"google_not_linked"}`. The Worker stores the preview in `MUSE_TOKENS` under `preview:<preview_id>` for 600 seconds and returns `status` `preview` with `confirm_required` true and `resource_ids` containing the property id. It does not call Google.
+
+`POST /v1/writes/confirm` loads that preview. A missing, expired, or already used preview is `400` `{"error":"preview_invalid"}`. A preview owned by another grant is `403` `{"error":"preview_forbidden"}`. `confirm_phrase` must contain every `resource_ids` entry (substring, case-sensitive) or the response is `400` `{"error":"confirm_refused","confirm_required":true}` and the preview stays usable. A matching phrase deletes the preview and returns `status` `confirmed`, `executed` false, `reason` `stub_no_mutate`.
 
 ## Deploy
 
