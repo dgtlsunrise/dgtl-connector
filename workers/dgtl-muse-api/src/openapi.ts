@@ -472,6 +472,15 @@ export const openApiDocument = {
           dimension: { $ref: "#/components/schemas/Ga4CustomDimensionDraft" },
         },
       },
+      GtmParameter: {
+        type: "object",
+        required: ["type"],
+        properties: {
+          type: { type: "string", minLength: 1, maxLength: 64 },
+          key: { type: "string", minLength: 1, maxLength: 200 },
+          value: { type: "string", minLength: 1, maxLength: 1024 },
+        },
+      },
       GtmVariableDraft: {
         type: "object",
         required: ["name", "type"],
@@ -481,6 +490,13 @@ export const openApiDocument = {
             type: "string",
             description: "Tag Manager variable type, such as c for a constant. Matches tip gtm_create_variable.",
             pattern: "^[A-Za-z0-9_]{1,64}$",
+          },
+          parameter: {
+            type: "array",
+            maxItems: 20,
+            description:
+              "Optional Tag Manager parameters, same shape as tip gtm_create_variable. Constant type c with no parameter is posted as a template value of muse.",
+            items: { $ref: "#/components/schemas/GtmParameter" },
           },
         },
       },
