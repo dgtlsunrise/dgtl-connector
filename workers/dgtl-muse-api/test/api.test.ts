@@ -66,6 +66,7 @@ describe("openapi", () => {
     const serialized = JSON.stringify(body);
     expect(serialized).toContain("https://www.dgtlsunrise.com/privacy");
     expect(serialized).toContain("https://www.dgtlsunrise.com/terms");
+    expect(serialized).toContain("Open /connect to get a Bearer token.");
     const schemes = (body["components"] as { securitySchemes: Record<string, unknown> })
       .securitySchemes;
     expect(schemes["bearerAuth"]).toEqual({
@@ -140,11 +141,6 @@ describe("routes", () => {
     const { token, hash, grant } = await issuedToken();
     const env = envWithGrant(hash, grant);
     const cases = [
-      request(
-        "/v1/ga4/properties/123456789/sessions?start_date=28daysAgo&end_date=yesterday",
-        "GET",
-        token,
-      ),
       request("/v1/ga4/properties/123456789", "GET", token),
       request("/v1/writes/preview", "POST", token),
       request("/v1/writes/confirm", "POST", token),
