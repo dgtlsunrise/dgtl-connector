@@ -1,0 +1,23 @@
+{
+  "name": "dgtl-muse-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "description": "DGTL Sunrise Muse connector API. OpenAPI stub Worker.",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "test": "tsc --noEmit && vitest run",
+    "types": "wrangler types"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "^12.1.0",
+    "@cloudflare/workers-types": "^5.20260924.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1",
+    "wrangler": "^4.137.0"
+  }
+}
