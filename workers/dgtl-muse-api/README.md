@@ -21,7 +21,7 @@ npx wrangler dev
 
 ## Deploy
 
-Deploy is Noel-only. Do not run it from CI or from an agent. No DNS, custom domain, or secrets are part of this stub.
+Deploy is Noel-only. Do not run it from CI or from an agent. The Worker serves on `https://muse-api.dgtlsunrise.com` via a Cloudflare custom domain on the DGTL account.
 
 ```bash
 cd workers/dgtl-muse-api && npx wrangler deploy
