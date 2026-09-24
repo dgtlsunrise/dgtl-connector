@@ -26,7 +26,8 @@ export const openApiDocument = {
     { name: "ga4", description: "Free Google Analytics 4 reads." },
     {
       name: "writes",
-      description: "Confirm-gated write placeholder. Preview, then confirm.",
+      description:
+        "Confirm-gated writes. Preview stores a one-shot proposal. Confirm accepts or refuses. This stub does not mutate Google.",
     },
   ],
   paths: {
@@ -154,7 +155,7 @@ export const openApiDocument = {
         tags: ["writes"],
         summary: "Preview a confirm-gated write",
         description:
-          "Placeholder for the confirm-gated write flow. Returns a preview and does not mutate. The caller then posts the resource phrase to /v1/writes/confirm. This stub returns 501.",
+          "Stores a one-shot preview for kind ga4_custom_dimension_create. Does not call the Google Admin API and does not mutate. The caller then posts a confirm_phrase that contains every resource id to /v1/writes/confirm.",
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -166,19 +167,27 @@ export const openApiDocument = {
         },
         responses: {
           "200": {
-            description: "Preview only. No mutate has run. Not served by this stub.",
+            description: "Preview only. No mutate has run.",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/WritePreview" },
               },
             },
           },
-          "401": { $ref: "#/components/responses/Unauthorized" },
-          "501": {
-            description: "Not implemented.",
+          "400": {
+            description: "The kind is unknown, or the preview body is not a GA4 custom dimension create.",
             content: {
               "application/json": {
-                schema: { $ref: "#/components/schemas/ErrorBody" },
+                schema: { $ref: "#/components/schemas/WritePreviewError" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "403": {
+            description: "The grant has no Google link.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/GoogleNotLinked" },
               },
             },
           },
@@ -191,7 +200,7 @@ export const openApiDocument = {
         tags: ["writes"],
         summary: "Confirm a previewed write",
         description:
-          "Placeholder for the confirm step. When implemented, executes the previewed write only if confirm_phrase contains the resource id from the preview, and refuses otherwise. This stub returns 501 and does not execute.",
+          "Accepts the preview when confirm_phrase contains every resource id from the preview. A refused phrase leaves the preview usable. On accept, the preview is one-shot and the response is a stub with executed false. This operation does not call Google and does not mutate.",
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -203,19 +212,28 @@ export const openApiDocument = {
         },
         responses: {
           "200": {
-            description: "Execute or refuse result. Not served by this stub.",
+            description: "Confirm accepted. Live Google mutate is not enabled.",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/WriteConfirmResult" },
               },
             },
           },
-          "401": { $ref: "#/components/responses/Unauthorized" },
-          "501": {
-            description: "Not implemented.",
+          "400": {
+            description:
+              "The preview is missing, expired, or already used, the body is invalid, or confirm_phrase does not include every resource id.",
             content: {
               "application/json": {
-                schema: { $ref: "#/components/schemas/ErrorBody" },
+                schema: { $ref: "#/components/schemas/WriteConfirmError" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "403": {
+            description: "The preview belongs to a different grant.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/PreviewForbidden" },
               },
             },
           },
@@ -307,33 +325,95 @@ export const openApiDocument = {
           currency_code: { type: "string" },
         },
       },
+      GoogleNotLinked: {
+        type: "object",
+        required: ["error"],
+        properties: {
+          error: { type: "string", enum: ["google_not_linked"] },
+        },
+      },
+      PreviewForbidden: {
+        type: "object",
+        required: ["error"],
+        properties: {
+          error: { type: "string", enum: ["preview_forbidden"] },
+        },
+      },
+      WritePreviewError: {
+        type: "object",
+        required: ["error"],
+        properties: {
+          error: { type: "string", enum: ["invalid_request", "unknown_kind"] },
+        },
+      },
+      WriteConfirmError: {
+        oneOf: [
+          {
+            type: "object",
+            required: ["error"],
+            properties: {
+              error: { type: "string", enum: ["invalid_request", "preview_invalid"] },
+            },
+          },
+          {
+            type: "object",
+            required: ["error", "confirm_required"],
+            properties: {
+              error: { type: "string", enum: ["confirm_refused"] },
+              confirm_required: { type: "boolean", enum: [true] },
+            },
+          },
+        ],
+      },
+      Ga4CustomDimensionDraft: {
+        type: "object",
+        required: ["parameter_name", "display_name", "scope"],
+        properties: {
+          parameter_name: {
+            type: "string",
+            description: "GA4 custom dimension parameter name.",
+            pattern: "^[A-Za-z][A-Za-z0-9_]{0,39}$",
+          },
+          display_name: { type: "string", minLength: 1, maxLength: 82 },
+          scope: { type: "string", enum: ["EVENT", "USER", "ITEM"] },
+        },
+      },
       WritePreviewRequest: {
         type: "object",
-        required: ["operation", "resource"],
+        required: ["kind", "property_id", "dimension"],
         properties: {
-          operation: {
+          kind: { type: "string", enum: ["ga4_custom_dimension_create"] },
+          property_id: {
             type: "string",
-            description: "Write operation name, such as gtm.tags.create.",
+            description: "GA4 property id, digits only.",
+            pattern: "^[0-9]{1,20}$",
           },
-          resource: {
-            type: "object",
-            description: "Resource identifiers the confirm phrase must include.",
-            additionalProperties: { type: "string" },
-          },
-          payload: {
-            type: "object",
-            additionalProperties: true,
-          },
+          dimension: { $ref: "#/components/schemas/Ga4CustomDimensionDraft" },
         },
       },
       WritePreview: {
         type: "object",
-        required: ["status", "preview_id", "confirm_required"],
+        required: [
+          "status",
+          "preview_id",
+          "confirm_required",
+          "kind",
+          "resource_ids",
+          "summary",
+          "expires_at",
+        ],
         properties: {
           status: { type: "string", enum: ["preview"] },
           preview_id: { type: "string" },
-          confirm_required: { type: "boolean" },
+          confirm_required: { type: "boolean", enum: [true] },
+          kind: { type: "string", enum: ["ga4_custom_dimension_create"] },
+          resource_ids: {
+            type: "array",
+            minItems: 1,
+            items: { type: "string" },
+          },
           summary: { type: "string" },
+          expires_at: { type: "string", format: "date-time" },
         },
       },
       WriteConfirmRequest: {
@@ -347,16 +427,19 @@ export const openApiDocument = {
           confirm_phrase: {
             type: "string",
             description:
-              "Caller-supplied phrase that contains the resource id from the preview. Not a credential.",
+              "Caller-supplied phrase that contains every resource id from the preview. Not a credential.",
           },
         },
       },
       WriteConfirmResult: {
         type: "object",
-        required: ["status"],
+        required: ["status", "preview_id", "executed", "reason", "message"],
         properties: {
-          status: { type: "string", enum: ["executed", "refused"] },
-          summary: { type: "string" },
+          status: { type: "string", enum: ["confirmed"] },
+          preview_id: { type: "string" },
+          executed: { type: "boolean", enum: [false] },
+          reason: { type: "string", enum: ["stub_no_mutate"] },
+          message: { type: "string" },
         },
       },
     },

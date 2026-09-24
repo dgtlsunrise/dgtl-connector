@@ -3,6 +3,7 @@ import { CORS_HEADERS, json } from "./http";
 import { connectPage, finishGoogleOAuth, startGoogleOAuth } from "./oauth";
 import { openApiDocument } from "./openapi";
 import { readSessions } from "./sessions";
+import { confirmWrite, previewWrite } from "./writes";
 
 function unauthorized(request: Request): Response {
   const { pathname } = new URL(request.url);
@@ -40,6 +41,12 @@ function handleV1(request: Request, grant: ActiveGrant, env: Env): Response | Pr
       return notImplemented(request);
     }
     return readSessions(request, grant, env, propertyId);
+  }
+  if (request.method === "POST" && pathname === "/v1/writes/preview") {
+    return previewWrite(request, grant, env);
+  }
+  if (request.method === "POST" && pathname === "/v1/writes/confirm") {
+    return confirmWrite(request, grant, env);
   }
   return notImplemented(request);
 }

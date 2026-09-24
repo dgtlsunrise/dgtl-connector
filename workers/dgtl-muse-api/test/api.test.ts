@@ -137,25 +137,18 @@ describe("routes", () => {
     expect(await readJson(response)).toEqual({ ok: true });
   });
 
-  it("returns 501 JSON for Free read and confirm-gated write stubs", async () => {
+  it("returns 501 JSON for the unimplemented GA4 property read", async () => {
     const { token, hash, grant } = await issuedToken();
     const env = envWithGrant(hash, grant);
-    const cases = [
-      request("/v1/ga4/properties/123456789", "GET", token),
-      request("/v1/writes/preview", "POST", token),
-      request("/v1/writes/confirm", "POST", token),
-    ];
-
-    for (const req of cases) {
-      const response = await worker.fetch(req, env);
-      expect(response.status).toBe(501);
-      expect(response.headers.get("content-type")).toContain("application/json");
-      expect(response.headers.get("access-control-allow-origin")).toBe("*");
-      const body = await readJson(response);
-      expect(body["error"]).toBe("not_implemented");
-      expect(body["path"]).toBe(new URL(req.url).pathname);
-      expect(body["method"]).toBe(req.method);
-    }
+    const req = request("/v1/ga4/properties/123456789", "GET", token);
+    const response = await worker.fetch(req, env);
+    expect(response.status).toBe(501);
+    expect(response.headers.get("content-type")).toContain("application/json");
+    expect(response.headers.get("access-control-allow-origin")).toBe("*");
+    const body = await readJson(response);
+    expect(body["error"]).toBe("not_implemented");
+    expect(body["path"]).toBe("/v1/ga4/properties/123456789");
+    expect(body["method"]).toBe("GET");
   });
 
   it("returns 404 JSON for unknown paths", async () => {
