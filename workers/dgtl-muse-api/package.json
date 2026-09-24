@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "Apache-2.0",
-  "description": "DGTL Sunrise Muse connector API. OpenAPI stub Worker.",
+  "description": "DGTL Sunrise Muse connector API. Bearer-authenticated OpenAPI Worker.",
   "engines": {
     "node": ">=22.12"
   },

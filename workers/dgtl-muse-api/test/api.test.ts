@@ -3,6 +3,7 @@ import type { OpenAPI } from "openapi-types";
 import { describe, expect, it } from "vitest";
 import worker from "../src/index";
 import { openApiDocument } from "../src/openapi";
+import { emptyEnv, envWithGrant, issuedToken } from "./support";
 
 function isOpenApiDocument(value: unknown): value is OpenAPI.Document {
   if (value === null || typeof value !== "object") {
@@ -22,13 +23,29 @@ async function readJson(response: Response): Promise<Record<string, unknown>> {
   return body as Record<string, unknown>;
 }
 
-function request(pathname: string, method = "GET"): Request {
-  return new Request(`${ORIGIN}${pathname}`, { method });
+function request(pathname: string, method = "GET", token?: string): Request {
+  const headers = new Headers();
+  if (token !== undefined) {
+    headers.set("authorization", `Bearer ${token}`);
+  }
+  return new Request(`${ORIGIN}${pathname}`, { method, headers });
+}
+
+const HTTP_METHODS = ["get", "post", "put", "patch", "delete", "head", "options", "trace"];
+
+function isOperation(
+  value: unknown,
+): value is { security: unknown; responses: Record<string, unknown> } {
+  if (value === null || typeof value !== "object" || !("responses" in value)) {
+    return false;
+  }
+  const responses = value.responses;
+  return responses !== null && typeof responses === "object";
 }
 
 describe("openapi", () => {
   it("serves a document that passes the OpenAPI validator", async () => {
-    const response = await worker.fetch(request("/openapi.json"));
+    const response = await worker.fetch(request("/openapi.json"), emptyEnv());
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("application/json");
     expect(response.headers.get("access-control-allow-origin")).toBe("*");
@@ -51,11 +68,10 @@ describe("openapi", () => {
     expect(serialized).toContain("https://www.dgtlsunrise.com/terms");
     const schemes = (body["components"] as { securitySchemes: Record<string, unknown> })
       .securitySchemes;
-    expect(schemes["freeCredential"]).toEqual({
+    expect(schemes["bearerAuth"]).toEqual({
       type: "http",
       scheme: "bearer",
-      description:
-        "Stub for a Muse-storable Free credential. No credential is included in this document.",
+      bearerFormat: "dgtl_muse token",
     });
 
     const paths = body["paths"] as Record<string, unknown>;
@@ -70,11 +86,50 @@ describe("openapi", () => {
     const validated = await SwaggerParser.validate(structuredClone(body));
     expect(validated.info.title).toBe("DGTL Sunrise Connector API");
   });
+
+  it("declares bearerAuth on every /v1 operation", async () => {
+    const response = await worker.fetch(request("/openapi.json"), emptyEnv());
+    expect(response.status).toBe(200);
+    const body = await readJson(response);
+    const paths = body["paths"] as Record<string, Record<string, unknown>>;
+    expect(Object.keys(paths).filter((path) => path.startsWith("/v1/"))).toEqual([
+      "/v1/ga4/properties/{property_id}/sessions",
+      "/v1/ga4/properties/{property_id}",
+      "/v1/writes/preview",
+      "/v1/writes/confirm",
+    ]);
+
+    let operations = 0;
+    for (const path of Object.keys(paths)) {
+      if (!path.startsWith("/v1/")) {
+        continue;
+      }
+      const item = paths[path];
+      if (item === undefined) {
+        throw new Error(`missing path ${path}`);
+      }
+      for (const method of HTTP_METHODS) {
+        const operation = item[method];
+        if (operation === undefined) {
+          continue;
+        }
+        if (!isOperation(operation)) {
+          throw new Error(`${method} ${path} is not an operation`);
+        }
+        operations += 1;
+        expect(operation.security).toEqual([{ bearerAuth: [] }]);
+        expect(operation.responses["401"]).toEqual({
+          $ref: "#/components/responses/Unauthorized",
+        });
+      }
+    }
+    expect(operations).toBe(4);
+  });
 });
 
 describe("routes", () => {
   it("returns 200 JSON from /healthz", async () => {
-    const response = await worker.fetch(request("/healthz"));
+    const response = await worker.fetch(request("/healthz"), emptyEnv());
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("application/json");
     expect(response.headers.get("access-control-allow-origin")).toBe("*");
@@ -82,15 +137,21 @@ describe("routes", () => {
   });
 
   it("returns 501 JSON for Free read and confirm-gated write stubs", async () => {
+    const { token, hash, grant } = await issuedToken();
+    const env = envWithGrant(hash, grant);
     const cases = [
-      request("/v1/ga4/properties/123456789/sessions?start_date=28daysAgo&end_date=yesterday"),
-      request("/v1/ga4/properties/123456789"),
-      request("/v1/writes/preview", "POST"),
-      request("/v1/writes/confirm", "POST"),
+      request(
+        "/v1/ga4/properties/123456789/sessions?start_date=28daysAgo&end_date=yesterday",
+        "GET",
+        token,
+      ),
+      request("/v1/ga4/properties/123456789", "GET", token),
+      request("/v1/writes/preview", "POST", token),
+      request("/v1/writes/confirm", "POST", token),
     ];
 
     for (const req of cases) {
-      const response = await worker.fetch(req);
+      const response = await worker.fetch(req, env);
       expect(response.status).toBe(501);
       expect(response.headers.get("content-type")).toContain("application/json");
       expect(response.headers.get("access-control-allow-origin")).toBe("*");
@@ -102,7 +163,7 @@ describe("routes", () => {
   });
 
   it("returns 404 JSON for unknown paths", async () => {
-    const response = await worker.fetch(request("/missing"));
+    const response = await worker.fetch(request("/missing"), emptyEnv());
     expect(response.status).toBe(404);
     expect(response.headers.get("content-type")).toContain("application/json");
     expect(response.headers.get("access-control-allow-origin")).toBe("*");
@@ -113,7 +174,7 @@ describe("routes", () => {
   });
 
   it("answers CORS preflight", async () => {
-    const response = await worker.fetch(request("/v1/writes/preview", "OPTIONS"));
+    const response = await worker.fetch(request("/v1/writes/preview", "OPTIONS"), emptyEnv());
     expect(response.status).toBe(204);
     expect(response.headers.get("access-control-allow-origin")).toBe("*");
     expect(response.headers.get("access-control-allow-methods")).toContain("POST");

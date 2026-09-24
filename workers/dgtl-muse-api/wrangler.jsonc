@@ -5,6 +5,13 @@
   "compatibility_date": "2026-09-24",
   "workers_dev": false,
   "routes": [{ "pattern": "muse-api.dgtlsunrise.com", "custom_domain": true }],
+  "kv_namespaces": [
+    {
+      "binding": "MUSE_TOKENS",
+      // Placeholder. Operator creates the namespace and replaces this id before deploy.
+      "id": "<MUSE_TOKENS_NAMESPACE_ID>"
+    }
+  ],
   "observability": {
     "enabled": true
   }
