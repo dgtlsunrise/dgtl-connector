@@ -4,6 +4,7 @@ import { CORS_HEADERS, json } from "./http";
 import { connectPage, finishGoogleOAuth, startGoogleOAuth } from "./oauth";
 import { openApiDocument } from "./openapi";
 import { routeReads } from "./reads";
+import { routeShopifyReads } from "./shopify-reads";
 import { readSessions } from "./sessions";
 import { confirmWrite, previewWrite } from "./writes";
 
@@ -52,6 +53,10 @@ async function handleV1(
       return notImplemented(request);
     }
     return readSessions(request, grant, env, propertyId);
+  }
+  const shopify = await routeShopifyReads(request, grant, env);
+  if (shopify !== null) {
+    return shopify;
   }
   const read = await routeReads(request, grant, env);
   if (read !== null) {

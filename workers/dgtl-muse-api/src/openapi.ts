@@ -12,7 +12,7 @@ export const openApiDocument = {
     summary:
       "Free Google GA4, Search Console, and Tag Manager reads for Muse, plus confirm-gated GA4 and GTM writes. A grant missing the scope a route needs must reconnect.",
     description:
-      `HTTPS API for the DGTL Sunrise Muse connector. Open /connect to get a Bearer token. /connect requests ${connectScopes}. It does not request ${neverScopes}. GA4 reads need https://www.googleapis.com/auth/analytics.readonly. Search Console reads need https://www.googleapis.com/auth/webmasters.readonly. Tag Manager reads need https://www.googleapis.com/auth/tagmanager.readonly. A linked grant missing that scope returns google_reconnect_required and does not call Google. An older grant that only has analytics.readonly can still read GA4. GA4 custom dimension create requires https://www.googleapis.com/auth/analytics.edit. GTM variable create requires https://www.googleapis.com/auth/tagmanager.edit.containers. A missing manage scope returns google_reconnect_required and does not mutate. POST /v1/writes/confirm creates one GA4 custom dimension or one GTM workspace variable. It does not publish a container or submit a sitemap. POST /v1/connect/shopify and POST /v1/connect/klaviyo seal a Shopify Admin API token and a Klaviyo private key with the same AES-GCM key as the Google refresh token. GET /v1/connect reports those links as linked or null and does not return the secrets. This API has no Shopify or Klaviyo tool routes. Privacy policy: https://www.dgtlsunrise.com/privacy`,
+      `HTTPS API for the DGTL Sunrise Muse connector. Open /connect to get a Bearer token. /connect requests ${connectScopes}. It does not request ${neverScopes}. GA4 reads need https://www.googleapis.com/auth/analytics.readonly. Search Console reads need https://www.googleapis.com/auth/webmasters.readonly. Tag Manager reads need https://www.googleapis.com/auth/tagmanager.readonly. A linked grant missing that scope returns google_reconnect_required and does not call Google. An older grant that only has analytics.readonly can still read GA4. GA4 custom dimension create requires https://www.googleapis.com/auth/analytics.edit. GTM variable create requires https://www.googleapis.com/auth/tagmanager.edit.containers. A missing manage scope returns google_reconnect_required and does not mutate. POST /v1/writes/confirm creates one GA4 custom dimension or one GTM workspace variable. It does not publish a container or submit a sitemap. POST /v1/connect/shopify and POST /v1/connect/klaviyo seal a Shopify Admin API token and a Klaviyo private key with the same AES-GCM key as the Google refresh token. GET /v1/connect reports those links as linked or null and does not return the secrets. GET /v1/shopify/shop and GET /v1/shopify/products call Shopify Admin REST API version 2026-04 with the sealed token. A grant with no Shopify link returns shopify_not_linked and does not call Shopify. These routes do not write to Shopify. Klaviyo tool routes are not in this API. Privacy policy: https://www.dgtlsunrise.com/privacy`,
     termsOfService: "https://www.dgtlsunrise.com/terms",
     contact: {
       name: "DGTL Sunrise",
@@ -33,7 +33,12 @@ export const openApiDocument = {
     {
       name: "connect",
       description:
-        "Seal Shopify and Klaviyo credentials on the Bearer grant. Status is linked or null. Responses do not return secrets. Tool routes are not in this API.",
+        "Seal Shopify and Klaviyo credentials on the Bearer grant. Status is linked or null. Responses do not return secrets.",
+    },
+    {
+      name: "shopify",
+      description:
+        "Read Shopify Admin REST API 2026-04 with the sealed token from POST /v1/connect/shopify. These routes do not write.",
     },
     ...readTags,
     {
@@ -221,6 +226,135 @@ export const openApiDocument = {
             },
           },
           "401": { $ref: "#/components/responses/Unauthorized" },
+        },
+      },
+    },
+    "/v1/shopify/shop": {
+      get: {
+        operationId: "getShopifyShop",
+        tags: ["shopify"],
+        summary: "Read the linked Shopify shop",
+        description:
+          "Calls Shopify Admin REST GET /admin/api/2026-04/shop.json with the sealed token. The version matches the tip Admin API pin. Returns the shop object. Does not return the token or the Shopify error body. A grant with no Shopify link returns 403 shopify_not_linked and does not call Shopify. Shopify 401, 403, and 429 are returned as shopify_unauthorized, shopify_forbidden, and shopify_rate_limited.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Shopify shop resource.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ShopifyShop" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "403": {
+            description: "Shopify is not linked, or Shopify refused the token.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ShopifyReadError" },
+              },
+            },
+          },
+          "429": {
+            description: "Shopify rate limited the request.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ShopifyReadError" },
+              },
+            },
+          },
+          "500": {
+            description: "The sealed token could not be opened.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/GrantUnreadable" },
+              },
+            },
+          },
+          "502": {
+            description: "Shopify did not return a shop object.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ShopifyReadError" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/v1/shopify/products": {
+      get: {
+        operationId: "listShopifyProducts",
+        tags: ["shopify"],
+        summary: "List products on the linked Shopify shop",
+        description:
+          "Calls Shopify Admin REST GET /admin/api/2026-04/products.json. page_size maps to limit (default 25, maximum 50, the tip shopify_list_products bounds). page_token maps to the Shopify page_info cursor. A rel=next Link header becomes next_page_token. Does not return the token or the Shopify error body and does not write. A grant with no Shopify link returns 403 shopify_not_linked and does not call Shopify. Shopify 401, 403, and 429 are returned as shopify_unauthorized, shopify_forbidden, and shopify_rate_limited.",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "page_size",
+            in: "query",
+            required: false,
+            schema: { type: "integer", minimum: 1, maximum: 50, default: 25 },
+          },
+          {
+            name: "page_token",
+            in: "query",
+            required: false,
+            schema: { type: "string" },
+            description: "Shopify page_info cursor from a previous next_page_token.",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Product list.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ShopifyProductList" },
+              },
+            },
+          },
+          "400": {
+            description: "page_size or page_token is not valid.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/InvalidRequest" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "403": {
+            description: "Shopify is not linked, or Shopify refused the token.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ShopifyReadError" },
+              },
+            },
+          },
+          "429": {
+            description: "Shopify rate limited the request.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ShopifyReadError" },
+              },
+            },
+          },
+          "500": {
+            description: "The sealed token could not be opened.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/GrantUnreadable" },
+              },
+            },
+          },
+          "502": {
+            description: "Shopify did not return a product list.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ShopifyReadError" },
+              },
+            },
+          },
         },
       },
     },
@@ -557,6 +691,43 @@ export const openApiDocument = {
             enum: ["invalid_request", "invalid_shop", "invalid_shopify_credential"],
           },
           message: { type: "string" },
+        },
+      },
+      ShopifyShop: {
+        type: "object",
+        additionalProperties: false,
+        required: ["shop"],
+        properties: {
+          shop: { type: "object", additionalProperties: true },
+        },
+      },
+      ShopifyProductList: {
+        type: "object",
+        additionalProperties: false,
+        required: ["products"],
+        properties: {
+          products: {
+            type: "array",
+            items: { type: "object", additionalProperties: true },
+          },
+          next_page_token: { type: "string" },
+        },
+      },
+      ShopifyReadError: {
+        type: "object",
+        additionalProperties: false,
+        required: ["error"],
+        properties: {
+          error: {
+            type: "string",
+            enum: [
+              "shopify_not_linked",
+              "shopify_unauthorized",
+              "shopify_forbidden",
+              "shopify_rate_limited",
+              "shopify_unavailable",
+            ],
+          },
         },
       },
       KlaviyoConnectRequest: {

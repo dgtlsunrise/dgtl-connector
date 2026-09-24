@@ -128,6 +128,8 @@ describe("openapi", () => {
       "/v1/gtm/accounts/{account_id}/containers/{container_id}/workspaces/{workspace_id}/tags",
       "/v1/gtm/accounts/{account_id}/containers/{container_id}/workspaces/{workspace_id}/triggers",
       "/v1/gtm/accounts/{account_id}/containers/{container_id}/workspaces/{workspace_id}/variables",
+      "/v1/shopify/products",
+      "/v1/shopify/shop",
       "/v1/writes/confirm",
       "/v1/writes/preview",
     ]);
@@ -156,7 +158,7 @@ describe("openapi", () => {
         });
       }
     }
-    expect(operations).toBe(33);
+    expect(operations).toBe(35);
   });
 });
 

@@ -117,7 +117,7 @@ describe("routing", () => {
         expect(response.status, `${method} ${path}`).toBe(401);
       }
     }
-    expect(operations).toBe(33);
+    expect(operations).toBe(35);
   });
 });
 
