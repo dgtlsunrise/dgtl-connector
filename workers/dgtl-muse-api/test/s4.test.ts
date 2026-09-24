@@ -197,7 +197,7 @@ describe("openapi writes", () => {
     const preview = openApiDocument.paths["/v1/writes/preview"].post.responses;
     const confirm = openApiDocument.paths["/v1/writes/confirm"].post.responses;
     expect(Object.keys(preview).sort()).toEqual(["200", "400", "401", "403", "404", "500", "502"]);
-    expect(Object.keys(confirm).sort()).toEqual(["200", "400", "401", "403", "404", "500", "502"]);
+    expect(Object.keys(confirm).sort()).toEqual(["200", "400", "401", "403", "404", "429", "500", "502"]);
     expect(preview).not.toHaveProperty("501");
     expect(confirm).not.toHaveProperty("501");
     expect(openApiDocument.components.schemas.WriteKind.enum).toEqual([...WRITE_KIND_NAMES]);
