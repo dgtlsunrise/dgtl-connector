@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Grant } from "../src/auth";
 import worker from "../src/index";
 import { openApiDocument } from "../src/openapi";
+import { CONSENT_A, SCOPE } from "../src/scopes";
 import { MemoryKv, emptyEnv, envWithGrant, envWithKv, issuedToken } from "./support";
 
 const ORIGIN = "https://muse-api.dgtlsunrise.com";
@@ -18,6 +19,16 @@ const PREVIEW_BODY = {
   },
 };
 const SUMMARY = `Would create custom dimension muse_stub_dim on GA4 property ${PROPERTY_ID}. Not executed.`;
+const LEGACY_READONLY_SCOPES = [
+  "openid",
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/analytics.readonly",
+] as const;
+const RECONNECT = {
+  error: "google_reconnect_required",
+  message: `This Google connection is missing ${SCOPE.analyticsEdit}. Reopen /connect and reconnect Google.`,
+  missing_scopes: [SCOPE.analyticsEdit],
+};
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -49,26 +60,26 @@ function post(pathname: string, body: unknown, token?: string): Request {
   });
 }
 
-function linkedGrant(grant: Grant, sub = "1001"): Grant {
+function linkedGrant(grant: Grant, sub = "1001", scopes: readonly string[] = CONSENT_A): Grant {
   return {
     ...grant,
     google: {
       sub,
       email: sub === "1001" ? "ada@example.com" : "bea@example.com",
-      scopes: [
-        "openid",
-        "https://www.googleapis.com/auth/userinfo.email",
-        "https://www.googleapis.com/auth/analytics.readonly",
-      ],
+      scopes: [...scopes],
       refresh_token: { alg: "A256GCM", iv: "iv-test", ct: "ct-test" },
       linked_at: "2026-09-24T00:00:00.000Z",
     },
   };
 }
 
-async function seedLinked(kv: MemoryKv, sub?: string): Promise<{ token: string; grant: Grant }> {
+async function seedLinked(
+  kv: MemoryKv,
+  sub?: string,
+  scopes?: readonly string[],
+): Promise<{ token: string; grant: Grant }> {
   const issued = await issuedToken();
-  const grant = linkedGrant(issued.grant, sub);
+  const grant = linkedGrant(issued.grant, sub, scopes);
   kv.records.set(issued.hash, { value: JSON.stringify(grant), expiresAtMs: null });
   return { token: issued.token, grant };
 }
@@ -183,6 +194,17 @@ describe("write preview", () => {
     expect(response.status).toBe(400);
     expect(await readJson(response)).toEqual({ error: "unknown_kind" });
     expect(kv.puts).toEqual([]);
+  });
+
+  it("rejects a readonly-only grant and does not store a preview", async () => {
+    forbidFetch();
+    const kv = new MemoryKv();
+    const { token } = await seedLinked(kv, "1001", LEGACY_READONLY_SCOPES);
+    const response = await worker.fetch(post(PREVIEW_PATH, PREVIEW_BODY, token), envWithKv(kv));
+    expect(response.status).toBe(403);
+    expect(await readJson(response)).toEqual(RECONNECT);
+    expect(kv.puts).toEqual([]);
+    expect([...kv.entries().keys()].some((key) => key.startsWith("preview:"))).toBe(false);
   });
 });
 
@@ -333,5 +355,35 @@ describe("write confirm", () => {
     );
     expect(response.status).toBe(400);
     expect(await readJson(response)).toEqual({ error: "preview_invalid" });
+  });
+
+  it("rejects a readonly-only grant and does not delete the preview", async () => {
+    forbidFetch();
+    const kv = new MemoryKv();
+    const { token, grant } = await seedLinked(kv, "1001", LEGACY_READONLY_SCOPES);
+    const previewId = "d".repeat(43);
+    kv.records.set(`preview:${previewId}`, {
+      value: JSON.stringify({
+        grant_id: grant.grant_id,
+        kind: "ga4_custom_dimension_create",
+        property_id: PROPERTY_ID,
+        dimension: PREVIEW_BODY.dimension,
+        resource_ids: [PROPERTY_ID],
+        summary: SUMMARY,
+        expires_at: "2099-01-01T00:00:00.000Z",
+      }),
+      expiresAtMs: null,
+    });
+    const response = await worker.fetch(
+      post(
+        CONFIRM_PATH,
+        { preview_id: previewId, confirm_phrase: `confirm create on property ${PROPERTY_ID}` },
+        token,
+      ),
+      envWithKv(kv),
+    );
+    expect(response.status).toBe(403);
+    expect(await readJson(response)).toEqual(RECONNECT);
+    expect(kv.entries().has(`preview:${previewId}`)).toBe(true);
   });
 });
