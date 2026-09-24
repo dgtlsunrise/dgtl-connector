@@ -659,10 +659,70 @@ describe("gtm variable create", () => {
         url: GTM_VARIABLE_URL,
         method: "POST",
         authorization: `Bearer ${ACCESS}`,
-        body: JSON.stringify({ name: "Muse constant", type: "c" }),
+        body: JSON.stringify({
+          name: "Muse constant",
+          type: "c",
+          parameter: [{ type: "template", key: "value", value: "muse" }],
+        }),
       },
     ]);
     expect(kv.entries().has(`preview:${previewId}`)).toBe(false);
+  });
+
+  it("posts a caller parameter instead of the constant default", async () => {
+    const kv = new MemoryKv();
+    const { token } = await seedLinked(kv);
+    const parameter = [{ type: "template", key: "value", value: "G-MUSE123" }];
+    mockGoogle({
+      [GTM_CONTAINER_URL]: { body: { publicId: PUBLIC_ID, containerId: CONTAINER_ID } },
+    });
+    const previewResponse = await worker.fetch(
+      post(
+        PREVIEW_PATH,
+        {
+          ...GTM_BODY,
+          variable: { name: "Muse constant", type: "c", parameter },
+        },
+        token,
+      ),
+      envWithKv(kv),
+    );
+    expect(previewResponse.status).toBe(200);
+    const previewBody = await readJson(previewResponse);
+    const previewId = previewBody["preview_id"];
+    if (typeof previewId !== "string") {
+      throw new Error("missing preview_id");
+    }
+
+    const seen = mockGoogle({
+      [GTM_VARIABLE_URL]: {
+        body: { path: GTM_PATH, name: "Muse constant", type: "c", variableId: "15" },
+      },
+    });
+    const accepted = await worker.fetch(
+      post(
+        CONFIRM_PATH,
+        { preview_id: previewId, confirm_phrase: `create variable on ${PUBLIC_ID}` },
+        token,
+      ),
+      envWithKv(kv),
+    );
+    expect(accepted.status).toBe(200);
+    expect(await readJson(accepted)).toEqual({
+      status: "confirmed",
+      preview_id: previewId,
+      kind: "gtm_variable_create",
+      executed: true,
+      resource_name: GTM_PATH,
+    });
+    expect(seen.filter((call) => call.url === GTM_VARIABLE_URL)).toEqual([
+      {
+        url: GTM_VARIABLE_URL,
+        method: "POST",
+        authorization: `Bearer ${ACCESS}`,
+        body: JSON.stringify({ name: "Muse constant", type: "c", parameter }),
+      },
+    ]);
   });
 
   it("does not store a preview when the container has no publicId", async () => {
