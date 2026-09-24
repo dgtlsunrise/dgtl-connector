@@ -3,8 +3,7 @@ import { json } from "./http";
 import { openRefreshToken } from "./seal";
 import { invalidRequest, isRecord } from "./validate";
 
-/** Tip pins this in src/shopify/auth.ts. Muse reads call Admin REST, not the tip GraphQL client. */
-export const SHOPIFY_ADMIN_API_VERSION = "2026-04";
+const SHOPIFY_ADMIN_API_VERSION = "2026-04";
 
 const PRODUCT_PAGE_DEFAULT = 25;
 const PRODUCT_PAGE_MAX = 50;
