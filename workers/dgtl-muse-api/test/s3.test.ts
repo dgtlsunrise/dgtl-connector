@@ -3,15 +3,28 @@ import { parseToken, tokenKey, type SealedRefreshToken } from "../src/auth";
 import { bytesToBase64Url } from "../src/bytes";
 import worker from "../src/index";
 import { openRefreshToken, sealRefreshToken } from "../src/seal";
+import { CONSENT_A, FREE_GOOGLE_NEVER } from "../src/scopes";
 import { MemoryKv, TEST_ENC_KEY, emptyEnv, envWithGrant, envWithKv, issuedToken } from "./support";
 
 const ORIGIN = "https://muse-api.dgtlsunrise.com";
 const REFRESH = "muse-refresh-plaintext-9f3c2a7b";
-const SCOPES = [
+const FREE_GOOGLE_SCOPES = [
   "openid",
   "https://www.googleapis.com/auth/userinfo.email",
   "https://www.googleapis.com/auth/analytics.readonly",
-];
+  "https://www.googleapis.com/auth/webmasters.readonly",
+  "https://www.googleapis.com/auth/tagmanager.readonly",
+  "https://www.googleapis.com/auth/analytics.edit",
+  "https://www.googleapis.com/auth/tagmanager.edit.containers",
+  "https://www.googleapis.com/auth/tagmanager.edit.containerversions",
+  "https://www.googleapis.com/auth/tagmanager.publish",
+  "https://www.googleapis.com/auth/webmasters",
+] as const;
+const LEGACY_READONLY_SCOPES = [
+  "openid",
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/analytics.readonly",
+] as const;
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -77,9 +90,12 @@ describe("connect", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("text/html; charset=utf-8");
     const html = await response.text();
-    expect(html).toContain("<h1>Connect Google Analytics to Muse</h1>");
+    expect(html).toContain("<h1>Connect Google to Muse</h1>");
+    expect(html).toContain("Search Console");
+    expect(html).toContain("Tag Manager");
+    expect(html).toContain("does not ask for Google Ads");
     expect(html).toContain('action="/oauth/google/start"');
-    expect(html).toContain(">Connect Google Analytics</button>");
+    expect(html).toContain(">Connect Google</button>");
     expect(html.toLowerCase()).not.toContain("coming soon");
     expect(html.toLowerCase()).not.toMatch(/\bbeta\b/);
   });
@@ -97,7 +113,13 @@ describe("google oauth callback", () => {
       "https://muse-api.dgtlsunrise.com/oauth/google/callback",
     );
     expect(authorize.searchParams.get("response_type")).toBe("code");
-    expect(authorize.searchParams.get("scope")).toBe(SCOPES.join(" "));
+    expect([...CONSENT_A]).toEqual([...FREE_GOOGLE_SCOPES]);
+    expect(authorize.searchParams.get("scope")).toBe(FREE_GOOGLE_SCOPES.join(" "));
+    const requested = authorize.searchParams.get("scope")?.split(" ") ?? [];
+    for (const banned of FREE_GOOGLE_NEVER) {
+      expect(requested).not.toContain(banned);
+    }
+    expect(requested).not.toContain("https://www.googleapis.com/auth/analytics");
     expect(authorize.searchParams.get("access_type")).toBe("offline");
     expect(authorize.searchParams.get("prompt")).toBe("consent");
     expect(authorize.searchParams.get("code_challenge_method")).toBe("S256");
@@ -131,7 +153,7 @@ describe("google oauth callback", () => {
             access_token: "access-should-not-be-stored",
             refresh_token: REFRESH,
             id_token: jwt({ sub: "1001", email: "ada@example.com" }),
-            scope: SCOPES.join(" "),
+            scope: FREE_GOOGLE_SCOPES.join(" "),
             token_type: "Bearer",
             expires_in: 3600,
           }),
@@ -195,7 +217,7 @@ describe("google oauth callback", () => {
     expect(grant.google).toMatchObject({
       sub: "1001",
       email: "ada@example.com",
-      scopes: SCOPES,
+      scopes: [...FREE_GOOGLE_SCOPES],
       refresh_token: { alg: "A256GCM" },
     });
     expect(grant.google.refresh_token.ct).not.toContain(REFRESH);
@@ -265,7 +287,7 @@ describe("google oauth callback", () => {
           JSON.stringify({
             access_token: "access-should-not-be-stored",
             id_token: jwt({ sub: "1001", email: "ada@example.com" }),
-            scope: SCOPES.join(" "),
+            scope: FREE_GOOGLE_SCOPES.join(" "),
             token_type: "Bearer",
           }),
           { status: 200, headers: { "content-type": "application/json" } },
@@ -280,10 +302,40 @@ describe("google oauth callback", () => {
     expect(await response.text()).toContain("Google did not return a refresh token.");
     expect([...kv.entries().keys()]).toEqual([]);
   });
+
+  it("stores nothing when Google returns only analytics.readonly", async () => {
+    const kv = new MemoryKv();
+    const authorize = await startOAuth(kv);
+    const state = authorize.searchParams.get("state");
+    if (state === null) {
+      throw new Error("missing state");
+    }
+    vi.stubGlobal("fetch", () =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            access_token: "access-should-not-be-stored",
+            refresh_token: REFRESH,
+            id_token: jwt({ sub: "1001", email: "ada@example.com" }),
+            scope: LEGACY_READONLY_SCOPES.join(" "),
+            token_type: "Bearer",
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
+    const response = await worker.fetch(
+      new Request(`${ORIGIN}/oauth/google/callback?code=auth-code-1&state=${state}`),
+      envWithKv(kv),
+    );
+    expect(response.status).toBe(400);
+    expect(await response.text()).toContain("Reopen /connect and reconnect Google.");
+    expect([...kv.entries().keys()]).toEqual([]);
+  });
 });
 
 describe("ga4 sessions", () => {
-  it("returns the sessions number from runReport", async () => {
+  it("returns the sessions number from runReport for a legacy analytics.readonly grant", async () => {
     const { token, hash, grant } = await issuedToken();
     const sealed = await sealRefreshToken(REFRESH, TEST_ENC_KEY);
     if (sealed === null) {
@@ -325,7 +377,7 @@ describe("ga4 sessions", () => {
         google: {
           sub: "1001",
           email: "ada@example.com",
-          scopes: SCOPES,
+          scopes: [...LEGACY_READONLY_SCOPES],
           refresh_token: sealed,
           linked_at: "2026-09-24T00:00:00.000Z",
         },
@@ -409,7 +461,7 @@ describe("ga4 sessions", () => {
         google: {
           sub: "1001",
           email: "ada@example.com",
-          scopes: SCOPES,
+          scopes: [...LEGACY_READONLY_SCOPES],
           refresh_token: sealed,
           linked_at: "2026-09-24T00:00:00.000Z",
         },

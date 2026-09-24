@@ -1,11 +1,17 @@
+import { CONSENT_A, FREE_GOOGLE_NEVER } from "./scopes";
+
+const connectScopes = CONSENT_A.join(", ");
+const neverScopes = FREE_GOOGLE_NEVER.join(", ");
+
 export const openApiDocument = {
   openapi: "3.1.0",
   info: {
     title: "DGTL Sunrise Connector API",
     version: "0.1.0",
-    summary: "Free Google reads for Muse. Writes are previewed, then confirmed.",
+    summary:
+      "Free Google read and manage for Muse. Writes are previewed, then confirmed. A grant missing the manage scope must reconnect.",
     description:
-      "HTTPS API for the DGTL Sunrise Muse connector. Open /connect to get a Bearer token. Privacy policy: https://www.dgtlsunrise.com/privacy",
+      `HTTPS API for the DGTL Sunrise Muse connector. Open /connect to get a Bearer token. /connect requests ${connectScopes}. It does not request ${neverScopes}. Manage routes reject a grant that is missing the scope they need until the user reopens /connect and reconnects Google. Reads that only need analytics.readonly still succeed on an older grant that has that scope. Privacy policy: https://www.dgtlsunrise.com/privacy`,
     termsOfService: "https://www.dgtlsunrise.com/terms",
     contact: {
       name: "DGTL Sunrise",
@@ -27,7 +33,7 @@ export const openApiDocument = {
     {
       name: "writes",
       description:
-        "Confirm-gated writes. Preview stores a one-shot proposal. Confirm accepts or refuses. This stub does not mutate Google.",
+        "Confirm-gated writes. Preview stores a one-shot proposal. Confirm accepts or refuses. GA4 manage requires https://www.googleapis.com/auth/analytics.edit. A grant without that scope returns google_reconnect_required and does not store or delete a preview. This stub does not mutate Google.",
     },
   ],
   paths: {
@@ -155,7 +161,7 @@ export const openApiDocument = {
         tags: ["writes"],
         summary: "Preview a confirm-gated write",
         description:
-          "Stores a one-shot preview for kind ga4_custom_dimension_create. Does not call the Google Admin API and does not mutate. The caller then posts a confirm_phrase that contains every resource id to /v1/writes/confirm.",
+          "Stores a one-shot preview for kind ga4_custom_dimension_create when the grant includes https://www.googleapis.com/auth/analytics.edit. Does not call the Google Admin API and does not mutate. A readonly-only grant is refused and nothing is stored. The caller then posts a confirm_phrase that contains every resource id to /v1/writes/confirm.",
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -184,10 +190,16 @@ export const openApiDocument = {
           },
           "401": { $ref: "#/components/responses/Unauthorized" },
           "403": {
-            description: "The grant has no Google link.",
+            description:
+              "The grant has no Google link, or it is missing https://www.googleapis.com/auth/analytics.edit. A missing manage scope does not store a preview. Reopen /connect and reconnect Google.",
             content: {
               "application/json": {
-                schema: { $ref: "#/components/schemas/GoogleNotLinked" },
+                schema: {
+                  oneOf: [
+                    { $ref: "#/components/schemas/GoogleNotLinked" },
+                    { $ref: "#/components/schemas/GoogleReconnectRequired" },
+                  ],
+                },
               },
             },
           },
@@ -200,7 +212,7 @@ export const openApiDocument = {
         tags: ["writes"],
         summary: "Confirm a previewed write",
         description:
-          "Accepts the preview when confirm_phrase contains every resource id from the preview. A refused phrase leaves the preview usable. On accept, the preview is one-shot and the response is a stub with executed false. This operation does not call Google and does not mutate.",
+          "Accepts the preview when the grant includes https://www.googleapis.com/auth/analytics.edit and confirm_phrase contains every resource id from the preview. A grant missing that scope leaves the preview in place and does not mutate. A refused phrase leaves the preview usable. On accept, the preview is one-shot and the response is a stub with executed false. This operation does not call Google and does not mutate.",
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -230,10 +242,17 @@ export const openApiDocument = {
           },
           "401": { $ref: "#/components/responses/Unauthorized" },
           "403": {
-            description: "The preview belongs to a different grant.",
+            description:
+              "The preview belongs to a different grant, the grant has no Google link, or the grant is missing https://www.googleapis.com/auth/analytics.edit. A missing manage scope does not delete the preview and does not mutate. Reopen /connect and reconnect Google.",
             content: {
               "application/json": {
-                schema: { $ref: "#/components/schemas/PreviewForbidden" },
+                schema: {
+                  oneOf: [
+                    { $ref: "#/components/schemas/PreviewForbidden" },
+                    { $ref: "#/components/schemas/GoogleNotLinked" },
+                    { $ref: "#/components/schemas/GoogleReconnectRequired" },
+                  ],
+                },
               },
             },
           },
@@ -330,6 +349,18 @@ export const openApiDocument = {
         required: ["error"],
         properties: {
           error: { type: "string", enum: ["google_not_linked"] },
+        },
+      },
+      GoogleReconnectRequired: {
+        type: "object",
+        required: ["error", "message", "missing_scopes"],
+        properties: {
+          error: { type: "string", enum: ["google_reconnect_required"] },
+          message: { type: "string" },
+          missing_scopes: {
+            type: "array",
+            items: { type: "string" },
+          },
         },
       },
       PreviewForbidden: {

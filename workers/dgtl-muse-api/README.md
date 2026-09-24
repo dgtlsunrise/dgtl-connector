@@ -75,13 +75,26 @@ To revoke without deleting the record, put the same JSON with `"status":"revoked
 
 ## Connect
 
-Open `https://muse-api.dgtlsunrise.com/connect` and choose Connect Google Analytics. The callback stores the grant and shows a `dgtl_muse_` token once. Paste that token into Muse as the Bearer token.
+Open `https://muse-api.dgtlsunrise.com/connect` and choose Connect Google. The callback stores the grant and shows a `dgtl_muse_` token once. Paste that token into Muse as the Bearer token.
 
-The Google web client is asked only for `openid`, `https://www.googleapis.com/auth/userinfo.email`, and `https://www.googleapis.com/auth/analytics.readonly`. The refresh token is encrypted with AES-256-GCM before it is stored. `GET /v1/ga4/properties/{property_id}/sessions` returns `{property_id, start_date, end_date, sessions}`. `start_date` defaults to `28daysAgo` and `end_date` defaults to `yesterday`. A grant with `google: null` returns `403` `{"error":"google_not_linked"}`.
+`/connect` requests the Free Google set (the same strings as tip `CONSENT_A`):
+
+- `openid`
+- `https://www.googleapis.com/auth/userinfo.email`
+- `https://www.googleapis.com/auth/analytics.readonly`
+- `https://www.googleapis.com/auth/webmasters.readonly`
+- `https://www.googleapis.com/auth/tagmanager.readonly`
+- `https://www.googleapis.com/auth/analytics.edit`
+- `https://www.googleapis.com/auth/tagmanager.edit.containers`
+- `https://www.googleapis.com/auth/tagmanager.edit.containerversions`
+- `https://www.googleapis.com/auth/tagmanager.publish`
+- `https://www.googleapis.com/auth/webmasters`
+
+It does not request `https://www.googleapis.com/auth/adwords`, `https://www.googleapis.com/auth/content`, or `https://www.googleapis.com/auth/business.manage`. Google must return every requested scope. A partial grant is not stored. The callback writes the granted scope list on the grant next to the sealed refresh token. The refresh token is encrypted with AES-256-GCM before it is stored. `GET /v1/ga4/properties/{property_id}/sessions` returns `{property_id, start_date, end_date, sessions}` and still works for an older grant that only has `analytics.readonly`. `start_date` defaults to `28daysAgo` and `end_date` defaults to `yesterday`. A grant with `google: null` returns `403` `{"error":"google_not_linked"}`.
 
 ## Writes
 
-`POST /v1/writes/preview` accepts only `kind` `ga4_custom_dimension_create` with `property_id` and `dimension` (`parameter_name`, `display_name`, `scope`). The grant must have `google` linked, or the response is `403` `{"error":"google_not_linked"}`. The Worker stores the preview in `MUSE_TOKENS` under `preview:<preview_id>` for 600 seconds and returns `status` `preview` with `confirm_required` true and `resource_ids` containing the property id. It does not call Google.
+`POST /v1/writes/preview` accepts only `kind` `ga4_custom_dimension_create` with `property_id` and `dimension` (`parameter_name`, `display_name`, `scope`). The grant must have `google` linked, or the response is `403` `{"error":"google_not_linked"}`. GA4 manage also requires `https://www.googleapis.com/auth/analytics.edit`. A linked grant without that scope returns `403` `{"error":"google_reconnect_required","message":"This Google connection is missing https://www.googleapis.com/auth/analytics.edit. Reopen /connect and reconnect Google.","missing_scopes":["https://www.googleapis.com/auth/analytics.edit"]}` and the Worker does not store a preview. The same refusal on `POST /v1/writes/confirm` leaves an existing preview in place. It does not call Google and it does not mutate. When the scope is present, the Worker stores the preview in `MUSE_TOKENS` under `preview:<preview_id>` for 600 seconds and returns `status` `preview` with `confirm_required` true and `resource_ids` containing the property id.
 
 `POST /v1/writes/confirm` loads that preview. A missing, expired, or already used preview is `400` `{"error":"preview_invalid"}`. A preview owned by another grant is `403` `{"error":"preview_forbidden"}`. `confirm_phrase` must contain every `resource_ids` entry (substring, case-sensitive) or the response is `400` `{"error":"confirm_refused","confirm_required":true}` and the preview stays usable. A matching phrase deletes the preview and returns `status` `confirmed`, `executed` false, `reason` `stub_no_mutate`.
 

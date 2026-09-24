@@ -1,16 +1,12 @@
 import { mintBearerToken, type ActiveGrant, type GoogleLink } from "./auth";
 import { base64UrlToBytes, bytesToBase64Url } from "./bytes";
 import { html } from "./http";
+import { CONSENT_A } from "./scopes";
 import { sealRefreshToken } from "./seal";
 
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
-const SCOPES = [
-  "openid",
-  "https://www.googleapis.com/auth/userinfo.email",
-  "https://www.googleapis.com/auth/analytics.readonly",
-] as const;
 const STATE_TTL_SECONDS = 600;
 const STATE_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 // Pinned so the incoming Host cannot choose a different Google redirect URI.
@@ -27,6 +23,11 @@ type TokenResponse = {
   readonly idToken: string | null;
   readonly scopes: readonly string[];
 };
+
+type CodeExchange =
+  | { readonly kind: "token"; readonly token: TokenResponse }
+  | { readonly kind: "missing_scopes" }
+  | { readonly kind: "failed" };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -69,8 +70,8 @@ ${body}
 function errorPage(status: number, message: string): Response {
   return html(
     page(
-      "Connect Google Analytics to Muse",
-      `<h1>Connect Google Analytics to Muse</h1>
+      "Connect Google to Muse",
+      `<h1>Connect Google to Muse</h1>
 <p>${escapeHtml(message)}</p>
 <p><a href="/connect">Return to Connect</a></p>`,
     ),
@@ -81,11 +82,12 @@ function errorPage(status: number, message: string): Response {
 export function connectPage(): Response {
   return html(
     page(
-      "Connect Google Analytics to Muse",
-      `<h1>Connect Google Analytics to Muse</h1>
-<p>Sign in with Google so Muse can read Google Analytics sessions for a property you choose.</p>
+      "Connect Google to Muse",
+      `<h1>Connect Google to Muse</h1>
+<p>Sign in with Google so Muse can read and manage Google Analytics, Search Console, and Tag Manager on accounts you can access.</p>
+<p>Muse does not ask for Google Ads, Merchant Center, or Business Profile. An older read-only connection cannot manage until you connect again.</p>
 <form action="/oauth/google/start" method="get">
-<button type="submit">Connect Google Analytics</button>
+<button type="submit">Connect Google</button>
 </form>`,
     ),
     200,
@@ -119,7 +121,7 @@ export async function startGoogleOAuth(env: Env): Promise<Response> {
   authorize.searchParams.set("client_id", env.GOOGLE_WEB_CLIENT_ID);
   authorize.searchParams.set("redirect_uri", REDIRECT_URI);
   authorize.searchParams.set("response_type", "code");
-  authorize.searchParams.set("scope", SCOPES.join(" "));
+  authorize.searchParams.set("scope", CONSENT_A.join(" "));
   authorize.searchParams.set("state", state);
   authorize.searchParams.set("code_challenge", challenge);
   authorize.searchParams.set("code_challenge_method", "S256");
@@ -168,10 +170,10 @@ function optionalString(value: unknown): string | null {
 
 function scopesFromToken(value: unknown): readonly string[] | null {
   if (typeof value !== "string" || value.length === 0) {
-    return [...SCOPES];
+    return null;
   }
   const scopes = value.split(/\s+/).filter((scope) => scope.length > 0);
-  for (const required of SCOPES) {
+  for (const required of CONSENT_A) {
     if (!scopes.includes(required)) {
       return null;
     }
@@ -179,11 +181,7 @@ function scopesFromToken(value: unknown): readonly string[] | null {
   return scopes;
 }
 
-async function exchangeCode(
-  env: Env,
-  code: string,
-  verifier: string,
-): Promise<TokenResponse | null> {
+async function exchangeCode(env: Env, code: string, verifier: string): Promise<CodeExchange> {
   let response: Response;
   try {
     response = await fetch(GOOGLE_TOKEN_URL, {
@@ -200,29 +198,32 @@ async function exchangeCode(
       cache: "no-store",
     });
   } catch {
-    return null;
+    return { kind: "failed" };
   }
   if (!response.ok) {
-    return null;
+    return { kind: "failed" };
   }
   let payload: unknown;
   try {
     payload = await response.json();
   } catch {
-    return null;
+    return { kind: "failed" };
   }
   if (!isRecord(payload)) {
-    return null;
+    return { kind: "failed" };
   }
   const scopes = scopesFromToken(payload["scope"]);
   if (scopes === null) {
-    return null;
+    return { kind: "missing_scopes" };
   }
   return {
-    refreshToken: optionalString(payload["refresh_token"]),
-    accessToken: optionalString(payload["access_token"]),
-    idToken: optionalString(payload["id_token"]),
-    scopes,
+    kind: "token",
+    token: {
+      refreshToken: optionalString(payload["refresh_token"]),
+      accessToken: optionalString(payload["access_token"]),
+      idToken: optionalString(payload["id_token"]),
+      scopes,
+    },
   };
 }
 
@@ -334,19 +335,31 @@ export async function finishGoogleOAuth(request: Request, env: Env): Promise<Res
   }
 
   const exchanged = await exchangeCode(env, code, pending.code_verifier);
-  if (exchanged === null) {
-    return errorPage(502, "Google did not complete sign-in.");
+  switch (exchanged.kind) {
+    case "failed":
+      return errorPage(502, "Google did not complete sign-in.");
+    case "missing_scopes":
+      return errorPage(
+        400,
+        "Google did not grant the Free Google access Muse needs. Reopen /connect and reconnect Google.",
+      );
+    case "token":
+      break;
+    default: {
+      const unexpected: never = exchanged;
+      return unexpected;
+    }
   }
-  if (exchanged.refreshToken === null) {
+  if (exchanged.token.refreshToken === null) {
     return errorPage(502, "Google did not return a refresh token.");
   }
 
-  const identity = await readIdentity(exchanged);
+  const identity = await readIdentity(exchanged.token);
   if (identity === null) {
     return errorPage(502, "Google did not share the account.");
   }
 
-  const sealed = await sealRefreshToken(exchanged.refreshToken, env.MUSE_TOKEN_ENC_KEY);
+  const sealed = await sealRefreshToken(exchanged.token.refreshToken, env.MUSE_TOKEN_ENC_KEY);
   if (sealed === null) {
     return errorPage(500, "Sign-in could not be saved.");
   }
@@ -356,7 +369,7 @@ export async function finishGoogleOAuth(request: Request, env: Env): Promise<Res
   const google: GoogleLink = {
     sub: identity.sub,
     email: identity.email,
-    scopes: exchanged.scopes,
+    scopes: exchanged.token.scopes,
     refresh_token: sealed,
     linked_at: now,
   };

@@ -1,6 +1,7 @@
 import type { ActiveGrant } from "./auth";
 import { bytesToBase64Url } from "./bytes";
 import { json } from "./http";
+import { GA4_MANAGE_SCOPES, refusalForGoogleScopes } from "./scopes";
 
 const PREVIEW_TTL_SECONDS = 600;
 const PREVIEW_PREFIX = "preview:";
@@ -185,6 +186,11 @@ export async function previewWrite(
     }
   }
 
+  const refused = refusalForGoogleScopes(grant.google, GA4_MANAGE_SCOPES);
+  if (refused !== null) {
+    return refused;
+  }
+
   const previewId = newPreviewId();
   const expiresAt = new Date(Date.now() + PREVIEW_TTL_SECONDS * 1000).toISOString();
   const summary = summaryFor(parsed.dimension.parameter_name, parsed.propertyId);
@@ -261,6 +267,10 @@ export async function confirmWrite(
   }
   if (stored.grant_id !== grant.grant_id) {
     return json({ error: "preview_forbidden" }, 403);
+  }
+  const refused = refusalForGoogleScopes(grant.google, GA4_MANAGE_SCOPES);
+  if (refused !== null) {
+    return refused;
   }
   if (typeof parsed.phrase !== "string" || !phraseCovers(parsed.phrase, stored.resource_ids)) {
     return json({ error: "confirm_refused", confirm_required: true }, 400);
