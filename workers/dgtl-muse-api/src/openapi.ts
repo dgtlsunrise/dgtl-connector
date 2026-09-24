@@ -10,9 +10,9 @@ export const openApiDocument = {
     title: "DGTL Sunrise Connector API",
     version: "0.1.0",
     summary:
-      "Free Google GA4, Search Console, and Tag Manager reads for Muse, plus confirm-gated GA4, GTM, and Shopify inventory writes. A grant missing the scope a route needs must reconnect.",
+      "Free Google GA4, Search Console, and Tag Manager reads for Muse, plus confirm-gated GA4, GTM, Shopify inventory, and Klaviyo profile writes. A grant missing the scope a route needs must reconnect.",
     description:
-      `HTTPS API for the DGTL Sunrise Muse connector. Open /connect to get a Bearer token. /connect requests ${connectScopes}. It does not request ${neverScopes}. GA4 reads need https://www.googleapis.com/auth/analytics.readonly. Search Console reads need https://www.googleapis.com/auth/webmasters.readonly. Tag Manager reads need https://www.googleapis.com/auth/tagmanager.readonly. A linked grant missing that scope returns google_reconnect_required and does not call Google. An older grant that only has analytics.readonly can still read GA4. GA4 custom dimension create requires https://www.googleapis.com/auth/analytics.edit. GTM variable create requires https://www.googleapis.com/auth/tagmanager.edit.containers. A missing manage scope returns google_reconnect_required and does not mutate. POST /v1/writes/confirm creates one GA4 custom dimension, one GTM workspace variable, or one Shopify inventory adjustment. It does not publish a container, submit a sitemap, or run productSet. POST /v1/connect/shopify and POST /v1/connect/klaviyo seal a Shopify Admin API token and a Klaviyo private key with the same AES-GCM key as the Google refresh token. GET /v1/connect reports those links as linked or null and does not return the secrets. GET /v1/shopify/shop and GET /v1/shopify/products call Shopify Admin REST API version 2026-04 with the sealed token. A grant with no Shopify link returns shopify_not_linked and does not call Shopify. Those read routes do not write. POST /v1/writes/confirm kind shopify_inventory_adjust posts tip inventoryAdjustQuantities on Admin GraphQL 2026-04 after confirm_phrase contains the inventory item id and the location id. GET /v1/klaviyo/account and GET /v1/klaviyo/profiles call Klaviyo with revision header 2026-07-15 and the sealed pk_ key. A grant with no Klaviyo link returns klaviyo_not_linked and does not call Klaviyo. These routes do not write to Klaviyo, and they do not store account_id on the grant. Privacy policy: https://www.dgtlsunrise.com/privacy`,
+      `HTTPS API for the DGTL Sunrise Muse connector. Open /connect to get a Bearer token. /connect requests ${connectScopes}. It does not request ${neverScopes}. GA4 reads need https://www.googleapis.com/auth/analytics.readonly. Search Console reads need https://www.googleapis.com/auth/webmasters.readonly. Tag Manager reads need https://www.googleapis.com/auth/tagmanager.readonly. A linked grant missing that scope returns google_reconnect_required and does not call Google. An older grant that only has analytics.readonly can still read GA4. GA4 custom dimension create requires https://www.googleapis.com/auth/analytics.edit. GTM variable create requires https://www.googleapis.com/auth/tagmanager.edit.containers. A missing manage scope returns google_reconnect_required and does not mutate. POST /v1/writes/confirm creates one GA4 custom dimension, one GTM workspace variable, one Shopify inventory adjustment, or one Klaviyo profile upsert. It does not publish a container, submit a sitemap, or run productSet. POST /v1/connect/shopify and POST /v1/connect/klaviyo seal a Shopify Admin API token and a Klaviyo private key with the same AES-GCM key as the Google refresh token. GET /v1/connect reports those links as linked or null and does not return the secrets. GET /v1/shopify/shop and GET /v1/shopify/products call Shopify Admin REST API version 2026-04 with the sealed token. A grant with no Shopify link returns shopify_not_linked and does not call Shopify. Those read routes do not write. POST /v1/writes/confirm kind shopify_inventory_adjust posts tip inventoryAdjustQuantities on Admin GraphQL 2026-04 after confirm_phrase contains the inventory item id and the location id. GET /v1/klaviyo/account and GET /v1/klaviyo/profiles call Klaviyo with revision header 2026-07-15 and the sealed pk_ key. A grant with no Klaviyo link returns klaviyo_not_linked and does not call Klaviyo. These read routes do not write to Klaviyo, and they do not store account_id on the grant. POST /v1/writes/confirm kind klaviyo_upsert_profile posts POST /api/profile-import after confirm_phrase contains every stored identifier (email, external_id, and profile_id when present). Privacy policy: https://www.dgtlsunrise.com/privacy`,
     termsOfService: "https://www.dgtlsunrise.com/terms",
     contact: {
       name: "DGTL Sunrise",
@@ -43,13 +43,13 @@ export const openApiDocument = {
     {
       name: "klaviyo",
       description:
-        "Read Klaviyo revision 2026-07-15 with the sealed pk_ key from POST /v1/connect/klaviyo. These routes do not write.",
+        "Read Klaviyo revision 2026-07-15 with the sealed pk_ key from POST /v1/connect/klaviyo. These routes do not write. Profile upsert is the confirm-gated write klaviyo_upsert_profile.",
     },
     ...readTags,
     {
       name: "writes",
       description:
-        "Confirm-gated writes. Kinds: ga4_custom_dimension_create, gtm_variable_create, and shopify_inventory_adjust. Preview stores a one-shot proposal and does not mutate. Confirm posts only when confirm_phrase contains every resource id. GA4 manage requires https://www.googleapis.com/auth/analytics.edit. GTM variable create requires https://www.googleapis.com/auth/tagmanager.edit.containers. A grant missing that scope returns google_reconnect_required and does not store or delete a preview. Shopify inventory adjust requires a linked shop. A grant with no Shopify link returns shopify_not_linked and does not call Shopify.",
+        "Confirm-gated writes. Kinds: ga4_custom_dimension_create, gtm_variable_create, shopify_inventory_adjust, and klaviyo_upsert_profile. Preview stores a one-shot proposal and does not mutate. Confirm posts only when confirm_phrase contains every resource id. GA4 manage requires https://www.googleapis.com/auth/analytics.edit. GTM variable create requires https://www.googleapis.com/auth/tagmanager.edit.containers. A grant missing that scope returns google_reconnect_required and does not store or delete a preview. Shopify inventory adjust requires a linked shop. A grant with no Shopify link returns shopify_not_linked and does not call Shopify. Klaviyo profile upsert requires a sealed pk_ key. A grant with no Klaviyo link returns klaviyo_not_linked and does not call Klaviyo. confirm_phrase for that kind must contain each stored email, external_id, and profile_id. Names are not resource ids.",
     },
   ],
   paths: {
@@ -575,7 +575,7 @@ export const openApiDocument = {
         tags: ["writes"],
         summary: "Preview a confirm-gated write",
         description:
-          "Stores a one-shot preview for ga4_custom_dimension_create, gtm_variable_create, or shopify_inventory_adjust. GA4 preview does not call Google. GTM preview GETs the container to resolve publicId and does not create a variable. Shopify inventory preview does not call Shopify. A grant missing the manage scope for a Google kind is refused and nothing is stored. A grant with no Shopify link is refused for shopify_inventory_adjust and nothing is stored. The caller then posts a confirm_phrase that contains every resource id to /v1/writes/confirm. GA4 resource id is properties/{property_id}. GTM resource id is the container publicId. Shopify resource ids are the InventoryItem gid and the Location gid.",
+          "Stores a one-shot preview for ga4_custom_dimension_create, gtm_variable_create, shopify_inventory_adjust, or klaviyo_upsert_profile. GA4 preview does not call Google. GTM preview GETs the container to resolve publicId and does not create a variable. Shopify inventory preview does not call Shopify. Klaviyo profile preview does not call Klaviyo. A grant missing the manage scope for a Google kind is refused and nothing is stored. A grant with no Shopify link is refused for shopify_inventory_adjust and nothing is stored. A grant with no Klaviyo link is refused for klaviyo_upsert_profile and nothing is stored. The caller then posts a confirm_phrase that contains every resource id to /v1/writes/confirm. GA4 resource id is properties/{property_id}. GTM resource id is the container publicId. Shopify resource ids are the InventoryItem gid and the Location gid. Klaviyo resource ids are the accepted email, external_id, and profile_id, in that order. At least one identifier is required. first_name and last_name are optional and are not resource ids. A properties bag or any other field is invalid_request.",
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -605,7 +605,7 @@ export const openApiDocument = {
           "401": { $ref: "#/components/responses/Unauthorized" },
           "403": {
             description:
-              "The grant has no Google link, it is missing the manage scope for a Google kind (analytics.edit or tagmanager.edit.containers), or Shopify is not linked for shopify_inventory_adjust. A refusal does not store a preview.",
+              "The grant has no Google link, it is missing the manage scope for a Google kind (analytics.edit or tagmanager.edit.containers), Shopify is not linked for shopify_inventory_adjust, or Klaviyo is not linked for klaviyo_upsert_profile. A refusal does not store a preview.",
             content: {
               "application/json": {
                 schema: {
@@ -614,6 +614,7 @@ export const openApiDocument = {
                     { $ref: "#/components/schemas/GoogleReconnectRequired" },
                     { $ref: "#/components/schemas/GtmForbidden" },
                     { $ref: "#/components/schemas/ShopifyReadError" },
+                    { $ref: "#/components/schemas/KlaviyoReadError" },
                   ],
                 },
               },
@@ -653,7 +654,7 @@ export const openApiDocument = {
         tags: ["writes"],
         summary: "Confirm a previewed write",
         description:
-          "Posts the previewed mutate when confirm_phrase contains every resource id. GA4 posts customDimensions on the Analytics Admin API. GTM posts a workspace variable on the Tag Manager API. shopify_inventory_adjust posts inventoryAdjustQuantities to Admin GraphQL /admin/api/2026-04/graphql.json, the same mutation as tip shopify_adjust_inventory. The phrase must contain the inventory item gid and the location gid. A missing manage scope, a missing Shopify link, a refused phrase, or an upstream error leaves the preview in place and does not delete it. Shopify 401, 403, and 429 are shopify_unauthorized, shopify_forbidden, and shopify_rate_limited. On success the preview is deleted and executed is true.",
+          "Posts the previewed mutate when confirm_phrase contains every resource id. GA4 posts customDimensions on the Analytics Admin API. GTM posts a workspace variable on the Tag Manager API. shopify_inventory_adjust posts inventoryAdjustQuantities to Admin GraphQL /admin/api/2026-04/graphql.json, the same mutation as tip shopify_adjust_inventory. The phrase must contain the inventory item gid and the location gid. klaviyo_upsert_profile posts JSON:API profile-import to https://a.klaviyo.com/api/profile-import with revision 2026-07-15, the same pin as the Klaviyo reads, and the same closed body as tip klaviyo_upsert_profile: email, external_id, and profile_id (data.id) plus optional first_name and last_name. No properties bag. confirm_phrase must contain each stored identifier (email, external_id, and profile_id when present). Names are not resource ids. This is not an account-id phrase. A missing manage scope, a missing Shopify or Klaviyo link, a refused phrase, or an upstream error leaves the preview in place and does not delete it. Shopify 401, 403, and 429 are shopify_unauthorized, shopify_forbidden, and shopify_rate_limited. Klaviyo 401, 403, and 429 are klaviyo_unauthorized, klaviyo_forbidden, and klaviyo_rate_limited. The sealed pk_ key and the Klaviyo error body are not returned. On success the preview is deleted and executed is true. Klaviyo success also returns profile_id from the profile-import response.",
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -666,13 +667,14 @@ export const openApiDocument = {
         responses: {
           "200": {
             description:
-              "The upstream API accepted the mutate. executed is true. Google returns resource_name. Shopify returns the inventory item id and location id from the adjustment.",
+              "The upstream API accepted the mutate. executed is true. Google returns resource_name. Shopify returns the inventory item id and location id from the adjustment. Klaviyo returns profile_id from profile-import.",
             content: {
               "application/json": {
                 schema: {
                   oneOf: [
                     { $ref: "#/components/schemas/WriteConfirmResult" },
                     { $ref: "#/components/schemas/ShopifyInventoryConfirm" },
+                    { $ref: "#/components/schemas/KlaviyoProfileConfirm" },
                   ],
                 },
               },
@@ -680,7 +682,7 @@ export const openApiDocument = {
           },
           "400": {
             description:
-              "The preview is missing, expired, or already used, the body is invalid, Shopify rejected the adjustment, or confirm_phrase does not include every resource id.",
+              "The preview is missing, expired, or already used, the body is invalid, Shopify rejected the adjustment, or confirm_phrase does not include every resource id. For klaviyo_upsert_profile the phrase must include every stored email, external_id, and profile_id.",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/WriteConfirmError" },
@@ -690,7 +692,7 @@ export const openApiDocument = {
           "401": { $ref: "#/components/responses/Unauthorized" },
           "403": {
             description:
-              "The preview belongs to a different grant, the grant has no Google link, the grant is missing the manage scope, Google refused the mutate, or Shopify refused the token. A refusal does not delete the preview. Reopen /connect when the error is google_reconnect_required.",
+              "The preview belongs to a different grant, the grant has no Google link, the grant is missing the manage scope, Google refused the mutate, Shopify refused the token, or Klaviyo is not linked or refused the key. A refusal does not delete the preview. Reopen /connect when the error is google_reconnect_required.",
             content: {
               "application/json": {
                 schema: {
@@ -701,16 +703,23 @@ export const openApiDocument = {
                     { $ref: "#/components/schemas/Ga4Forbidden" },
                     { $ref: "#/components/schemas/GtmForbidden" },
                     { $ref: "#/components/schemas/ShopifyReadError" },
+                    { $ref: "#/components/schemas/KlaviyoReadError" },
                   ],
                 },
               },
             },
           },
           "429": {
-            description: "Shopify rate limited the inventory adjustment. The preview stays in place.",
+            description:
+              "Shopify rate limited the inventory adjustment, or Klaviyo rate limited the profile import. The preview stays in place.",
             content: {
               "application/json": {
-                schema: { $ref: "#/components/schemas/ShopifyReadError" },
+                schema: {
+                  oneOf: [
+                    { $ref: "#/components/schemas/ShopifyReadError" },
+                    { $ref: "#/components/schemas/KlaviyoReadError" },
+                  ],
+                },
               },
             },
           },
@@ -732,7 +741,7 @@ export const openApiDocument = {
           },
           "502": {
             description:
-              "Refreshing the Google access token failed, the Google mutate had no resource name, or Shopify did not return adjustment ids. The preview stays in place.",
+              "Refreshing the Google access token failed, the Google mutate had no resource name, Shopify did not return adjustment ids, or Klaviyo did not return a profile id. The preview stays in place.",
             content: {
               "application/json": {
                 schema: {
@@ -740,6 +749,7 @@ export const openApiDocument = {
                     { $ref: "#/components/schemas/Ga4Unavailable" },
                     { $ref: "#/components/schemas/GtmUnavailable" },
                     { $ref: "#/components/schemas/ShopifyReadError" },
+                    { $ref: "#/components/schemas/KlaviyoReadError" },
                   ],
                 },
               },
@@ -1072,7 +1082,12 @@ export const openApiDocument = {
       },
       WriteKind: {
         type: "string",
-        enum: ["ga4_custom_dimension_create", "gtm_variable_create", "shopify_inventory_adjust"],
+        enum: [
+          "ga4_custom_dimension_create",
+          "gtm_variable_create",
+          "shopify_inventory_adjust",
+          "klaviyo_upsert_profile",
+        ],
       },
       Ga4CustomDimensionCreate: {
         type: "object",
@@ -1169,6 +1184,52 @@ export const openApiDocument = {
           },
         },
       },
+      KlaviyoProfileUpsert: {
+        type: "object",
+        additionalProperties: false,
+        required: ["kind"],
+        description:
+          "Closed fields for tip klaviyo_upsert_profile. At least one of email, external_id, or profile_id is required. Optional first_name and last_name. properties and any other field are refused. Preview does not call Klaviyo. confirm_phrase must contain every identifier that was stored: email, then external_id, then profile_id. Names are not resource ids.",
+        properties: {
+          kind: { type: "string", enum: ["klaviyo_upsert_profile"] },
+          email: {
+            type: "string",
+            minLength: 1,
+            maxLength: 254,
+            description: "Profile email. Stored as a resource id when present.",
+          },
+          external_id: {
+            type: "string",
+            minLength: 1,
+            maxLength: 255,
+            description: "Profile external_id. Stored as a resource id when present.",
+          },
+          profile_id: {
+            type: "string",
+            minLength: 1,
+            maxLength: 255,
+            description:
+              "Existing Klaviyo profile id. Sent as data.id on POST /api/profile-import. Stored as a resource id when present.",
+          },
+          first_name: { type: "string", minLength: 1, maxLength: 255 },
+          last_name: { type: "string", minLength: 1, maxLength: 255 },
+        },
+      },
+      KlaviyoProfileConfirm: {
+        type: "object",
+        additionalProperties: false,
+        required: ["status", "preview_id", "kind", "executed", "profile_id"],
+        properties: {
+          status: { type: "string", enum: ["confirmed"] },
+          preview_id: { type: "string" },
+          kind: { type: "string", enum: ["klaviyo_upsert_profile"] },
+          executed: { type: "boolean", enum: [true] },
+          profile_id: {
+            type: "string",
+            description: "Profile id returned by Klaviyo POST /api/profile-import. Not the sealed pk_ key.",
+          },
+        },
+      },
       ShopifyInventoryConfirm: {
         type: "object",
         additionalProperties: false,
@@ -1193,6 +1254,7 @@ export const openApiDocument = {
           { $ref: "#/components/schemas/Ga4CustomDimensionCreate" },
           { $ref: "#/components/schemas/GtmVariableCreate" },
           { $ref: "#/components/schemas/ShopifyInventoryAdjust" },
+          { $ref: "#/components/schemas/KlaviyoProfileUpsert" },
         ],
       },
       WritePreview: {
@@ -1231,7 +1293,7 @@ export const openApiDocument = {
           confirm_phrase: {
             type: "string",
             description:
-              "Caller-supplied phrase that contains every resource id from the preview. Not a credential.",
+              "Caller-supplied phrase that contains every resource id from the preview. Not a credential. For klaviyo_upsert_profile the resource ids are the stored email, external_id, and profile_id (each one that was sent). Names are not resource ids. This is not a Klaviyo account id.",
           },
         },
       },

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "Apache-2.0",
-  "description": "DGTL Sunrise Muse connector API. Bearer-authenticated Worker with Free Google reads and confirm-gated GA4, GTM, and Shopify inventory writes.",
+  "description": "DGTL Sunrise Muse connector API. Bearer-authenticated Worker with Free Google reads and confirm-gated GA4, GTM, Shopify inventory, and Klaviyo profile writes.",
   "engines": {
     "node": ">=22.12"
   },

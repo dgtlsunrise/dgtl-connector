@@ -3,8 +3,8 @@ import { json } from "./http";
 import { openRefreshToken } from "./seal";
 import { invalidRequest, isRecord } from "./validate";
 
-const KLAVIYO_API_REVISION = "2026-07-15";
-const KLAVIYO_ORIGIN = "https://a.klaviyo.com";
+export const KLAVIYO_API_REVISION = "2026-07-15";
+export const KLAVIYO_ORIGIN = "https://a.klaviyo.com";
 
 const PROFILE_PAGE_DEFAULT = 20;
 const PROFILE_PAGE_MAX = 100;
