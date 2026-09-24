@@ -5,7 +5,7 @@ export const openApiDocument = {
     version: "0.1.0",
     summary: "Free Google reads for Muse. Writes are previewed, then confirmed.",
     description:
-      "HTTPS API for the DGTL Sunrise Muse connector. Privacy policy: https://www.dgtlsunrise.com/privacy",
+      "HTTPS API for the DGTL Sunrise Muse connector. Open /connect to get a Bearer token. Privacy policy: https://www.dgtlsunrise.com/privacy",
     termsOfService: "https://www.dgtlsunrise.com/terms",
     contact: {
       name: "DGTL Sunrise",
@@ -70,47 +70,48 @@ export const openApiDocument = {
         tags: ["ga4"],
         summary: "Read GA4 sessions for a property",
         description:
-          "Free Google read of the sessions metric for one GA4 property and date range. This stub returns 501.",
+          "Free Google read of the sessions metric for one GA4 property and date range.",
         security: [{ bearerAuth: [] }],
         parameters: [
           { $ref: "#/components/parameters/propertyId" },
           {
             name: "start_date",
             in: "query",
-            required: true,
-            description: "YYYY-MM-DD, or a GA4 relative date such as 28daysAgo.",
-            schema: { type: "string" },
+            required: false,
+            description: "YYYY-MM-DD, or a GA4 relative date. Defaults to 28daysAgo.",
+            schema: { type: "string", default: "28daysAgo" },
           },
           {
             name: "end_date",
             in: "query",
-            required: true,
-            description: "YYYY-MM-DD, or a GA4 relative date such as yesterday.",
-            schema: { type: "string" },
-          },
-          {
-            name: "dimensions",
-            in: "query",
             required: false,
-            description: "Comma-separated GA4 dimension API names.",
-            schema: { type: "string" },
+            description: "YYYY-MM-DD, or a GA4 relative date. Defaults to yesterday.",
+            schema: { type: "string", default: "yesterday" },
           },
         ],
         responses: {
           "200": {
-            description: "Sessions report. Not served by this stub.",
+            description: "Sessions for the property and date range.",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/Ga4SessionsReport" },
               },
             },
           },
-          "401": { $ref: "#/components/responses/Unauthorized" },
-          "501": {
-            description: "Not implemented.",
+          "400": {
+            description: "property_id is not digits.",
             content: {
               "application/json": {
-                schema: { $ref: "#/components/schemas/ErrorBody" },
+                schema: { $ref: "#/components/schemas/InvalidPropertyId" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "403": {
+            description: "The grant has no Google link, or Google refused the read.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Ga4SessionsError" },
               },
             },
           },
@@ -274,26 +275,26 @@ export const openApiDocument = {
       },
       Ga4SessionsReport: {
         type: "object",
-        required: ["property_id", "metric", "start_date", "end_date", "rows"],
+        required: ["property_id", "start_date", "end_date", "sessions"],
         properties: {
           property_id: { type: "string" },
-          metric: { type: "string", enum: ["sessions"] },
           start_date: { type: "string" },
           end_date: { type: "string" },
-          rows: {
-            type: "array",
-            items: {
-              type: "object",
-              required: ["sessions"],
-              properties: {
-                dimension_values: {
-                  type: "array",
-                  items: { type: "string" },
-                },
-                sessions: { type: "integer", minimum: 0 },
-              },
-            },
-          },
+          sessions: { type: "number" },
+        },
+      },
+      Ga4SessionsError: {
+        type: "object",
+        required: ["error"],
+        properties: {
+          error: { type: "string", enum: ["google_not_linked", "ga4_forbidden"] },
+        },
+      },
+      InvalidPropertyId: {
+        type: "object",
+        required: ["error"],
+        properties: {
+          error: { type: "string", enum: ["invalid_property_id"] },
         },
       },
       Ga4Property: {

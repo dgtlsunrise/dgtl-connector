@@ -1,12 +1,28 @@
+import { bytesToBase64Url } from "./bytes";
+
 declare const tokenBrand: unique symbol;
 
 export type Token = string & { readonly [tokenBrand]: "dgtl_muse" };
+
+export type SealedRefreshToken = {
+  readonly alg: "A256GCM";
+  readonly iv: string;
+  readonly ct: string;
+};
+
+export type GoogleLink = {
+  readonly sub: string;
+  readonly email: string;
+  readonly scopes: readonly string[];
+  readonly refresh_token: SealedRefreshToken;
+  readonly linked_at: string;
+};
 
 type GrantFields = {
   readonly v: 1;
   readonly grant_id: string;
   readonly created_at: string;
-  readonly google: null;
+  readonly google: GoogleLink | null;
 };
 
 export type ActiveGrant = GrantFields & { readonly status: "active" };
@@ -30,6 +46,16 @@ export function parseToken(value: string): Token | null {
     return null;
   }
   return value as Token;
+}
+
+export async function mintBearerToken(): Promise<{ token: Token; key: string }> {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  const token = parseToken(`${TOKEN_PREFIX}${bytesToBase64Url(bytes)}`);
+  if (token === null) {
+    throw new Error("minted token did not match dgtl_muse_ format");
+  }
+  return { token, key: await tokenKey(token) };
 }
 
 export async function tokenKey(token: Token): Promise<string> {
@@ -60,22 +86,57 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function isGrant(value: unknown): value is Grant {
-  if (!isRecord(value)) {
-    return false;
+function nonEmptyString(value: unknown): string | null {
+  if (typeof value !== "string" || value.length === 0) {
+    return null;
   }
-  const grantId = value["grant_id"];
-  const createdAt = value["created_at"];
-  const status = value["status"];
-  return (
-    value["v"] === 1 &&
-    typeof grantId === "string" &&
-    grantId.length > 0 &&
-    typeof createdAt === "string" &&
-    createdAt.length > 0 &&
-    (status === "active" || status === "revoked") &&
-    value["google"] === null
-  );
+  return value;
+}
+
+function parseScopes(value: unknown): readonly string[] | null {
+  if (!Array.isArray(value) || value.length === 0) {
+    return null;
+  }
+  const scopes: string[] = [];
+  for (const item of value) {
+    if (typeof item !== "string" || item.length === 0) {
+      return null;
+    }
+    scopes.push(item);
+  }
+  return scopes;
+}
+
+function parseGoogle(value: unknown): GoogleLink | null | undefined {
+  if (value === null) {
+    return null;
+  }
+  if (!isRecord(value)) {
+    return undefined;
+  }
+  const sub = nonEmptyString(value["sub"]);
+  const email = nonEmptyString(value["email"]);
+  const linkedAt = nonEmptyString(value["linked_at"]);
+  const scopes = parseScopes(value["scopes"]);
+  const refresh = value["refresh_token"];
+  if (sub === null || email === null || linkedAt === null || scopes === null || !isRecord(refresh)) {
+    return undefined;
+  }
+  if (refresh["alg"] !== "A256GCM") {
+    return undefined;
+  }
+  const iv = nonEmptyString(refresh["iv"]);
+  const ct = nonEmptyString(refresh["ct"]);
+  if (iv === null || ct === null) {
+    return undefined;
+  }
+  return {
+    sub,
+    email,
+    scopes,
+    refresh_token: { alg: "A256GCM", iv, ct },
+    linked_at: linkedAt,
+  };
 }
 
 function parseGrant(raw: string): Grant | null {
@@ -85,15 +146,28 @@ function parseGrant(raw: string): Grant | null {
   } catch {
     return null;
   }
-  if (!isGrant(value)) {
+  if (!isRecord(value)) {
+    return null;
+  }
+  const grantId = nonEmptyString(value["grant_id"]);
+  const createdAt = nonEmptyString(value["created_at"]);
+  const status = value["status"];
+  const google = parseGoogle(value["google"]);
+  if (
+    value["v"] !== 1 ||
+    grantId === null ||
+    createdAt === null ||
+    (status !== "active" && status !== "revoked") ||
+    google === undefined
+  ) {
     return null;
   }
   return {
-    v: value.v,
-    grant_id: value.grant_id,
-    created_at: value.created_at,
-    status: value.status,
-    google: null,
+    v: 1,
+    grant_id: grantId,
+    created_at: createdAt,
+    status,
+    google,
   };
 }
 
