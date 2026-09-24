@@ -8,8 +8,7 @@
   "kv_namespaces": [
     {
       "binding": "MUSE_TOKENS",
-      // Placeholder. Operator creates the namespace and replaces this id before deploy.
-      "id": "<MUSE_TOKENS_NAMESPACE_ID>"
+      "id": "0d402c45bb384f0081f5327556d05de7"
     }
   ],
   "observability": {

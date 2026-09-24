@@ -37,14 +37,16 @@ The token is `dgtl_muse_` plus 43 base64url characters from 32 random bytes. It 
 
 ### KV namespace
 
-The `MUSE_TOKENS` id in `wrangler.jsonc` is a placeholder. Create the namespace and paste the real id before deploy:
+`MUSE_TOKENS` already exists. Its id is `0d402c45bb384f0081f5327556d05de7`, bound in `wrangler.jsonc`. A namespace id is not a secret. Do not commit a token.
+
+Recreate it only if the namespace is gone:
 
 ```bash
 cd workers/dgtl-muse-api
 npx wrangler kv namespace create MUSE_TOKENS
 ```
 
-Put the printed id on the `MUSE_TOKENS` binding. Do not commit a token.
+Put the printed id on the `MUSE_TOKENS` binding.
 
 ### Mint
 
@@ -73,7 +75,7 @@ To revoke without deleting the record, put the same JSON with `"status":"revoked
 
 ## Deploy
 
-Deploy is Noel-only. Do not run it from CI or from an agent. Replace the `MUSE_TOKENS` placeholder id first. The Worker serves on `https://muse-api.dgtlsunrise.com` via a Cloudflare custom domain on the DGTL account.
+Deploy is Noel-only. Do not run it from CI or from an agent. The Worker serves on `https://muse-api.dgtlsunrise.com` via a Cloudflare custom domain on the DGTL account.
 
 ```bash
 cd workers/dgtl-muse-api && npx wrangler deploy
