@@ -56,3 +56,30 @@ jobs:
           persist-credentials: false
       - name: Semgrep SAST
         run: semgrep scan --error --config p/typescript --config p/nodejs
+
+  # Separate package. Root tip jobs above stay as they are.
+  muse-api:
+    name: dgtl-muse-api
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers/dgtl-muse-api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          # vitest 5 requires Node >= 22.12. The root tip job stays on Node 20.
+          node-version: 22
+          cache: npm
+          cache-dependency-path: workers/dgtl-muse-api/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm test
