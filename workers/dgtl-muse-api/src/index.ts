@@ -4,6 +4,7 @@ import { CORS_HEADERS, json } from "./http";
 import { connectPage, finishGoogleOAuth, startGoogleOAuth } from "./oauth";
 import { openApiDocument } from "./openapi";
 import { routeReads } from "./reads";
+import { routeKlaviyoReads } from "./klaviyo-reads";
 import { routeShopifyReads } from "./shopify-reads";
 import { readSessions } from "./sessions";
 import { confirmWrite, previewWrite } from "./writes";
@@ -57,6 +58,10 @@ async function handleV1(
   const shopify = await routeShopifyReads(request, grant, env);
   if (shopify !== null) {
     return shopify;
+  }
+  const klaviyo = await routeKlaviyoReads(request, grant, env);
+  if (klaviyo !== null) {
+    return klaviyo;
   }
   const read = await routeReads(request, grant, env);
   if (read !== null) {
