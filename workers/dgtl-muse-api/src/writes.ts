@@ -2,6 +2,7 @@ import { parseShopDomain, type ActiveGrant } from "./auth";
 import { bytesToBase64Url } from "./bytes";
 import { ADMIN_ORIGIN, GTM_ORIGIN, accessForRead, googleObject } from "./google";
 import { json } from "./http";
+import { KLAVIYO_API_REVISION, KLAVIYO_ORIGIN } from "./klaviyo-reads";
 import {
   GA4_MANAGE_SCOPES,
   GTM_MANAGE_SCOPES,
@@ -17,6 +18,17 @@ const DIGITS = /^[0-9]{1,20}$/;
 const PARAMETER_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9_]{0,39}$/;
 const PUBLIC_ID_PATTERN = /^GTM-[A-Z0-9]{1,20}$/;
 const VARIABLE_TYPE_PATTERN = /^[A-Za-z0-9_]{1,64}$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const KLAVIYO_EMAIL_MAX = 254;
+const KLAVIYO_TEXT_MAX = 255;
+const KLAVIYO_PREVIEW_KEYS = new Set([
+  "kind",
+  "email",
+  "external_id",
+  "profile_id",
+  "first_name",
+  "last_name",
+]);
 const DIMENSION_SCOPES = ["EVENT", "USER", "ITEM"] as const;
 
 /**
@@ -35,6 +47,9 @@ const WRITE_KINDS = {
   },
   shopify_inventory_adjust: {
     family: "shopify",
+  },
+  klaviyo_upsert_profile: {
+    family: "klaviyo",
   },
 } as const;
 
@@ -125,7 +140,23 @@ type ShopifyInventoryStored = {
   readonly expires_at: string;
 };
 
-type StoredPreview = GoogleStored | ShopifyInventoryStored;
+type KlaviyoProfileFields = {
+  readonly email?: string;
+  readonly external_id?: string;
+  readonly profile_id?: string;
+  readonly first_name?: string;
+  readonly last_name?: string;
+};
+
+type KlaviyoProfileStored = KlaviyoProfileFields & {
+  readonly kind: "klaviyo_upsert_profile";
+  readonly grant_id: string;
+  readonly resource_ids: readonly string[];
+  readonly summary: string;
+  readonly expires_at: string;
+};
+
+type StoredPreview = GoogleStored | ShopifyInventoryStored | KlaviyoProfileStored;
 
 type PreviewParse =
   | { readonly kind: "ok"; readonly stored: StoredPreview }
@@ -343,6 +374,8 @@ async function parsePreviewBody(
   switch (kind) {
     case "shopify_inventory_adjust":
       return parseShopifyPreview(value, grant);
+    case "klaviyo_upsert_profile":
+      return parseKlaviyoPreview(value, grant);
     case "ga4_custom_dimension_create": {
       const refused = refusalForGoogleScopes(grant.google, WRITE_KINDS[kind].scopes);
       if (refused !== null) {
@@ -494,6 +527,189 @@ function readQuantityName(value: unknown): QuantityName | null {
   return typeof value === "string" && isQuantityName(value) ? value : null;
 }
 
+function requiresGoogleLink(kind: unknown): boolean {
+  if (!isWriteKind(kind)) {
+    return true;
+  }
+  const family = WRITE_KINDS[kind].family;
+  switch (family) {
+    case "ga4":
+    case "gtm":
+      return true;
+    case "shopify":
+    case "klaviyo":
+      return false;
+    default: {
+      const unexpected: never = family;
+      return unexpected;
+    }
+  }
+}
+
+function optionalClosedText(value: unknown, max: number): string | undefined | null {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return undefined;
+  }
+  if (trimmed.length > max || /[\u0000-\u001F]/.test(trimmed)) {
+    return null;
+  }
+  return trimmed;
+}
+
+function optionalEmail(value: unknown): string | undefined | null {
+  const email = optionalClosedText(value, KLAVIYO_EMAIL_MAX);
+  if (email === undefined || email === null) {
+    return email;
+  }
+  return EMAIL_PATTERN.test(email) ? email : null;
+}
+
+function profileResourceIds(fields: KlaviyoProfileFields): readonly string[] {
+  return [
+    ...(fields.email === undefined ? [] : [fields.email]),
+    ...(fields.external_id === undefined ? [] : [fields.external_id]),
+    ...(fields.profile_id === undefined ? [] : [fields.profile_id]),
+  ];
+}
+
+function klaviyoPreviewKeysOnly(value: Record<string, unknown>): boolean {
+  return Object.keys(value).every((key) => KLAVIYO_PREVIEW_KEYS.has(key));
+}
+
+function parseKlaviyoFields(value: Record<string, unknown>): KlaviyoProfileFields | null {
+  const email = optionalEmail(value["email"]);
+  const externalId = optionalClosedText(value["external_id"], KLAVIYO_TEXT_MAX);
+  const profileId = optionalClosedText(value["profile_id"], KLAVIYO_TEXT_MAX);
+  const firstName = optionalClosedText(value["first_name"], KLAVIYO_TEXT_MAX);
+  const lastName = optionalClosedText(value["last_name"], KLAVIYO_TEXT_MAX);
+  if (
+    email === null ||
+    externalId === null ||
+    profileId === null ||
+    firstName === null ||
+    lastName === null
+  ) {
+    return null;
+  }
+  const fields: {
+    email?: string;
+    external_id?: string;
+    profile_id?: string;
+    first_name?: string;
+    last_name?: string;
+  } = {};
+  if (email !== undefined) {
+    fields.email = email;
+  }
+  if (externalId !== undefined) {
+    fields.external_id = externalId;
+  }
+  if (profileId !== undefined) {
+    fields.profile_id = profileId;
+  }
+  if (firstName !== undefined) {
+    fields.first_name = firstName;
+  }
+  if (lastName !== undefined) {
+    fields.last_name = lastName;
+  }
+  if (profileResourceIds(fields).length === 0) {
+    return null;
+  }
+  return fields;
+}
+
+function parseKlaviyoPreview(value: Record<string, unknown>, grant: ActiveGrant): PreviewParse {
+  if (grant.klaviyo === null) {
+    return { kind: "response", response: json({ error: "klaviyo_not_linked" }, 403) };
+  }
+  if (!klaviyoPreviewKeysOnly(value)) {
+    return { kind: "invalid" };
+  }
+  const fields = parseKlaviyoFields(value);
+  if (fields === null) {
+    return { kind: "invalid" };
+  }
+  const resourceIds = profileResourceIds(fields);
+  return {
+    kind: "ok",
+    stored: {
+      kind: "klaviyo_upsert_profile",
+      grant_id: grant.grant_id,
+      ...fields,
+      resource_ids: resourceIds,
+      summary: `Would upsert Klaviyo profile ${resourceIds.join(", ")}. Not executed.`,
+      expires_at: expiresAt(),
+    },
+  };
+}
+
+function readStoredClosedText(
+  value: Record<string, unknown>,
+  key: string,
+  max: number,
+): string | undefined | null {
+  if (!Object.prototype.hasOwnProperty.call(value, key)) {
+    return undefined;
+  }
+  const raw = value[key];
+  if (typeof raw !== "string" || raw.length === 0 || raw.length > max || /[\u0000-\u001F]/.test(raw)) {
+    return null;
+  }
+  return raw;
+}
+
+function readStoredProfile(value: Record<string, unknown>): KlaviyoProfileFields | null {
+  const email = readStoredClosedText(value, "email", KLAVIYO_EMAIL_MAX);
+  const externalId = readStoredClosedText(value, "external_id", KLAVIYO_TEXT_MAX);
+  const profileId = readStoredClosedText(value, "profile_id", KLAVIYO_TEXT_MAX);
+  const firstName = readStoredClosedText(value, "first_name", KLAVIYO_TEXT_MAX);
+  const lastName = readStoredClosedText(value, "last_name", KLAVIYO_TEXT_MAX);
+  if (
+    email === null ||
+    externalId === null ||
+    profileId === null ||
+    firstName === null ||
+    lastName === null ||
+    (email !== undefined && !EMAIL_PATTERN.test(email))
+  ) {
+    return null;
+  }
+  const fields: {
+    email?: string;
+    external_id?: string;
+    profile_id?: string;
+    first_name?: string;
+    last_name?: string;
+  } = {};
+  if (email !== undefined) {
+    fields.email = email;
+  }
+  if (externalId !== undefined) {
+    fields.external_id = externalId;
+  }
+  if (profileId !== undefined) {
+    fields.profile_id = profileId;
+  }
+  if (firstName !== undefined) {
+    fields.first_name = firstName;
+  }
+  if (lastName !== undefined) {
+    fields.last_name = lastName;
+  }
+  if (profileResourceIds(fields).length === 0) {
+    return null;
+  }
+  return fields;
+}
+
 function parseShopifyPreview(value: Record<string, unknown>, grant: ActiveGrant): PreviewParse {
   if (grant.shopify === null) {
     return { kind: "response", response: json({ error: "shopify_not_linked" }, 403) };
@@ -630,6 +846,25 @@ function parseStoredPreview(raw: string): StoredPreview | null {
         expires_at: common.expiresAt,
       };
     }
+    case "klaviyo_upsert_profile": {
+      const fields = readStoredProfile(value);
+      if (fields === null) {
+        return null;
+      }
+      const resourceIds = profileResourceIds(fields);
+      const common = readCommon(value, resourceIds);
+      if (common === null) {
+        return null;
+      }
+      return {
+        kind: "klaviyo_upsert_profile",
+        grant_id: common.grantId,
+        ...fields,
+        resource_ids: resourceIds,
+        summary: common.summary,
+        expires_at: common.expiresAt,
+      };
+    }
     default: {
       const unexpected: never = value["kind"];
       return unexpected;
@@ -718,7 +953,7 @@ export async function previewWrite(
   env: Env,
 ): Promise<Response> {
   const body = await readBody(request);
-  if ((!isRecord(body) || body["kind"] !== "shopify_inventory_adjust") && grant.google === null) {
+  if ((!isRecord(body) || requiresGoogleLink(body["kind"])) && grant.google === null) {
     return json({ error: "google_not_linked" }, 403);
   }
 
@@ -948,6 +1183,143 @@ async function confirmShopifyInventory(
   );
 }
 
+function profileImportBody(stored: KlaviyoProfileStored): Record<string, unknown> {
+  const attributes: Record<string, string> = {};
+  if (stored.email !== undefined) {
+    attributes.email = stored.email;
+  }
+  if (stored.external_id !== undefined) {
+    attributes.external_id = stored.external_id;
+  }
+  if (stored.first_name !== undefined) {
+    attributes.first_name = stored.first_name;
+  }
+  if (stored.last_name !== undefined) {
+    attributes.last_name = stored.last_name;
+  }
+  const data: Record<string, unknown> = { type: "profile", attributes };
+  if (stored.profile_id !== undefined) {
+    data.id = stored.profile_id;
+  }
+  return { data };
+}
+
+function profileIdOf(body: unknown): string | null {
+  if (!isRecord(body) || !isRecord(body["data"])) {
+    return null;
+  }
+  const id = body["data"]["id"];
+  if (typeof id !== "string" || id.length === 0 || id.length > KLAVIYO_TEXT_MAX || /[\u0000-\u001F]/.test(id)) {
+    return null;
+  }
+  return id;
+}
+
+type KlaviyoUpsertResult =
+  | { readonly kind: "ok"; readonly profileId: string }
+  | { readonly kind: "unauthorized" }
+  | { readonly kind: "forbidden" }
+  | { readonly kind: "rate_limited" }
+  | { readonly kind: "unavailable" };
+
+async function postProfileImport(
+  apiKey: string,
+  stored: KlaviyoProfileStored,
+): Promise<KlaviyoUpsertResult> {
+  let response: Response;
+  try {
+    response = await fetch(`${KLAVIYO_ORIGIN}/api/profile-import`, {
+      method: "POST",
+      headers: {
+        accept: "application/vnd.api+json",
+        authorization: `Klaviyo-API-Key ${apiKey}`,
+        "content-type": "application/vnd.api+json",
+        revision: KLAVIYO_API_REVISION,
+      },
+      body: JSON.stringify(profileImportBody(stored)),
+      cache: "no-store",
+      redirect: "manual",
+    });
+  } catch {
+    return { kind: "unavailable" };
+  }
+  if (response.status === 401) {
+    return { kind: "unauthorized" };
+  }
+  if (response.status === 403) {
+    return { kind: "forbidden" };
+  }
+  if (response.status === 429) {
+    return { kind: "rate_limited" };
+  }
+  if (!response.ok) {
+    return { kind: "unavailable" };
+  }
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    return { kind: "unavailable" };
+  }
+  const profileId = profileIdOf(body);
+  if (profileId === null) {
+    return { kind: "unavailable" };
+  }
+  return { kind: "ok", profileId };
+}
+
+function klaviyoUpsertError(result: Exclude<KlaviyoUpsertResult, { readonly kind: "ok" }>): Response {
+  switch (result.kind) {
+    case "unauthorized":
+      return json({ error: "klaviyo_unauthorized" }, 401);
+    case "forbidden":
+      return json({ error: "klaviyo_forbidden" }, 403);
+    case "rate_limited":
+      return json({ error: "klaviyo_rate_limited" }, 429);
+    case "unavailable":
+      return json({ error: "klaviyo_unavailable" }, 502);
+    default: {
+      const unexpected: never = result;
+      return unexpected;
+    }
+  }
+}
+
+async function confirmKlaviyoProfile(
+  previewId: string,
+  phrase: unknown,
+  stored: KlaviyoProfileStored,
+  grant: ActiveGrant,
+  env: Env,
+  key: string,
+): Promise<Response> {
+  if (grant.klaviyo === null) {
+    return json({ error: "klaviyo_not_linked" }, 403);
+  }
+  if (typeof phrase !== "string" || !phraseCovers(phrase, stored.resource_ids)) {
+    return json({ error: "confirm_refused", confirm_required: true }, 400);
+  }
+  const apiKey = await openRefreshToken(grant.klaviyo.api_key, env.MUSE_TOKEN_ENC_KEY);
+  if (apiKey === null) {
+    return json({ error: "grant_unreadable" }, 500);
+  }
+  const result = await postProfileImport(apiKey, stored);
+  if (result.kind !== "ok") {
+    return klaviyoUpsertError(result);
+  }
+  await env.MUSE_TOKENS.delete(key);
+  return json(
+    {
+      status: "confirmed",
+      preview_id: previewId,
+      kind: stored.kind,
+      executed: true,
+      profile_id: result.profileId,
+    },
+    200,
+  );
+}
+
 export async function confirmWrite(
   request: Request,
   grant: ActiveGrant,
@@ -981,6 +1353,9 @@ export async function confirmWrite(
   }
   if (stored.kind === "shopify_inventory_adjust") {
     return confirmShopifyInventory(parsed.previewId, parsed.phrase, stored, grant, env, key);
+  }
+  if (stored.kind === "klaviyo_upsert_profile") {
+    return confirmKlaviyoProfile(parsed.previewId, parsed.phrase, stored, grant, env, key);
   }
   const meta = WRITE_KINDS[stored.kind];
   const refused = refusalForGoogleScopes(grant.google, meta.scopes);
