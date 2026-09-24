@@ -2,7 +2,7 @@
 
 Cloudflare Worker for the DGTL Sunrise Muse connector (Raw API + OpenAPI).
 
-`GET /openapi.json` is an OpenAPI 3.1 document. `GET /healthz` returns `200`. `GET /connect` starts Google sign-in and the callback shows a Bearer token once. Free Google reads cover GA4, Search Console, and Tag Manager. `POST /v1/writes/preview` and `POST /v1/writes/confirm` are a confirm gate that does not mutate Google.
+`GET /openapi.json` is an OpenAPI 3.1 document. `GET /healthz` returns `200`. `GET /connect` starts Google sign-in and the callback shows a Bearer token once. Free Google reads cover GA4, Search Console, and Tag Manager. `POST /v1/writes/preview` stores a confirm-gated proposal. `POST /v1/writes/confirm` creates one GA4 custom dimension or one GTM workspace variable. It does not publish a container.
 
 The stdio tip (`src/`) and stamp are separate. This directory installs and deploys on its own.
 
@@ -131,9 +131,34 @@ Google-calling reads open the stored refresh token and mint an access token. `GE
 
 ## Writes
 
-`POST /v1/writes/preview` accepts only `kind` `ga4_custom_dimension_create` with `property_id` and `dimension` (`parameter_name`, `display_name`, `scope`). The grant must have `google` linked, or the response is `403` `{"error":"google_not_linked"}`. GA4 manage also requires `https://www.googleapis.com/auth/analytics.edit`. A linked grant without that scope returns `403` `{"error":"google_reconnect_required","message":"This Google connection is missing https://www.googleapis.com/auth/analytics.edit. Reopen /connect and reconnect Google.","missing_scopes":["https://www.googleapis.com/auth/analytics.edit"]}` and the Worker does not store a preview. The same refusal on `POST /v1/writes/confirm` leaves an existing preview in place. It does not call Google and it does not mutate. When the scope is present, the Worker stores the preview in `MUSE_TOKENS` under `preview:<preview_id>` for 600 seconds and returns `status` `preview` with `confirm_required` true and `resource_ids` containing the property id.
+Preview stores a one-shot record in `MUSE_TOKENS` under `preview:<preview_id>` for 600 seconds. It does not mutate. Confirm is the mutate. A missing, expired, or already used preview is `400` `{"error":"preview_invalid"}`. A preview owned by another grant is `403` `{"error":"preview_forbidden"}`. `confirm_phrase` must contain every `resource_ids` entry (substring, case-sensitive) or the response is `400` `{"error":"confirm_refused","confirm_required":true}` and the preview stays usable. A missing manage scope is `403` `google_reconnect_required` and does not store or delete a preview. A Google error on confirm also leaves the preview in place. Success deletes the preview and returns `executed: true` plus `resource_name`.
 
-`POST /v1/writes/confirm` loads that preview. A missing, expired, or already used preview is `400` `{"error":"preview_invalid"}`. A preview owned by another grant is `403` `{"error":"preview_forbidden"}`. `confirm_phrase` must contain every `resource_ids` entry (substring, case-sensitive) or the response is `400` `{"error":"confirm_refused","confirm_required":true}` and the preview stays usable. A matching phrase deletes the preview and returns `status` `confirmed`, `executed` false, `reason` `stub_no_mutate`.
+| Kind | Manage scope | Preview | Confirm |
+| --- | --- | --- | --- |
+| `ga4_custom_dimension_create` | `https://www.googleapis.com/auth/analytics.edit` | No Google call. Body: `property_id`, `dimension` (`parameter_name`, `display_name`, `scope`, optional `description`). `resource_ids` is `properties/{property_id}`. | `POST https://analyticsadmin.googleapis.com/v1beta/properties/{property_id}/customDimensions`. Same body as tip `ga4_create_custom_dimension`. |
+| `gtm_variable_create` | `https://www.googleapis.com/auth/tagmanager.edit.containers` | `GET` the container and stores its `publicId` in `resource_ids`. Body: `account_id`, `container_id`, `workspace_id`, `variable` (`name`, `type`). Does not create the variable. | `POST https://tagmanager.googleapis.com/tagmanager/v2/accounts/{account_id}/containers/{container_id}/workspaces/{workspace_id}/variables`. Same create as tip `gtm_create_variable`. Does not publish. |
+
+The grant must have `google` linked, or the response is `403` `{"error":"google_not_linked"}`. A linked grant without `analytics.edit` that previews a custom dimension returns `403` `{"error":"google_reconnect_required","message":"This Google connection is missing https://www.googleapis.com/auth/analytics.edit. Reopen /connect and reconnect Google.","missing_scopes":["https://www.googleapis.com/auth/analytics.edit"]}`. The GTM kind uses the same refusal with `tagmanager.edit.containers`.
+
+### Live smoke after deploy
+
+Do not run this from CI. Tip stdio is unchanged.
+
+GA4 disposable property: `554200375`. `confirm_phrase` must include `properties/554200375`.
+
+```bash
+curl -s -X POST https://muse-api.dgtlsunrise.com/v1/writes/preview \
+  -H "authorization: Bearer $MUSE_TOKEN" -H "content-type: application/json" \
+  -d '{"kind":"ga4_custom_dimension_create","property_id":"554200375","dimension":{"parameter_name":"muse_f4_dim","display_name":"Muse F4","scope":"EVENT"}}'
+
+curl -s -X POST https://muse-api.dgtlsunrise.com/v1/writes/confirm \
+  -H "authorization: Bearer $MUSE_TOKEN" -H "content-type: application/json" \
+  -d '{"preview_id":"<preview_id>","confirm_phrase":"create properties/554200375"}'
+```
+
+Expect `executed: true` and `resource_name` beginning with `properties/554200375/customDimensions/`.
+
+GTM: this repo does not record a disposable account, container, or workspace id. Pass the operator's disposable container as digits in `account_id`, `container_id`, and `workspace_id`. Preview returns that container's `publicId` in `resource_ids`. `confirm_phrase` must include that `publicId`. The create is a workspace variable and does not publish.
 
 ## Deploy
 

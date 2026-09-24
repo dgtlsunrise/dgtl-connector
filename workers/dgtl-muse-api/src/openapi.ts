@@ -10,9 +10,9 @@ export const openApiDocument = {
     title: "DGTL Sunrise Connector API",
     version: "0.1.0",
     summary:
-      "Free Google GA4, Search Console, and Tag Manager reads for Muse, plus a confirm-gated write stub. A grant missing the scope a route needs must reconnect.",
+      "Free Google GA4, Search Console, and Tag Manager reads for Muse, plus confirm-gated GA4 and GTM writes. A grant missing the scope a route needs must reconnect.",
     description:
-      `HTTPS API for the DGTL Sunrise Muse connector. Open /connect to get a Bearer token. /connect requests ${connectScopes}. It does not request ${neverScopes}. GA4 reads need https://www.googleapis.com/auth/analytics.readonly. Search Console reads need https://www.googleapis.com/auth/webmasters.readonly. Tag Manager reads need https://www.googleapis.com/auth/tagmanager.readonly. A linked grant missing that scope returns google_reconnect_required and does not call Google. An older grant that only has analytics.readonly can still read GA4. Manage routes also reject a grant that is missing https://www.googleapis.com/auth/analytics.edit until the user reopens /connect. These read routes do not publish a container, submit a sitemap, or run a GA4 Admin write. Privacy policy: https://www.dgtlsunrise.com/privacy`,
+      `HTTPS API for the DGTL Sunrise Muse connector. Open /connect to get a Bearer token. /connect requests ${connectScopes}. It does not request ${neverScopes}. GA4 reads need https://www.googleapis.com/auth/analytics.readonly. Search Console reads need https://www.googleapis.com/auth/webmasters.readonly. Tag Manager reads need https://www.googleapis.com/auth/tagmanager.readonly. A linked grant missing that scope returns google_reconnect_required and does not call Google. An older grant that only has analytics.readonly can still read GA4. GA4 custom dimension create requires https://www.googleapis.com/auth/analytics.edit. GTM variable create requires https://www.googleapis.com/auth/tagmanager.edit.containers. A missing manage scope returns google_reconnect_required and does not mutate. POST /v1/writes/confirm creates one GA4 custom dimension or one GTM workspace variable. It does not publish a container or submit a sitemap. Privacy policy: https://www.dgtlsunrise.com/privacy`,
     termsOfService: "https://www.dgtlsunrise.com/terms",
     contact: {
       name: "DGTL Sunrise",
@@ -34,7 +34,7 @@ export const openApiDocument = {
     {
       name: "writes",
       description:
-        "Confirm-gated writes. Preview stores a one-shot proposal. Confirm accepts or refuses. GA4 manage requires https://www.googleapis.com/auth/analytics.edit. A grant without that scope returns google_reconnect_required and does not store or delete a preview. This stub does not mutate Google.",
+        "Confirm-gated writes. Kinds: ga4_custom_dimension_create and gtm_variable_create. Preview stores a one-shot proposal and does not mutate. Confirm posts to Google only when confirm_phrase contains every resource id. GA4 manage requires https://www.googleapis.com/auth/analytics.edit. GTM variable create requires https://www.googleapis.com/auth/tagmanager.edit.containers. A grant missing that scope returns google_reconnect_required and does not store or delete a preview.",
     },
   ],
   paths: {
@@ -155,7 +155,7 @@ export const openApiDocument = {
         tags: ["writes"],
         summary: "Preview a confirm-gated write",
         description:
-          "Stores a one-shot preview for kind ga4_custom_dimension_create when the grant includes https://www.googleapis.com/auth/analytics.edit. Does not call the Google Admin API and does not mutate. A readonly-only grant is refused and nothing is stored. The caller then posts a confirm_phrase that contains every resource id to /v1/writes/confirm.",
+          "Stores a one-shot preview for ga4_custom_dimension_create or gtm_variable_create. GA4 preview does not call Google. GTM preview GETs the container to resolve publicId and does not create a variable. A grant missing the manage scope for that kind is refused and nothing is stored. The caller then posts a confirm_phrase that contains every resource id to /v1/writes/confirm. GA4 resource id is properties/{property_id}. GTM resource id is the container publicId.",
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -175,7 +175,7 @@ export const openApiDocument = {
             },
           },
           "400": {
-            description: "The kind is unknown, or the preview body is not a GA4 custom dimension create.",
+            description: "The kind is unknown, or the preview body does not match that kind.",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/WritePreviewError" },
@@ -185,15 +185,41 @@ export const openApiDocument = {
           "401": { $ref: "#/components/responses/Unauthorized" },
           "403": {
             description:
-              "The grant has no Google link, or it is missing https://www.googleapis.com/auth/analytics.edit. A missing manage scope does not store a preview. Reopen /connect and reconnect Google.",
+              "The grant has no Google link, or it is missing the manage scope for this kind (analytics.edit or tagmanager.edit.containers). A missing manage scope does not store a preview. Reopen /connect and reconnect Google.",
             content: {
               "application/json": {
                 schema: {
                   oneOf: [
                     { $ref: "#/components/schemas/GoogleNotLinked" },
                     { $ref: "#/components/schemas/GoogleReconnectRequired" },
+                    { $ref: "#/components/schemas/GtmForbidden" },
                   ],
                 },
+              },
+            },
+          },
+          "404": {
+            description: "Tag Manager has no container at the given account and container id. Nothing is stored.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/NotFound" },
+              },
+            },
+          },
+          "500": {
+            description: "The stored refresh token could not be opened while resolving a GTM container. Nothing is stored.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/GrantUnreadable" },
+              },
+            },
+          },
+          "502": {
+            description:
+              "Refreshing the Google access token failed, or the container lookup did not return a GTM publicId. Nothing is stored.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/GtmUnavailable" },
               },
             },
           },
@@ -206,7 +232,7 @@ export const openApiDocument = {
         tags: ["writes"],
         summary: "Confirm a previewed write",
         description:
-          "Accepts the preview when the grant includes https://www.googleapis.com/auth/analytics.edit and confirm_phrase contains every resource id from the preview. A grant missing that scope leaves the preview in place and does not mutate. A refused phrase leaves the preview usable. On accept, the preview is one-shot and the response is a stub with executed false. This operation does not call Google and does not mutate.",
+          "Posts the previewed mutate when the grant still has the manage scope for that kind and confirm_phrase contains every resource id. GA4 posts customDimensions on the Analytics Admin API. GTM posts a workspace variable on the Tag Manager API. A missing manage scope or a refused phrase leaves the preview in place and does not mutate. A Google error also leaves the preview in place. On success the preview is deleted, executed is true, and resource_name is the Google resource.",
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -218,7 +244,8 @@ export const openApiDocument = {
         },
         responses: {
           "200": {
-            description: "Confirm accepted. Live Google mutate is not enabled.",
+            description:
+              "Google accepted the mutate. executed is true. resource_name is the GA4 custom dimension name or the GTM variable path.",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/WriteConfirmResult" },
@@ -237,7 +264,7 @@ export const openApiDocument = {
           "401": { $ref: "#/components/responses/Unauthorized" },
           "403": {
             description:
-              "The preview belongs to a different grant, the grant has no Google link, or the grant is missing https://www.googleapis.com/auth/analytics.edit. A missing manage scope does not delete the preview and does not mutate. Reopen /connect and reconnect Google.",
+              "The preview belongs to a different grant, the grant has no Google link, the grant is missing the manage scope, or Google refused the mutate. A missing manage scope or a Google refusal does not delete the preview. Reopen /connect when the error is google_reconnect_required.",
             content: {
               "application/json": {
                 schema: {
@@ -245,6 +272,38 @@ export const openApiDocument = {
                     { $ref: "#/components/schemas/PreviewForbidden" },
                     { $ref: "#/components/schemas/GoogleNotLinked" },
                     { $ref: "#/components/schemas/GoogleReconnectRequired" },
+                    { $ref: "#/components/schemas/Ga4Forbidden" },
+                    { $ref: "#/components/schemas/GtmForbidden" },
+                  ],
+                },
+              },
+            },
+          },
+          "404": {
+            description: "Google has no resource at the previewed id. The preview stays in place.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/NotFound" },
+              },
+            },
+          },
+          "500": {
+            description: "The stored refresh token could not be opened. The preview stays in place.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/GrantUnreadable" },
+              },
+            },
+          },
+          "502": {
+            description:
+              "Refreshing the Google access token failed, or the mutate response had no resource name. The preview stays in place.",
+            content: {
+              "application/json": {
+                schema: {
+                  oneOf: [
+                    { $ref: "#/components/schemas/Ga4Unavailable" },
+                    { $ref: "#/components/schemas/GtmUnavailable" },
                   ],
                 },
               },
@@ -393,20 +452,66 @@ export const openApiDocument = {
           },
           display_name: { type: "string", minLength: 1, maxLength: 82 },
           scope: { type: "string", enum: ["EVENT", "USER", "ITEM"] },
+          description: { type: "string", minLength: 1, maxLength: 150 },
         },
       },
-      WritePreviewRequest: {
+      WriteKind: {
+        type: "string",
+        enum: ["ga4_custom_dimension_create", "gtm_variable_create"],
+      },
+      Ga4CustomDimensionCreate: {
         type: "object",
         required: ["kind", "property_id", "dimension"],
         properties: {
           kind: { type: "string", enum: ["ga4_custom_dimension_create"] },
           property_id: {
             type: "string",
-            description: "GA4 property id, digits only.",
+            description: "GA4 property id, digits only. Disposable smoke property: 554200375.",
             pattern: "^[0-9]{1,20}$",
           },
           dimension: { $ref: "#/components/schemas/Ga4CustomDimensionDraft" },
         },
+      },
+      GtmVariableDraft: {
+        type: "object",
+        required: ["name", "type"],
+        properties: {
+          name: { type: "string", minLength: 1, maxLength: 200 },
+          type: {
+            type: "string",
+            description: "Tag Manager variable type, such as c for a constant. Matches tip gtm_create_variable.",
+            pattern: "^[A-Za-z0-9_]{1,64}$",
+          },
+        },
+      },
+      GtmVariableCreate: {
+        type: "object",
+        required: ["kind", "account_id", "container_id", "workspace_id", "variable"],
+        properties: {
+          kind: { type: "string", enum: ["gtm_variable_create"] },
+          account_id: {
+            type: "string",
+            description: "Numeric Tag Manager account id. No disposable account id is recorded in this repo.",
+            pattern: "^[0-9]{1,20}$",
+          },
+          container_id: {
+            type: "string",
+            description: "Numeric Tag Manager container id. publicId is resolved from this id.",
+            pattern: "^[0-9]{1,20}$",
+          },
+          workspace_id: {
+            type: "string",
+            description: "Numeric workspace id. The variable is created in this workspace and is not published.",
+            pattern: "^[0-9]{1,20}$",
+          },
+          variable: { $ref: "#/components/schemas/GtmVariableDraft" },
+        },
+      },
+      WritePreviewRequest: {
+        oneOf: [
+          { $ref: "#/components/schemas/Ga4CustomDimensionCreate" },
+          { $ref: "#/components/schemas/GtmVariableCreate" },
+        ],
       },
       WritePreview: {
         type: "object",
@@ -423,7 +528,7 @@ export const openApiDocument = {
           status: { type: "string", enum: ["preview"] },
           preview_id: { type: "string" },
           confirm_required: { type: "boolean", enum: [true] },
-          kind: { type: "string", enum: ["ga4_custom_dimension_create"] },
+          kind: { $ref: "#/components/schemas/WriteKind" },
           resource_ids: {
             type: "array",
             minItems: 1,
@@ -450,13 +555,17 @@ export const openApiDocument = {
       },
       WriteConfirmResult: {
         type: "object",
-        required: ["status", "preview_id", "executed", "reason", "message"],
+        required: ["status", "preview_id", "kind", "executed", "resource_name"],
         properties: {
           status: { type: "string", enum: ["confirmed"] },
           preview_id: { type: "string" },
-          executed: { type: "boolean", enum: [false] },
-          reason: { type: "string", enum: ["stub_no_mutate"] },
-          message: { type: "string" },
+          kind: { $ref: "#/components/schemas/WriteKind" },
+          executed: { type: "boolean", enum: [true] },
+          resource_name: {
+            type: "string",
+            description:
+              "GA4 custom dimension resource name, or the Tag Manager variable path returned by Google.",
+          },
         },
       },
     },
