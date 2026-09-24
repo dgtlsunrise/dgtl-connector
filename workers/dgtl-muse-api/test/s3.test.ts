@@ -6,7 +6,7 @@ import { openRefreshToken, sealRefreshToken } from "../src/seal";
 import { MemoryKv, TEST_ENC_KEY, emptyEnv, envWithGrant, envWithKv, issuedToken } from "./support";
 
 const ORIGIN = "https://muse-api.dgtlsunrise.com";
-const REFRESH = "1//muse-refresh-plaintext-9f3c2a7b";
+const REFRESH = "muse-refresh-plaintext-9f3c2a7b";
 const SCOPES = [
   "openid",
   "https://www.googleapis.com/auth/userinfo.email",
@@ -128,7 +128,7 @@ describe("google oauth callback", () => {
       return Promise.resolve(
         new Response(
           JSON.stringify({
-            access_token: "ya29.should-not-be-stored",
+            access_token: "access-should-not-be-stored",
             refresh_token: REFRESH,
             id_token: jwt({ sub: "1001", email: "ada@example.com" }),
             scope: SCOPES.join(" "),
@@ -179,7 +179,7 @@ describe("google oauth callback", () => {
       throw new Error("missing grant");
     }
     expect(stored).not.toContain(REFRESH);
-    expect(stored).not.toContain("ya29.should-not-be-stored");
+    expect(stored).not.toContain("access-should-not-be-stored");
     const grant = JSON.parse(stored) as {
       v: number;
       status: string;
@@ -263,7 +263,7 @@ describe("google oauth callback", () => {
       Promise.resolve(
         new Response(
           JSON.stringify({
-            access_token: "ya29.should-not-be-stored",
+            access_token: "access-should-not-be-stored",
             id_token: jwt({ sub: "1001", email: "ada@example.com" }),
             scope: SCOPES.join(" "),
             token_type: "Bearer",
@@ -295,7 +295,7 @@ describe("ga4 sessions", () => {
       calls.push({ url, init });
       if (url === "https://oauth2.googleapis.com/token") {
         return Promise.resolve(
-          new Response(JSON.stringify({ access_token: "ya29.test-access", token_type: "Bearer" }), {
+          new Response(JSON.stringify({ access_token: "test-access-token", token_type: "Bearer" }), {
             status: 200,
             headers: { "content-type": "application/json" },
           }),
@@ -352,7 +352,7 @@ describe("ga4 sessions", () => {
     expect(formBody(refresh.init).get("client_id")).toBe("test-web-client-id");
     expect(formBody(refresh.init).get("client_secret")).toBe("test-web-client-secret");
     expect(report.init?.headers).toEqual({
-      authorization: "Bearer ya29.test-access",
+      authorization: "Bearer test-access-token",
       "content-type": "application/json",
     });
     expect(JSON.parse(String(report.init?.body))).toEqual({
@@ -384,7 +384,7 @@ describe("ga4 sessions", () => {
       const url = requestUrl(input);
       if (url === "https://oauth2.googleapis.com/token") {
         return Promise.resolve(
-          new Response(JSON.stringify({ access_token: "ya29.test-access", token_type: "Bearer" }), {
+          new Response(JSON.stringify({ access_token: "test-access-token", token_type: "Bearer" }), {
             status: 200,
             headers: { "content-type": "application/json" },
           }),
