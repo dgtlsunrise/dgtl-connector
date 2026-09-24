@@ -14,10 +14,10 @@ async function readJson(response: Response): Promise<Record<string, unknown>> {
   return body as Record<string, unknown>;
 }
 
-function request(pathname: string, token?: string): Request {
+function request(pathname: string, token?: string, scheme = "Bearer"): Request {
   const headers = new Headers();
   if (token !== undefined) {
-    headers.set("authorization", `Bearer ${token}`);
+    headers.set("authorization", `${scheme} ${token}`);
   }
   return new Request(`${ORIGIN}${pathname}`, { method: "GET", headers });
 }
@@ -72,6 +72,21 @@ describe("auth boundary", () => {
     );
     expect(response.status).toBe(501);
     expect(response.headers.get("www-authenticate")).toBeNull();
+    expect(await readJson(response)).toEqual({
+      error: "not_implemented",
+      message: "This operation is not implemented.",
+      path: SESSIONS,
+      method: "GET",
+    });
+  });
+
+  it("returns 501 for a valid token sent as bearer", async () => {
+    const { token, hash, grant } = await issuedToken();
+    const response = await worker.fetch(
+      request(SESSIONS, token, "bearer"),
+      envWithGrant(hash, grant),
+    );
+    expect(response.status).toBe(501);
     expect(await readJson(response)).toEqual({
       error: "not_implemented",
       message: "This operation is not implemented.",

@@ -38,24 +38,16 @@ function unauthorized(request: Request): Response {
 }
 
 function handleV1(request: Request, grant: ActiveGrant): Response {
-  switch (grant.status) {
-    case "active": {
-      const { pathname } = new URL(request.url);
-      return json(
-        {
-          error: "not_implemented",
-          message: "This operation is not implemented.",
-          path: pathname,
-          method: request.method,
-        },
-        501,
-      );
-    }
-    default: {
-      const unexpected: never = grant.status;
-      return unexpected;
-    }
-  }
+  const { pathname } = new URL(request.url);
+  return json(
+    {
+      error: "not_implemented",
+      message: "This operation is not implemented.",
+      path: pathname,
+      method: request.method,
+    },
+    501,
+  );
 }
 
 function isV1(pathname: string): boolean {

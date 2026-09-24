@@ -19,7 +19,7 @@ export type AuthResult =
 
 const TOKEN_PREFIX = "dgtl_muse_";
 const TOKEN_BODY = /^[A-Za-z0-9_-]{43}$/;
-const BEARER = /^Bearer ([A-Za-z0-9_-]+)$/;
+const BEARER = /^Bearer ([A-Za-z0-9_-]+)$/i;
 
 export function parseToken(value: string): Token | null {
   if (!value.startsWith(TOKEN_PREFIX)) {
