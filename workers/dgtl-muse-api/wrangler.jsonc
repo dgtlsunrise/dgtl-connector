@@ -5,6 +5,12 @@
   "compatibility_date": "2026-09-24",
   "workers_dev": false,
   "routes": [{ "pattern": "muse-api.dgtlsunrise.com", "custom_domain": true }],
+  "kv_namespaces": [
+    {
+      "binding": "MUSE_TOKENS",
+      "id": "0d402c45bb384f0081f5327556d05de7"
+    }
+  ],
   "observability": {
     "enabled": true
   }

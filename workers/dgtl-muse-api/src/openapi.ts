@@ -71,7 +71,7 @@ export const openApiDocument = {
         summary: "Read GA4 sessions for a property",
         description:
           "Free Google read of the sessions metric for one GA4 property and date range. This stub returns 501.",
-        security: [{ freeCredential: [] }],
+        security: [{ bearerAuth: [] }],
         parameters: [
           { $ref: "#/components/parameters/propertyId" },
           {
@@ -105,6 +105,7 @@ export const openApiDocument = {
               },
             },
           },
+          "401": { $ref: "#/components/responses/Unauthorized" },
           "501": {
             description: "Not implemented.",
             content: {
@@ -123,7 +124,7 @@ export const openApiDocument = {
         summary: "Read a GA4 property",
         description:
           "Free Google read of one GA4 property (display name, time zone, currency). This stub returns 501.",
-        security: [{ freeCredential: [] }],
+        security: [{ bearerAuth: [] }],
         parameters: [{ $ref: "#/components/parameters/propertyId" }],
         responses: {
           "200": {
@@ -134,6 +135,7 @@ export const openApiDocument = {
               },
             },
           },
+          "401": { $ref: "#/components/responses/Unauthorized" },
           "501": {
             description: "Not implemented.",
             content: {
@@ -152,7 +154,7 @@ export const openApiDocument = {
         summary: "Preview a confirm-gated write",
         description:
           "Placeholder for the confirm-gated write flow. Returns a preview and does not mutate. The caller then posts the resource phrase to /v1/writes/confirm. This stub returns 501.",
-        security: [{ freeCredential: [] }],
+        security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
           content: {
@@ -170,6 +172,7 @@ export const openApiDocument = {
               },
             },
           },
+          "401": { $ref: "#/components/responses/Unauthorized" },
           "501": {
             description: "Not implemented.",
             content: {
@@ -188,7 +191,7 @@ export const openApiDocument = {
         summary: "Confirm a previewed write",
         description:
           "Placeholder for the confirm step. When implemented, executes the previewed write only if confirm_phrase contains the resource id from the preview, and refuses otherwise. This stub returns 501 and does not execute.",
-        security: [{ freeCredential: [] }],
+        security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
           content: {
@@ -206,6 +209,7 @@ export const openApiDocument = {
               },
             },
           },
+          "401": { $ref: "#/components/responses/Unauthorized" },
           "501": {
             description: "Not implemented.",
             content: {
@@ -220,11 +224,25 @@ export const openApiDocument = {
   },
   components: {
     securitySchemes: {
-      freeCredential: {
+      bearerAuth: {
         type: "http",
         scheme: "bearer",
-        description:
-          "Stub for a Muse-storable Free credential. No credential is included in this document.",
+        bearerFormat: "dgtl_muse token",
+      },
+    },
+    responses: {
+      Unauthorized: {
+        description: "Missing, malformed, unknown, or revoked bearer token.",
+        headers: {
+          "WWW-Authenticate": {
+            schema: { type: "string", const: "Bearer" },
+          },
+        },
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/ErrorBody" },
+          },
+        },
       },
     },
     parameters: {
