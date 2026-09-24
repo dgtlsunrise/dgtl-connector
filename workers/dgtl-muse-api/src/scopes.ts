@@ -38,6 +38,15 @@ export const CONSENT_A = [
 /** Scopes that must never be requested on Muse Free Connect. */
 export const FREE_GOOGLE_NEVER = [SCOPE.adwords, SCOPE.content, SCOPE.business] as const;
 
+/** GA4 Data and Admin reads. */
+export const GA4_READ_SCOPES = [SCOPE.analytics] as const;
+
+/** Search Console reads. */
+export const GSC_READ_SCOPES = [SCOPE.webmasters] as const;
+
+/** Tag Manager reads. */
+export const GTM_READ_SCOPES = [SCOPE.tagmanager] as const;
+
 /** GA4 manage (custom dimensions and other Admin writes). */
 export const GA4_MANAGE_SCOPES = [SCOPE.analyticsEdit] as const;
 

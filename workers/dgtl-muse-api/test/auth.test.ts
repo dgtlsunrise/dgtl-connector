@@ -67,7 +67,7 @@ describe("auth boundary", () => {
   it("returns 501 for a valid token on an unimplemented /v1 route", async () => {
     const { token, hash, grant } = await issuedToken();
     const response = await worker.fetch(
-      request("/v1/ga4/properties/123", token),
+      request("/v1/not-a-route", token),
       envWithGrant(hash, grant),
     );
     expect(response.status).toBe(501);
@@ -75,7 +75,7 @@ describe("auth boundary", () => {
     expect(await readJson(response)).toEqual({
       error: "not_implemented",
       message: "This operation is not implemented.",
-      path: "/v1/ga4/properties/123",
+      path: "/v1/not-a-route",
       method: "GET",
     });
   });
@@ -83,14 +83,14 @@ describe("auth boundary", () => {
   it("returns 501 for a valid token sent as bearer", async () => {
     const { token, hash, grant } = await issuedToken();
     const response = await worker.fetch(
-      request("/v1/ga4/properties/123", token, "bearer"),
+      request("/v1/not-a-route", token, "bearer"),
       envWithGrant(hash, grant),
     );
     expect(response.status).toBe(501);
     expect(await readJson(response)).toEqual({
       error: "not_implemented",
       message: "This operation is not implemented.",
-      path: "/v1/ga4/properties/123",
+      path: "/v1/not-a-route",
       method: "GET",
     });
   });

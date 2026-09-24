@@ -1,3 +1,4 @@
+import { readParameters, readPaths, readSchemas, readTags } from "./openapi-reads";
 import { CONSENT_A, FREE_GOOGLE_NEVER } from "./scopes";
 
 const connectScopes = CONSENT_A.join(", ");
@@ -9,9 +10,9 @@ export const openApiDocument = {
     title: "DGTL Sunrise Connector API",
     version: "0.1.0",
     summary:
-      "Free Google read and manage for Muse. Writes are previewed, then confirmed. A grant missing the manage scope must reconnect.",
+      "Free Google GA4, Search Console, and Tag Manager reads for Muse, plus a confirm-gated write stub. A grant missing the scope a route needs must reconnect.",
     description:
-      `HTTPS API for the DGTL Sunrise Muse connector. Open /connect to get a Bearer token. /connect requests ${connectScopes}. It does not request ${neverScopes}. Manage routes reject a grant that is missing the scope they need until the user reopens /connect and reconnects Google. Reads that only need analytics.readonly still succeed on an older grant that has that scope. Privacy policy: https://www.dgtlsunrise.com/privacy`,
+      `HTTPS API for the DGTL Sunrise Muse connector. Open /connect to get a Bearer token. /connect requests ${connectScopes}. It does not request ${neverScopes}. GA4 reads need https://www.googleapis.com/auth/analytics.readonly. Search Console reads need https://www.googleapis.com/auth/webmasters.readonly. Tag Manager reads need https://www.googleapis.com/auth/tagmanager.readonly. A linked grant missing that scope returns google_reconnect_required and does not call Google. An older grant that only has analytics.readonly can still read GA4. Manage routes also reject a grant that is missing https://www.googleapis.com/auth/analytics.edit until the user reopens /connect. These read routes do not publish a container, submit a sitemap, or run a GA4 Admin write. Privacy policy: https://www.dgtlsunrise.com/privacy`,
     termsOfService: "https://www.dgtlsunrise.com/terms",
     contact: {
       name: "DGTL Sunrise",
@@ -29,7 +30,7 @@ export const openApiDocument = {
   },
   servers: [{ url: "https://muse-api.dgtlsunrise.com" }],
   tags: [
-    { name: "ga4", description: "Free Google Analytics 4 reads." },
+    ...readTags,
     {
       name: "writes",
       description:
@@ -115,46 +116,39 @@ export const openApiDocument = {
           },
           "401": { $ref: "#/components/responses/Unauthorized" },
           "403": {
-            description: "The grant has no Google link, or Google refused the read.",
+            description:
+              "The grant has no Google link, is missing https://www.googleapis.com/auth/analytics.readonly, or Google refused the read. A missing scope does not call Google.",
             content: {
               "application/json": {
-                schema: { $ref: "#/components/schemas/Ga4SessionsError" },
+                schema: {
+                  oneOf: [
+                    { $ref: "#/components/schemas/Ga4SessionsError" },
+                    { $ref: "#/components/schemas/GoogleReconnectRequired" },
+                  ],
+                },
+              },
+            },
+          },
+          "500": {
+            description: "The stored refresh token could not be opened.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/GrantUnreadable" },
+              },
+            },
+          },
+          "502": {
+            description: "Refreshing the Google access token failed, or the Data API report call failed.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Ga4Unavailable" },
               },
             },
           },
         },
       },
     },
-    "/v1/ga4/properties/{property_id}": {
-      get: {
-        operationId: "getGa4Property",
-        tags: ["ga4"],
-        summary: "Read a GA4 property",
-        description:
-          "Free Google read of one GA4 property (display name, time zone, currency). This stub returns 501.",
-        security: [{ bearerAuth: [] }],
-        parameters: [{ $ref: "#/components/parameters/propertyId" }],
-        responses: {
-          "200": {
-            description: "Property resource. Not served by this stub.",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/Ga4Property" },
-              },
-            },
-          },
-          "401": { $ref: "#/components/responses/Unauthorized" },
-          "501": {
-            description: "Not implemented.",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/ErrorBody" },
-              },
-            },
-          },
-        },
-      },
-    },
+    ...readPaths,
     "/v1/writes/preview": {
       post: {
         operationId: "previewWrite",
@@ -284,6 +278,7 @@ export const openApiDocument = {
       },
     },
     parameters: {
+      ...readParameters,
       propertyId: {
         name: "property_id",
         in: "path",
@@ -293,6 +288,7 @@ export const openApiDocument = {
       },
     },
     schemas: {
+      ...readSchemas,
       Health: {
         type: "object",
         required: ["ok"],
@@ -332,16 +328,6 @@ export const openApiDocument = {
         required: ["error"],
         properties: {
           error: { type: "string", enum: ["invalid_property_id"] },
-        },
-      },
-      Ga4Property: {
-        type: "object",
-        required: ["property_id", "display_name", "time_zone", "currency_code"],
-        properties: {
-          property_id: { type: "string" },
-          display_name: { type: "string" },
-          time_zone: { type: "string" },
-          currency_code: { type: "string" },
         },
       },
       GoogleNotLinked: {
