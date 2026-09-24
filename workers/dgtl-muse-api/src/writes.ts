@@ -1,4 +1,4 @@
-import type { ActiveGrant } from "./auth";
+import { parseShopDomain, type ActiveGrant } from "./auth";
 import { bytesToBase64Url } from "./bytes";
 import { ADMIN_ORIGIN, GTM_ORIGIN, accessForRead, googleObject } from "./google";
 import { json } from "./http";
@@ -7,6 +7,7 @@ import {
   GTM_MANAGE_SCOPES,
   refusalForGoogleScopes,
 } from "./scopes";
+import { openRefreshToken } from "./seal";
 import { isRecord } from "./validate";
 
 const PREVIEW_TTL_SECONDS = 600;
@@ -19,7 +20,7 @@ const VARIABLE_TYPE_PATTERN = /^[A-Za-z0-9_]{1,64}$/;
 const DIMENSION_SCOPES = ["EVENT", "USER", "ITEM"] as const;
 
 /**
- * Confirm-gated Free Google mutates. Preview stores the proposal.
+ * Confirm-gated mutates. Preview stores the proposal.
  * Confirm posts only after `confirm_phrase` contains every resource id.
  * GA4 matches tip `ga4CreateCustomDimension`.
  */
@@ -32,10 +33,35 @@ const WRITE_KINDS = {
     family: "gtm",
     scopes: GTM_MANAGE_SCOPES,
   },
+  shopify_inventory_adjust: {
+    family: "shopify",
+  },
 } as const;
+
+const SHOPIFY_ADMIN_API_VERSION = "2026-04";
+const ADJUST_REASONS = ["correction", "restock", "shrinkage", "received", "damaged", "other"] as const;
+const QUANTITY_NAMES = ["available", "on_hand"] as const;
+const INVENTORY_ADJUST_DOCUMENT = `mutation InventoryAdjust($input: InventoryAdjustQuantitiesInput!) {
+  inventoryAdjustQuantities(input: $input) {
+    userErrors { field message code }
+    inventoryAdjustmentGroup {
+      createdAt
+      reason
+      changes {
+        name
+        delta
+        quantityAfterChange
+        item { id sku }
+        location { id name }
+      }
+    }
+  }
+}`;
 
 type WriteKind = keyof typeof WRITE_KINDS;
 type DimensionScope = (typeof DIMENSION_SCOPES)[number];
+type AdjustReason = (typeof ADJUST_REASONS)[number];
+type QuantityName = (typeof QUANTITY_NAMES)[number];
 
 type Dimension = {
   readonly parameter_name: string;
@@ -83,7 +109,23 @@ type GtmStored = {
   readonly expires_at: string;
 };
 
-type StoredPreview = Ga4Stored | GtmStored;
+type GoogleStored = Ga4Stored | GtmStored;
+
+type ShopifyInventoryStored = {
+  readonly kind: "shopify_inventory_adjust";
+  readonly grant_id: string;
+  readonly shop: string;
+  readonly inventory_item_id: string;
+  readonly location_id: string;
+  readonly delta: number;
+  readonly reason: AdjustReason;
+  readonly quantity_name: QuantityName;
+  readonly resource_ids: readonly [string, string];
+  readonly summary: string;
+  readonly expires_at: string;
+};
+
+type StoredPreview = GoogleStored | ShopifyInventoryStored;
 
 type PreviewParse =
   | { readonly kind: "ok"; readonly stored: StoredPreview }
@@ -298,12 +340,14 @@ async function parsePreviewBody(
     }
     return { kind: "invalid" };
   }
-  const refused = refusalForGoogleScopes(grant.google, WRITE_KINDS[kind].scopes);
-  if (refused !== null) {
-    return { kind: "response", response: refused };
-  }
   switch (kind) {
+    case "shopify_inventory_adjust":
+      return parseShopifyPreview(value, grant);
     case "ga4_custom_dimension_create": {
+      const refused = refusalForGoogleScopes(grant.google, WRITE_KINDS[kind].scopes);
+      if (refused !== null) {
+        return { kind: "response", response: refused };
+      }
       const propertyId = digits(value["property_id"]);
       const dimension = parseDimension(value["dimension"]);
       if (propertyId === null || dimension === null) {
@@ -324,6 +368,10 @@ async function parsePreviewBody(
       };
     }
     case "gtm_variable_create": {
+      const refused = refusalForGoogleScopes(grant.google, WRITE_KINDS[kind].scopes);
+      if (refused !== null) {
+        return { kind: "response", response: refused };
+      }
       const accountId = digits(value["account_id"]);
       const containerId = digits(value["container_id"]);
       const workspaceId = digits(value["workspace_id"]);
@@ -360,29 +408,127 @@ async function parsePreviewBody(
 
 function readCommon(
   value: Record<string, unknown>,
-  resourceId: string,
+  resourceIds: readonly string[],
 ): { readonly grantId: string; readonly summary: string; readonly expiresAt: string } | null {
   const grantId = value["grant_id"];
   const summary = value["summary"];
-  const expiresAt = value["expires_at"];
-  const resourceIds = value["resource_ids"];
+  const expiresAtValue = value["expires_at"];
+  const storedIds = value["resource_ids"];
   if (
     typeof grantId !== "string" ||
     grantId.length === 0 ||
     typeof summary !== "string" ||
     summary.length === 0 ||
-    typeof expiresAt !== "string" ||
-    !Number.isFinite(Date.parse(expiresAt)) ||
-    !Array.isArray(resourceIds) ||
-    resourceIds.length !== 1 ||
-    resourceIds[0] !== resourceId
+    typeof expiresAtValue !== "string" ||
+    !Number.isFinite(Date.parse(expiresAtValue)) ||
+    !Array.isArray(storedIds) ||
+    storedIds.length !== resourceIds.length ||
+    resourceIds.some((resourceId, index) => storedIds[index] !== resourceId)
   ) {
     return null;
   }
-  if (Date.parse(expiresAt) <= Date.now()) {
+  if (Date.parse(expiresAtValue) <= Date.now()) {
     return null;
   }
-  return { grantId, summary, expiresAt };
+  return { grantId, summary, expiresAt: expiresAtValue };
+}
+
+function isAdjustReason(value: string): value is AdjustReason {
+  return (ADJUST_REASONS as readonly string[]).includes(value);
+}
+
+function isQuantityName(value: string): value is QuantityName {
+  return (QUANTITY_NAMES as readonly string[]).includes(value);
+}
+
+function shopifyGid(value: unknown, resource: "InventoryItem" | "Location"): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  const numeric = /^[0-9]{1,20}$/;
+  if (numeric.test(trimmed)) {
+    return `gid://shopify/${resource}/${trimmed}`;
+  }
+  const prefix = `gid://shopify/${resource}/`;
+  if (!trimmed.startsWith(prefix) || !numeric.test(trimmed.slice(prefix.length))) {
+    return null;
+  }
+  return trimmed;
+}
+
+function parseDelta(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isInteger(value) || value === 0 || Math.abs(value) > 1_000_000) {
+    return null;
+  }
+  return value;
+}
+
+function parseAdjustReason(value: unknown): AdjustReason | null {
+  if (value === undefined) {
+    return "correction";
+  }
+  if (typeof value !== "string") {
+    return null;
+  }
+  const reason = value.trim().toLowerCase();
+  return isAdjustReason(reason) ? reason : null;
+}
+
+function parseQuantityName(value: unknown): QuantityName | null {
+  if (value === undefined) {
+    return "available";
+  }
+  if (typeof value !== "string") {
+    return null;
+  }
+  const name = value.trim().toLowerCase();
+  return isQuantityName(name) ? name : null;
+}
+
+function readAdjustReason(value: unknown): AdjustReason | null {
+  return typeof value === "string" && isAdjustReason(value) ? value : null;
+}
+
+function readQuantityName(value: unknown): QuantityName | null {
+  return typeof value === "string" && isQuantityName(value) ? value : null;
+}
+
+function parseShopifyPreview(value: Record<string, unknown>, grant: ActiveGrant): PreviewParse {
+  if (grant.shopify === null) {
+    return { kind: "response", response: json({ error: "shopify_not_linked" }, 403) };
+  }
+  const inventoryItemId = shopifyGid(value["inventory_item_id"], "InventoryItem");
+  const locationId = shopifyGid(value["location_id"], "Location");
+  const delta = parseDelta(value["delta"]);
+  const reason = parseAdjustReason(value["reason"]);
+  const quantityName = parseQuantityName(value["quantity_name"]);
+  if (
+    inventoryItemId === null ||
+    locationId === null ||
+    delta === null ||
+    reason === null ||
+    quantityName === null
+  ) {
+    return { kind: "invalid" };
+  }
+  const shop = grant.shopify.shop;
+  return {
+    kind: "ok",
+    stored: {
+      kind: "shopify_inventory_adjust",
+      grant_id: grant.grant_id,
+      shop,
+      inventory_item_id: inventoryItemId,
+      location_id: locationId,
+      delta,
+      reason,
+      quantity_name: quantityName,
+      resource_ids: [inventoryItemId, locationId],
+      summary: `Would adjust inventory item ${inventoryItemId} at ${locationId} by ${delta} on ${shop}. Not executed.`,
+      expires_at: expiresAt(),
+    },
+  };
 }
 
 function parseStoredPreview(raw: string): StoredPreview | null {
@@ -402,7 +548,7 @@ function parseStoredPreview(raw: string): StoredPreview | null {
       if (propertyId === null || dimension === null) {
         return null;
       }
-      const common = readCommon(value, ga4ResourceId(propertyId));
+      const common = readCommon(value, [ga4ResourceId(propertyId)]);
       if (common === null) {
         return null;
       }
@@ -432,7 +578,7 @@ function parseStoredPreview(raw: string): StoredPreview | null {
       ) {
         return null;
       }
-      const common = readCommon(value, publicId);
+      const common = readCommon(value, [publicId]);
       if (common === null) {
         return null;
       }
@@ -445,6 +591,41 @@ function parseStoredPreview(raw: string): StoredPreview | null {
         public_id: publicId,
         variable,
         resource_ids: [publicId],
+        summary: common.summary,
+        expires_at: common.expiresAt,
+      };
+    }
+    case "shopify_inventory_adjust": {
+      const shop = typeof value["shop"] === "string" ? parseShopDomain(value["shop"]) : null;
+      const inventoryItemId = shopifyGid(value["inventory_item_id"], "InventoryItem");
+      const locationId = shopifyGid(value["location_id"], "Location");
+      const delta = parseDelta(value["delta"]);
+      const reason = readAdjustReason(value["reason"]);
+      const quantityName = readQuantityName(value["quantity_name"]);
+      if (
+        shop === null ||
+        inventoryItemId === null ||
+        locationId === null ||
+        delta === null ||
+        reason === null ||
+        quantityName === null
+      ) {
+        return null;
+      }
+      const common = readCommon(value, [inventoryItemId, locationId]);
+      if (common === null) {
+        return null;
+      }
+      return {
+        kind: "shopify_inventory_adjust",
+        grant_id: common.grantId,
+        shop,
+        inventory_item_id: inventoryItemId,
+        location_id: locationId,
+        delta,
+        reason,
+        quantity_name: quantityName,
+        resource_ids: [inventoryItemId, locationId],
         summary: common.summary,
         expires_at: common.expiresAt,
       };
@@ -469,7 +650,7 @@ function gtmVariableBody(variable: GtmVariable): Record<string, unknown> {
   };
 }
 
-function mutateCall(stored: StoredPreview): { readonly url: string; readonly body: Record<string, unknown> } {
+function mutateCall(stored: GoogleStored): { readonly url: string; readonly body: Record<string, unknown> } {
   switch (stored.kind) {
     case "ga4_custom_dimension_create":
       return {
@@ -495,7 +676,7 @@ function mutateCall(stored: StoredPreview): { readonly url: string; readonly bod
   }
 }
 
-function resourceNameOf(stored: StoredPreview, record: Record<string, unknown>): string | null {
+function resourceNameOf(stored: GoogleStored, record: Record<string, unknown>): string | null {
   switch (stored.kind) {
     case "ga4_custom_dimension_create": {
       const name = record["name"];
@@ -536,11 +717,12 @@ export async function previewWrite(
   grant: ActiveGrant,
   env: Env,
 ): Promise<Response> {
-  if (grant.google === null) {
+  const body = await readBody(request);
+  if ((!isRecord(body) || body["kind"] !== "shopify_inventory_adjust") && grant.google === null) {
     return json({ error: "google_not_linked" }, 403);
   }
 
-  const parsed = await parsePreviewBody(await readBody(request), grant, env);
+  const parsed = await parsePreviewBody(body, grant, env);
   switch (parsed.kind) {
     case "unknown_kind":
       return json({ error: "unknown_kind" }, 400);
@@ -579,6 +761,193 @@ function parseConfirmBody(value: unknown): ConfirmBody {
   return { kind: "ready", previewId, phrase: value["confirm_phrase"] };
 }
 
+function graphqlErrorText(body: unknown): string {
+  if (!isRecord(body) || !Array.isArray(body["errors"])) {
+    return "";
+  }
+  return body["errors"]
+    .filter(isRecord)
+    .map((error) => {
+      const extensions = error["extensions"];
+      const code = isRecord(extensions) && typeof extensions["code"] === "string" ? extensions["code"] : "";
+      const message = typeof error["message"] === "string" ? error["message"] : "";
+      return `${code} ${message}`;
+    })
+    .join(" ");
+}
+
+function inventoryPayload(body: unknown): Record<string, unknown> | null {
+  if (!isRecord(body)) {
+    return null;
+  }
+  const data = body["data"];
+  if (!isRecord(data)) {
+    return null;
+  }
+  const payload = data["inventoryAdjustQuantities"];
+  return isRecord(payload) ? payload : null;
+}
+
+function adjustmentIds(body: unknown): { readonly inventoryItemId: string; readonly locationId: string } | null {
+  const payload = inventoryPayload(body);
+  if (payload === null || !isRecord(payload["inventoryAdjustmentGroup"])) {
+    return null;
+  }
+  const changes = payload["inventoryAdjustmentGroup"]["changes"];
+  const change = Array.isArray(changes) ? changes[0] : undefined;
+  if (!isRecord(change) || !isRecord(change["item"]) || !isRecord(change["location"])) {
+    return null;
+  }
+  const inventoryItemId = change["item"]["id"];
+  const locationId = change["location"]["id"];
+  if (typeof inventoryItemId !== "string" || inventoryItemId.length === 0) {
+    return null;
+  }
+  if (typeof locationId !== "string" || locationId.length === 0) {
+    return null;
+  }
+  return { inventoryItemId, locationId };
+}
+
+type ShopifyAdjustResult =
+  | { readonly kind: "ok"; readonly inventoryItemId: string; readonly locationId: string }
+  | { readonly kind: "rejected" }
+  | { readonly kind: "unauthorized" }
+  | { readonly kind: "forbidden" }
+  | { readonly kind: "rate_limited" }
+  | { readonly kind: "unavailable" };
+
+async function postInventoryAdjust(
+  accessToken: string,
+  stored: ShopifyInventoryStored,
+): Promise<ShopifyAdjustResult> {
+  const url = `https://${stored.shop}/admin/api/${SHOPIFY_ADMIN_API_VERSION}/graphql.json`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+        "X-Shopify-Access-Token": accessToken,
+      },
+      body: JSON.stringify({
+        query: INVENTORY_ADJUST_DOCUMENT,
+        operationName: "InventoryAdjust",
+        variables: {
+          input: {
+            reason: stored.reason,
+            name: stored.quantity_name,
+            changes: [
+              {
+                inventoryItemId: stored.inventory_item_id,
+                locationId: stored.location_id,
+                delta: stored.delta,
+              },
+            ],
+          },
+        },
+      }),
+      cache: "no-store",
+      redirect: "manual",
+    });
+  } catch {
+    return { kind: "unavailable" };
+  }
+  if (response.status === 401) {
+    return { kind: "unauthorized" };
+  }
+  if (response.status === 403) {
+    return { kind: "forbidden" };
+  }
+  if (response.status === 429) {
+    return { kind: "rate_limited" };
+  }
+  if (!response.ok) {
+    return { kind: "unavailable" };
+  }
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    return { kind: "unavailable" };
+  }
+  if (/throttl|rate.?limit/i.test(graphqlErrorText(body))) {
+    return { kind: "rate_limited" };
+  }
+  if (graphqlErrorText(body).length > 0) {
+    return { kind: "unavailable" };
+  }
+  const payload = inventoryPayload(body);
+  const userErrors = payload === null ? undefined : payload["userErrors"];
+  if (Array.isArray(userErrors) && userErrors.length > 0) {
+    return { kind: "rejected" };
+  }
+  const ids = adjustmentIds(body);
+  if (ids === null) {
+    return { kind: "unavailable" };
+  }
+  return { kind: "ok", inventoryItemId: ids.inventoryItemId, locationId: ids.locationId };
+}
+
+function shopifyAdjustError(result: Exclude<ShopifyAdjustResult, { readonly kind: "ok" }>): Response {
+  switch (result.kind) {
+    case "rejected":
+      return json({ error: "shopify_rejected" }, 400);
+    case "unauthorized":
+      return json({ error: "shopify_unauthorized" }, 401);
+    case "forbidden":
+      return json({ error: "shopify_forbidden" }, 403);
+    case "rate_limited":
+      return json({ error: "shopify_rate_limited" }, 429);
+    case "unavailable":
+      return json({ error: "shopify_unavailable" }, 502);
+    default: {
+      const unexpected: never = result;
+      return unexpected;
+    }
+  }
+}
+
+async function confirmShopifyInventory(
+  previewId: string,
+  phrase: unknown,
+  stored: ShopifyInventoryStored,
+  grant: ActiveGrant,
+  env: Env,
+  key: string,
+): Promise<Response> {
+  if (grant.shopify === null) {
+    return json({ error: "shopify_not_linked" }, 403);
+  }
+  if (grant.shopify.shop !== stored.shop) {
+    return json({ error: "preview_forbidden" }, 403);
+  }
+  if (typeof phrase !== "string" || !phraseCovers(phrase, stored.resource_ids)) {
+    return json({ error: "confirm_refused", confirm_required: true }, 400);
+  }
+  const accessToken = await openRefreshToken(grant.shopify.access_token, env.MUSE_TOKEN_ENC_KEY);
+  if (accessToken === null) {
+    return json({ error: "grant_unreadable" }, 500);
+  }
+  const result = await postInventoryAdjust(accessToken, stored);
+  if (result.kind !== "ok") {
+    return shopifyAdjustError(result);
+  }
+  await env.MUSE_TOKENS.delete(key);
+  return json(
+    {
+      status: "confirmed",
+      preview_id: previewId,
+      kind: stored.kind,
+      executed: true,
+      inventory_item_id: result.inventoryItemId,
+      location_id: result.locationId,
+    },
+    200,
+  );
+}
+
 export async function confirmWrite(
   request: Request,
   grant: ActiveGrant,
@@ -609,6 +978,9 @@ export async function confirmWrite(
   }
   if (stored.grant_id !== grant.grant_id) {
     return json({ error: "preview_forbidden" }, 403);
+  }
+  if (stored.kind === "shopify_inventory_adjust") {
+    return confirmShopifyInventory(parsed.previewId, parsed.phrase, stored, grant, env, key);
   }
   const meta = WRITE_KINDS[stored.kind];
   const refused = refusalForGoogleScopes(grant.google, meta.scopes);

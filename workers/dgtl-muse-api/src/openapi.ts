@@ -10,9 +10,9 @@ export const openApiDocument = {
     title: "DGTL Sunrise Connector API",
     version: "0.1.0",
     summary:
-      "Free Google GA4, Search Console, and Tag Manager reads for Muse, plus confirm-gated GA4 and GTM writes. A grant missing the scope a route needs must reconnect.",
+      "Free Google GA4, Search Console, and Tag Manager reads for Muse, plus confirm-gated GA4, GTM, and Shopify inventory writes. A grant missing the scope a route needs must reconnect.",
     description:
-      `HTTPS API for the DGTL Sunrise Muse connector. Open /connect to get a Bearer token. /connect requests ${connectScopes}. It does not request ${neverScopes}. GA4 reads need https://www.googleapis.com/auth/analytics.readonly. Search Console reads need https://www.googleapis.com/auth/webmasters.readonly. Tag Manager reads need https://www.googleapis.com/auth/tagmanager.readonly. A linked grant missing that scope returns google_reconnect_required and does not call Google. An older grant that only has analytics.readonly can still read GA4. GA4 custom dimension create requires https://www.googleapis.com/auth/analytics.edit. GTM variable create requires https://www.googleapis.com/auth/tagmanager.edit.containers. A missing manage scope returns google_reconnect_required and does not mutate. POST /v1/writes/confirm creates one GA4 custom dimension or one GTM workspace variable. It does not publish a container or submit a sitemap. POST /v1/connect/shopify and POST /v1/connect/klaviyo seal a Shopify Admin API token and a Klaviyo private key with the same AES-GCM key as the Google refresh token. GET /v1/connect reports those links as linked or null and does not return the secrets. GET /v1/shopify/shop and GET /v1/shopify/products call Shopify Admin REST API version 2026-04 with the sealed token. A grant with no Shopify link returns shopify_not_linked and does not call Shopify. These routes do not write to Shopify. GET /v1/klaviyo/account and GET /v1/klaviyo/profiles call Klaviyo with revision header 2026-07-15 and the sealed pk_ key. A grant with no Klaviyo link returns klaviyo_not_linked and does not call Klaviyo. These routes do not write to Klaviyo, and they do not store account_id on the grant. Privacy policy: https://www.dgtlsunrise.com/privacy`,
+      `HTTPS API for the DGTL Sunrise Muse connector. Open /connect to get a Bearer token. /connect requests ${connectScopes}. It does not request ${neverScopes}. GA4 reads need https://www.googleapis.com/auth/analytics.readonly. Search Console reads need https://www.googleapis.com/auth/webmasters.readonly. Tag Manager reads need https://www.googleapis.com/auth/tagmanager.readonly. A linked grant missing that scope returns google_reconnect_required and does not call Google. An older grant that only has analytics.readonly can still read GA4. GA4 custom dimension create requires https://www.googleapis.com/auth/analytics.edit. GTM variable create requires https://www.googleapis.com/auth/tagmanager.edit.containers. A missing manage scope returns google_reconnect_required and does not mutate. POST /v1/writes/confirm creates one GA4 custom dimension, one GTM workspace variable, or one Shopify inventory adjustment. It does not publish a container, submit a sitemap, or run productSet. POST /v1/connect/shopify and POST /v1/connect/klaviyo seal a Shopify Admin API token and a Klaviyo private key with the same AES-GCM key as the Google refresh token. GET /v1/connect reports those links as linked or null and does not return the secrets. GET /v1/shopify/shop and GET /v1/shopify/products call Shopify Admin REST API version 2026-04 with the sealed token. A grant with no Shopify link returns shopify_not_linked and does not call Shopify. Those read routes do not write. POST /v1/writes/confirm kind shopify_inventory_adjust posts tip inventoryAdjustQuantities on Admin GraphQL 2026-04 after confirm_phrase contains the inventory item id and the location id. GET /v1/klaviyo/account and GET /v1/klaviyo/profiles call Klaviyo with revision header 2026-07-15 and the sealed pk_ key. A grant with no Klaviyo link returns klaviyo_not_linked and does not call Klaviyo. These routes do not write to Klaviyo, and they do not store account_id on the grant. Privacy policy: https://www.dgtlsunrise.com/privacy`,
     termsOfService: "https://www.dgtlsunrise.com/terms",
     contact: {
       name: "DGTL Sunrise",
@@ -49,7 +49,7 @@ export const openApiDocument = {
     {
       name: "writes",
       description:
-        "Confirm-gated writes. Kinds: ga4_custom_dimension_create and gtm_variable_create. Preview stores a one-shot proposal and does not mutate. Confirm posts to Google only when confirm_phrase contains every resource id. GA4 manage requires https://www.googleapis.com/auth/analytics.edit. GTM variable create requires https://www.googleapis.com/auth/tagmanager.edit.containers. A grant missing that scope returns google_reconnect_required and does not store or delete a preview.",
+        "Confirm-gated writes. Kinds: ga4_custom_dimension_create, gtm_variable_create, and shopify_inventory_adjust. Preview stores a one-shot proposal and does not mutate. Confirm posts only when confirm_phrase contains every resource id. GA4 manage requires https://www.googleapis.com/auth/analytics.edit. GTM variable create requires https://www.googleapis.com/auth/tagmanager.edit.containers. A grant missing that scope returns google_reconnect_required and does not store or delete a preview. Shopify inventory adjust requires a linked shop. A grant with no Shopify link returns shopify_not_linked and does not call Shopify.",
     },
   ],
   paths: {
@@ -575,7 +575,7 @@ export const openApiDocument = {
         tags: ["writes"],
         summary: "Preview a confirm-gated write",
         description:
-          "Stores a one-shot preview for ga4_custom_dimension_create or gtm_variable_create. GA4 preview does not call Google. GTM preview GETs the container to resolve publicId and does not create a variable. A grant missing the manage scope for that kind is refused and nothing is stored. The caller then posts a confirm_phrase that contains every resource id to /v1/writes/confirm. GA4 resource id is properties/{property_id}. GTM resource id is the container publicId.",
+          "Stores a one-shot preview for ga4_custom_dimension_create, gtm_variable_create, or shopify_inventory_adjust. GA4 preview does not call Google. GTM preview GETs the container to resolve publicId and does not create a variable. Shopify inventory preview does not call Shopify. A grant missing the manage scope for a Google kind is refused and nothing is stored. A grant with no Shopify link is refused for shopify_inventory_adjust and nothing is stored. The caller then posts a confirm_phrase that contains every resource id to /v1/writes/confirm. GA4 resource id is properties/{property_id}. GTM resource id is the container publicId. Shopify resource ids are the InventoryItem gid and the Location gid.",
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -605,7 +605,7 @@ export const openApiDocument = {
           "401": { $ref: "#/components/responses/Unauthorized" },
           "403": {
             description:
-              "The grant has no Google link, or it is missing the manage scope for this kind (analytics.edit or tagmanager.edit.containers). A missing manage scope does not store a preview. Reopen /connect and reconnect Google.",
+              "The grant has no Google link, it is missing the manage scope for a Google kind (analytics.edit or tagmanager.edit.containers), or Shopify is not linked for shopify_inventory_adjust. A refusal does not store a preview.",
             content: {
               "application/json": {
                 schema: {
@@ -613,6 +613,7 @@ export const openApiDocument = {
                     { $ref: "#/components/schemas/GoogleNotLinked" },
                     { $ref: "#/components/schemas/GoogleReconnectRequired" },
                     { $ref: "#/components/schemas/GtmForbidden" },
+                    { $ref: "#/components/schemas/ShopifyReadError" },
                   ],
                 },
               },
@@ -652,7 +653,7 @@ export const openApiDocument = {
         tags: ["writes"],
         summary: "Confirm a previewed write",
         description:
-          "Posts the previewed mutate when the grant still has the manage scope for that kind and confirm_phrase contains every resource id. GA4 posts customDimensions on the Analytics Admin API. GTM posts a workspace variable on the Tag Manager API. A missing manage scope or a refused phrase leaves the preview in place and does not mutate. A Google error also leaves the preview in place. On success the preview is deleted, executed is true, and resource_name is the Google resource.",
+          "Posts the previewed mutate when confirm_phrase contains every resource id. GA4 posts customDimensions on the Analytics Admin API. GTM posts a workspace variable on the Tag Manager API. shopify_inventory_adjust posts inventoryAdjustQuantities to Admin GraphQL /admin/api/2026-04/graphql.json, the same mutation as tip shopify_adjust_inventory. The phrase must contain the inventory item gid and the location gid. A missing manage scope, a missing Shopify link, a refused phrase, or an upstream error leaves the preview in place and does not delete it. Shopify 401, 403, and 429 are shopify_unauthorized, shopify_forbidden, and shopify_rate_limited. On success the preview is deleted and executed is true.",
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -665,16 +666,21 @@ export const openApiDocument = {
         responses: {
           "200": {
             description:
-              "Google accepted the mutate. executed is true. resource_name is the GA4 custom dimension name or the GTM variable path.",
+              "The upstream API accepted the mutate. executed is true. Google returns resource_name. Shopify returns the inventory item id and location id from the adjustment.",
             content: {
               "application/json": {
-                schema: { $ref: "#/components/schemas/WriteConfirmResult" },
+                schema: {
+                  oneOf: [
+                    { $ref: "#/components/schemas/WriteConfirmResult" },
+                    { $ref: "#/components/schemas/ShopifyInventoryConfirm" },
+                  ],
+                },
               },
             },
           },
           "400": {
             description:
-              "The preview is missing, expired, or already used, the body is invalid, or confirm_phrase does not include every resource id.",
+              "The preview is missing, expired, or already used, the body is invalid, Shopify rejected the adjustment, or confirm_phrase does not include every resource id.",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/WriteConfirmError" },
@@ -684,7 +690,7 @@ export const openApiDocument = {
           "401": { $ref: "#/components/responses/Unauthorized" },
           "403": {
             description:
-              "The preview belongs to a different grant, the grant has no Google link, the grant is missing the manage scope, or Google refused the mutate. A missing manage scope or a Google refusal does not delete the preview. Reopen /connect when the error is google_reconnect_required.",
+              "The preview belongs to a different grant, the grant has no Google link, the grant is missing the manage scope, Google refused the mutate, or Shopify refused the token. A refusal does not delete the preview. Reopen /connect when the error is google_reconnect_required.",
             content: {
               "application/json": {
                 schema: {
@@ -694,8 +700,17 @@ export const openApiDocument = {
                     { $ref: "#/components/schemas/GoogleReconnectRequired" },
                     { $ref: "#/components/schemas/Ga4Forbidden" },
                     { $ref: "#/components/schemas/GtmForbidden" },
+                    { $ref: "#/components/schemas/ShopifyReadError" },
                   ],
                 },
+              },
+            },
+          },
+          "429": {
+            description: "Shopify rate limited the inventory adjustment. The preview stays in place.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ShopifyReadError" },
               },
             },
           },
@@ -717,13 +732,14 @@ export const openApiDocument = {
           },
           "502": {
             description:
-              "Refreshing the Google access token failed, or the mutate response had no resource name. The preview stays in place.",
+              "Refreshing the Google access token failed, the Google mutate had no resource name, or Shopify did not return adjustment ids. The preview stays in place.",
             content: {
               "application/json": {
                 schema: {
                   oneOf: [
                     { $ref: "#/components/schemas/Ga4Unavailable" },
                     { $ref: "#/components/schemas/GtmUnavailable" },
+                    { $ref: "#/components/schemas/ShopifyReadError" },
                   ],
                 },
               },
@@ -1031,6 +1047,13 @@ export const openApiDocument = {
               confirm_required: { type: "boolean", enum: [true] },
             },
           },
+          {
+            type: "object",
+            required: ["error"],
+            properties: {
+              error: { type: "string", enum: ["shopify_rejected"] },
+            },
+          },
         ],
       },
       Ga4CustomDimensionDraft: {
@@ -1049,7 +1072,7 @@ export const openApiDocument = {
       },
       WriteKind: {
         type: "string",
-        enum: ["ga4_custom_dimension_create", "gtm_variable_create"],
+        enum: ["ga4_custom_dimension_create", "gtm_variable_create", "shopify_inventory_adjust"],
       },
       Ga4CustomDimensionCreate: {
         type: "object",
@@ -1115,10 +1138,61 @@ export const openApiDocument = {
           variable: { $ref: "#/components/schemas/GtmVariableDraft" },
         },
       },
+      ShopifyInventoryAdjust: {
+        type: "object",
+        required: ["kind", "inventory_item_id", "location_id", "delta"],
+        properties: {
+          kind: { type: "string", enum: ["shopify_inventory_adjust"] },
+          inventory_item_id: {
+            type: "string",
+            description: "Numeric inventory item id or gid://shopify/InventoryItem/{id}. Preview returns the gid.",
+            minLength: 1,
+          },
+          location_id: {
+            type: "string",
+            description: "Numeric location id or gid://shopify/Location/{id}. Preview returns the gid.",
+            minLength: 1,
+          },
+          delta: {
+            type: "integer",
+            description: "Non-zero quantity delta. Same field as tip shopify_adjust_inventory. Magnitude at most 1000000.",
+          },
+          reason: {
+            type: "string",
+            enum: ["correction", "restock", "shrinkage", "received", "damaged", "other"],
+            description: "Defaults to correction, matching tip.",
+          },
+          quantity_name: {
+            type: "string",
+            enum: ["available", "on_hand"],
+            description: "Defaults to available, matching tip.",
+          },
+        },
+      },
+      ShopifyInventoryConfirm: {
+        type: "object",
+        additionalProperties: false,
+        required: ["status", "preview_id", "kind", "executed", "inventory_item_id", "location_id"],
+        properties: {
+          status: { type: "string", enum: ["confirmed"] },
+          preview_id: { type: "string" },
+          kind: { type: "string", enum: ["shopify_inventory_adjust"] },
+          executed: { type: "boolean", enum: [true] },
+          inventory_item_id: {
+            type: "string",
+            description: "Inventory item id returned by inventoryAdjustQuantities.",
+          },
+          location_id: {
+            type: "string",
+            description: "Location id returned by inventoryAdjustQuantities.",
+          },
+        },
+      },
       WritePreviewRequest: {
         oneOf: [
           { $ref: "#/components/schemas/Ga4CustomDimensionCreate" },
           { $ref: "#/components/schemas/GtmVariableCreate" },
+          { $ref: "#/components/schemas/ShopifyInventoryAdjust" },
         ],
       },
       WritePreview: {
