@@ -50,6 +50,9 @@ export const GTM_READ_SCOPES = [SCOPE.tagmanager] as const;
 /** GA4 manage (custom dimensions and other Admin writes). */
 export const GA4_MANAGE_SCOPES = [SCOPE.analyticsEdit] as const;
 
+/** Tag Manager workspace edits. Variable create uses this. Publish is a different scope. */
+export const GTM_MANAGE_SCOPES = [SCOPE.tagmanagerEditContainers] as const;
+
 export function refusalForGoogleScopes(
   google: GoogleLink | null,
   required: readonly string[],
