@@ -13,6 +13,8 @@ export function createMint(now = new Date()) {
     created_at: now.toISOString(),
     status: "active",
     google: null,
+    shopify: null,
+    klaviyo: null,
   };
   const putCommand = `wrangler kv key put --binding MUSE_TOKENS ${hash} '${JSON.stringify(grant)}' --remote`;
   return { token, hash, grant, putCommand };

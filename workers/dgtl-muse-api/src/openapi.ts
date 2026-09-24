@@ -12,7 +12,7 @@ export const openApiDocument = {
     summary:
       "Free Google GA4, Search Console, and Tag Manager reads for Muse, plus confirm-gated GA4 and GTM writes. A grant missing the scope a route needs must reconnect.",
     description:
-      `HTTPS API for the DGTL Sunrise Muse connector. Open /connect to get a Bearer token. /connect requests ${connectScopes}. It does not request ${neverScopes}. GA4 reads need https://www.googleapis.com/auth/analytics.readonly. Search Console reads need https://www.googleapis.com/auth/webmasters.readonly. Tag Manager reads need https://www.googleapis.com/auth/tagmanager.readonly. A linked grant missing that scope returns google_reconnect_required and does not call Google. An older grant that only has analytics.readonly can still read GA4. GA4 custom dimension create requires https://www.googleapis.com/auth/analytics.edit. GTM variable create requires https://www.googleapis.com/auth/tagmanager.edit.containers. A missing manage scope returns google_reconnect_required and does not mutate. POST /v1/writes/confirm creates one GA4 custom dimension or one GTM workspace variable. It does not publish a container or submit a sitemap. Privacy policy: https://www.dgtlsunrise.com/privacy`,
+      `HTTPS API for the DGTL Sunrise Muse connector. Open /connect to get a Bearer token. /connect requests ${connectScopes}. It does not request ${neverScopes}. GA4 reads need https://www.googleapis.com/auth/analytics.readonly. Search Console reads need https://www.googleapis.com/auth/webmasters.readonly. Tag Manager reads need https://www.googleapis.com/auth/tagmanager.readonly. A linked grant missing that scope returns google_reconnect_required and does not call Google. An older grant that only has analytics.readonly can still read GA4. GA4 custom dimension create requires https://www.googleapis.com/auth/analytics.edit. GTM variable create requires https://www.googleapis.com/auth/tagmanager.edit.containers. A missing manage scope returns google_reconnect_required and does not mutate. POST /v1/writes/confirm creates one GA4 custom dimension or one GTM workspace variable. It does not publish a container or submit a sitemap. POST /v1/connect/shopify and POST /v1/connect/klaviyo seal a Shopify Admin API token and a Klaviyo private key with the same AES-GCM key as the Google refresh token. GET /v1/connect reports those links as linked or null and does not return the secrets. This API has no Shopify or Klaviyo tool routes. Privacy policy: https://www.dgtlsunrise.com/privacy`,
     termsOfService: "https://www.dgtlsunrise.com/terms",
     contact: {
       name: "DGTL Sunrise",
@@ -30,6 +30,11 @@ export const openApiDocument = {
   },
   servers: [{ url: "https://muse-api.dgtlsunrise.com" }],
   tags: [
+    {
+      name: "connect",
+      description:
+        "Seal Shopify and Klaviyo credentials on the Bearer grant. Status is linked or null. Responses do not return secrets. Tool routes are not in this API.",
+    },
     ...readTags,
     {
       name: "writes",
@@ -69,6 +74,153 @@ export const openApiDocument = {
               },
             },
           },
+        },
+      },
+    },
+    "/v1/connect": {
+      get: {
+        operationId: "getConnectionStatus",
+        tags: ["connect"],
+        summary: "Read Shopify and Klaviyo link status",
+        description:
+          "Reports whether this grant has a sealed Shopify Admin token and a sealed Klaviyo private key. linked means the secret is stored. null means it is not. The response does not include the shop domain, the token, the key, or ciphertext.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Link status without secrets.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ConnectionStatus" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+        },
+      },
+    },
+    "/v1/connect/shopify": {
+      post: {
+        operationId: "connectShopify",
+        tags: ["connect"],
+        summary: "Seal a Shopify Admin API token on the grant",
+        description:
+          "Stores a normalized *.myshopify.com shop and a sealed Admin API access token. Does not call Shopify. Replaces any previous Shopify link on this grant. The response returns the shop and does not return the token.",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ShopifyConnectRequest" },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Shopify is linked. The token is not in the body.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ShopifyConnected" },
+              },
+            },
+          },
+          "400": {
+            description: "The shop domain is not a myshopify host, the token is empty, or the body is not the expected object.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ShopifyConnectError" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "500": {
+            description: "The token could not be sealed. The grant is unchanged.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/SealFailed" },
+              },
+            },
+          },
+        },
+      },
+      delete: {
+        operationId: "disconnectShopify",
+        tags: ["connect"],
+        summary: "Remove the Shopify link",
+        description: "Clears the sealed Shopify token on this grant. Idempotent when Shopify is already unlinked.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Shopify is unlinked.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Disconnected" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+        },
+      },
+    },
+    "/v1/connect/klaviyo": {
+      post: {
+        operationId: "connectKlaviyo",
+        tags: ["connect"],
+        summary: "Seal a Klaviyo private key on the grant",
+        description:
+          "Stores a sealed Klaviyo private key. account id stays empty until a later read. Does not call Klaviyo. Replaces any previous Klaviyo link on this grant. The response does not return the key.",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/KlaviyoConnectRequest" },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Klaviyo is linked. The key is not in the body.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/KlaviyoConnected" },
+              },
+            },
+          },
+          "400": {
+            description: "The key is missing or does not start with pk_, or the body is not the expected object.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/KlaviyoConnectError" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "500": {
+            description: "The key could not be sealed. The grant is unchanged.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/SealFailed" },
+              },
+            },
+          },
+        },
+      },
+      delete: {
+        operationId: "disconnectKlaviyo",
+        tags: ["connect"],
+        summary: "Remove the Klaviyo link",
+        description: "Clears the sealed Klaviyo key on this grant. Idempotent when Klaviyo is already unlinked.",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Klaviyo is unlinked.",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Disconnected" },
+              },
+            },
+          },
+          "401": { $ref: "#/components/responses/Unauthorized" },
         },
       },
     },
@@ -353,6 +505,104 @@ export const openApiDocument = {
         required: ["ok"],
         properties: {
           ok: { type: "boolean" },
+        },
+      },
+      LinkState: {
+        oneOf: [
+          { type: "string", enum: ["linked"] },
+          { type: "null" },
+        ],
+      },
+      ConnectionStatus: {
+        type: "object",
+        additionalProperties: false,
+        required: ["shopify", "klaviyo"],
+        properties: {
+          shopify: { $ref: "#/components/schemas/LinkState" },
+          klaviyo: { $ref: "#/components/schemas/LinkState" },
+        },
+      },
+      ShopifyConnectRequest: {
+        type: "object",
+        additionalProperties: false,
+        required: ["shop", "access_token"],
+        properties: {
+          shop: {
+            type: "string",
+            description: "Shopify shop host. The server lowercases it and accepts only a *.myshopify.com domain.",
+            pattern: "^[A-Za-z0-9](?:[A-Za-z0-9-]{0,60}[A-Za-z0-9])?\\.myshopify\\.com$",
+          },
+          access_token: {
+            type: "string",
+            minLength: 1,
+            description: "Shopify Admin API access token. Sealed at rest. Not returned.",
+          },
+        },
+      },
+      ShopifyConnected: {
+        type: "object",
+        additionalProperties: false,
+        required: ["connected", "shop"],
+        properties: {
+          connected: { type: "boolean", enum: [true] },
+          shop: { type: "string" },
+        },
+      },
+      ShopifyConnectError: {
+        type: "object",
+        required: ["error"],
+        properties: {
+          error: {
+            type: "string",
+            enum: ["invalid_request", "invalid_shop", "invalid_shopify_credential"],
+          },
+          message: { type: "string" },
+        },
+      },
+      KlaviyoConnectRequest: {
+        type: "object",
+        additionalProperties: false,
+        required: ["api_key"],
+        properties: {
+          api_key: {
+            type: "string",
+            description: "Klaviyo private API key. Must start with pk_. Sealed at rest. Not returned.",
+            pattern: "^pk_[A-Za-z0-9_-]{8,240}$",
+          },
+        },
+      },
+      KlaviyoConnected: {
+        type: "object",
+        additionalProperties: false,
+        required: ["connected"],
+        properties: {
+          connected: { type: "boolean", enum: [true] },
+        },
+      },
+      KlaviyoConnectError: {
+        type: "object",
+        required: ["error"],
+        properties: {
+          error: {
+            type: "string",
+            enum: ["invalid_request", "invalid_klaviyo_credential"],
+          },
+          message: { type: "string" },
+        },
+      },
+      Disconnected: {
+        type: "object",
+        additionalProperties: false,
+        required: ["connected"],
+        properties: {
+          connected: { type: "boolean", enum: [false] },
+        },
+      },
+      SealFailed: {
+        type: "object",
+        required: ["error"],
+        properties: {
+          error: { type: "string", enum: ["seal_failed"] },
         },
       },
       ErrorBody: {

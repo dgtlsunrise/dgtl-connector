@@ -99,6 +99,9 @@ describe("openapi", () => {
     const body = await readJson(response);
     const paths = body["paths"] as Record<string, Record<string, unknown>>;
     expect(Object.keys(paths).filter((path) => path.startsWith("/v1/")).sort()).toEqual([
+      "/v1/connect",
+      "/v1/connect/klaviyo",
+      "/v1/connect/shopify",
       "/v1/ga4/account-summaries",
       "/v1/ga4/accounts",
       "/v1/ga4/accounts/{account_id}/properties",
@@ -153,7 +156,7 @@ describe("openapi", () => {
         });
       }
     }
-    expect(operations).toBe(28);
+    expect(operations).toBe(33);
   });
 });
 
