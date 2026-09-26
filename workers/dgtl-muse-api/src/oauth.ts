@@ -1,7 +1,7 @@
 import { mintBearerToken, type ActiveGrant, type GoogleLink } from "./auth";
 import { base64UrlToBytes, bytesToBase64Url } from "./bytes";
 import { html } from "./http";
-import { CONSENT_A } from "./scopes";
+import { CONNECT_REQUIRED_SCOPES, CONSENT_A } from "./scopes";
 import { sealRefreshToken } from "./seal";
 
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -173,7 +173,7 @@ function scopesFromToken(value: unknown): readonly string[] | null {
     return null;
   }
   const scopes = value.split(/\s+/).filter((scope) => scope.length > 0);
-  for (const required of CONSENT_A) {
+  for (const required of CONNECT_REQUIRED_SCOPES) {
     if (!scopes.includes(required)) {
       return null;
     }
@@ -341,7 +341,7 @@ export async function finishGoogleOAuth(request: Request, env: Env): Promise<Res
     case "missing_scopes":
       return errorPage(
         400,
-        "Google did not grant the Free Google access Muse needs. Reopen /connect and reconnect Google.",
+        "Google did not share your Google account ID and email, which Muse needs to connect. Reopen /connect and reconnect Google.",
       );
     case "token":
       break;

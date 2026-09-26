@@ -67,6 +67,10 @@ describe("openapi", () => {
     expect(serialized).toContain("https://www.dgtlsunrise.com/privacy");
     expect(serialized).toContain("https://www.dgtlsunrise.com/terms");
     expect(serialized).toContain("Open /connect to get a Bearer token.");
+    expect(serialized).not.toContain("tagmanager.edit.containerversions");
+    expect(serialized).toContain(
+      "Only openid and https://www.googleapis.com/auth/userinfo.email are required to connect.",
+    );
     const schemes = (body["components"] as { securitySchemes: Record<string, unknown> })
       .securitySchemes;
     expect(schemes["bearerAuth"]).toEqual({

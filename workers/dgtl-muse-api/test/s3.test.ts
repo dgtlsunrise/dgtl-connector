@@ -16,10 +16,10 @@ const FREE_GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/tagmanager.readonly",
   "https://www.googleapis.com/auth/analytics.edit",
   "https://www.googleapis.com/auth/tagmanager.edit.containers",
-  "https://www.googleapis.com/auth/tagmanager.edit.containerversions",
   "https://www.googleapis.com/auth/tagmanager.publish",
   "https://www.googleapis.com/auth/webmasters",
 ] as const;
+const CONTAINERVERSIONS = "https://www.googleapis.com/auth/tagmanager.edit.containerversions";
 const LEGACY_READONLY_SCOPES = [
   "openid",
   "https://www.googleapis.com/auth/userinfo.email",
@@ -120,6 +120,7 @@ describe("google oauth callback", () => {
       expect(requested).not.toContain(banned);
     }
     expect(requested).not.toContain("https://www.googleapis.com/auth/analytics");
+    expect(requested).not.toContain(CONTAINERVERSIONS);
     expect(authorize.searchParams.get("access_type")).toBe("offline");
     expect(authorize.searchParams.get("prompt")).toBe("consent");
     expect(authorize.searchParams.get("code_challenge_method")).toBe("S256");
@@ -303,7 +304,7 @@ describe("google oauth callback", () => {
     expect([...kv.entries().keys()]).toEqual([]);
   });
 
-  it("stores nothing when Google returns only analytics.readonly", async () => {
+  it("connects a partial grant, then refuses a route whose scope was not granted", async () => {
     const kv = new MemoryKv();
     const authorize = await startOAuth(kv);
     const state = authorize.searchParams.get("state");
@@ -324,12 +325,68 @@ describe("google oauth callback", () => {
         ),
       ),
     );
+    const callback = await worker.fetch(
+      new Request(`${ORIGIN}/oauth/google/callback?code=auth-code-1&state=${state}`),
+      envWithKv(kv),
+    );
+    expect(callback.status).toBe(200);
+    const shownToken = (await callback.text()).match(/dgtl_muse_[A-Za-z0-9_-]{43}/)?.[0];
+    if (shownToken === undefined) {
+      throw new Error("missing bearer token");
+    }
+    const stored = [...kv.entries().values()];
+    expect(stored).toHaveLength(1);
+    const grant = JSON.parse(stored[0] ?? "{}") as { google: { scopes: string[] } };
+    expect(grant.google.scopes).toEqual([...LEGACY_READONLY_SCOPES]);
+
+    forbidFetch();
+    const refused = await worker.fetch(
+      new Request(`${ORIGIN}/v1/gtm/accounts`, {
+        headers: { authorization: `Bearer ${shownToken}` },
+      }),
+      envWithKv(kv),
+    );
+    expect(refused.status).toBe(403);
+    expect(await readJson(refused)).toEqual({
+      error: "google_reconnect_required",
+      message:
+        "This Google connection is missing https://www.googleapis.com/auth/tagmanager.readonly. Reopen /connect and reconnect Google.",
+      missing_scopes: ["https://www.googleapis.com/auth/tagmanager.readonly"],
+    });
+  });
+
+  it.each([
+    ["openid", ["https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/analytics.readonly"]],
+    ["userinfo.email", ["openid", "https://www.googleapis.com/auth/analytics.readonly"]],
+  ])("stores nothing when Google does not grant %s", async (_missing, granted) => {
+    const kv = new MemoryKv();
+    const authorize = await startOAuth(kv);
+    const state = authorize.searchParams.get("state");
+    if (state === null) {
+      throw new Error("missing state");
+    }
+    vi.stubGlobal("fetch", () =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            access_token: "access-should-not-be-stored",
+            refresh_token: REFRESH,
+            id_token: jwt({ sub: "1001", email: "ada@example.com" }),
+            scope: granted.join(" "),
+            token_type: "Bearer",
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      ),
+    );
     const response = await worker.fetch(
       new Request(`${ORIGIN}/oauth/google/callback?code=auth-code-1&state=${state}`),
       envWithKv(kv),
     );
     expect(response.status).toBe(400);
-    expect(await response.text()).toContain("Reopen /connect and reconnect Google.");
+    const text = await response.text();
+    expect(text).toContain("Google did not share your Google account ID and email");
+    expect(text).toContain("Reopen /connect and reconnect Google.");
     expect([...kv.entries().keys()]).toEqual([]);
   });
 });
