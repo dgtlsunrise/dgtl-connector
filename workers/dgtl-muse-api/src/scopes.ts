@@ -3,7 +3,9 @@ import { json } from "./http";
 
 /**
  * Free Google scopes for Muse `/connect`.
- * Same strings as tip `CONSENT_A` in `src/google/scopes.ts`.
+ * Same strings as tip `CONSENT_A` in `src/google/scopes.ts` (production set).
+ * Does not request tagmanager.edit.containerversions: Muse has no container
+ * version route, and that scope is not verified for production traffic.
  * Never request adwords, content (Merchant), or business.manage.
  */
 export const SCOPE = {
@@ -30,10 +32,16 @@ export const CONSENT_A = [
   SCOPE.tagmanager,
   SCOPE.analyticsEdit,
   SCOPE.tagmanagerEditContainers,
-  SCOPE.tagmanagerEditContainerversions,
   SCOPE.tagmanagerPublish,
   SCOPE.webmastersWrite,
 ] as const;
+
+/**
+ * The only scopes the callback requires. Every other CONSENT_A scope is optional:
+ * a user may untick it on Google's consent screen, and the route that needs it
+ * refuses at call time with google_reconnect_required and missing_scopes.
+ */
+export const CONNECT_REQUIRED_SCOPES = [SCOPE.openid, SCOPE.email] as const;
 
 /** Scopes that must never be requested on Muse Free Connect. */
 export const FREE_GOOGLE_NEVER = [SCOPE.adwords, SCOPE.content, SCOPE.business] as const;
