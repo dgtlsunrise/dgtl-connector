@@ -19,6 +19,7 @@ export const SCOPE = {
 /**
  * Free Google (CONSENT_A) — one Desktop Connect with identity + GA4/GSC/GTM
  * read and manage. Never includes adwords, content (MC), or business.manage.
+ * Production set: only scopes Google has verified for this project.
  */
 export const CONSENT_A = [
   SCOPE.openid,
@@ -28,10 +29,26 @@ export const CONSENT_A = [
   SCOPE.tagmanager,
   SCOPE.analyticsEdit,
   SCOPE.tagmanagerEditContainers,
-  SCOPE.tagmanagerEditContainerversions,
   SCOPE.tagmanagerPublish,
   SCOPE.webmastersWrite,
 ] as const;
+
+/** Env flag that adds CONSENT_A_STAGING_EXTRA to Free Connect. Exactly "1" turns it on. */
+export const STAGING_SCOPES_ENV = "DGTL_GOOGLE_STAGING_SCOPES";
+
+/**
+ * Scopes under Google verification. Google asked that unverified scopes not reach
+ * production traffic, so Free Connect requests these only when
+ * DGTL_GOOGLE_STAGING_SCOPES=1 (staging within the production app).
+ * `tagmanager.edit.containerversions` is needed by workspaces.create_version
+ * (gtm_publish_container live).
+ */
+export const CONSENT_A_STAGING_EXTRA = [SCOPE.tagmanagerEditContainerversions] as const;
+
+/** Free Connect scope list: CONSENT_A, plus the staging extra when the flag is exactly "1". */
+export function freeConnectScopes(env: NodeJS.ProcessEnv = process.env): readonly string[] {
+  return env[STAGING_SCOPES_ENV] === "1" ? [...CONSENT_A, ...CONSENT_A_STAGING_EXTRA] : CONSENT_A;
+}
 
 /** Product + manage scopes on plugin.json `consentA` (identity stays in identityScopesSameConsent). */
 export const CONSENT_A_PRODUCT = [
@@ -40,7 +57,6 @@ export const CONSENT_A_PRODUCT = [
   SCOPE.tagmanager,
   SCOPE.analyticsEdit,
   SCOPE.tagmanagerEditContainers,
-  SCOPE.tagmanagerEditContainerversions,
   SCOPE.tagmanagerPublish,
   SCOPE.webmastersWrite,
 ] as const;
@@ -54,16 +70,18 @@ export const FREE_GOOGLE_NEVER = [SCOPE.adwords, SCOPE.content, SCOPE.business] 
  */
 export const CONSENT_W = [
   SCOPE.tagmanagerEditContainers,
-  SCOPE.tagmanagerEditContainerversions,
   SCOPE.tagmanagerPublish,
   SCOPE.webmastersWrite,
   SCOPE.analyticsEdit,
 ] as const;
 
-/** GTM edit/publish subset used by GoogleWriteHttp. */
+/**
+ * GTM edit/publish subset used by GoogleWriteHttp to pick the write token.
+ * Excludes tagmanager.edit.containerversions (staging only); gtm_publish_container
+ * checks it per call and refuses with CONSENT_MISSING when it is absent.
+ */
 export const CONSENT_W_GTM = [
   SCOPE.tagmanagerEditContainers,
-  SCOPE.tagmanagerEditContainerversions,
   SCOPE.tagmanagerPublish,
 ] as const;
 

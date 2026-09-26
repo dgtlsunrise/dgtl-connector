@@ -16,6 +16,9 @@ const HINT_CONSENT =
   "Use Free Google (`auth login` / GOOGLE_ACCESS_TOKEN with GTM write scopes) or a legacy GOOGLE_WRITE_ACCESS_TOKEN / google-oauth-write.json. Do not add adwords, content, or business.manage to Free Google.";
 
 const HOST = APIS.tagmanager;
+
+const MSG_VERSION_SCOPE_MISSING =
+  "Publishing needs a new container version, and this Google grant does not include https://www.googleapis.com/auth/tagmanager.edit.containerversions. Free Google Connect does not request that scope yet (Google verification is in progress). No version was created and nothing was published.";
 type Rec = Record<string, unknown>;
 
 /**
@@ -637,6 +640,18 @@ export async function gtmPublishContainer(ctx: AppContext, args: Rec): Promise<E
   }
 
   assertConfirmContainsPublicId(args.confirm_phrase, publicId);
+
+  // create_version needs tagmanager.edit.containerversions. Free Connect requests it only
+  // in staging until Google verifies it, so refuse before any Google call when the grant
+  // lists its scopes and lacks it. Nothing is created or published.
+  const writeTok = await ctx.authWrite.getAccessToken();
+  if (writeTok?.scopes?.length && !writeTok.scopes.includes(SCOPE.tagmanagerEditContainerversions)) {
+    return failEnvelope(tool, "CONSENT_MISSING", MSG_VERSION_SCOPE_MISSING, {
+      missing_scope: SCOPE.tagmanagerEditContainerversions,
+      api: HOST,
+      hint: "Run this tool with dry_run true to preview, or create and publish the version in the Tag Manager web UI.",
+    });
+  }
 
   const versionBody: Rec = {};
   if (versionName) versionBody.name = versionName;

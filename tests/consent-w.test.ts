@@ -32,7 +32,8 @@ describe("Consent W scaffold — writes need scopes + confirm, not DGTL_WRITES_E
 
   it("CONSENT_A includes Free Google manage scopes and never Pro/GBP/MC", () => {
     assert.ok(CONSENT_A.includes(SCOPE.tagmanagerEditContainers as (typeof CONSENT_A)[number]));
-    assert.ok(CONSENT_A.includes(SCOPE.tagmanagerEditContainerversions as (typeof CONSENT_A)[number]));
+    // Staging only until Google verifies it (DGTL_GOOGLE_STAGING_SCOPES=1).
+    assert.ok(!(CONSENT_A as readonly string[]).includes(SCOPE.tagmanagerEditContainerversions));
     assert.ok(CONSENT_A.includes(SCOPE.tagmanagerPublish as (typeof CONSENT_A)[number]));
     assert.ok(CONSENT_A.includes(SCOPE.webmastersWrite as (typeof CONSENT_A)[number]));
     assert.ok(CONSENT_A.includes(SCOPE.analyticsEdit as (typeof CONSENT_A)[number]));
@@ -57,12 +58,9 @@ describe("Consent W scaffold — writes need scopes + confirm, not DGTL_WRITES_E
 
   it("CONSENT_W is exported separately and includes GTM edit/publish", () => {
     assert.ok(CONSENT_W.includes(SCOPE.tagmanagerEditContainers));
-    assert.ok(CONSENT_W.includes(SCOPE.tagmanagerEditContainerversions));
+    assert.ok(!(CONSENT_W as readonly string[]).includes(SCOPE.tagmanagerEditContainerversions));
     assert.ok(CONSENT_W.includes(SCOPE.tagmanagerPublish));
-    assert.deepEqual(
-      [...CONSENT_W_GTM],
-      [SCOPE.tagmanagerEditContainers, SCOPE.tagmanagerEditContainerversions, SCOPE.tagmanagerPublish],
-    );
+    assert.deepEqual([...CONSENT_W_GTM], [SCOPE.tagmanagerEditContainers, SCOPE.tagmanagerPublish]);
     for (const s of CONSENT_W) {
       assert.ok((CONSENT_A as readonly string[]).includes(s), `CONSENT_W must sit on Free Google: ${s}`);
     }
@@ -78,10 +76,10 @@ describe("Consent W scaffold — writes need scopes + confirm, not DGTL_WRITES_E
     assert.deepEqual(gtmIntersection.sort(), [...CONSENT_W_GTM].sort());
     assert.ok(write.size > 0);
     assert.ok(gtmWrite.has(SCOPE.tagmanagerEditContainers));
-    assert.ok(gtmWrite.has(SCOPE.tagmanagerEditContainerversions));
+    assert.ok(!gtmWrite.has(SCOPE.tagmanagerEditContainerversions));
     assert.ok(gtmWrite.has(SCOPE.tagmanagerPublish));
     assert.ok(a.has(SCOPE.tagmanagerEditContainers));
-    assert.ok(a.has(SCOPE.tagmanagerEditContainerversions));
+    assert.ok(!a.has(SCOPE.tagmanagerEditContainerversions));
     assert.ok(a.has(SCOPE.tagmanagerPublish));
     assert.ok(a.has(SCOPE.webmastersWrite));
     assert.ok(a.has(SCOPE.analyticsEdit));

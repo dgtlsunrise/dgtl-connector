@@ -33,7 +33,6 @@ export const FREE_FULL_SCOPES = [
   SCOPE.tagmanager,
   SCOPE.analyticsEdit,
   SCOPE.tagmanagerEditContainers,
-  SCOPE.tagmanagerEditContainerversions,
   SCOPE.tagmanagerPublish,
   SCOPE.webmastersWrite,
 ].join(" ");
