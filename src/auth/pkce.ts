@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { CONSENT_A } from "../google/scopes.js";
+import { freeConnectScopes } from "../google/scopes.js";
 
 export type PkceChallenge = {
   verifier: string;
@@ -25,7 +25,7 @@ export function buildGoogleAuthUrl(opts: {
   u.searchParams.set("client_id", opts.clientId);
   u.searchParams.set("redirect_uri", opts.redirectUri);
   u.searchParams.set("response_type", "code");
-  u.searchParams.set("scope", (opts.scopes ?? CONSENT_A).join(" "));
+  u.searchParams.set("scope", (opts.scopes ?? freeConnectScopes()).join(" "));
   u.searchParams.set("code_challenge", opts.challenge);
   u.searchParams.set("code_challenge_method", "S256");
   u.searchParams.set("state", opts.state);

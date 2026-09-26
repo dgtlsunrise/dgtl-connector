@@ -82,6 +82,7 @@ async function main(argv: string[]): Promise<void> {
         clientId,
         pluginDataDir: ctx.pluginDataDir,
         fetchImpl: ctx.fetchImpl,
+        env: ctx.env,
       });
       return;
     }

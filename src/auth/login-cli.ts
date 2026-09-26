@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { buildGoogleAuthUrl, exchangeAuthorizationCode, generatePkce } from "./pkce.js";
 import { writeStore, STORE_FILE } from "./store.js";
-import { CONSENT_A, CONSENT_B, CONSENT_C_GOOGLE, CONSENT_MC } from "../google/scopes.js";
+import { CONSENT_B, CONSENT_C_GOOGLE, CONSENT_MC, freeConnectScopes } from "../google/scopes.js";
 import { postMetaExchange } from "../gateway/meta-exchange.js";
 import { postLicenseRedeem } from "../gateway/license-redeem.js";
 import {
@@ -129,12 +129,14 @@ export async function runAuthLogin(opts: {
   clientId: string;
   pluginDataDir: string;
   fetchImpl: typeof fetch;
+  /** Reads DGTL_GOOGLE_STAGING_SCOPES. Defaults to process.env. */
+  env?: NodeJS.ProcessEnv;
 }): Promise<number> {
   return runGooglePkceLogin({
     clientId: opts.clientId,
     pluginDataDir: opts.pluginDataDir,
     fetchImpl: opts.fetchImpl,
-    scopes: CONSENT_A,
+    scopes: freeConnectScopes(opts.env),
     storeFile: STORE_FILE.a,
     laneLabel: "Free Google",
     allowConsentASecretFallback: true,

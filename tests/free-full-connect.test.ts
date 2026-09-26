@@ -16,7 +16,9 @@ import {
   CONSENT_W,
   CONSENT_W_GTM,
   FREE_GOOGLE_NEVER,
+  freeConnectScopes,
   SCOPE,
+  STAGING_SCOPES_ENV,
 } from "../src/google/scopes.js";
 import { dispatch } from "../src/tools/dispatch.js";
 import { FREE_FULL_SCOPES, installNetworkGuard, makeCtx, ROOT, testEnv, TEST_TOKEN } from "./helpers.js";
@@ -29,7 +31,6 @@ const FREE_FULL = [
   "https://www.googleapis.com/auth/tagmanager.readonly",
   "https://www.googleapis.com/auth/analytics.edit",
   "https://www.googleapis.com/auth/tagmanager.edit.containers",
-  "https://www.googleapis.com/auth/tagmanager.edit.containerversions",
   "https://www.googleapis.com/auth/tagmanager.publish",
   "https://www.googleapis.com/auth/webmasters",
 ] as const;
@@ -77,7 +78,6 @@ describe("Free full Google Connect", () => {
       SCOPE.tagmanager,
       SCOPE.analyticsEdit,
       SCOPE.tagmanagerEditContainers,
-      SCOPE.tagmanagerEditContainerversions,
       SCOPE.tagmanagerPublish,
       SCOPE.webmastersWrite,
     ]);
@@ -144,7 +144,7 @@ describe("Free full Google Connect", () => {
       assert.deepEqual(granted, [...FREE_FULL]);
       assert.ok(granted.includes("https://www.googleapis.com/auth/analytics.edit"));
       assert.ok(granted.includes("https://www.googleapis.com/auth/tagmanager.edit.containers"));
-      assert.ok(granted.includes("https://www.googleapis.com/auth/tagmanager.edit.containerversions"));
+      assert.ok(!granted.includes("https://www.googleapis.com/auth/tagmanager.edit.containerversions"));
       assert.ok(granted.includes("https://www.googleapis.com/auth/tagmanager.publish"));
       assert.ok(granted.includes("https://www.googleapis.com/auth/webmasters"));
       assert.ok(!granted.includes("https://www.googleapis.com/auth/adwords"));
@@ -339,5 +339,105 @@ describe("Free full Google Connect", () => {
     for (const banned of FREE_GOOGLE_NEVER) {
       assert.ok(!plugin.extensions["com.dgtlsunrise"].consentA.includes(banned), banned);
     }
+  });
+});
+
+describe("tagmanager.edit.containerversions is staging-only", () => {
+  let restore: () => void;
+  before(() => {
+    restore = installNetworkGuard();
+  });
+  after(() => restore());
+
+  const CV = SCOPE.tagmanagerEditContainerversions;
+  const PUBLISH_ARGS = {
+    account_id: "444444",
+    container_id: "555555",
+    workspace_id: "6",
+  };
+
+  it("default Free Connect URL omits it; DGTL_GOOGLE_STAGING_SCOPES=1 adds exactly it", () => {
+    assert.equal(STAGING_SCOPES_ENV, "DGTL_GOOGLE_STAGING_SCOPES");
+    for (const env of [{}, { DGTL_GOOGLE_STAGING_SCOPES: "0" }, { DGTL_GOOGLE_STAGING_SCOPES: "true" }]) {
+      assert.deepEqual([...freeConnectScopes(env)], [...FREE_FULL], JSON.stringify(env));
+    }
+    const staged = freeConnectScopes({ DGTL_GOOGLE_STAGING_SCOPES: "1" });
+    assert.deepEqual([...staged], [...FREE_FULL, CV]);
+    for (const banned of FREE_GOOGLE_NEVER) {
+      assert.ok(!staged.includes(banned), banned);
+    }
+  });
+
+  it("auth login with DGTL_GOOGLE_STAGING_SCOPES=1 prints a URL that requests it", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "dgtl-staged-url-"));
+    const chunks: string[] = [];
+    const origWrite = process.stderr.write.bind(process.stderr);
+    process.stderr.write = ((chunk: string | Uint8Array) => {
+      chunks.push(typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8"));
+      return true;
+    }) as typeof process.stderr.write;
+    try {
+      const login = runAuthLogin({
+        clientId: "example-public-client-id.apps.googleusercontent.com",
+        pluginDataDir: dir,
+        env: { DGTL_GOOGLE_STAGING_SCOPES: "1" },
+        fetchImpl: (async () => {
+          throw new Error("NETWORK_FORBIDDEN");
+        }) as typeof fetch,
+      });
+      const parsed = new URL(await waitForPrintedAuthUrl(chunks));
+      const granted = parsed.searchParams.get("scope")?.split(/\s+/) ?? [];
+      const redirectUri = parsed.searchParams.get("redirect_uri");
+      assert.ok(redirectUri);
+      const deny = new URL(redirectUri);
+      deny.searchParams.set("error", "access_denied");
+      deny.searchParams.set("state", parsed.searchParams.get("state") ?? "");
+      assert.equal(await loopbackGet(deny.toString()), 200);
+      assert.equal(await login, 1);
+      assert.deepEqual(granted, [...FREE_FULL, CV]);
+    } finally {
+      process.stderr.write = origWrite;
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("gtm_publish_container dry run still works on a production grant without it", async () => {
+    const ctx = makeCtx({}, testEnv({ GOOGLE_ACCESS_TOKEN: TEST_TOKEN, GOOGLE_GRANTED_SCOPES: FREE_FULL_SCOPES }));
+    const env = await dispatch(ctx, "gtm_publish_container", { ...PUBLISH_ARGS, dry_run: true });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    assert.equal((env.data as { dry_run?: boolean }).dry_run, true);
+    assert.ok(!ctx.calls.some((c) => c.method === "POST"));
+  });
+
+  it("live gtm_publish_container on a grant without it returns CONSENT_MISSING and posts nothing", async () => {
+    const ctx = makeCtx({}, testEnv({ GOOGLE_ACCESS_TOKEN: TEST_TOKEN, GOOGLE_GRANTED_SCOPES: FREE_FULL_SCOPES }));
+    const env = await dispatch(ctx, "gtm_publish_container", {
+      ...PUBLISH_ARGS,
+      dry_run: false,
+      confirm_phrase: "I confirm publish for GTM-XXXX000",
+    });
+    assert.equal(env.ok, false, JSON.stringify(env));
+    assert.equal(env.error_code, "CONSENT_MISSING");
+    assert.match(env.message ?? "", /tagmanager\.edit\.containerversions/);
+    assert.match(env.message ?? "", /No version was created and nothing was published/);
+    assert.equal((env as { missing_scope?: string }).missing_scope, CV);
+    assert.ok(!ctx.calls.some((c) => c.path.includes(":create_version")));
+    assert.ok(!ctx.calls.some((c) => c.path.includes(":publish")));
+  });
+
+  it("live gtm_publish_container on a staged grant creates the version then publishes", async () => {
+    const ctx = makeCtx(
+      {},
+      testEnv({ GOOGLE_ACCESS_TOKEN: TEST_TOKEN, GOOGLE_GRANTED_SCOPES: `${FREE_FULL_SCOPES} ${CV}` }),
+    );
+    const env = await dispatch(ctx, "gtm_publish_container", {
+      ...PUBLISH_ARGS,
+      dry_run: false,
+      confirm_phrase: "I confirm publish for GTM-XXXX000",
+      version_name: "Staged publish",
+    });
+    assert.equal(env.ok, true, JSON.stringify(env));
+    assert.ok(ctx.calls.some((c) => c.path.includes(":create_version")));
+    assert.ok(ctx.calls.some((c) => c.path.includes(":publish")));
   });
 });
