@@ -21,16 +21,22 @@ import {
  */
 
 const PAGE_LIST_SCOPES = ["pages_show_list", "pages_read_engagement"] as const;
+const BUSINESS_MANAGEMENT = "business_management";
+/** Permissions a stamp denial may name. Pages scopes stay first. */
+const RECONNECT_SCOPES = [...PAGE_LIST_SCOPES, BUSINESS_MANAGEMENT] as const;
 const PAGE_AFTER = /^[A-Za-z0-9_\-=]{1,512}$/;
 
 /**
- * Reconnect hint naming the missing Pages permission(s).
+ * Reconnect hint naming the missing permission(s).
  * One name uses "grant it"; two or more use "grant them".
+ * business_management alone calls out Business Manager Pages (/me/accounts).
  */
 export function pagesListReconnectHint(missing: readonly string[]): string {
+  const onlyBm = missing.length === 1 && missing[0] === BUSINESS_MANAGEMENT;
+  const lead = onlyBm ? "Listing Business Manager Pages" : "Listing your Pages";
   const names = missing.length === 1 ? missing[0] : missing.join(" and ");
   const pronoun = missing.length === 1 ? "it" : "them";
-  return `Listing your Pages needs ${names}. Reconnect at https://stamp.dgtlsunrise.com/meta/login, grant ${pronoun}, then run dgtl-connector-mcp auth login-meta --code <code>.`;
+  return `${lead} needs ${names}. Reconnect at https://stamp.dgtlsunrise.com/meta/login, grant ${pronoun}, then run dgtl-connector-mcp auth login-meta --code <code>.`;
 }
 
 /**
@@ -143,12 +149,31 @@ function withPagesReconnectHint(env: Envelope): Envelope {
     env.error_code === "META_SCOPE_MISSING" ||
     env.error_code === "PERMISSION_DENIED" ||
     blob.includes("pages_show_list") ||
-    blob.includes("pages_read_engagement");
+    blob.includes("pages_read_engagement") ||
+    blob.includes(BUSINESS_MANAGEMENT);
   if (!permission) return env;
-  const named = PAGE_LIST_SCOPES.filter((name) => blob.includes(name));
-  // One named permission stays specific. Both, or neither, name both so the reconnect steps are present.
-  env.hint = pagesListReconnectHint(named.length === 1 ? named : [...PAGE_LIST_SCOPES]);
+  const named = RECONNECT_SCOPES.filter((name) => blob.includes(name));
+  // No named permission: keep the two Pages permissions (unspecified denial).
+  // Named permissions stay specific, including business_management alone.
+  env.hint = pagesListReconnectHint(named.length === 0 ? [...PAGE_LIST_SCOPES] : named);
   return env;
+}
+
+/** True only when the stamp body is an empty page array, or `{ data: [] }`. */
+function stampPageDataEmpty(data: unknown): boolean {
+  if (Array.isArray(data)) return data.length === 0;
+  const root = asRecord(data);
+  if (!root || !Array.isArray(root.data)) return false;
+  return root.data.length === 0;
+}
+
+function scopesKnown(scopes: string[] | undefined | null): scopes is string[] {
+  return Array.isArray(scopes) && scopes.length > 0;
+}
+
+function hasScope(scopes: string[], name: string): boolean {
+  const want = name.toLowerCase();
+  return scopes.some((s) => s.trim().toLowerCase() === want);
 }
 
 function requireMetaLicense(ctx: AppContext, tool: string): Envelope | null {
@@ -265,6 +290,10 @@ export async function metaDisabled(
  * Read-only Pages list. Pro-gated like other Meta reads. Not a mutate:
  * no preview/confirm and not affected by DGTL_META_MUTATE_ENABLED.
  * Known scopes missing pages_show_list or pages_read_engagement fail before any stamp HTTP.
+ * Known scopes that lack business_management still hop (BM Pages may not apply).
+ * An empty data array then returns META_SCOPE_MISSING naming business_management.
+ * Unknown scopes, or business_management granted, keep an empty list as success.
+ * Other Meta reads do not require business_management.
  */
 export async function metaListPages(ctx: AppContext, args: Record<string, unknown>): Promise<Envelope> {
   const tool = "meta_list_pages";
@@ -282,6 +311,9 @@ export async function metaListPages(ctx: AppContext, args: Record<string, unknow
       hint: pagesListReconnectHint(missingPages),
     });
   }
+  // Do not hard-fail before the hop: Business Manager Pages may or may not apply.
+  const knownScopes = tok?.accessToken && scopesKnown(tok.scopes) ? tok.scopes : null;
+  const lacksBusinessManagement = knownScopes !== null && !hasScope(knownScopes, BUSINESS_MANAGEMENT);
 
   const hopArgs: Record<string, unknown> = {};
   if (typeof args.limit === "number") hopArgs.limit = args.limit;
@@ -289,8 +321,16 @@ export async function metaListPages(ctx: AppContext, args: Record<string, unknow
 
   const env = await metaDisabled(ctx, tool, hopArgs);
   if (!env.ok) return withPagesReconnectHint(env);
+  const raw = env.data;
   env.data = sanitizeMetaListPagesData(env.data);
   if (env.page) env.page = dropTokenFields(env.page) as Envelope["page"];
+  if (lacksBusinessManagement && stampPageDataEmpty(raw)) {
+    return failEnvelope(tool, "META_SCOPE_MISSING", MSG.META_SCOPE_MISSING, {
+      api: "meta",
+      missing_scope: BUSINESS_MANAGEMENT,
+      hint: pagesListReconnectHint([BUSINESS_MANAGEMENT]),
+    });
+  }
   return env;
 }
 

@@ -1,6 +1,8 @@
 /**
  * meta_list_pages — Pro-gated read hop. pages_show_list and pages_read_engagement
- * when scopes are known. No Meta network. Stamp is a local fetch mock.
+ * when scopes are known. business_management is not a pre-hop hard fail; an empty
+ * data array asks for it when scopes are known and it is missing. No Meta network.
+ * Stamp is a local fetch mock.
  */
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -325,6 +327,14 @@ describe("meta_list_pages", () => {
         },
         missing: ["pages_show_list", "pages_read_engagement"],
       },
+      {
+        body: {
+          ok: false,
+          error_code: "META_SCOPE_MISSING",
+          message: "(#200) Requires business_management permission",
+        },
+        missing: ["business_management"],
+      },
     ];
     for (const c of cases) {
       const { fetchImpl, captures } = mockWorker(c.body);
@@ -441,5 +451,91 @@ describe("meta_list_pages", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it("Pages scopes without business_management still POST; empty data names that gap", async () => {
+    const emptyBody = {
+      ok: true,
+      tool: "meta_list_pages",
+      data: {
+        access_token: "EMPTY_TOKEN_SHOULD_DROP",
+        page_access_token: "ALSO_DROP",
+        metadata_read: 0,
+        data: [],
+      },
+      page: { truncated: false, row_count: 0, next_page_token: "USERTOKEN" },
+    };
+
+    const missing = mockWorker(emptyBody);
+    const missingCtx = createAppContext({
+      pluginRoot: ROOT,
+      env: licensedEnv({ META_GRANTED_SCOPES: PAGES_SCOPES }),
+      fetchImpl: missing.fetchImpl,
+    });
+    const gap = await dispatch(missingCtx, "meta_list_pages", { limit: 25 });
+    assert.equal(gap.ok, false);
+    assert.equal(gap.error_code, "META_SCOPE_MISSING");
+    assert.equal(gap.api, "meta");
+    assert.equal(gap.missing_scope, "business_management");
+    assert.equal(gap.hint, pagesListReconnectHint(["business_management"]));
+    assert.match(gap.hint ?? "", /Business Manager Pages/);
+    assert.match(gap.hint ?? "", /business_management/);
+    assert.match(gap.hint ?? "", /stamp\.dgtlsunrise\.com\/meta\/login/);
+    assert.match(gap.hint ?? "", /grant it/);
+    const gapBlob = JSON.stringify(gap);
+    assert.ok(!gapBlob.toLowerCase().includes("token"));
+    assert.ok(!gapBlob.includes("EMPTY_TOKEN"));
+    assert.ok(!gapBlob.includes("USERTOKEN"));
+    const hop = missing.captures.find((c) => c.url.includes("/v1/meta/meta_list_pages"));
+    assert.ok(hop);
+    assert.equal(hop.method, "POST");
+    const hopBody = hop.body as { params?: { limit?: number } };
+    assert.equal(hopBody.params?.limit, 25);
+
+    const granted = mockWorker(emptyBody);
+    const grantedCtx = createAppContext({
+      pluginRoot: ROOT,
+      env: licensedEnv({
+        META_GRANTED_SCOPES: `${PAGES_SCOPES},business_management`,
+      }),
+      fetchImpl: granted.fetchImpl,
+    });
+    const emptyOk = await dispatch(grantedCtx, "meta_list_pages", {});
+    assert.equal(emptyOk.ok, true, emptyOk.hint ?? emptyOk.message);
+    assert.equal(emptyOk.error_code, undefined);
+    assert.deepEqual(emptyOk.data, { data: [], metadata_read: 0 });
+    const okBlob = JSON.stringify(emptyOk);
+    assert.ok(!okBlob.toLowerCase().includes("token"));
+    assert.ok(!okBlob.includes("EMPTY_TOKEN"));
+    assert.ok(granted.captures.some((c) => c.url.includes("/v1/meta/meta_list_pages")));
+
+    const unknown = mockWorker(emptyBody);
+    const unknownCtx = createAppContext({
+      pluginRoot: ROOT,
+      env: licensedEnv({ META_GRANTED_SCOPES: "" }),
+      fetchImpl: unknown.fetchImpl,
+    });
+    const unknownEmpty = await dispatch(unknownCtx, "meta_list_pages", {});
+    assert.equal(unknownEmpty.ok, true, unknownEmpty.hint ?? unknownEmpty.message);
+    assert.deepEqual(unknownEmpty.data, { data: [], metadata_read: 0 });
+    assert.ok(!JSON.stringify(unknownEmpty).toLowerCase().includes("token"));
+    assert.ok(unknown.captures.some((c) => c.url.includes("/v1/meta/meta_list_pages")));
+  });
+
+  it("meta_list_ad_accounts does not require business_management", async () => {
+    const { fetchImpl, captures } = mockWorker({
+      ok: true,
+      tool: "meta_list_ad_accounts",
+      data: [{ id: "act_1", name: "A" }],
+    });
+    const ctx = createAppContext({
+      pluginRoot: ROOT,
+      env: licensedEnv({ META_GRANTED_SCOPES: PAGES_SCOPES }),
+      fetchImpl,
+    });
+    const env = await dispatch(ctx, "meta_list_ad_accounts", {});
+    assert.equal(env.ok, true, env.hint ?? env.message);
+    assert.notEqual(env.error_code, "META_SCOPE_MISSING");
+    assert.ok(captures.some((c) => c.url.includes("/v1/meta/meta_list_ad_accounts")));
   });
 });

@@ -283,6 +283,14 @@ const META_LOGIN_PERM_ALLOWLIST = [
   "ads_management",
   "pages_show_list",
   "pages_read_engagement",
+  "business_management",
+] as const;
+
+/** Named in the meta_list_pages gap note, in allowlist order. */
+const META_LIST_PAGES_NOTE_SCOPES = [
+  "pages_show_list",
+  "pages_read_engagement",
+  "business_management",
 ] as const;
 
 function knownMetaLoginPerms(scopes: string[]): string[] {
@@ -293,10 +301,13 @@ function knownMetaLoginPerms(scopes: string[]): string[] {
 /**
  * CLI line after a successful Meta exchange. Never includes the access token.
  * read + manage when ads_management was granted; read-only otherwise when scopes
- * are known. "+ Pages" only when both Pages permissions are granted. If either
- * pages_show_list or pages_read_engagement is missing, the note names that gap.
+ * are known. "+ Pages" only when both Pages permissions and business_management
+ * are granted. If pages_show_list, pages_read_engagement, or business_management
+ * is missing, the note names that gap (Business Manager Pages need
+ * business_management for /me/accounts).
  * Unknown (older stamp omitted granted_scopes) does not claim either.
- * Only ads_read, ads_management, pages_show_list, and pages_read_engagement are named.
+ * Only ads_read, ads_management, pages_show_list, pages_read_engagement, and
+ * business_management are named.
  */
 export function formatMetaLoginSaved(scopes: string[] | undefined): string {
   const saved =
@@ -310,8 +321,8 @@ export function formatMetaLoginSaved(scopes: string[] | undefined): string {
   const known = knownMetaLoginPerms(scopes);
   const has = (name: (typeof META_LOGIN_PERM_ALLOWLIST)[number]) => known.includes(name);
   if (has("ads_management")) {
-    const missingPages = (["pages_show_list", "pages_read_engagement"] as const).filter((name) => !has(name));
-    if (missingPages.length === 0) {
+    const missingNote = META_LIST_PAGES_NOTE_SCOPES.filter((name) => !has(name));
+    if (missingNote.length === 0) {
       return (
         saved +
         `Access: read + manage + Pages (${known.join(", ")}). Write tools are available and stay preview/confirm-gated.\n`
@@ -320,8 +331,8 @@ export function formatMetaLoginSaved(scopes: string[] | undefined): string {
     const detail = has("ads_read")
       ? "read + manage (ads_read and ads_management)"
       : "read + manage (ads_management)";
-    const needs = missingPages.length === 1 ? missingPages[0] : missingPages.join(" and ");
-    const pronoun = missingPages.length === 1 ? "it" : "them";
+    const needs = missingNote.length === 1 ? missingNote[0] : missingNote.join(" and ");
+    const pronoun = missingNote.length === 1 ? "it" : "them";
     return (
       saved +
       `Access: ${detail}. Write tools are available and stay preview/confirm-gated. ` +
@@ -573,8 +584,8 @@ Consent B (GBP): set GOOGLE_OAUTH_GBP_CLIENT_ID (separate Desktop client) then
 Meta: prefer host-injected META_ACCESS_TOKEN (optional META_GRANTED_SCOPES).
   Otherwise redeem a hosted Login one-time grant code: auth login-meta --code
   <code> → POST /v1/meta/exchange. The stamp /meta/login page requests ads_read,
-  ads_management, pages_show_list, and pages_read_engagement. Stored scopes are
-  the exchange granted_scopes. Older stamps that omit granted_scopes leave scopes
+  ads_management, pages_show_list, pages_read_engagement, and business_management.
+  Stored scopes are the exchange granted_scopes. Older stamps that omit granted_scopes leave scopes
   unknown (write tools let the stamp decide).
   Exchange returns the long-lived token to the plugin; Worker stores nothing.
   Requires DGTL_GATEWAY_URL + license with meta. Support never collects Meta tokens.

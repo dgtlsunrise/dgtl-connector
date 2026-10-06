@@ -37,6 +37,12 @@ describe("PR-10 auth login-ads / login-meta --code", () => {
     assert.ok(h.includes("Support never collects Meta tokens"));
     assert.ok(h.includes("pages_show_list"));
     assert.ok(h.includes("pages_read_engagement"));
+    assert.ok(h.includes("business_management"));
+    assert.ok(
+      h.includes(
+        "ads_read,\n  ads_management, pages_show_list, pages_read_engagement, and business_management.",
+      ),
+    );
     assert.ok(h.includes("doctor"));
   });
 
@@ -408,7 +414,11 @@ describe("PR-10 auth login-ads / login-meta --code", () => {
       assert.ok(stored?.scopes?.includes("ads_management"));
       assert.ok(errOut.includes("read + manage"));
       assert.ok(errOut.includes("preview/confirm-gated"));
-      assert.ok(errOut.includes("meta_list_pages needs pages_show_list and pages_read_engagement"));
+      assert.ok(
+        errOut.includes(
+          "meta_list_pages needs pages_show_list and pages_read_engagement and business_management",
+        ),
+      );
       assert.ok(errOut.includes("reconnect to grant them"));
       assert.ok(!errOut.includes("+ Pages"));
       assert.ok(!errOut.includes(token));
@@ -572,9 +582,9 @@ describe("PR-10 auth login-ads / login-meta --code", () => {
     }
   });
 
-  it("formatMetaLoginSaved names only the four known permissions", () => {
+  it("formatMetaLoginSaved names the five known permissions", () => {
     const saved = "Meta authorization saved to PLUGIN_DATA/meta-oauth.json (token not logged). Worker stores nothing.\n";
-    const allFour = formatMetaLoginSaved([
+    const allFive = formatMetaLoginSaved([
       "ads_read",
       "ads_management",
       "pages_show_list",
@@ -583,18 +593,18 @@ describe("PR-10 auth login-ads / login-meta --code", () => {
       "EAABshould-not-print",
     ]);
     assert.equal(
-      allFour,
+      allFive,
       saved +
-        "Access: read + manage + Pages (ads_read, ads_management, pages_show_list, pages_read_engagement). Write tools are available and stay preview/confirm-gated.\n",
+        "Access: read + manage + Pages (ads_read, ads_management, pages_show_list, pages_read_engagement, business_management). Write tools are available and stay preview/confirm-gated.\n",
     );
-    assert.ok(!allFour.includes("business_management"));
-    assert.ok(!allFour.includes("EAAB"));
+    assert.ok(allFive.includes("business_management"));
+    assert.ok(!allFive.includes("EAAB"));
 
     const manageOnly = formatMetaLoginSaved(["ads_read", "ads_management"]);
     assert.equal(
       manageOnly,
       saved +
-        "Access: read + manage (ads_read and ads_management). Write tools are available and stay preview/confirm-gated. meta_list_pages needs pages_show_list and pages_read_engagement; reconnect to grant them.\n",
+        "Access: read + manage (ads_read and ads_management). Write tools are available and stay preview/confirm-gated. meta_list_pages needs pages_show_list and pages_read_engagement and business_management; reconnect to grant them.\n",
     );
     assert.ok(!manageOnly.includes("+ Pages"));
 
@@ -602,7 +612,7 @@ describe("PR-10 auth login-ads / login-meta --code", () => {
     assert.equal(
       missingShow,
       saved +
-        "Access: read + manage (ads_management). Write tools are available and stay preview/confirm-gated. meta_list_pages needs pages_show_list; reconnect to grant it.\n",
+        "Access: read + manage (ads_management). Write tools are available and stay preview/confirm-gated. meta_list_pages needs pages_show_list and business_management; reconnect to grant them.\n",
     );
     assert.ok(!missingShow.includes("+ Pages"));
 
@@ -610,19 +620,34 @@ describe("PR-10 auth login-ads / login-meta --code", () => {
     assert.equal(
       missingEngagement,
       saved +
-        "Access: read + manage (ads_read and ads_management). Write tools are available and stay preview/confirm-gated. meta_list_pages needs pages_read_engagement; reconnect to grant it.\n",
+        "Access: read + manage (ads_read and ads_management). Write tools are available and stay preview/confirm-gated. meta_list_pages needs pages_read_engagement and business_management; reconnect to grant them.\n",
     );
     assert.ok(!missingEngagement.includes("+ Pages"));
 
-    const bothPagesNoRead = formatMetaLoginSaved([
+    const missingBmOnly = formatMetaLoginSaved([
+      "ads_read",
       "ads_management",
       "pages_show_list",
       "pages_read_engagement",
     ]);
     assert.equal(
+      missingBmOnly,
+      saved +
+        "Access: read + manage (ads_read and ads_management). Write tools are available and stay preview/confirm-gated. meta_list_pages needs business_management; reconnect to grant it.\n",
+    );
+    assert.ok(!missingBmOnly.includes("+ Pages"));
+    assert.ok(!missingBmOnly.includes("pages_show_list"));
+
+    const bothPagesNoRead = formatMetaLoginSaved([
+      "ads_management",
+      "pages_show_list",
+      "pages_read_engagement",
+      "business_management",
+    ]);
+    assert.equal(
       bothPagesNoRead,
       saved +
-        "Access: read + manage + Pages (ads_management, pages_show_list, pages_read_engagement). Write tools are available and stay preview/confirm-gated.\n",
+        "Access: read + manage + Pages (ads_management, pages_show_list, pages_read_engagement, business_management). Write tools are available and stay preview/confirm-gated.\n",
     );
 
     const readOnly = formatMetaLoginSaved(["ads_read"]);
@@ -631,6 +656,8 @@ describe("PR-10 auth login-ads / login-meta --code", () => {
     assert.ok(readOnly.includes("auth login-meta"));
     assert.ok(readOnly.includes("/meta/login"));
     assert.ok(readOnly.includes("ads_management"));
+    assert.ok(!readOnly.includes("business_management"));
+    assert.ok(!readOnly.includes("meta_list_pages needs"));
 
     const readOnlyPages = formatMetaLoginSaved([
       "pages_read_engagement",
@@ -644,7 +671,24 @@ describe("PR-10 auth login-ads / login-meta --code", () => {
       ),
     );
     assert.ok(!readOnlyPages.includes("catalog_management"));
+    assert.ok(!readOnlyPages.includes("business_management"));
+    assert.ok(!readOnlyPages.includes("meta_list_pages needs"));
     assert.ok(readOnlyPages.includes("Write tools need ads_management."));
+
+    const readOnlyWithBm = formatMetaLoginSaved([
+      "business_management",
+      "pages_read_engagement",
+      "ads_read",
+      "pages_show_list",
+    ]);
+    assert.ok(
+      readOnlyWithBm.includes(
+        "Access: read-only (ads_read, pages_show_list, pages_read_engagement, business_management).",
+      ),
+    );
+    assert.ok(readOnlyWithBm.includes("Write tools need ads_management."));
+    assert.ok(!readOnlyWithBm.includes("+ Pages"));
+    assert.ok(!readOnlyWithBm.includes("meta_list_pages needs"));
 
     const unknown = formatMetaLoginSaved(undefined);
     assert.ok(unknown.includes("not reported"));
