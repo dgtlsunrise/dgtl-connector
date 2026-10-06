@@ -656,6 +656,7 @@ Consent A kernel stays **26**. These are Polar-gated; local describe tools need 
 | `gads_create_display_campaign` | Display foundation: budget + DISPLAY campaign + DISPLAY_STANDARD ad group. Campaign defaults **PAUSED**; child ad group **ENABLED**. Add RDA with `gads_create_responsive_display_ad`. |
 | `gads_create_responsive_search_ad` / `gads_set_*` / `gads_update_campaign_budget` | Creates default PAUSED; status/budget updates are confirm-gated. ENABLED only with explicit `status` + confirm. |
 | `meta_list_ad_accounts` | Use first for `ad_account_id`. |
+| `meta_list_pages` | Facebook Pages you manage (id, name, optional category, non-negative `followers_count` / `fan_count`), `paging.after`, and `metadata_read`. Read-only. When stored scopes are known and lack `pages_show_list` or `pages_read_engagement`, returns `META_SCOPE_MISSING` naming the missing permission(s) with no hop. Unknown scopes still hop. Other Meta reads do not require Pages scopes. |
 | `meta_describe_insights_schema` | Local levels / date_presets / breakdowns / fields — call before `meta_insights`. |
 | `meta_insights` | `date_preset` or dates; optional `breakdowns` / `fields` / `time_increment`; cite `data.cited`. ads_read only. |
 | `meta_list_*` / `meta_get_creative` | Read lists + creative metadata (URLs, not bytes). |

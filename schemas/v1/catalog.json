@@ -460,6 +460,11 @@
       "fail": "LICENSE_REQUIRED"
     },
     {
+      "name": "meta_list_pages",
+      "group": "meta",
+      "fail": "LICENSE_REQUIRED"
+    },
+    {
       "name": "meta_describe_insights_schema",
       "group": "meta",
       "fail": "LICENSE_REQUIRED"

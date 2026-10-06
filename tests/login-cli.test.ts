@@ -35,6 +35,8 @@ describe("PR-10 auth login-ads / login-meta --code", () => {
     assert.ok(h.includes("Do not add adwords") || h.includes("adwords"));
     assert.ok(h.includes("login-mc"));
     assert.ok(h.includes("Support never collects Meta tokens"));
+    assert.ok(h.includes("pages_show_list"));
+    assert.ok(h.includes("pages_read_engagement"));
     assert.ok(h.includes("doctor"));
   });
 
@@ -406,8 +408,11 @@ describe("PR-10 auth login-ads / login-meta --code", () => {
       assert.ok(stored?.scopes?.includes("ads_management"));
       assert.ok(errOut.includes("read + manage"));
       assert.ok(errOut.includes("preview/confirm-gated"));
+      assert.ok(errOut.includes("meta_list_pages needs pages_show_list and pages_read_engagement"));
+      assert.ok(errOut.includes("reconnect to grant them"));
+      assert.ok(!errOut.includes("+ Pages"));
       assert.ok(!errOut.includes(token));
-      assert.ok(!errOut.includes("pages_show_list"));
+      assert.ok(!errOut.includes("not a scope"));
 
       const ctx = toolCtx(dir, jwt, gatewayFetch(counts));
       const envOut = await dispatch(ctx, "meta_create_campaign", {
@@ -565,6 +570,88 @@ describe("PR-10 auth login-ads / login-meta --code", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it("formatMetaLoginSaved names only the four known permissions", () => {
+    const saved = "Meta authorization saved to PLUGIN_DATA/meta-oauth.json (token not logged). Worker stores nothing.\n";
+    const allFour = formatMetaLoginSaved([
+      "ads_read",
+      "ads_management",
+      "pages_show_list",
+      "pages_read_engagement",
+      "business_management",
+      "EAABshould-not-print",
+    ]);
+    assert.equal(
+      allFour,
+      saved +
+        "Access: read + manage + Pages (ads_read, ads_management, pages_show_list, pages_read_engagement). Write tools are available and stay preview/confirm-gated.\n",
+    );
+    assert.ok(!allFour.includes("business_management"));
+    assert.ok(!allFour.includes("EAAB"));
+
+    const manageOnly = formatMetaLoginSaved(["ads_read", "ads_management"]);
+    assert.equal(
+      manageOnly,
+      saved +
+        "Access: read + manage (ads_read and ads_management). Write tools are available and stay preview/confirm-gated. meta_list_pages needs pages_show_list and pages_read_engagement; reconnect to grant them.\n",
+    );
+    assert.ok(!manageOnly.includes("+ Pages"));
+
+    const missingShow = formatMetaLoginSaved(["ads_management", "pages_read_engagement"]);
+    assert.equal(
+      missingShow,
+      saved +
+        "Access: read + manage (ads_management). Write tools are available and stay preview/confirm-gated. meta_list_pages needs pages_show_list; reconnect to grant it.\n",
+    );
+    assert.ok(!missingShow.includes("+ Pages"));
+
+    const missingEngagement = formatMetaLoginSaved(["ads_read", "ads_management", "pages_show_list"]);
+    assert.equal(
+      missingEngagement,
+      saved +
+        "Access: read + manage (ads_read and ads_management). Write tools are available and stay preview/confirm-gated. meta_list_pages needs pages_read_engagement; reconnect to grant it.\n",
+    );
+    assert.ok(!missingEngagement.includes("+ Pages"));
+
+    const bothPagesNoRead = formatMetaLoginSaved([
+      "ads_management",
+      "pages_show_list",
+      "pages_read_engagement",
+    ]);
+    assert.equal(
+      bothPagesNoRead,
+      saved +
+        "Access: read + manage + Pages (ads_management, pages_show_list, pages_read_engagement). Write tools are available and stay preview/confirm-gated.\n",
+    );
+
+    const readOnly = formatMetaLoginSaved(["ads_read"]);
+    assert.match(readOnly, /^Meta authorization saved/);
+    assert.ok(readOnly.includes("Access: read-only (ads_read)."));
+    assert.ok(readOnly.includes("auth login-meta"));
+    assert.ok(readOnly.includes("/meta/login"));
+    assert.ok(readOnly.includes("ads_management"));
+
+    const readOnlyPages = formatMetaLoginSaved([
+      "pages_read_engagement",
+      "ads_read",
+      "pages_show_list",
+      "catalog_management",
+    ]);
+    assert.ok(
+      readOnlyPages.includes(
+        "Access: read-only (ads_read, pages_show_list, pages_read_engagement).",
+      ),
+    );
+    assert.ok(!readOnlyPages.includes("catalog_management"));
+    assert.ok(readOnlyPages.includes("Write tools need ads_management."));
+
+    const unknown = formatMetaLoginSaved(undefined);
+    assert.ok(unknown.includes("not reported"));
+    assert.ok(!unknown.includes("Access:"));
+    assert.ok(!unknown.includes("read-only"));
+    assert.equal(formatMetaLoginSaved([]), unknown);
+    assert.ok(!formatMetaLoginSaved(["ads_read", "raw-token-value"]).includes("raw-token-value"));
   });
 
   it("gateway Worker stub mapping: 501 → GATEWAY_UNAVAILABLE (fail closed)", async () => {

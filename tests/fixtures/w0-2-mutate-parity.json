@@ -67,6 +67,7 @@
   ],
   "meta_read_hop": [
     "meta_list_ad_accounts",
+    "meta_list_pages",
     "meta_list_campaigns",
     "meta_list_adsets",
     "meta_list_ads",

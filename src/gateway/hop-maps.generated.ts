@@ -36,6 +36,7 @@ export const GATEWAY_PARAM_ALLOW_KEYS = [
   "date_range",
   "where",
   "limit",
+  "after",
   "campaign_id",
   "status",
   "campaign_budget_id",
@@ -518,6 +519,13 @@ export const HOP_TOOLS = [
     "kind": "read_hop",
     "method": "GET",
     "path_template": "/{GRAPH_API_VERSION}/me/adaccounts"
+  },
+  {
+    "name": "meta_list_pages",
+    "family": "meta",
+    "kind": "read_hop",
+    "method": "GET",
+    "path_template": "/{GRAPH_API_VERSION}/me/accounts"
   },
   {
     "name": "meta_list_campaigns",

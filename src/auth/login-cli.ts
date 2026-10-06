@@ -277,10 +277,26 @@ export function parseLoginMetaCode(argv: string[]): string | null {
   return null;
 }
 
+/** Printed permission names only. Never the token or any other scope string. */
+const META_LOGIN_PERM_ALLOWLIST = [
+  "ads_read",
+  "ads_management",
+  "pages_show_list",
+  "pages_read_engagement",
+] as const;
+
+function knownMetaLoginPerms(scopes: string[]): string[] {
+  const have = new Set(scopes.map((s) => s.trim().toLowerCase()).filter(Boolean));
+  return META_LOGIN_PERM_ALLOWLIST.filter((name) => have.has(name));
+}
+
 /**
  * CLI line after a successful Meta exchange. Never includes the access token.
  * read + manage when ads_management was granted; read-only otherwise when scopes
- * are known. Unknown (older stamp omitted granted_scopes) does not claim either.
+ * are known. "+ Pages" only when both Pages permissions are granted. If either
+ * pages_show_list or pages_read_engagement is missing, the note names that gap.
+ * Unknown (older stamp omitted granted_scopes) does not claim either.
+ * Only ads_read, ads_management, pages_show_list, and pages_read_engagement are named.
  */
 export function formatMetaLoginSaved(scopes: string[] | undefined): string {
   const saved =
@@ -291,16 +307,28 @@ export function formatMetaLoginSaved(scopes: string[] | undefined): string {
       "Granted scopes were not reported by this stamp. Reads still work; write access is checked when a write tool runs.\n"
     );
   }
-  if (scopes.includes("ads_management")) {
-    const detail = scopes.includes("ads_read")
+  const known = knownMetaLoginPerms(scopes);
+  const has = (name: (typeof META_LOGIN_PERM_ALLOWLIST)[number]) => known.includes(name);
+  if (has("ads_management")) {
+    const missingPages = (["pages_show_list", "pages_read_engagement"] as const).filter((name) => !has(name));
+    if (missingPages.length === 0) {
+      return (
+        saved +
+        `Access: read + manage + Pages (${known.join(", ")}). Write tools are available and stay preview/confirm-gated.\n`
+      );
+    }
+    const detail = has("ads_read")
       ? "read + manage (ads_read and ads_management)"
       : "read + manage (ads_management)";
+    const needs = missingPages.length === 1 ? missingPages[0] : missingPages.join(" and ");
+    const pronoun = missingPages.length === 1 ? "it" : "them";
     return (
       saved +
-      `Access: ${detail}. Write tools are available and stay preview/confirm-gated.\n`
+      `Access: ${detail}. Write tools are available and stay preview/confirm-gated. ` +
+      `meta_list_pages needs ${needs}; reconnect to grant ${pronoun}.\n`
     );
   }
-  const detail = scopes.includes("ads_read") ? "read-only (ads_read)" : "read-only";
+  const detail = known.length > 0 ? `read-only (${known.join(", ")})` : "read-only";
   return (
     saved +
     `Access: ${detail}. Write tools need ads_management. ` +
@@ -364,7 +392,7 @@ export async function runAuthLoginMeta(opts: {
     stored.scopes = result.granted_scopes;
   }
   writeStore(opts.pluginDataDir, stored, STORE_FILE.meta);
-  // Never print the Meta token or the raw scope list (only ads_read / ads_management).
+  // Never print the Meta token or raw scopes (allowlist only; see formatMetaLoginSaved).
   process.stderr.write(formatMetaLoginSaved(stored.scopes));
   return 0;
 }
@@ -544,9 +572,10 @@ Consent B (GBP): set GOOGLE_OAUTH_GBP_CLIENT_ID (separate Desktop client) then
 
 Meta: prefer host-injected META_ACCESS_TOKEN (optional META_GRANTED_SCOPES).
   Otherwise redeem a hosted Login one-time grant code: auth login-meta --code
-  <code> → POST /v1/meta/exchange. The stamp /meta/login page requests ads_read
-  and ads_management. Stored scopes are the exchange granted_scopes. Older stamps
-  that omit granted_scopes leave scopes unknown (write tools let the stamp decide).
+  <code> → POST /v1/meta/exchange. The stamp /meta/login page requests ads_read,
+  ads_management, pages_show_list, and pages_read_engagement. Stored scopes are
+  the exchange granted_scopes. Older stamps that omit granted_scopes leave scopes
+  unknown (write tools let the stamp decide).
   Exchange returns the long-lived token to the plugin; Worker stores nothing.
   Requires DGTL_GATEWAY_URL + license with meta. Support never collects Meta tokens.
   Hosted Login UI (PR-3b) is Noel-gated — do not deploy a Meta demo hostname here.
