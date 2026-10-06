@@ -15,6 +15,7 @@ import { probeGatewayReachable, postGateway } from "../gateway/client.js";
 import { metaDisabled } from "./meta.js";
 import {
   ADS_MANAGEMENT,
+  HINT_ADS_MANAGEMENT_MISSING,
   HINT_FLAG,
   actPhrase,
   assertAdsManagementWhenDetectable,
@@ -161,7 +162,7 @@ async function liveCatalogHop(
     return failEnvelope(tool, "META_SCOPE_MISSING", MSG.META_SCOPE_MISSING, {
       api: "meta",
       missing_scope: `${ADS_MANAGEMENT}|${CATALOG_MANAGEMENT}`,
-      hint: "Granted scopes are present but lack ads_management or catalog_management. Re-authorize after App Review — do not silently retry.",
+      hint: "Granted scopes are present but lack ads_management or catalog_management. Reconnect Meta with `dgtl-connector-mcp auth login-meta --code <grant>` via the stamp /meta/login page and grant ads_management. Do not silently retry.",
     });
   }
   void ctx.auth;
@@ -207,7 +208,7 @@ async function liveCapiHop(
     return failEnvelope(tool, "META_SCOPE_MISSING", MSG.META_SCOPE_MISSING, {
       api: "meta",
       missing_scope: ADS_MANAGEMENT,
-      hint: "Granted scopes are present but lack ads_management. Re-authorize after Advanced Access — do not silently retry.",
+      hint: HINT_ADS_MANAGEMENT_MISSING,
     });
   }
   void ctx.auth;

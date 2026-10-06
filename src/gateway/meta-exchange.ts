@@ -20,6 +20,12 @@ export type MetaExchangeOk = {
   access_token: string;
   expires_in: number;
   token_type: string;
+  /**
+   * Scopes the stamp read from Graph /me/permissions (status=granted).
+   * Omitted when the stamp does not send `granted_scopes` (older Workers).
+   * Never invented — callers must not assume ads_read.
+   */
+  granted_scopes?: string[];
 };
 
 export type MetaExchangeFail = {
@@ -33,6 +39,28 @@ export type MetaExchangeFail = {
 export type MetaExchangeResult = MetaExchangeOk | MetaExchangeFail;
 
 const EXCHANGE_TIMEOUT_MS = 25_000;
+
+/** Meta permission names from Graph /me/permissions (ads_read, ads_management, …). */
+const SCOPE_TOKEN = /^[a-z][a-z0-9_]{1,63}$/;
+
+/**
+ * Validate stamp `granted_scopes`: array of strings, trim, lowercase, drop junk.
+ * Non-arrays (missing field, string, null) return undefined — scopes stay unknown.
+ * An array that is empty after filtering returns [] (still unknown to write pre-checks).
+ */
+export function normalizeMetaGrantedScopes(raw: unknown): string[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of raw) {
+    if (typeof item !== "string") continue;
+    const s = item.trim().toLowerCase();
+    if (!SCOPE_TOKEN.test(s) || seen.has(s)) continue;
+    seen.add(s);
+    out.push(s);
+  }
+  return out;
+}
 
 function exactlyOneCredential(body: MetaExchangeRequest): boolean {
   const hasTok = typeof body.short_lived_token === "string" && body.short_lived_token.trim().length > 0;
@@ -121,11 +149,14 @@ export async function postMetaExchange(opts: {
         typeof parsed.expires_in === "number" && Number.isFinite(parsed.expires_in)
           ? parsed.expires_in
           : 5_184_000; // Meta long-lived default ~60d when omitted
+      const granted = normalizeMetaGrantedScopes(parsed.granted_scopes);
       return {
         ok: true,
         access_token: parsed.access_token,
         expires_in: expiresIn,
         token_type: typeof parsed.token_type === "string" ? parsed.token_type : "bearer",
+        // Older stamps omit granted_scopes. declined_scopes is ignored (not stored).
+        ...(granted !== undefined ? { granted_scopes: granted } : {}),
       };
     }
 

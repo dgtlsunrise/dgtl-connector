@@ -42,7 +42,7 @@ Shopping create needs a digits `merchant_center_id` from `gads_list_merchant_cen
 
 ## `META_SCOPE_MISSING`
 
-Re-authorize Meta after `ads_management` Advanced Access. Do not silently retry. Support never collects Meta tokens.
+Reconnect Meta with `dgtl-connector-mcp auth login-meta --code` via the stamp `/meta/login` page and grant `ads_management`. Do not silently retry. `ads_read` reads may still work. Support never collects Meta tokens.
 
 ## `META_NOT_CONNECTED`
 

@@ -1,7 +1,7 @@
 /**
  * Local Meta Marketing API insights catalog (steal UX from Meta hosted Ads MCP docs).
  * No Graph / gateway call — agents must use these names; do not invent fields.
- * Writes / catalogs / audiences / lift stay out of v1 (ads_read only).
+ * Insights reads use ads_read. Create/edit tools are separate and need ads_management.
  */
 
 export type MetaField = {
@@ -92,7 +92,7 @@ export function describeMetaInsightsSchema(): {
       "Empty insights with ok:true is not auth failure — widen dates, drop breakdowns, or check object_id.",
       "NOT_FOUND usually means wrong ad_account_id / object_id — re-list; retrying the same id will not help.",
       "Cite ad_account_id, level, dates/preset, and breakdowns from data.cited in answers.",
-      "v1 is ads_read only — no create/edit campaign, catalog, audience, or lift mutate tools.",
+      "Insights reads use ads_read. Create and edit tools are separate, preview/confirm-gated, and need ads_management. Lift stays deferred.",
     ],
     deferred: [
       "Meta hosted Ads MCP categories left for backlog: ad create/edit, catalogs, signals/datasets, help-center search, A/B tests & lift, activity logs.",

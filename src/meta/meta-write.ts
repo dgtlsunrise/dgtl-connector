@@ -16,6 +16,10 @@ import { hasFeature } from "../license/verify.js";
 export const HINT_FLAG =
   "Plugin Meta mutate defaults on; set DGTL_META_MUTATE_ENABLED=false (or META_MUTATE_ENABLED=false) to opt out. Live hop still needs Worker META_MUTATE_ENABLED=true after Meta ads_management Advanced Access. Reads stay ads_read-only.";
 
+/** Detectable scopes without ads_management. Zero mutate hop. */
+export const HINT_ADS_MANAGEMENT_MISSING =
+  "Granted scopes are present but lack ads_management. Reconnect Meta with `dgtl-connector-mcp auth login-meta --code <grant>` via the stamp /meta/login page and grant ads_management. Write tools stay preview/confirm-gated. Do not silently retry. ads_read reads may still work.";
+
 const ALLOWED_STATUS = new Set(["ACTIVE", "PAUSED"]);
 /** Meta write scope — never on Consent A. W0.5: CONSENT_A ∩ ads_management = ∅ */
 export const ADS_MANAGEMENT = "ads_management";
@@ -413,7 +417,7 @@ async function metaUpdateFields(
     return failEnvelope(tool, "META_SCOPE_MISSING", MSG.META_SCOPE_MISSING, {
       api: "meta",
       missing_scope: ADS_MANAGEMENT,
-      hint: "Granted scopes are present but lack ads_management. Re-authorize Meta after Advanced Access — do not silently retry.",
+      hint: HINT_ADS_MANAGEMENT_MISSING,
     });
   }
 
@@ -446,8 +450,7 @@ function enrichMetaMutateEnvelope(
 ): Envelope {
   if (!env.ok) {
     if (env.error_code === "META_SCOPE_MISSING" && !env.hint) {
-      env.hint =
-        "Meta denied the mutate — usually missing ads_management. Do not silently retry. Reads may still work with ads_read.";
+      env.hint = HINT_ADS_MANAGEMENT_MISSING;
     }
     return env;
   }
@@ -856,7 +859,7 @@ async function metaCreateObject(
     return failEnvelope(tool, "META_SCOPE_MISSING", MSG.META_SCOPE_MISSING, {
       api: "meta",
       missing_scope: ADS_MANAGEMENT,
-      hint: "Granted scopes are present but lack ads_management. Re-authorize Meta after Advanced Access — do not silently retry.",
+      hint: HINT_ADS_MANAGEMENT_MISSING,
     });
   }
   void ctx.auth;
@@ -970,7 +973,7 @@ async function liveMetaCreativeHop(
     return failEnvelope(tool, "META_SCOPE_MISSING", MSG.META_SCOPE_MISSING, {
       api: "meta",
       missing_scope: ADS_MANAGEMENT,
-      hint: "Granted scopes are present but lack ads_management. Re-authorize Meta after Advanced Access — do not silently retry.",
+      hint: HINT_ADS_MANAGEMENT_MISSING,
     });
   }
   void ctx.auth;
