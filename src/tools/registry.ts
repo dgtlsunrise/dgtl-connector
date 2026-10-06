@@ -83,7 +83,7 @@ import {
   metaGetBatchStatus,
   metaSendCapiEvents,
 } from "../meta/meta-wave16.js";
-import { metaDisabled, metaDescribeInsightsSchema } from "../meta/meta.js";
+import { metaDisabled, metaDescribeInsightsSchema, metaListPages } from "../meta/meta.js";
 import {
   mcGetProduct,
   mcListAccountIssues,
@@ -1351,6 +1351,16 @@ export const TOOLS: ToolSpec[] = [
     inputSchema: S.emptyInput,
     annotations: ANN_RO,
     handler: async (ctx, args) => metaDisabled(ctx, "meta_list_ad_accounts", args),
+  },
+  {
+    name: "meta_list_pages",
+    group: "meta",
+    family: "meta",
+    title: "Meta list pages",
+    description: "List the Facebook Pages you manage (id, name, and follower count). Read-only.",
+    inputSchema: S.metaListPages,
+    annotations: ANN_RO,
+    handler: (ctx, args) => metaListPages(ctx, args),
   },
   {
     name: "meta_describe_insights_schema",

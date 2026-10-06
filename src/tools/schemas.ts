@@ -261,6 +261,16 @@ export const gadsSearch = z
   .strict();
 
 export const metaAccount = z.object({ ad_account_id: str }).strict();
+/** Pages the user manages. `after` matches the stamp cursor /^[A-Za-z0-9_\-=]{1,512}$/. */
+export const metaListPages = z
+  .object({
+    limit: z.number().int().min(1).max(100).optional(),
+    after: z
+      .string()
+      .regex(/^[A-Za-z0-9_\-=]{1,512}$/)
+      .optional(),
+  })
+  .strict();
 export const metaDescribeInsightsSchema = emptyInput;
 export const metaInsights = z
   .object({

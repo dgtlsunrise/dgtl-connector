@@ -20,6 +20,137 @@ import {
  * (catalog only — agents must not invent insights fields).
  */
 
+const PAGE_LIST_SCOPES = ["pages_show_list", "pages_read_engagement"] as const;
+const PAGE_AFTER = /^[A-Za-z0-9_\-=]{1,512}$/;
+
+/**
+ * Reconnect hint naming the missing Pages permission(s).
+ * One name uses "grant it"; two or more use "grant them".
+ */
+export function pagesListReconnectHint(missing: readonly string[]): string {
+  const names = missing.length === 1 ? missing[0] : missing.join(" and ");
+  const pronoun = missing.length === 1 ? "it" : "them";
+  return `Listing your Pages needs ${names}. Reconnect at https://stamp.dgtlsunrise.com/meta/login, grant ${pronoun}, then run dgtl-connector-mcp auth login-meta --code <code>.`;
+}
+
+/**
+ * Non-empty granted scopes are known. Empty/omitted scopes (older stamp) stay unknown.
+ * Unknown returns null so the stamp decides. Otherwise the missing Pages permissions,
+ * in allowlist order (empty when both are present).
+ */
+function missingPageListScopes(scopes: string[] | undefined | null): string[] | null {
+  if (!scopes || scopes.length === 0) return null;
+  const normalized = scopes.map((s) => s.trim().toLowerCase());
+  return PAGE_LIST_SCOPES.filter((name) => !normalized.includes(name));
+}
+
+function validateMetaListPagesArgs(args: Record<string, unknown>): Envelope | null {
+  const tool = "meta_list_pages";
+  if (args.limit !== undefined) {
+    const n = args.limit;
+    if (typeof n !== "number" || !Number.isInteger(n) || n < 1 || n > 100) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", MSG.INVALID_ARGUMENT, {
+        hint: "limit must be an integer from 1 to 100.",
+      });
+    }
+  }
+  if (args.after !== undefined) {
+    if (typeof args.after !== "string" || !PAGE_AFTER.test(args.after)) {
+      return failEnvelope(tool, "INVALID_ARGUMENT", MSG.INVALID_ARGUMENT, {
+        hint: "after must be a paging cursor of 1–512 letters, digits, underscores, hyphens, or equals.",
+      });
+    }
+  }
+  return null;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+type PageRow = {
+  id: string;
+  name?: string;
+  category?: string;
+  followers_count?: number;
+  fan_count?: number;
+};
+
+/** Non-negative integer only. Floats, negatives, and numeric strings are dropped. */
+function nonNegInt(value: unknown): number | undefined {
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 0) return undefined;
+  return value;
+}
+
+/**
+ * id, name, category, non-negative followers_count / fan_count, paging.after,
+ * and metadata_read. Drop any key whose name contains "token".
+ */
+function sanitizeMetaListPagesData(data: unknown): {
+  data: PageRow[];
+  paging?: { after: string };
+  metadata_read?: number;
+} {
+  const root = asRecord(data);
+  const rows = Array.isArray(data) ? data : Array.isArray(root?.data) ? root.data : [];
+  const pages: PageRow[] = [];
+  for (const row of rows) {
+    const rec = asRecord(row);
+    if (!rec) continue;
+    const idRaw = rec.id;
+    const id =
+      typeof idRaw === "string"
+        ? idRaw
+        : typeof idRaw === "number" && Number.isFinite(idRaw)
+          ? String(idRaw)
+          : "";
+    if (!id) continue;
+    const page: PageRow = { id };
+    if (typeof rec.name === "string" && rec.name) page.name = rec.name;
+    if (typeof rec.category === "string" && rec.category) page.category = rec.category;
+    const followers = nonNegInt(rec.followers_count);
+    if (followers !== undefined) page.followers_count = followers;
+    const fans = nonNegInt(rec.fan_count);
+    if (fans !== undefined) page.fan_count = fans;
+    pages.push(page);
+  }
+  const pagingRec = asRecord(root?.paging);
+  const after = pagingRec && typeof pagingRec.after === "string" ? pagingRec.after : "";
+  const out: { data: PageRow[]; paging?: { after: string }; metadata_read?: number } = { data: pages };
+  if (after) out.paging = { after };
+  const metadataRead = nonNegInt(root?.metadata_read);
+  if (metadataRead !== undefined) out.metadata_read = metadataRead;
+  return dropTokenFields(out) as { data: PageRow[]; paging?: { after: string }; metadata_read?: number };
+}
+
+function dropTokenFields(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(dropTokenFields);
+  const rec = asRecord(value);
+  if (!rec) return value;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(rec)) {
+    if (k.toLowerCase().includes("token")) continue;
+    out[k] = dropTokenFields(v);
+  }
+  return out;
+}
+
+function withPagesReconnectHint(env: Envelope): Envelope {
+  if (env.ok) return env;
+  const blob = `${env.message ?? ""} ${env.hint ?? ""} ${env.google_reason ?? ""}`.toLowerCase();
+  const permission =
+    env.error_code === "META_SCOPE_MISSING" ||
+    env.error_code === "PERMISSION_DENIED" ||
+    blob.includes("pages_show_list") ||
+    blob.includes("pages_read_engagement");
+  if (!permission) return env;
+  const named = PAGE_LIST_SCOPES.filter((name) => blob.includes(name));
+  // One named permission stays specific. Both, or neither, name both so the reconnect steps are present.
+  env.hint = pagesListReconnectHint(named.length === 1 ? named : [...PAGE_LIST_SCOPES]);
+  return env;
+}
+
 function requireMetaLicense(ctx: AppContext, tool: string): Envelope | null {
   if (!hasFeature(ctx.license, "meta")) {
     return failEnvelope(tool, "LICENSE_REQUIRED", MSG.LICENSE_REQUIRED, {
@@ -128,6 +259,39 @@ export async function metaDisabled(
   });
 
   return enrichMetaEnvelope(tool, args, env);
+}
+
+/**
+ * Read-only Pages list. Pro-gated like other Meta reads. Not a mutate:
+ * no preview/confirm and not affected by DGTL_META_MUTATE_ENABLED.
+ * Known scopes missing pages_show_list or pages_read_engagement fail before any stamp HTTP.
+ */
+export async function metaListPages(ctx: AppContext, args: Record<string, unknown>): Promise<Envelope> {
+  const tool = "meta_list_pages";
+  const miss = requireMetaLicense(ctx, tool);
+  if (miss) return miss;
+  const bad = validateMetaListPagesArgs(args);
+  if (bad) return bad;
+
+  const tok = await ctx.authMeta.getAccessToken();
+  const missingPages = tok?.accessToken ? missingPageListScopes(tok.scopes) : null;
+  if (missingPages && missingPages.length > 0) {
+    return failEnvelope(tool, "META_SCOPE_MISSING", MSG.META_SCOPE_MISSING, {
+      api: "meta",
+      missing_scope: missingPages.join(","),
+      hint: pagesListReconnectHint(missingPages),
+    });
+  }
+
+  const hopArgs: Record<string, unknown> = {};
+  if (typeof args.limit === "number") hopArgs.limit = args.limit;
+  if (typeof args.after === "string") hopArgs.after = args.after;
+
+  const env = await metaDisabled(ctx, tool, hopArgs);
+  if (!env.ok) return withPagesReconnectHint(env);
+  env.data = sanitizeMetaListPagesData(env.data);
+  if (env.page) env.page = dropTokenFields(env.page) as Envelope["page"];
+  return env;
 }
 
 function enrichMetaEnvelope(tool: string, args: Record<string, unknown>, env: Envelope): Envelope {
