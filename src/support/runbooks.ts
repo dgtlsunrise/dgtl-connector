@@ -61,7 +61,7 @@ export const ERROR_RUNBOOKS: Partial<Record<ErrorCode, RunbookHint>> = {
   META_SCOPE_MISSING: {
     runbook: `${RUNBOOK_INDEX}#meta_scope_missing`,
     next_human_step:
-      "Re-authorize Meta after ads_management and/or catalog_management Advanced Access. Do not silently retry. ads_read reads may still work. Support never collects Meta tokens.",
+      "Reconnect Meta with `dgtl-connector-mcp auth login-meta --code` via the stamp /meta/login page and grant ads_management. Do not silently retry. ads_read reads may still work. Support never collects Meta tokens.",
   },
   GBP_NOT_ENABLED: {
     runbook: `${RUNBOOK_INDEX}#gbp_not_enabled`,

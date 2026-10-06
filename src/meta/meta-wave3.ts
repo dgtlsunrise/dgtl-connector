@@ -11,6 +11,7 @@ import { requireId } from "../ids.js";
 import { probeGatewayReachable, postGateway } from "../gateway/client.js";
 import {
   ADS_MANAGEMENT,
+  HINT_ADS_MANAGEMENT_MISSING,
   HINT_FLAG,
   actPhrase,
   assertAdsManagementWhenDetectable,
@@ -118,7 +119,7 @@ async function liveMetaMutateHop(
     return failEnvelope(tool, "META_SCOPE_MISSING", MSG.META_SCOPE_MISSING, {
       api: "meta",
       missing_scope: ADS_MANAGEMENT,
-      hint: "Granted scopes are present but lack ads_management. Re-authorize Meta after Advanced Access — do not silently retry.",
+      hint: HINT_ADS_MANAGEMENT_MISSING,
     });
   }
   void ctx.auth;

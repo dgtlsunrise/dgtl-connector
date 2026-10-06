@@ -157,10 +157,10 @@ Shopify tools are **local merchant credentials** (not Polar, not stamp).
 
 ### `ADS_SCOPE_MISSING` / `META_NOT_CONNECTED`
 
-License **and** gateway are ok, but the second OAuth (Ads `adwords` / Meta `ads_read`) is not connected. Consent C / Meta tokens never come from Consent A (`GOOGLE_ACCESS_TOKEN`).
+License **and** gateway are ok, but the second OAuth (Ads `adwords` / Meta `ads_read` and `ads_management`) is not connected. Consent C / Meta tokens never come from Consent A (`GOOGLE_ACCESS_TOKEN`).
 
 - Ads: set `GOOGLE_ADS_ACCESS_TOKEN` or run `dgtl-connector-mcp auth login-ads` (requires `GOOGLE_OAUTH_ADS_CLIENT_ID` — separate Consent C client; never add `adwords` to Consent A). No developer-token in this plugin.
-- Meta: set `META_ACCESS_TOKEN` or run `dgtl-connector-mcp auth login-meta --code <grant>` (redeems hosted Login via `POST /v1/meta/exchange`; long-lived token returns **to the plugin**; Worker stores nothing). Support never collects Meta tokens.
+- Meta: set `META_ACCESS_TOKEN` or run `dgtl-connector-mcp auth login-meta --code <grant>` (stamp `/meta/login` requests `ads_read` and `ads_management`; redeems hosted Login via `POST /v1/meta/exchange`; long-lived token returns **to the plugin**; Worker stores nothing). Support never collects Meta tokens.
 
 ### `CONSENT_G_REQUIRED` / `CONSENT_S_REQUIRED`
 
@@ -269,7 +269,7 @@ Meta CAPI event send opted out, or Worker `META_CAPI_ENABLED` is off / unknown. 
 
 ### `META_SCOPE_MISSING`
 
-Meta token lacks `ads_management` (or `catalog_management` for catalog writes), or Graph denied the mutate. Re-authorize after App Review Advanced Access. Do not silently retry.
+Meta token lacks `ads_management` (or `catalog_management` for catalog writes), or Graph denied the mutate. Reconnect with `dgtl-connector-mcp auth login-meta --code <grant>` via the stamp `/meta/login` page and grant `ads_management`. Do not silently retry. `ads_read` reads may still work. When the stamp omits `granted_scopes`, scopes stay unknown and the stamp's Graph denial still maps to this code.
 
 ### `SPEND_CAP_EXCEEDED`
 

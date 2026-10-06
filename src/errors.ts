@@ -111,7 +111,7 @@ export const MSG = {
   META_CAPI_NOT_ENABLED:
     "Meta CAPI event send is opted out or the Worker META_CAPI_ENABLED flag is off. Plugin defaults on; set DGTL_META_CAPI_ENABLED=false to opt out. Live hop needs Worker META_CAPI_ENABLED=true (fail-closed, separate from META_MUTATE_ENABLED). Polar Pro meta bit. App secret stays on the Worker. Never send unhashed PII.",
   META_SCOPE_MISSING:
-    "This Meta login did not grant ads_management (or catalog_management for catalog writes), or Graph denied the mutate. Re-authorize after App Review Advanced Access. Do not silently retry. ads_read reads may still work.",
+    "This Meta login did not grant ads_management (or catalog_management for catalog writes), or Graph denied the mutate. Reconnect with `dgtl-connector-mcp auth login-meta --code <grant>` via the stamp /meta/login page and grant ads_management. Do not silently retry. ads_read reads may still work.",
   SPEND_CAP_EXCEEDED:
     "Requested budget exceeds the product sanity cap ($100,000/day equivalent). Google Ads: lower amount_micros / daily_budget_dollars (micros). Meta: lower daily_budget / lifetime_budget (cents, not micros). No mutate HTTP was sent.",
   NOT_IMPLEMENTED:
@@ -129,7 +129,7 @@ export const MSG = {
   SHOPIFY_SCOPE_MISSING:
     "This Shopify token is missing a required Admin API scope. Default install is read_products + read_orders + read_inventory + read_locations. Explicit expand (reinstall; never silent): read_publications, read_product_listings, write_inventory, write_products. Not Polar, not stamp vault.",
   META_NOT_CONNECTED:
-    "Meta Ads is a separate OAuth (ads_read). After a valid DGTL license + gateway, set META_ACCESS_TOKEN or run `dgtl-connector-mcp auth login-meta --code <grant>`. Support never collects Meta tokens; the app secret is never in this plugin.",
+    "Meta Ads is a separate OAuth (ads_read and ads_management). After a valid DGTL license + gateway, set META_ACCESS_TOKEN or run `dgtl-connector-mcp auth login-meta --code <grant>` (stamp /meta/login). Support never collects Meta tokens; the app secret is never in this plugin.",
   TIKTOK_NOT_CONNECTED:
     "TikTok Ads is a separate OAuth (Marketing API advertiser grant). After a valid DGTL license with feature `tiktok` + gateway, set TIKTOK_ACCESS_TOKEN or PLUGIN_DATA/tiktok-oauth.json. Support never collects TikTok tokens; the app secret is never in this plugin.",
   TIKTOK_MUTATE_NOT_ENABLED:

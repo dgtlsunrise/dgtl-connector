@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import { buildGoogleAuthUrl, exchangeAuthorizationCode, generatePkce } from "./pkce.js";
-import { writeStore, STORE_FILE } from "./store.js";
+import { writeStore, STORE_FILE, type StoredTokens } from "./store.js";
 import { CONSENT_B, CONSENT_C_GOOGLE, CONSENT_MC, freeConnectScopes } from "../google/scopes.js";
 import { postMetaExchange } from "../gateway/meta-exchange.js";
 import { postLicenseRedeem } from "../gateway/license-redeem.js";
@@ -278,8 +278,41 @@ export function parseLoginMetaCode(argv: string[]): string | null {
 }
 
 /**
+ * CLI line after a successful Meta exchange. Never includes the access token.
+ * read + manage when ads_management was granted; read-only otherwise when scopes
+ * are known. Unknown (older stamp omitted granted_scopes) does not claim either.
+ */
+export function formatMetaLoginSaved(scopes: string[] | undefined): string {
+  const saved =
+    "Meta authorization saved to PLUGIN_DATA/meta-oauth.json (token not logged). Worker stores nothing.\n";
+  if (scopes === undefined || scopes.length === 0) {
+    return (
+      saved +
+      "Granted scopes were not reported by this stamp. Reads still work; write access is checked when a write tool runs.\n"
+    );
+  }
+  if (scopes.includes("ads_management")) {
+    const detail = scopes.includes("ads_read")
+      ? "read + manage (ads_read and ads_management)"
+      : "read + manage (ads_management)";
+    return (
+      saved +
+      `Access: ${detail}. Write tools are available and stay preview/confirm-gated.\n`
+    );
+  }
+  const detail = scopes.includes("ads_read") ? "read-only (ads_read)" : "read-only";
+  return (
+    saved +
+    `Access: ${detail}. Write tools need ads_management. ` +
+    "Reconnect with `dgtl-connector-mcp auth login-meta --code <grant>` via the stamp /meta/login page and grant ads_management.\n"
+  );
+}
+
+/**
  * Redeem hosted Login one-time grant code via Worker POST /v1/meta/exchange.
  * Long-lived token is written to PLUGIN_DATA/meta-oauth.json; Worker stores nothing.
+ * Scopes are the exchange `granted_scopes` when the stamp sends them.
+ * Older stamps omit the field — scopes stay unknown (do not invent ads_read).
  * Fail-closed without gateway URL / license / code. Never prints the Meta token.
  * Loopback Meta Login without hosted redirect is not v1 default (PR-3b Noel-gated).
  */
@@ -321,20 +354,18 @@ export async function runAuthLoginMeta(opts: {
     return 1;
   }
 
-  writeStore(
-    opts.pluginDataDir,
-    {
-      access_token: result.access_token,
-      expiry: Date.now() + result.expires_in * 1000,
-      token_type: result.token_type,
-      scopes: ["ads_read"],
-    },
-    STORE_FILE.meta,
-  );
-  // Never print the Meta token.
-  process.stderr.write(
-    "Meta authorization saved to PLUGIN_DATA/meta-oauth.json (token not logged). Worker stores nothing.\n",
-  );
+  const stored: StoredTokens = {
+    access_token: result.access_token,
+    expiry: Date.now() + result.expires_in * 1000,
+    token_type: result.token_type,
+  };
+  // Omit scopes when the stamp did not report granted_scopes (unknown → stamp decides).
+  if (result.granted_scopes !== undefined) {
+    stored.scopes = result.granted_scopes;
+  }
+  writeStore(opts.pluginDataDir, stored, STORE_FILE.meta);
+  // Never print the Meta token or the raw scope list (only ads_read / ads_management).
+  process.stderr.write(formatMetaLoginSaved(stored.scopes));
   return 0;
 }
 
@@ -511,8 +542,11 @@ Consent B (GBP): set GOOGLE_OAUTH_GBP_CLIENT_ID (separate Desktop client) then
   posts/replies). Flag DGTL_GBP_ENABLED stays default false; login-gbp does not
   flip it. Live quota (Basic API Access) is a Noel gate.
 
-Meta: prefer host-injected META_ACCESS_TOKEN. Otherwise redeem a hosted Login
-  one-time grant code: auth login-meta --code <code> → POST /v1/meta/exchange.
+Meta: prefer host-injected META_ACCESS_TOKEN (optional META_GRANTED_SCOPES).
+  Otherwise redeem a hosted Login one-time grant code: auth login-meta --code
+  <code> → POST /v1/meta/exchange. The stamp /meta/login page requests ads_read
+  and ads_management. Stored scopes are the exchange granted_scopes. Older stamps
+  that omit granted_scopes leave scopes unknown (write tools let the stamp decide).
   Exchange returns the long-lived token to the plugin; Worker stores nothing.
   Requires DGTL_GATEWAY_URL + license with meta. Support never collects Meta tokens.
   Hosted Login UI (PR-3b) is Noel-gated — do not deploy a Meta demo hostname here.
